@@ -55,7 +55,7 @@ fn floor_div(this: &BigInt, args: &Vec<Variable>, runtime: &mut Runtime) {
 fn div(this: &BigInt, args: &Vec<Variable>, runtime: &mut Runtime) {
     let mut ratio = BigDecimal::new(this.clone(), 0);
     for arg in args {
-        ratio *= arg.clone().int(runtime)
+        ratio *= BigDecimal::new(arg.clone().int(runtime), 0)
     }
     runtime.push(Variable::Decimal(ratio))
 }
