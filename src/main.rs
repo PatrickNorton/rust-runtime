@@ -1,5 +1,6 @@
 extern crate num_bigint;
 extern crate bigdecimal;
+extern crate enum_map;
 
 mod bytecode;
 mod operator;

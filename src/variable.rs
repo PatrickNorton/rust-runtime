@@ -3,6 +3,7 @@ use std::vec::Vec;
 use std::string::String;
 use std::cell::RefCell;
 
+use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::std_variable::StdVariable;
@@ -14,23 +15,29 @@ pub enum Method<T> {
     Native(fn(T, Vec<Variable>, &Runtime)),
 }
 
+pub enum Name {
+    Attribute(String),
+    Operator(Operator),
+}
+
+#[derive(Clone)]
 pub enum Variable {
     Bigint(BigInt),
     String(String),
     Decimal(BigDecimal),
     Type(Type),
-    Standard(Rc<RefCell<StdVariable>>),
+    Standard(StdVariable),
     Custom(),
 }
 
 impl Variable {
-    pub fn str(&mut self, runtime: &Runtime) -> String {
+    pub fn str(&mut self, runtime: &mut Runtime) -> String {
         return match self {
             Variable::String(val) => val.clone(),
             Variable::Bigint(val) => val.to_str_radix(10),
             Variable::Decimal(val) => val.to_string(),
             Variable::Type(val) => val.to_string(),
-            Variable::Standard(val) => val.borrow_mut().str(runtime),
+            Variable::Standard(val) => val.clone().str(runtime),
             _ => unimplemented!()
         }
     }
@@ -39,6 +46,20 @@ impl Variable {
         return match self {
             Variable::Bigint(val) => val.clone(),
             Variable::Decimal(val) => val.to_bigint().unwrap(),
+            _ => unimplemented!()
+        }
+    }
+
+    pub fn call(&self, args: (&Vec<Variable>, &mut Runtime)) {
+        match self {
+            Variable::Standard(val) => val.call(args),
+            _ => unimplemented!()
+        }
+    }
+
+    pub fn index(&self, index: Name) -> Variable {
+        return match self {
+            Variable::Standard(val) => val.index(index),
             _ => unimplemented!()
         }
     }

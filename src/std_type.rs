@@ -1,5 +1,6 @@
 use std::string::{String, ToString};
 
+#[derive(Clone)]
 pub struct Type {
     name: String,
 }
