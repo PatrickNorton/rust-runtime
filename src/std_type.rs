@@ -1,6 +1,6 @@
 use std::string::{String, ToString};
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct Type {
     name: String,
 }

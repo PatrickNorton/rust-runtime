@@ -1,4 +1,6 @@
 use std::boxed::Box;
+use std::cmp::{PartialEq, Eq};
+use std::hash::{Hash, Hasher};
 use std::vec::Vec;
 
 use crate::variable::Variable;
@@ -19,9 +21,7 @@ pub trait Method: MethodClone {
 }
 
 impl<T> MethodClone for T
-where
-    T: 'static + Method + Clone,
-{
+where T: 'static + Method + Clone, {
     fn clone_box(&self) -> Box<dyn Method> {
         Box::new(self.clone())
     }
@@ -30,6 +30,23 @@ where
 impl Clone for Box<dyn Method> {
     fn clone(&self) -> Box<dyn Method> {
         self.clone_box()
+    }
+}
+
+impl PartialEq for Box<dyn Method> {
+    fn eq(&self, other: &Box<dyn Method>) -> bool {
+        let left: *const dyn Method = self.as_ref();
+        let right: *const dyn Method = other.as_ref();
+        left == right
+    }
+}
+
+impl Eq for Box<dyn Method> {
+}
+
+impl Hash for Box<dyn Method> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        unimplemented!()
     }
 }
 

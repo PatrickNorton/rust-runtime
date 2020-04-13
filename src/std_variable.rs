@@ -1,5 +1,7 @@
 use std::cell::RefCell;
+use std::cmp::{Eq, PartialEq};
 use std::collections::HashMap;
+use std::hash::{Hash, Hasher};
 use std::ops::{Index};
 use std::rc::Rc;
 use std::string::String;
@@ -17,13 +19,14 @@ pub enum StdMethod {
     Native(fn(StdVariable, Vec<Variable>, &mut Runtime)),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Eq)]
 pub struct StdVariable {
     value: Rc<RefCell<InnerVar>>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 struct InnerVar {
+    pub uuid: i128,
     pub cls: &'static Type,
     pub values: HashMap<String, Variable>,
     pub operators: EnumMap<Operator, Variable>
@@ -52,3 +55,15 @@ impl StdVariable {
 }
 
 impl InnerVar {}
+
+impl Hash for StdVariable {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        state.write_i128(self.value.borrow().uuid)
+    }
+}
+
+impl PartialEq for StdVariable {
+    fn eq(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.value, &other.value)
+    }
+}

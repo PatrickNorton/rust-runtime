@@ -15,5 +15,7 @@ impl Runtime {
         self.variables.pop().unwrap()
     }
 
-    fn call(&mut self) {}
+    fn call(&mut self) {
+        
+    }
 }

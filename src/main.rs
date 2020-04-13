@@ -7,6 +7,7 @@ mod int_functions;
 mod method;
 mod operator;
 mod runtime;
+mod stack_frame;
 mod std_type;
 mod std_variable;
 mod variable;

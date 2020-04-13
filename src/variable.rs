@@ -4,6 +4,7 @@ use std::string::String;
 use std::cell::RefCell;
 use std::boxed::Box;
 use std::clone::Clone;
+use std::cmp::PartialEq;
 
 use crate::operator::Operator;
 use crate::runtime::Runtime;
@@ -18,7 +19,7 @@ pub enum Name {
     Operator(Operator),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Eq, Hash)]
 pub enum Variable {
     Bigint(BigInt),
     String(String),
@@ -61,6 +62,38 @@ impl Variable {
         return match self {
             Variable::Standard(val) => val.index(index),
             _ => unimplemented!()
+        }
+    }
+}
+
+impl PartialEq for Variable {
+    fn eq(&self, other: &Self) -> bool {
+        return match self {
+            Variable::Bigint(val) =>
+                if let Variable::Bigint(o) = other {
+                    val == o
+                } else { false }
+            Variable::String(val) =>
+                if let Variable::String(o) = other {
+                    val == o
+                } else { false }
+            Variable::Decimal(val) =>
+                if let Variable::Decimal(o) = other {
+                    val == o
+                } else { false }
+            Variable::Type(val) =>
+                if let Variable::Type(o) = other {
+                    val == o
+                } else { false }
+            Variable::Standard(val) =>
+                if let Variable::Standard(o) = other {
+                    val == o
+                } else { false }
+            Variable::Method(val) =>
+                if let Variable::Method(o) = other {
+                    val == o
+                } else { false }
+            Variable::Custom() => unimplemented!()
         }
     }
 }
