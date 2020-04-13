@@ -24,27 +24,31 @@ impl Runtime {
 
     }
 
-    pub fn load_args(argc: u16) -> Vec<Variable> {
+    pub fn load_args(&mut self, argc: u16) -> Vec<Variable> {
         let mut args: Vec<Variable> = Vec::with_capacity(argc as usize);
         for i in 0..argc {
-            args[&argc - i - 1] = pop()
+            args[(argc - i - 1) as usize] = self.pop()
         }
         return args
     }
 
     // uint16_t varCount, uint16_t functionNumber, const std::vector<Variable>& args, FileInfo* info, FramePtr& frame
     pub fn push_stack(&mut self, var_count: u16, fn_no: u16, args: &mut Vec<Variable>, info: Rc<FileInfo>) {
-        let native = self.isNative();
-        if Rc::ptr_eq(&info, self.files.top()) {
+        let native = self.is_native();
+        if Rc::ptr_eq(&info, self.files.last().unwrap()) {
             self.frames.push(StackFrame::new(var_count, fn_no, args));
         } else {
             self.frames.push(StackFrame::new_file(var_count, fn_no, args));
             self.files.push(info);
         }
-        self.frames.top().load_args(args);
+        self.frames.last().unwrap().load_args(args);
         if native {
             Executor::execute(self);
-            assert!(self.isNative());
+            assert!(self.is_native());
         }
+    }
+
+    pub fn is_native(&self) -> bool {
+        self.frames.last().unwrap().is_native()
     }
 }

@@ -29,7 +29,7 @@ impl FileInfo {
     }
 
     pub fn get_export(&self, name: &String) -> &Variable {
-        self.constants[exports[name]]
+        &self.constants[self.exports[name] as usize]
     }
 
     pub fn execute() {
