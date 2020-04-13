@@ -2,7 +2,9 @@ extern crate num_bigint;
 extern crate bigdecimal;
 extern crate enum_map;
 
+mod base_fn;
 mod bytecode;
+mod file_info;
 mod int_functions;
 mod method;
 mod operator;
