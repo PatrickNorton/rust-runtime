@@ -2,6 +2,8 @@ use std::rc::Rc;
 use std::vec::Vec;
 use std::string::String;
 use std::cell::RefCell;
+use std::boxed::Box;
+use std::clone::Clone;
 
 use crate::operator::Operator;
 use crate::runtime::Runtime;
@@ -9,11 +11,7 @@ use crate::std_type::Type;
 use crate::std_variable::StdVariable;
 use num_bigint::{BigInt, ToBigInt};
 use bigdecimal::BigDecimal;
-
-pub enum Method<T> {
-    Standard(i32),
-    Native(fn(T, Vec<Variable>, &Runtime)),
-}
+use crate::method::Method;
 
 pub enum Name {
     Attribute(String),
@@ -27,6 +25,7 @@ pub enum Variable {
     Decimal(BigDecimal),
     Type(Type),
     Standard(StdVariable),
+    Method(Box<dyn Method>),
     Custom(),
 }
 
@@ -53,6 +52,7 @@ impl Variable {
     pub fn call(&self, args: (&Vec<Variable>, &mut Runtime)) {
         match self {
             Variable::Standard(val) => val.call(args),
+            Variable::Method(method) => method.call(args),
             _ => unimplemented!()
         }
     }

@@ -7,7 +7,7 @@ pub struct Runtime {
 }
 
 impl Runtime {
-    fn push(&mut self, var: Variable) {
+    pub(crate) fn push(&mut self, var: Variable) {
         self.variables.push(var)
     }
 
