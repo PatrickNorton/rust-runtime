@@ -2,7 +2,6 @@ use std::cell::RefCell;
 use std::cmp::{Eq, PartialEq};
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
-use std::ops::{Index};
 use std::rc::Rc;
 use std::string::String;
 use std::vec::Vec;
@@ -38,6 +37,11 @@ impl StdVariable {
         return runtime.pop().str(runtime)
     }
 
+    pub fn bool(&mut self, runtime: &mut Runtime) -> bool {
+        self.call_operator(Operator::Bool, runtime);
+        runtime.pop().to_bool(runtime)
+    }
+
     pub fn call_operator(&mut self, op: Operator, runtime: &mut Runtime) {
         unimplemented!()
     }
@@ -51,6 +55,14 @@ impl StdVariable {
             Name::Operator(op) => self.value.borrow().operators[op].clone(),
             Name::Attribute(str) => self.value.borrow().values[&str].clone(),
         }
+    }
+
+    pub fn set(&self, index: String, value: Variable) {
+        self.value.borrow_mut().values.insert(index, value);
+    }
+
+    pub fn identical(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.value, &other.value)
     }
 }
 

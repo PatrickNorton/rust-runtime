@@ -1,3 +1,4 @@
+#[derive(Clone, Copy)]
 pub enum Bytecode {
     Nop = 0x0,
     LoadNull = 0x1,
@@ -79,4 +80,74 @@ pub enum Bytecode {
     Dotimes = 0x57,
     // Misc.
     LoadFunction = 0x60,
+}
+
+pub fn bytecode_size(b: Bytecode) -> usize {
+    return match b {
+        Bytecode::Nop | Bytecode::LoadNull => 0,
+        Bytecode::LoadConst
+        | Bytecode::LoadValue
+        | Bytecode::LoadDot
+        | Bytecode::LoadSubscript
+        | Bytecode::LoadOp => 2,
+        Bytecode::PopTop | Bytecode::DupTop | Bytecode::Swap2 | Bytecode::Swap3 => 0,
+        Bytecode::SwapN => 4,
+        Bytecode::Store | Bytecode::StoreSubscript | Bytecode::StoreAttr => 2,
+        Bytecode::Plus
+        | Bytecode::Minus
+        | Bytecode::Times
+        | Bytecode::Divide
+        | Bytecode::FloorDiv
+        | Bytecode::Mod
+        | Bytecode::Subscript
+        | Bytecode::Power
+        | Bytecode::LBitshift
+        | Bytecode::RBitshift
+        | Bytecode::BitwiseAnd
+        | Bytecode::BitwiseOr
+        | Bytecode::BitwiseXor
+        | Bytecode::Compare
+        | Bytecode::DelSubscript
+        | Bytecode::UMinus
+        | Bytecode::BitwiseNot
+        | Bytecode::BoolAnd
+        | Bytecode::BoolOr
+        | Bytecode::BoolNot
+        | Bytecode::BoolXor
+        | Bytecode::Identical
+        | Bytecode::Instanceof => 0,
+        Bytecode::CallOp => 4,
+        Bytecode::PackTuple
+        | Bytecode::UnpackTuple
+        | Bytecode::Equal
+        | Bytecode::LessThan
+        | Bytecode::GreaterThan
+        | Bytecode::LessEqual
+        | Bytecode::GreaterEqual
+        | Bytecode::Contains => 0,
+        Bytecode::Jump
+        | Bytecode::JumpFalse
+        | Bytecode::JumpTrue
+        | Bytecode::JumpNn
+        | Bytecode::JumpNull => 4,
+        Bytecode::CallMethod
+        | Bytecode::CallTos
+        | Bytecode::TailMethod
+        | Bytecode::TailTos
+        | Bytecode::Return => 2,
+        Bytecode::Throw => 0,
+        Bytecode::ThrowQuick => 2,
+        Bytecode::EnterTry => 4,
+        Bytecode::ExceptN => 2,
+        Bytecode::Finally
+        | Bytecode::EndTry
+        | Bytecode::FuncDef
+        | Bytecode::ClassDef
+        | Bytecode::EndClass => 0,
+        Bytecode::ForIter => 4,
+        Bytecode::ListCreate | Bytecode::SetCreate | Bytecode::DictCreate => 2,
+        Bytecode::ListAdd | Bytecode::SetAdd | Bytecode::DictAdd => 0,
+        Bytecode::Dotimes => 4,
+        Bytecode::LoadFunction => 2,
+    };
 }

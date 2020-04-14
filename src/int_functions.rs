@@ -3,7 +3,7 @@ use std::vec::Vec;
 
 use crate::operator::Operator;
 use crate::variable::Variable;
-use num_bigint::BigInt;
+use num::bigint::BigInt;
 use crate::runtime::Runtime;
 use crate::method::{StdMethod, InnerMethod};
 use bigdecimal::BigDecimal;

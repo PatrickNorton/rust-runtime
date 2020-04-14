@@ -1,11 +1,16 @@
-extern crate num_bigint;
+extern crate num;
+#[macro_use]
+extern crate num_derive;
+extern crate num_traits;
 extern crate bigdecimal;
 extern crate enum_map;
 
 mod base_fn;
 mod bytecode;
+mod executor;
 mod file_info;
 mod int_functions;
+mod int_tools;
 mod method;
 mod operator;
 mod runtime;

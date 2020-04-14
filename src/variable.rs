@@ -1,7 +1,5 @@
-use std::rc::Rc;
 use std::vec::Vec;
 use std::string::String;
-use std::cell::RefCell;
 use std::boxed::Box;
 use std::clone::Clone;
 use std::cmp::PartialEq;
@@ -10,7 +8,7 @@ use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::std_variable::StdVariable;
-use num_bigint::{BigInt, ToBigInt};
+use num::bigint::{BigInt, ToBigInt};
 use bigdecimal::BigDecimal;
 use crate::method::Method;
 
@@ -21,6 +19,8 @@ pub enum Name {
 
 #[derive(Clone, Eq, Hash)]
 pub enum Variable {
+    Null(),
+    Bool(bool),
     Bigint(BigInt),
     String(String),
     Decimal(BigDecimal),
@@ -31,8 +31,10 @@ pub enum Variable {
 }
 
 impl Variable {
-    pub fn str(&mut self, runtime: &mut Runtime) -> String {
+    pub fn str(&self, runtime: &mut Runtime) -> String {
         return match self {
+            Variable::Null() => String::from("null"),
+            Variable::Bool(val) => String::from(if *val { "true" } else { "false" }),
             Variable::String(val) => val.clone(),
             Variable::Bigint(val) => val.to_str_radix(10),
             Variable::Decimal(val) => val.to_string(),
@@ -42,11 +44,25 @@ impl Variable {
         }
     }
 
-    pub fn int(&mut self, _runtime: &Runtime) -> BigInt {
+    pub fn int(&self, _runtime: &Runtime) -> BigInt {
         return match self {
             Variable::Bigint(val) => val.clone(),
             Variable::Decimal(val) => val.to_bigint().unwrap(),
             _ => unimplemented!()
+        }
+    }
+
+    pub fn to_bool(&self, _runtime: &mut Runtime) -> bool {
+        return match self {
+            Variable::Null() => false,
+            Variable::Bool(val) => *val,
+            Variable::String(val) => !val.is_empty(),
+            Variable::Bigint(val) => val == &BigInt::from(0_u64),
+            Variable::Decimal(val) => val == &BigDecimal::from(0_u64),
+            Variable::Type(val) => true,
+            Variable::Standard(val) => val.clone().bool(_runtime),
+            Variable::Method(_) => true,
+            Variable::Custom() => unimplemented!(),
         }
     }
 
@@ -64,11 +80,55 @@ impl Variable {
             _ => unimplemented!()
         }
     }
+
+    pub fn set(&self, index: String, value: Variable, _runtime: &mut Runtime) {
+        match self {
+            Variable::Standard(val) => {
+                val.set(index, value)
+            }
+            Variable::Custom() => unimplemented!(),
+            _ => unimplemented!()
+        }
+    }
+
+    pub fn identical(&self, other: &Variable) -> bool {
+        return match (self, other) {
+            (Variable::Null(), Variable::Null()) => true,
+            (Variable::Bool(a), Variable::Bool(b)) => a == b,
+            (Variable::String(a), Variable::String(b)) => a == b,
+            (Variable::Bigint(a), Variable::Bigint(b)) => a == b,
+            (Variable::Decimal(a), Variable::Decimal(b)) => a == b,
+            (Variable::Type(a), Variable::Type(b)) => a == b,
+            (Variable::Standard(a), Variable::Standard(b)) => {
+                a.identical(b)
+            }
+            (Variable::Method(a), Variable::Method(b)) => {
+                a == b
+            }
+            (Variable::Custom(), Variable::Custom()) => unimplemented!(),
+            _ => false
+        }
+    }
+
+    pub fn is_type_of(&self, other: &Variable) -> bool {
+        if let Variable::Type(t) = self {
+            return match other {
+                _ => unimplemented!()
+            }
+        } else {
+            false
+        }
+    }
 }
 
 impl PartialEq for Variable {
     fn eq(&self, other: &Self) -> bool {
         return match self {
+            Variable::Null() => if let Variable::Null() = other {true} else {false},
+            Variable::Bool(val) =>
+                if let Variable::Bool(o) = other {
+                    val == o
+                } else { false }
             Variable::Bigint(val) =>
                 if let Variable::Bigint(o) = other {
                     val == o

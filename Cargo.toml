@@ -7,6 +7,8 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-num-bigint = "0.2.6"
+num = "0.2.1"
+num-derive = "0.3.0"
+num-traits = "0.2.11"
 bigdecimal = "0.1.0"
 enum-map = "0.6.2"

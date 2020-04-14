@@ -1,6 +1,6 @@
 use enum_map::Enum;
 
-#[derive(Enum)]
+#[derive(Copy, Clone, Enum, FromPrimitive)]
 pub enum Operator {
     Add,
     RAdd,

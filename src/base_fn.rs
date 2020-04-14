@@ -10,7 +10,9 @@ pub struct BaseFunction {
 impl BaseFunction {
     fn new(name: String, local_count: u16, bytes: Vec<u8>) -> BaseFunction {
         BaseFunction {
-            name, local_count, bytes
+            name,
+            local_count,
+            bytes,
         }
     }
 
@@ -22,7 +24,7 @@ impl BaseFunction {
         self.local_count
     }
 
-    fn get_bytes(&self) -> &Vec<u8> {
+    pub(crate) fn get_bytes(&self) -> &Vec<u8> {
         &self.bytes
     }
 }
