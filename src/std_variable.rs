@@ -6,8 +6,6 @@ use std::rc::Rc;
 use std::string::String;
 use std::vec::Vec;
 
-use enum_map::EnumMap;
-
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::{StdType, Type};
@@ -27,8 +25,7 @@ pub struct StdVariable {
 struct InnerVar {
     pub uuid: i128,
     pub cls: &'static StdType,
-    pub values: HashMap<String, Variable>,
-    pub operators: EnumMap<Operator, Variable>,
+    pub values: HashMap<Name, Variable>,
 }
 
 impl StdVariable {
@@ -47,18 +44,18 @@ impl StdVariable {
     }
 
     pub fn call(&self, args: (&Vec<Variable>, &mut Runtime)) {
-        self.value.borrow_mut().operators[Operator::Call].call(args)
+        self.value.borrow_mut().values[&Name::Operator(Operator::Call)].call(args)
     }
 
     pub fn index(&self, index: Name) -> Variable {
-        return match index {
-            Name::Operator(op) => self.value.borrow().operators[op].clone(),
-            Name::Attribute(str) => self.value.borrow().values[&str].clone(),
-        };
+        self.value.borrow().values[&index].clone()
     }
 
     pub fn set(&self, index: String, value: Variable) {
-        self.value.borrow_mut().values.insert(index, value);
+        self.value
+            .borrow_mut()
+            .values
+            .insert(Name::Attribute(index), value);
     }
 
     pub fn identical(&self, other: &Self) -> bool {

@@ -1,7 +1,6 @@
 extern crate num;
 #[macro_use]
 extern crate num_derive;
-extern crate enum_map;
 
 mod base_fn;
 mod bytecode;

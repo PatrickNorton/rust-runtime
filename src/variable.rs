@@ -14,6 +14,7 @@ use num::bigint::{BigInt, ToBigInt};
 use num::{BigRational, Rational};
 use num_traits::Zero;
 
+#[derive(Clone, Eq, PartialEq, Hash)]
 pub enum Name {
     Attribute(String),
     Operator(Operator),
