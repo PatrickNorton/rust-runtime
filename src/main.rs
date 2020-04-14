@@ -1,7 +1,6 @@
 extern crate num;
 #[macro_use]
 extern crate num_derive;
-extern crate num_traits;
 extern crate bigdecimal;
 extern crate enum_map;
 
@@ -19,6 +18,4 @@ mod std_type;
 mod std_variable;
 mod variable;
 
-fn main() {
-
-}
+fn main() {}

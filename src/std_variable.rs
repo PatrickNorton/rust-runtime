@@ -8,10 +8,10 @@ use std::vec::Vec;
 
 use enum_map::EnumMap;
 
-use crate::variable::{Variable, Name};
-use crate::std_type::Type;
-use crate::runtime::Runtime;
 use crate::operator::Operator;
+use crate::runtime::Runtime;
+use crate::std_type::{StdType, Type};
+use crate::variable::{Name, Variable};
 
 pub enum StdMethod {
     Standard(i32),
@@ -26,15 +26,15 @@ pub struct StdVariable {
 #[derive(Clone, PartialEq, Eq)]
 struct InnerVar {
     pub uuid: i128,
-    pub cls: &'static Type,
+    pub cls: &'static StdType,
     pub values: HashMap<String, Variable>,
-    pub operators: EnumMap<Operator, Variable>
+    pub operators: EnumMap<Operator, Variable>,
 }
 
 impl StdVariable {
     pub fn str(&mut self, runtime: &mut Runtime) -> String {
         self.call_operator(Operator::Str, runtime);
-        return runtime.pop().str(runtime)
+        return runtime.pop().str(runtime);
     }
 
     pub fn bool(&mut self, runtime: &mut Runtime) -> bool {
@@ -54,7 +54,7 @@ impl StdVariable {
         return match index {
             Name::Operator(op) => self.value.borrow().operators[op].clone(),
             Name::Attribute(str) => self.value.borrow().values[&str].clone(),
-        }
+        };
     }
 
     pub fn set(&self, index: String, value: Variable) {
@@ -63,6 +63,10 @@ impl StdVariable {
 
     pub fn identical(&self, other: &Self) -> bool {
         Rc::ptr_eq(&self.value, &other.value)
+    }
+
+    pub fn get_type(&self) -> Type {
+        Type::Standard(self.value.borrow_mut().cls)
     }
 }
 
