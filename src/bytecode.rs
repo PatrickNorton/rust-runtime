@@ -1,4 +1,4 @@
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, FromPrimitive)]
 pub enum Bytecode {
     Nop = 0x0,
     LoadNull = 0x1,
@@ -52,7 +52,7 @@ pub enum Bytecode {
     Jump = 0x30,
     JumpFalse = 0x31,
     JumpTrue = 0x32,
-    JumpNn = 0x33,
+    JumpNN = 0x33,
     JumpNull = 0x34,
     CallMethod = 0x35,
     CallTos = 0x36,
@@ -128,7 +128,7 @@ pub fn bytecode_size(b: Bytecode) -> usize {
         Bytecode::Jump
         | Bytecode::JumpFalse
         | Bytecode::JumpTrue
-        | Bytecode::JumpNn
+        | Bytecode::JumpNN
         | Bytecode::JumpNull => 4,
         Bytecode::CallMethod
         | Bytecode::CallTos
