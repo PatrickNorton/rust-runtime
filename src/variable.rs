@@ -10,8 +10,9 @@ use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::std_variable::StdVariable;
-use bigdecimal::BigDecimal;
 use num::bigint::{BigInt, ToBigInt};
+use num::{BigRational, Rational};
+use num_traits::Zero;
 
 pub enum Name {
     Attribute(String),
@@ -24,7 +25,7 @@ pub enum Variable {
     Bool(bool),
     Bigint(BigInt),
     String(String),
-    Decimal(BigDecimal),
+    Decimal(BigRational),
     Type(Type),
     Standard(StdVariable),
     Method(Box<dyn Method>),
@@ -48,7 +49,7 @@ impl Variable {
     pub fn int(&self, _runtime: &Runtime) -> BigInt {
         return match self {
             Variable::Bigint(val) => val.clone(),
-            Variable::Decimal(val) => val.to_bigint().unwrap(),
+            Variable::Decimal(val) => val.to_integer(),
             _ => unimplemented!(),
         };
     }
@@ -58,8 +59,8 @@ impl Variable {
             Variable::Null() => false,
             Variable::Bool(val) => *val,
             Variable::String(val) => !val.is_empty(),
-            Variable::Bigint(val) => val == &BigInt::from(0_u64),
-            Variable::Decimal(val) => val == &BigDecimal::from(0_u64),
+            Variable::Bigint(val) => val == &BigInt::zero(),
+            Variable::Decimal(val) => val == &BigRational::zero(),
             Variable::Type(val) => true,
             Variable::Standard(val) => val.clone().bool(_runtime),
             Variable::Method(_) => true,

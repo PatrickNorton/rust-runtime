@@ -1,12 +1,12 @@
 use std::boxed::Box;
 use std::vec::Vec;
 
+use crate::method::{InnerMethod, StdMethod};
 use crate::operator::Operator;
+use crate::runtime::Runtime;
 use crate::variable::Variable;
 use num::bigint::BigInt;
-use crate::runtime::Runtime;
-use crate::method::{StdMethod, InnerMethod};
-use bigdecimal::BigDecimal;
+use num::BigRational;
 
 pub fn get_operator(this: &BigInt, o: Operator) -> Variable {
     let func: fn(&BigInt, &Vec<Variable>, &mut Runtime) = match o {
@@ -17,13 +17,16 @@ pub fn get_operator(this: &BigInt, o: Operator) -> Variable {
         Operator::Divide => div,
         _ => unimplemented!(),
     };
-    Variable::Method(Box::new(StdMethod::new(this.clone(), InnerMethod::Native(func))))
+    Variable::Method(Box::new(StdMethod::new(
+        this.clone(),
+        InnerMethod::Native(func),
+    )))
 }
 
 fn add(this: &BigInt, args: &Vec<Variable>, runtime: &mut Runtime) {
     let mut sum = this.clone();
     for arg in args {
-        sum += arg.clone().int(runtime)
+        sum += arg.int(runtime)
     }
     runtime.push(Variable::Bigint(sum))
 }
@@ -31,7 +34,7 @@ fn add(this: &BigInt, args: &Vec<Variable>, runtime: &mut Runtime) {
 fn sub(this: &BigInt, args: &Vec<Variable>, runtime: &mut Runtime) {
     let mut diff = this.clone();
     for arg in args {
-        diff -= arg.clone().int(runtime)
+        diff -= arg.int(runtime)
     }
     runtime.push(Variable::Bigint(diff))
 }
@@ -39,7 +42,7 @@ fn sub(this: &BigInt, args: &Vec<Variable>, runtime: &mut Runtime) {
 fn mul(this: &BigInt, args: &Vec<Variable>, runtime: &mut Runtime) {
     let mut prod = this.clone();
     for arg in args {
-        prod *= arg.clone().int(runtime)
+        prod *= arg.int(runtime)
     }
     runtime.push(Variable::Bigint(prod))
 }
@@ -47,15 +50,15 @@ fn mul(this: &BigInt, args: &Vec<Variable>, runtime: &mut Runtime) {
 fn floor_div(this: &BigInt, args: &Vec<Variable>, runtime: &mut Runtime) {
     let mut ratio = this.clone();
     for arg in args {
-        ratio *= arg.clone().int(runtime)
+        ratio *= arg.int(runtime)
     }
     runtime.push(Variable::Bigint(ratio))
 }
 
 fn div(this: &BigInt, args: &Vec<Variable>, runtime: &mut Runtime) {
-    let mut ratio = BigDecimal::new(this.clone(), 0);
+    let mut ratio = BigRational::from_integer(this.clone());
     for arg in args {
-        ratio *= &BigDecimal::new(arg.clone().int(runtime), 0)
+        ratio *= BigRational::from_integer(arg.int(runtime))
     }
     runtime.push(Variable::Decimal(ratio))
 }
