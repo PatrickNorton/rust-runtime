@@ -11,12 +11,25 @@ use std::collections::HashMap;
 pub struct Runtime {
     variables: Vec<Variable>,
     frames: Vec<StackFrame>,
-    files: Vec<Rc<FileInfo>>,
+    file_stack: Vec<Rc<FileInfo>>,
     exception_frames: HashMap<Variable, Vec<(u32, u32)>>,
     exception_stack: Vec<Variable>,
+
+    files: Vec<Rc<FileInfo>>,
 }
 
 impl Runtime {
+    pub fn new(files: Vec<Rc<FileInfo>>, starting_no: usize) -> Runtime {
+        Runtime {
+            variables: vec![],
+            frames: vec![StackFrame::new(0, 0, vec![])],
+            file_stack: vec![files[starting_no].clone()],
+            exception_frames: HashMap::new(),
+            exception_stack: vec![],
+            files,
+        }
+    }
+
     pub fn push(&mut self, var: Variable) {
         self.variables.push(var)
     }
@@ -34,7 +47,7 @@ impl Runtime {
     }
 
     pub fn load_const(&self, index: u16) -> &Variable {
-        &self.files.last().unwrap().get_constants()[index as usize]
+        &self.file_stack.last().unwrap().get_constants()[index as usize]
     }
 
     pub fn load_value(&self, index: u16) -> &Variable {
@@ -56,7 +69,7 @@ impl Runtime {
     }
 
     pub fn current_fn(&self) -> &Vec<u8> {
-        self.files.last().unwrap().get_functions()
+        self.file_stack.last().unwrap().get_functions()
             [self.frames.last().unwrap().get_fn_number() as usize]
             .get_bytes()
     }
@@ -78,20 +91,14 @@ impl Runtime {
         return args;
     }
 
-    pub fn push_stack(
-        &mut self,
-        var_count: u16,
-        fn_no: u16,
-        args: Vec<Variable>,
-        info: Rc<FileInfo>,
-    ) {
+    pub fn push_stack(&mut self, var_count: u16, fn_no: u16, args: Vec<Variable>, info: usize) {
         let native = self.is_native();
-        if Rc::ptr_eq(&info, self.files.last().unwrap()) {
+        if Rc::ptr_eq(&self.files[info], self.file_stack.last().unwrap()) {
             self.frames.push(StackFrame::new(var_count, fn_no, args));
         } else {
             self.frames
                 .push(StackFrame::new_file(var_count, fn_no, args));
-            self.files.push(info);
+            self.file_stack.push(self.files[info].clone());
         }
         if native {
             executor::execute(self);
@@ -109,7 +116,7 @@ impl Runtime {
             self.exception_stack.pop();
         }
         if self.frames.last().unwrap().is_new_file() {
-            self.files.pop();
+            self.file_stack.pop();
         }
         self.frames.pop();
     }

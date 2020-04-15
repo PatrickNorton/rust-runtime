@@ -5,6 +5,7 @@ use std::string::String;
 use std::vec::Vec;
 
 use crate::bytecode::Bytecode::TailTos;
+use crate::file_info::FileInfo;
 use crate::method::Method;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
@@ -13,6 +14,8 @@ use crate::std_variable::StdVariable;
 use num::bigint::{BigInt, ToBigInt};
 use num::{BigRational, Rational};
 use num_traits::Zero;
+use std::hash::{Hash, Hasher};
+use std::ptr;
 
 #[derive(Clone, Eq, PartialEq, Hash)]
 pub enum Name {
@@ -20,7 +23,7 @@ pub enum Name {
     Operator(Operator),
 }
 
-#[derive(Clone, Eq, Hash)]
+#[derive(Clone, Hash)]
 pub enum Variable {
     Null(),
     Bool(bool),
@@ -30,6 +33,7 @@ pub enum Variable {
     Type(Type),
     Standard(StdVariable),
     Method(Box<dyn Method>),
+    Function(usize, u32),
     Custom(),
 }
 
@@ -65,6 +69,7 @@ impl Variable {
             Variable::Type(val) => true,
             Variable::Standard(val) => val.clone().bool(_runtime),
             Variable::Method(_) => true,
+            Variable::Function(_, _) => true,
             Variable::Custom() => unimplemented!(),
         };
     }
@@ -102,6 +107,7 @@ impl Variable {
             Variable::Type(_) => Type::Type(),
             Variable::Method(_) => unimplemented!(),
             Variable::Standard(a) => a.get_type(),
+            Variable::Function(_, _) => unimplemented!(),
             Variable::Custom() => unimplemented!(),
         }
     }
@@ -189,7 +195,22 @@ impl PartialEq for Variable {
                     false
                 }
             }
+            Variable::Function(val1, val2) => {
+                if let Variable::Function(o1, o2) = other {
+                    ptr::eq(val1, o1) && val2 == o2
+                } else {
+                    false
+                }
+            }
             Variable::Custom() => unimplemented!(),
         };
+    }
+}
+
+impl Eq for Variable {}
+
+impl Hash for &'static FileInfo {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        ptr::hash(self, state);
     }
 }

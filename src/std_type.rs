@@ -1,5 +1,5 @@
 use crate::runtime::Runtime;
-use crate::std_variable::StdMethod;
+use crate::std_variable::StdVarMethod;
 use crate::variable::{Name, Variable};
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
@@ -19,18 +19,20 @@ pub enum Type {
 
 pub struct StdType {
     name: String,
+    file_no: usize,
     supers: Vec<Type>,
-    methods: HashMap<Name, StdMethod>,
-    static_methods: HashMap<Name, StdMethod>,
+    methods: HashMap<Name, StdVarMethod>,
+    static_methods: HashMap<Name, StdVarMethod>,
 }
 
 impl Type {
     pub fn new_std(
         name: String,
-        methods: HashMap<Name, StdMethod>,
-        static_methods: HashMap<Name, StdMethod>,
+        file_no: usize,
+        methods: HashMap<Name, StdVarMethod>,
+        static_methods: HashMap<Name, StdVarMethod>,
     ) -> Type {
-        let t = Box::new(StdType::new(name, methods, static_methods));
+        let t = Box::new(StdType::new(name, file_no, methods, static_methods));
         Type::Standard(Box::leak(t)) // Classes live forever, why worry about cleanup?
     }
 
@@ -97,11 +99,13 @@ impl Hash for StdType {
 impl StdType {
     pub fn new(
         name: String,
-        methods: HashMap<Name, StdMethod>,
-        static_methods: HashMap<Name, StdMethod>,
+        file_no: usize,
+        methods: HashMap<Name, StdVarMethod>,
+        static_methods: HashMap<Name, StdVarMethod>,
     ) -> StdType {
         StdType {
             name,
+            file_no,
             supers: vec![],
             methods,
             static_methods,

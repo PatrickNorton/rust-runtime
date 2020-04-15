@@ -6,15 +6,13 @@ use std::rc::Rc;
 use std::string::String;
 use std::vec::Vec;
 
+use crate::method::InnerMethod;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::{StdType, Type};
 use crate::variable::{Name, Variable};
 
-pub enum StdMethod {
-    Standard(i32),
-    Native(fn(StdVariable, Vec<Variable>, &mut Runtime)),
-}
+pub type StdVarMethod = InnerMethod<StdVariable>;
 
 #[derive(Clone, Eq)]
 pub struct StdVariable {

@@ -1,14 +1,14 @@
 use std::boxed::Box;
-use std::cmp::{PartialEq, Eq};
+use std::cmp::{Eq, PartialEq};
 use std::hash::{Hash, Hasher};
 use std::vec::Vec;
 
-use crate::variable::Variable;
 use crate::runtime::Runtime;
+use crate::variable::Variable;
 
 #[derive(Clone)]
 pub enum InnerMethod<T> {
-    Standard(i32),
+    Standard(u32),
     Native(fn(&T, &Vec<Variable>, &mut Runtime)),
 }
 
@@ -21,7 +21,9 @@ pub trait Method: MethodClone {
 }
 
 impl<T> MethodClone for T
-where T: 'static + Method + Clone, {
+where
+    T: 'static + Method + Clone,
+{
     fn clone_box(&self) -> Box<dyn Method> {
         Box::new(self.clone())
     }
@@ -41,8 +43,7 @@ impl PartialEq for Box<dyn Method> {
     }
 }
 
-impl Eq for Box<dyn Method> {
-}
+impl Eq for Box<dyn Method> {}
 
 impl Hash for Box<dyn Method> {
     fn hash<H: Hasher>(&self, state: &mut H) {
@@ -51,22 +52,31 @@ impl Hash for Box<dyn Method> {
 }
 
 #[derive(Clone)]
-pub struct StdMethod<T> where T: Clone {
+pub struct StdMethod<T>
+where
+    T: Clone,
+{
     value: T,
     method: InnerMethod<T>,
 }
 
-impl<T> StdMethod<T> where T: Clone {
+impl<T> StdMethod<T>
+where
+    T: Clone,
+{
     pub(crate) fn new(value: T, method: InnerMethod<T>) -> StdMethod<T> {
         StdMethod { value, method }
     }
 }
 
-impl<T: 'static> Method for StdMethod<T> where T: Clone {
+impl<T: 'static> Method for StdMethod<T>
+where
+    T: Clone,
+{
     fn call(&self, args: (&Vec<Variable>, &mut Runtime)) {
         match &self.method {
             InnerMethod::Standard(index) => unimplemented!(),
-            InnerMethod::Native(func) => func(&self.value, args.0, args.1)
+            InnerMethod::Native(func) => func(&self.value, args.0, args.1),
         }
     }
 }

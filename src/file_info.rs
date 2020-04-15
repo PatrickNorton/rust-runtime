@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::string::String;
 use std::vec::Vec;
 
-use crate::variable::Variable;
 use crate::base_fn::BaseFunction;
+use crate::variable::Variable;
 
 pub struct FileInfo {
     name: String,
@@ -13,10 +13,26 @@ pub struct FileInfo {
 }
 
 impl FileInfo {
-    pub fn new(name: String, constants: Vec<Variable>,
-               functions: Vec<BaseFunction>, exports: HashMap<String, u32>) -> FileInfo {
+    pub fn new(
+        name: String,
+        constants: Vec<Variable>,
+        functions: Vec<BaseFunction>,
+        exports: HashMap<String, u32>,
+    ) -> FileInfo {
         FileInfo {
-            name, constants, functions, exports
+            name,
+            constants,
+            functions,
+            exports,
+        }
+    }
+
+    pub fn temp() -> FileInfo {
+        FileInfo {
+            name: "".to_string(),
+            constants: vec![],
+            functions: vec![],
+            exports: HashMap::new(),
         }
     }
 

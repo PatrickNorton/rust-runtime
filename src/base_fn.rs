@@ -8,12 +8,16 @@ pub struct BaseFunction {
 }
 
 impl BaseFunction {
-    fn new(name: String, local_count: u16, bytes: Vec<u8>) -> BaseFunction {
+    pub(crate) fn new(name: String, local_count: u16, bytes: Vec<u8>) -> BaseFunction {
         BaseFunction {
             name,
             local_count,
             bytes,
         }
+    }
+
+    pub fn parse(data: &Vec<u8>, index: &mut usize) -> BaseFunction {
+        unimplemented!()
     }
 
     fn get_name(&self) -> &String {
@@ -24,7 +28,7 @@ impl BaseFunction {
         self.local_count
     }
 
-    pub(crate) fn get_bytes(&self) -> &Vec<u8> {
+    pub fn get_bytes(&self) -> &Vec<u8> {
         &self.bytes
     }
 }

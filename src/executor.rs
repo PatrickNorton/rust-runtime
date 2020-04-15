@@ -1,5 +1,5 @@
 use crate::bytecode::{bytecode_size, Bytecode};
-use crate::int_tools::{bytes_to_u16, bytes_to_u32};
+use crate::int_tools::bytes_to;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::variable::{Name, Variable};
@@ -44,22 +44,24 @@ fn parse(b: Bytecode, bytes: &Vec<u8>, runtime: &mut Runtime) {
             runtime.push(Variable::Null());
         }
         Bytecode::LoadConst => {
-            let const_val = runtime.load_const(bytes_to_u16(bytes)).clone();
+            let const_val = runtime.load_const(bytes_to::<u16>(bytes)).clone();
             runtime.push(const_val)
         }
         Bytecode::LoadValue => {
-            let value = runtime.load_value(bytes_to_u16(bytes)).clone();
+            let value = runtime.load_value(bytes_to::<u16>(bytes)).clone();
             runtime.push(value)
         }
         Bytecode::LoadDot => {
-            let dot_val = runtime.load_const(bytes_to_u16(bytes)).clone();
+            let dot_val = runtime.load_const(bytes_to::<u16>(bytes)).clone();
             let index = runtime.pop().index(Name::Attribute(dot_val.str(runtime)));
             runtime.push(index)
         }
-        Bytecode::LoadSubscript => call_operator(Operator::GetAttr, bytes_to_u16(bytes), runtime),
+        Bytecode::LoadSubscript => {
+            call_operator(Operator::GetAttr, bytes_to::<u16>(bytes), runtime)
+        }
         Bytecode::LoadOp => {
             let top = runtime.pop();
-            let index: Operator = FromPrimitive::from_u16(bytes_to_u16(bytes)).unwrap();
+            let index: Operator = FromPrimitive::from_u16(bytes_to::<u16>(bytes)).unwrap();
             runtime.push(top.index(Name::Operator(index)))
         }
         Bytecode::PopTop => {
@@ -84,7 +86,7 @@ fn parse(b: Bytecode, bytes: &Vec<u8>, runtime: &mut Runtime) {
             runtime.push(new_top);
         }
         Bytecode::SwapN => {
-            let swapped = bytes_to_u16(bytes);
+            let swapped = bytes_to::<u16>(bytes);
             let mut popped: Vec<Variable> = Vec::with_capacity(swapped as usize);
             for i in 0..swapped {
                 popped[i as usize] = runtime.pop();
@@ -97,7 +99,7 @@ fn parse(b: Bytecode, bytes: &Vec<u8>, runtime: &mut Runtime) {
         }
         Bytecode::Store => {
             let stored = runtime.pop();
-            runtime.store_variable(bytes_to_u16(bytes), stored);
+            runtime.store_variable(bytes_to::<u16>(bytes), stored);
         }
         Bytecode::StoreSubscript => {
             let result = runtime.pop();
@@ -108,7 +110,7 @@ fn parse(b: Bytecode, bytes: &Vec<u8>, runtime: &mut Runtime) {
         Bytecode::StoreAttr => {
             let stored = runtime.pop();
             let value = runtime.pop();
-            let attr_name = runtime.load_const(bytes_to_u16(bytes)).clone();
+            let attr_name = runtime.load_const(bytes_to::<u16>(bytes)).clone();
             let str_name = attr_name.str(runtime);
             value.set(str_name, stored, runtime);
         }
@@ -156,9 +158,9 @@ fn parse(b: Bytecode, bytes: &Vec<u8>, runtime: &mut Runtime) {
             runtime.push(Variable::Bool(y.is_type_of(&x)))
         }
         Bytecode::CallOp => {
-            let op_no = bytes_to_u16(&bytes[0..2].to_vec());
+            let op_no = bytes_to::<u16>(&bytes[0..2].to_vec());
             let op: Operator = FromPrimitive::from_u16(op_no).unwrap();
-            let argc = bytes_to_u16(&bytes[2..4].to_vec());
+            let argc = bytes_to::<u16>(&bytes[2..4].to_vec());
             call_operator(op, argc, runtime)
         }
         Bytecode::PackTuple => unimplemented!(),
@@ -169,31 +171,31 @@ fn parse(b: Bytecode, bytes: &Vec<u8>, runtime: &mut Runtime) {
         Bytecode::LessEqual => call_operator(Operator::LessEqual, 1, runtime),
         Bytecode::GreaterEqual => call_operator(Operator::GreaterEqual, 1, runtime),
         Bytecode::Contains => call_operator(Operator::In, 1, runtime),
-        Bytecode::Jump => runtime.goto(bytes_to_u32(bytes)),
+        Bytecode::Jump => runtime.goto(bytes_to::<u32>(bytes)),
         Bytecode::JumpTrue => {
             if runtime.pop().to_bool(runtime) {
-                runtime.goto(bytes_to_u32(bytes))
+                runtime.goto(bytes_to::<u32>(bytes))
             }
         }
         Bytecode::JumpFalse => {
             if !runtime.pop().to_bool(runtime) {
-                runtime.goto(bytes_to_u32(bytes))
+                runtime.goto(bytes_to::<u32>(bytes))
             }
         }
         Bytecode::JumpNN => {
             if let Variable::Null() = runtime.pop() {
             } else {
-                runtime.goto(bytes_to_u32(bytes))
+                runtime.goto(bytes_to::<u32>(bytes))
             }
         }
         Bytecode::JumpNull => {
             if let Variable::Null() = runtime.pop() {
-                runtime.goto(bytes_to_u32(bytes))
+                runtime.goto(bytes_to::<u32>(bytes))
             }
         }
         Bytecode::CallMethod => unimplemented!(),
         Bytecode::CallTos => {
-            let argc = bytes_to_u16(bytes);
+            let argc = bytes_to::<u16>(bytes);
             runtime.call(argc)
         }
         Bytecode::TailMethod => unimplemented!(),
