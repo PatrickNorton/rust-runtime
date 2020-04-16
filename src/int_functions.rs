@@ -18,6 +18,7 @@ pub fn get_operator(this: &BigInt, o: Operator) -> Variable {
         Operator::FloorDiv => floor_div,
         Operator::Divide => div,
         Operator::Power => pow,
+        Operator::Modulo => modulo,
         Operator::LessThan => less_than,
         _ => unimplemented!(),
     };
@@ -72,6 +73,12 @@ fn pow(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) {
     let arg_int = args[0].int(runtime);
     let result = this.pow(arg_int.to_biguint().unwrap_or_else(BigUint::zero));
     runtime.push(Variable::Bigint(result));
+}
+
+fn modulo(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) {
+    debug_assert!(args.len() == 1);
+    let arg_int = args[0].int(runtime);
+    runtime.push(Variable::Bigint(this.clone() % &arg_int));
 }
 
 fn less_than(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) {
