@@ -58,6 +58,10 @@ impl Runtime {
         self.frames.last_mut().unwrap()[index as usize] = value;
     }
 
+    pub fn call_quick(&mut self, fn_no: u16) {
+        self.push_stack_with_file(0, fn_no, vec![], self.file_stack.last().unwrap().clone());
+    }
+
     pub fn call_tos(&mut self, argc: u16) {
         let args = self.load_args(argc);
         let callee = self.pop();
@@ -103,6 +107,27 @@ impl Runtime {
             self.frames
                 .push(StackFrame::new_file(var_count, fn_no, args));
             self.file_stack.push(self.files[info].clone());
+        }
+        if native {
+            executor::execute(self);
+            assert!(self.is_native());
+        }
+    }
+
+    fn push_stack_with_file(
+        &mut self,
+        var_count: u16,
+        fn_no: u16,
+        args: Vec<Variable>,
+        info: Rc<FileInfo>,
+    ) {
+        let native = self.is_native();
+        if Rc::ptr_eq(&info, self.file_stack.last().unwrap()) {
+            self.frames.push(StackFrame::new(var_count, fn_no, args));
+        } else {
+            self.frames
+                .push(StackFrame::new_file(var_count, fn_no, args));
+            self.file_stack.push(info);
         }
         if native {
             executor::execute(self);

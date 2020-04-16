@@ -1,5 +1,5 @@
 use crate::bytecode::{bytecode_size, Bytecode};
-use crate::int_tools::bytes_to;
+use crate::int_tools::{bytes_index, bytes_to};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::variable::{Name, Variable};
@@ -198,6 +198,7 @@ fn parse(b: Bytecode, bytes: &Vec<u8>, runtime: &mut Runtime) {
             let argc = bytes_to::<u16>(bytes);
             runtime.call_tos(argc)
         }
+        Bytecode::CallFunction => runtime.call_quick(bytes_index::<u16>(bytes, &mut 0)),
         Bytecode::TailMethod => unimplemented!(),
         Bytecode::TailTos => unimplemented!(),
         Bytecode::Return => runtime.pop_stack(),
