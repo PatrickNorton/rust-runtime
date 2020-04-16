@@ -20,7 +20,9 @@ pub fn get_operator(this: &BigInt, o: Operator) -> Variable {
         Operator::Power => pow,
         Operator::Modulo => modulo,
         Operator::LessThan => less_than,
-        _ => unimplemented!(),
+        Operator::Str => to_str,
+        Operator::Int => to_int,
+        _ => unimplemented!(format!("Operator::{:?} unimplemented", o)),
     };
     Variable::Method(Box::new(StdMethod::new(
         this.clone(),
@@ -88,4 +90,14 @@ fn less_than(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) {
         }
     }
     runtime.push(Variable::Bool(true));
+}
+
+fn to_str(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) {
+    debug_assert!(args.is_empty());
+    runtime.push(Variable::String(this.to_str_radix(10)))
+}
+
+fn to_int(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) {
+    debug_assert!(args.is_empty());
+    runtime.push(Variable::Bigint(this.clone()))
 }
