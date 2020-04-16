@@ -4,8 +4,8 @@ use std::rc::Rc;
 use std::vec::Vec;
 
 use crate::variable::Variable;
-use std::ops::{Index, IndexMut};
 use std::cell::RefCell;
+use std::ops::{Index, IndexMut};
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct StackFrame {
@@ -44,13 +44,16 @@ impl StackFrame {
     }
 
     fn size(&self) -> usize {
-        self.variables.len() + if self.parent.is_some() {
-            (*self.parent.as_ref().unwrap()).borrow_mut().size()
-        } else { 0 }
+        self.variables.len()
+            + if self.parent.is_some() {
+                (*self.parent.as_ref().unwrap()).borrow_mut().size()
+            } else {
+                0
+            }
     }
 
     pub fn current_pos(&self) -> u32 {
-        self.location  // Ignore "cannot move" error here and other similar places
+        self.location // Ignore "cannot move" error here and other similar places
     }
 
     pub fn advance(&mut self, pos: u32) {
@@ -100,6 +103,9 @@ impl Index<usize> for StackFrame {
 
 impl IndexMut<usize> for StackFrame {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        while self.variables.len() <= index {
+            self.variables.push(Variable::Null())
+        }
         &mut self.variables[index]
     }
 }

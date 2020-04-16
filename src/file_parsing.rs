@@ -5,7 +5,7 @@ use crate::constant_loaders::{
 };
 use crate::file_info::FileInfo;
 use crate::int_tools::{bytes_index, bytes_to};
-use crate::variable::Variable;
+use crate::variable::{Function, Variable};
 use std::collections::HashMap;
 use std::fs::read;
 use std::path::Path;
@@ -45,7 +45,6 @@ pub fn parse_file(name: String, files: &mut Vec<Rc<FileInfo>>) -> usize {
     let mut index: usize = 0;
 
     let magic_number = bytes_index::<u32>(&data, &mut index);
-    println!("{}", magic_number);
     if magic_number != bytes_to::<u32>(&vec![0x0A, 0xBA, 0xDE, 0x66]) {
         panic!("File does not start with the magic number")
     }
@@ -92,7 +91,7 @@ pub fn parse_file(name: String, files: &mut Vec<Rc<FileInfo>>) -> usize {
     let mut cls_count: usize = 0;
     for c in &mut constants {
         if let Variable::Null() = c {
-            *c = Variable::Function(file_no, fn_indices[fn_count]);
+            *c = Variable::Function(Function::Standard(file_no, fn_indices[fn_count]));
             fn_count += 1;
         } else if let Variable::Custom() = c {
             *c = classes[cls_count].clone();

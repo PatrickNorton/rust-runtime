@@ -6,6 +6,7 @@ use std::vec::Vec;
 
 use crate::bytecode::Bytecode::TailTos;
 use crate::file_info::FileInfo;
+use crate::int_functions::get_operator;
 use crate::method::Method;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
@@ -23,6 +24,12 @@ pub enum Name {
     Operator(Operator),
 }
 
+#[derive(Clone)]
+pub enum Function {
+    Standard(usize, u32),
+    Native(fn(&Vec<Variable>, &mut Runtime)),
+}
+
 #[derive(Clone, Hash)]
 pub enum Variable {
     Null(),
@@ -33,7 +40,7 @@ pub enum Variable {
     Type(Type),
     Standard(StdVariable),
     Method(Box<dyn Method>),
-    Function(usize, u32),
+    Function(Function),
     Custom(),
 }
 
@@ -69,7 +76,7 @@ impl Variable {
             Variable::Type(val) => true,
             Variable::Standard(val) => val.clone().bool(_runtime),
             Variable::Method(_) => true,
-            Variable::Function(_, _) => true,
+            Variable::Function(_) => true,
             Variable::Custom() => unimplemented!(),
         };
     }
@@ -85,6 +92,13 @@ impl Variable {
     pub fn index(&self, index: Name) -> Variable {
         return match self {
             Variable::Standard(val) => val.index(index),
+            Variable::Bigint(val) => {
+                if let Name::Operator(o) = index {
+                    get_operator(val, o)
+                } else {
+                    unimplemented!()
+                }
+            }
             _ => unimplemented!(),
         };
     }
@@ -107,7 +121,7 @@ impl Variable {
             Variable::Type(_) => Type::Type(),
             Variable::Method(_) => unimplemented!(),
             Variable::Standard(a) => a.get_type(),
-            Variable::Function(_, _) => unimplemented!(),
+            Variable::Function(_) => unimplemented!(),
             Variable::Custom() => unimplemented!(),
         }
     }
@@ -195,9 +209,9 @@ impl PartialEq for Variable {
                     false
                 }
             }
-            Variable::Function(val1, val2) => {
-                if let Variable::Function(o1, o2) = other {
-                    ptr::eq(val1, o1) && val2 == o2
+            Variable::Function(val) => {
+                if let Variable::Function(o) = other {
+                    val == o
                 } else {
                     false
                 }
@@ -212,5 +226,31 @@ impl Eq for Variable {}
 impl Hash for &'static FileInfo {
     fn hash<H: Hasher>(&self, state: &mut H) {
         ptr::hash(self, state);
+    }
+}
+
+impl PartialEq for Function {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Function::Standard(a1, a2), Function::Standard(b1, b2)) => a1 == b1 && a2 == b2,
+            (Function::Native(x), Function::Native(y)) => *x as usize == *y as usize,
+            _ => false,
+        }
+    }
+}
+
+impl Eq for Function {}
+
+impl Hash for Function {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            Function::Standard(a, b) => {
+                a.hash(state);
+                b.hash(state);
+            }
+            Function::Native(a) => {
+                state.write_usize(*a as usize);
+            }
+        }
     }
 }

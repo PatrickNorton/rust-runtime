@@ -1,4 +1,4 @@
-#[derive(Copy, Clone, FromPrimitive, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, FromPrimitive, Hash, PartialEq, Eq, Debug)]
 pub enum Operator {
     Add,
     RAdd,

@@ -56,19 +56,22 @@ pub enum Bytecode {
     JumpNull = 0x34,
     CallMethod = 0x35,
     CallTos = 0x36,
-    TailMethod = 0x37,
-    TailTos = 0x38,
-    Return = 0x39,
-    Throw = 0x3A,
-    ThrowQuick = 0x3B,
-    EnterTry = 0x3C,
-    ExceptN = 0x3D,
-    Finally = 0x3E,
-    EndTry = 0x3F,
+    CallFunction = 0x37,
+    TailMethod = 0x38,
+    TailTos = 0x39,
+    TailFunction = 0x3A,
+    Return = 0x3B,
+    // Exception stuff
+    Throw = 0x40,
+    ThrowQuick = 0x41,
+    EnterTry = 0x42,
+    ExceptN = 0x43,
+    Finally = 0x44,
+    EndTry = 0x45,
     // Markers
-    FuncDef = 0x40,
-    ClassDef = 0x41,
-    EndClass = 0x42,
+    FuncDef = 0x48,
+    ClassDef = 0x49,
+    EndClass = 0x4A,
     // Loop stuff
     ForIter = 0x50,
     ListCreate = 0x51,
@@ -130,11 +133,11 @@ pub fn bytecode_size(b: Bytecode) -> usize {
         | Bytecode::JumpTrue
         | Bytecode::JumpNN
         | Bytecode::JumpNull => 4,
-        Bytecode::CallMethod
-        | Bytecode::CallTos
-        | Bytecode::TailMethod
-        | Bytecode::TailTos
-        | Bytecode::Return => 2,
+        Bytecode::CallMethod | Bytecode::CallTos => 2,
+        Bytecode::CallFunction => 2 + 2,
+        Bytecode::TailMethod | Bytecode::TailTos => 2,
+        Bytecode::TailFunction => 2 + 2,
+        Bytecode::Return => 2,
         Bytecode::Throw => 0,
         Bytecode::ThrowQuick => 2,
         Bytecode::EnterTry => 4,

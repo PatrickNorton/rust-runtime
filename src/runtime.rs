@@ -5,8 +5,8 @@ use crate::executor;
 use crate::file_info::FileInfo;
 use crate::operator::Operator;
 use crate::stack_frame::StackFrame;
-use crate::variable::Variable;
-use std::collections::HashMap;
+use crate::variable::{Name, Variable};
+use std::collections::{HashMap, VecDeque};
 
 pub struct Runtime {
     variables: Vec<Variable>,
@@ -58,10 +58,14 @@ impl Runtime {
         self.frames.last_mut().unwrap()[index as usize] = value;
     }
 
-    pub fn call(&mut self, argc: u16) {}
+    pub fn call_tos(&mut self, argc: u16) {
+        let args = self.load_args(argc);
+        let callee = self.pop();
+        callee.call((&args, self));
+    }
 
     pub fn call_op(&mut self, var: Variable, o: Operator, args: Vec<Variable>) {
-        unimplemented!()
+        var.index(Name::Operator(o)).call((&args, self));
     }
 
     pub fn goto(&mut self, pos: u32) {
@@ -84,11 +88,11 @@ impl Runtime {
     }
 
     pub fn load_args(&mut self, argc: u16) -> Vec<Variable> {
-        let mut args: Vec<Variable> = Vec::with_capacity(argc as usize);
-        for i in 0..argc {
-            args[(argc - i - 1) as usize] = self.pop()
+        let mut args: VecDeque<Variable> = VecDeque::with_capacity(argc as usize);
+        for _ in 0..argc {
+            args.push_front(self.pop());
         }
-        return args;
+        return args.into();
     }
 
     pub fn push_stack(&mut self, var_count: u16, fn_no: u16, args: Vec<Variable>, info: usize) {

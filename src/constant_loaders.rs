@@ -1,4 +1,5 @@
 use crate::base_fn::BaseFunction;
+use crate::builtins::builtin_of;
 use crate::file_info::FileInfo;
 use crate::int_tools::{bytes_index, bytes_to};
 use crate::method::StdMethod;
@@ -33,7 +34,7 @@ pub fn load_str(data: &Vec<u8>, index: &mut usize) -> Variable {
 }
 
 pub fn load_builtin(data: &Vec<u8>, index: &mut usize) -> Variable {
-    unimplemented!();
+    builtin_of(bytes_index::<u32>(data, index) as usize)
 }
 
 pub fn load_int(data: &Vec<u8>, index: &mut usize) -> Variable {

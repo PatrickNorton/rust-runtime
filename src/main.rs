@@ -9,6 +9,7 @@ use crate::runtime::Runtime;
 use std::rc::Rc;
 
 mod base_fn;
+mod builtins;
 mod bytecode;
 mod constant_loaders;
 mod executor;

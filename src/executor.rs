@@ -196,7 +196,7 @@ fn parse(b: Bytecode, bytes: &Vec<u8>, runtime: &mut Runtime) {
         Bytecode::CallMethod => unimplemented!(),
         Bytecode::CallTos => {
             let argc = bytes_to::<u16>(bytes);
-            runtime.call(argc)
+            runtime.call_tos(argc)
         }
         Bytecode::TailMethod => unimplemented!(),
         Bytecode::TailTos => unimplemented!(),

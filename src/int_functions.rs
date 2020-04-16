@@ -15,6 +15,7 @@ pub fn get_operator(this: &BigInt, o: Operator) -> Variable {
         Operator::Multiply => mul,
         Operator::FloorDiv => floor_div,
         Operator::Divide => div,
+        Operator::LessThan => less_than,
         _ => unimplemented!(),
     };
     Variable::Method(Box::new(StdMethod::new(
@@ -61,4 +62,13 @@ fn div(this: &BigInt, args: &Vec<Variable>, runtime: &mut Runtime) {
         ratio *= BigRational::from_integer(arg.int(runtime))
     }
     runtime.push(Variable::Decimal(ratio))
+}
+
+fn less_than(this: &BigInt, args: &Vec<Variable>, runtime: &mut Runtime) {
+    for arg in args {
+        if arg.int(runtime) > *this {
+            runtime.push(Variable::Bool(true));
+        }
+    }
+    runtime.push(Variable::Bool(false));
 }
