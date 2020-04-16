@@ -41,7 +41,7 @@ impl StdVariable {
         unimplemented!()
     }
 
-    pub fn call(&self, args: (&Vec<Variable>, &mut Runtime)) {
+    pub fn call(&self, args: (Vec<Variable>, &mut Runtime)) {
         self.value.borrow_mut().values[&Name::Operator(Operator::Call)].call(args)
     }
 

@@ -5,7 +5,7 @@ fn print() -> Variable {
     Variable::Function(Function::Native(print_impl))
 }
 
-fn print_impl(args: &Vec<Variable>, runtime: &mut Runtime) {
+fn print_impl(args: Vec<Variable>, runtime: &mut Runtime) {
     for arg in args {
         println!("{}", arg.str(runtime));
     }

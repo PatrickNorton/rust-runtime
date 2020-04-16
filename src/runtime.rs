@@ -61,11 +61,11 @@ impl Runtime {
     pub fn call_tos(&mut self, argc: u16) {
         let args = self.load_args(argc);
         let callee = self.pop();
-        callee.call((&args, self));
+        callee.call((args, self));
     }
 
     pub fn call_op(&mut self, var: Variable, o: Operator, args: Vec<Variable>) {
-        var.index(Name::Operator(o)).call((&args, self));
+        var.index(Name::Operator(o)).call((args, self));
     }
 
     pub fn goto(&mut self, pos: u32) {

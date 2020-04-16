@@ -27,7 +27,7 @@ pub enum Name {
 #[derive(Clone)]
 pub enum Function {
     Standard(usize, u32),
-    Native(fn(&Vec<Variable>, &mut Runtime)),
+    Native(fn(Vec<Variable>, &mut Runtime)),
 }
 
 #[derive(Clone, Hash)]
@@ -81,10 +81,11 @@ impl Variable {
         };
     }
 
-    pub fn call(&self, args: (&Vec<Variable>, &mut Runtime)) {
+    pub fn call(&self, args: (Vec<Variable>, &mut Runtime)) {
         match self {
             Variable::Standard(val) => val.call(args),
             Variable::Method(method) => method.call(args),
+            Variable::Function(func) => func.call(args),
             _ => unimplemented!(),
         }
     }
@@ -226,6 +227,17 @@ impl Eq for Variable {}
 impl Hash for &'static FileInfo {
     fn hash<H: Hasher>(&self, state: &mut H) {
         ptr::hash(self, state);
+    }
+}
+
+impl Function {
+    fn call(&self, args: (Vec<Variable>, &mut Runtime)) {
+        match self {
+            Function::Standard(file_no, fn_no) => {
+                args.1.push_stack(0, *fn_no as u16, args.0, *file_no);
+            }
+            Function::Native(func) => func(args.0, args.1),
+        }
     }
 }
 

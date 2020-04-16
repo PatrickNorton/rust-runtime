@@ -11,7 +11,7 @@ use num::traits::Pow;
 use num::{BigRational, Zero};
 
 pub fn get_operator(this: &BigInt, o: Operator) -> Variable {
-    let func: fn(&BigInt, &Vec<Variable>, &mut Runtime) = match o {
+    let func: fn(&BigInt, Vec<Variable>, &mut Runtime) = match o {
         Operator::Add => add,
         Operator::Subtract => sub,
         Operator::Multiply => mul,
@@ -27,7 +27,7 @@ pub fn get_operator(this: &BigInt, o: Operator) -> Variable {
     )))
 }
 
-fn add(this: &BigInt, args: &Vec<Variable>, runtime: &mut Runtime) {
+fn add(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) {
     let mut sum = this.clone();
     for arg in args {
         sum += arg.int(runtime)
@@ -35,7 +35,7 @@ fn add(this: &BigInt, args: &Vec<Variable>, runtime: &mut Runtime) {
     runtime.push(Variable::Bigint(sum))
 }
 
-fn sub(this: &BigInt, args: &Vec<Variable>, runtime: &mut Runtime) {
+fn sub(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) {
     let mut diff = this.clone();
     for arg in args {
         diff -= arg.int(runtime)
@@ -43,7 +43,7 @@ fn sub(this: &BigInt, args: &Vec<Variable>, runtime: &mut Runtime) {
     runtime.push(Variable::Bigint(diff))
 }
 
-fn mul(this: &BigInt, args: &Vec<Variable>, runtime: &mut Runtime) {
+fn mul(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) {
     let mut prod = this.clone();
     for arg in args {
         prod *= arg.int(runtime)
@@ -51,7 +51,7 @@ fn mul(this: &BigInt, args: &Vec<Variable>, runtime: &mut Runtime) {
     runtime.push(Variable::Bigint(prod))
 }
 
-fn floor_div(this: &BigInt, args: &Vec<Variable>, runtime: &mut Runtime) {
+fn floor_div(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) {
     let mut ratio = this.clone();
     for arg in args {
         ratio *= arg.int(runtime)
@@ -59,7 +59,7 @@ fn floor_div(this: &BigInt, args: &Vec<Variable>, runtime: &mut Runtime) {
     runtime.push(Variable::Bigint(ratio))
 }
 
-fn div(this: &BigInt, args: &Vec<Variable>, runtime: &mut Runtime) {
+fn div(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) {
     let mut ratio = BigRational::from_integer(this.clone());
     for arg in args {
         ratio *= BigRational::from_integer(arg.int(runtime))
@@ -67,14 +67,14 @@ fn div(this: &BigInt, args: &Vec<Variable>, runtime: &mut Runtime) {
     runtime.push(Variable::Decimal(ratio))
 }
 
-fn pow(this: &BigInt, args: &Vec<Variable>, runtime: &mut Runtime) {
+fn pow(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) {
     debug_assert!(args.len() == 1);
     let arg_int = args[0].int(runtime);
     let result = this.pow(arg_int.to_biguint().unwrap_or_else(BigUint::zero));
     runtime.push(Variable::Bigint(result));
 }
 
-fn less_than(this: &BigInt, args: &Vec<Variable>, runtime: &mut Runtime) {
+fn less_than(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) {
     for arg in args {
         if *this > arg.int(runtime) {
             runtime.push(Variable::Bool(false));

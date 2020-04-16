@@ -9,7 +9,7 @@ use crate::variable::Variable;
 #[derive(Clone)]
 pub enum InnerMethod<T> {
     Standard(u32),
-    Native(fn(&T, &Vec<Variable>, &mut Runtime)),
+    Native(fn(&T, Vec<Variable>, &mut Runtime)),
 }
 
 pub trait MethodClone {
@@ -17,7 +17,7 @@ pub trait MethodClone {
 }
 
 pub trait Method: MethodClone {
-    fn call(&self, args: (&Vec<Variable>, &mut Runtime));
+    fn call(&self, args: (Vec<Variable>, &mut Runtime));
 }
 
 impl<T> MethodClone for T
@@ -73,7 +73,7 @@ impl<T: 'static> Method for StdMethod<T>
 where
     T: Clone,
 {
-    fn call(&self, args: (&Vec<Variable>, &mut Runtime)) {
+    fn call(&self, args: (Vec<Variable>, &mut Runtime)) {
         match &self.method {
             InnerMethod::Standard(index) => unimplemented!(),
             InnerMethod::Native(func) => func(&self.value, args.0, args.1),
