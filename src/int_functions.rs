@@ -5,8 +5,10 @@ use crate::method::{InnerMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::variable::Variable;
-use num::bigint::BigInt;
-use num::BigRational;
+use crate::variable::Variable::Bigint;
+use num::bigint::{BigInt, BigUint};
+use num::traits::Pow;
+use num::{BigRational, Zero};
 
 pub fn get_operator(this: &BigInt, o: Operator) -> Variable {
     let func: fn(&BigInt, &Vec<Variable>, &mut Runtime) = match o {
@@ -15,6 +17,7 @@ pub fn get_operator(this: &BigInt, o: Operator) -> Variable {
         Operator::Multiply => mul,
         Operator::FloorDiv => floor_div,
         Operator::Divide => div,
+        Operator::Power => pow,
         Operator::LessThan => less_than,
         _ => unimplemented!(),
     };
@@ -64,11 +67,18 @@ fn div(this: &BigInt, args: &Vec<Variable>, runtime: &mut Runtime) {
     runtime.push(Variable::Decimal(ratio))
 }
 
+fn pow(this: &BigInt, args: &Vec<Variable>, runtime: &mut Runtime) {
+    debug_assert!(args.len() == 1);
+    let arg_int = args[0].int(runtime);
+    let result = this.pow(arg_int.to_biguint().unwrap_or_else(BigUint::zero));
+    runtime.push(Variable::Bigint(result));
+}
+
 fn less_than(this: &BigInt, args: &Vec<Variable>, runtime: &mut Runtime) {
     for arg in args {
-        if arg.int(runtime) > *this {
-            runtime.push(Variable::Bool(true));
+        if *this > arg.int(runtime) {
+            runtime.push(Variable::Bool(false));
         }
     }
-    runtime.push(Variable::Bool(false));
+    runtime.push(Variable::Bool(true));
 }
