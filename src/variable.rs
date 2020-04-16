@@ -12,13 +12,14 @@ use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::std_variable::StdVariable;
+use crate::string_functions;
 use num::bigint::{BigInt, ToBigInt};
 use num::{BigRational, Rational};
 use num_traits::Zero;
 use std::hash::{Hash, Hasher};
 use std::ptr;
 
-#[derive(Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum Name {
     Attribute(String),
     Operator(Operator),
@@ -86,6 +87,7 @@ impl Variable {
             Variable::Standard(val) => val.call(args),
             Variable::Method(method) => method.call(args),
             Variable::Function(func) => func.call(args),
+            Variable::Type(t) => t.push_create(args),
             _ => unimplemented!(),
         }
     }
@@ -96,6 +98,13 @@ impl Variable {
             Variable::Bigint(val) => {
                 if let Name::Operator(o) = index {
                     get_operator(val, o)
+                } else {
+                    unimplemented!()
+                }
+            }
+            Variable::String(val) => {
+                if let Name::Operator(o) = index {
+                    string_functions::get_operator(val, o)
                 } else {
                     unimplemented!()
                 }
@@ -264,5 +273,23 @@ impl Hash for Function {
                 state.write_usize(*a as usize);
             }
         }
+    }
+}
+
+impl From<BigInt> for Variable {
+    fn from(x: BigInt) -> Self {
+        Variable::Bigint(x)
+    }
+}
+
+impl From<StdVariable> for Variable {
+    fn from(x: StdVariable) -> Self {
+        Variable::Standard(x)
+    }
+}
+
+impl From<String> for Variable {
+    fn from(x: String) -> Self {
+        Variable::String(x)
     }
 }

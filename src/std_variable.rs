@@ -6,7 +6,7 @@ use std::rc::Rc;
 use std::string::String;
 use std::vec::Vec;
 
-use crate::method::InnerMethod;
+use crate::method::{InnerMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::{StdType, Type};
@@ -21,12 +21,17 @@ pub struct StdVariable {
 
 #[derive(Clone, PartialEq, Eq)]
 struct InnerVar {
-    pub uuid: i128,
     pub cls: &'static StdType,
     pub values: HashMap<Name, Variable>,
 }
 
 impl StdVariable {
+    pub fn new(cls: &'static StdType, values: HashMap<Name, Variable>) -> StdVariable {
+        StdVariable {
+            value: Rc::new(RefCell::new(InnerVar::new(cls, values))),
+        }
+    }
+
     pub fn str(&mut self, runtime: &mut Runtime) -> String {
         self.call_operator(Operator::Str, runtime);
         return runtime.pop().str(runtime);
@@ -46,7 +51,15 @@ impl StdVariable {
     }
 
     pub fn index(&self, index: Name) -> Variable {
-        self.value.borrow().values[&index].clone()
+        let self_value = self.value.borrow();
+        let val = self_value.values.get(&index);
+        match val {
+            Option::Some(true_val) => true_val.clone(),
+            Option::None => {
+                let inner_method = self.value.borrow().cls.get_method(index);
+                Variable::Method(Box::new(StdMethod::new(self.clone(), inner_method)))
+            }
+        }
     }
 
     pub fn set(&self, index: String, value: Variable) {
@@ -63,13 +76,21 @@ impl StdVariable {
     pub fn get_type(&self) -> Type {
         Type::Standard(self.value.borrow_mut().cls)
     }
+
+    pub fn var_ptr(&self) -> usize {
+        self.value.as_ptr() as usize
+    }
 }
 
-impl InnerVar {}
+impl InnerVar {
+    fn new(cls: &'static StdType, values: HashMap<Name, Variable>) -> InnerVar {
+        InnerVar { cls, values }
+    }
+}
 
 impl Hash for StdVariable {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        state.write_i128(self.value.borrow().uuid)
+        state.write_i128(self.value.as_ptr() as i128)
     }
 }
 

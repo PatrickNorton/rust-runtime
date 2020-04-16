@@ -1,5 +1,8 @@
+use crate::builtins::default_methods;
+use crate::method::{Method, StdMethod};
+use crate::operator::Operator;
 use crate::runtime::Runtime;
-use crate::std_variable::StdVarMethod;
+use crate::std_variable::{StdVarMethod, StdVariable};
 use crate::variable::{Name, Variable};
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
@@ -54,9 +57,9 @@ impl Type {
         var.get_type().is_subclass(self)
     }
 
-    pub fn create_inst(&self, args: &Vec<Variable>, runtime: &mut Runtime) -> Variable {
+    pub fn create_inst(&self, args: Vec<Variable>, runtime: &mut Runtime) -> Variable {
         return match self {
-            Type::Standard(_) => todo!(),
+            Type::Standard(std_t) => std_t.create(args, runtime),
             Type::Null() => Variable::Null(),
             Type::Bool() => Variable::Bool(args[0].to_bool(runtime)),
             Type::Bigint() => Variable::Bigint(args[0].int(runtime)),
@@ -64,6 +67,12 @@ impl Type {
             Type::Decimal() => unimplemented!(),
             Type::Type() => Variable::Type(args[0].get_type()),
         };
+    }
+
+    pub fn push_create(&self, args: (Vec<Variable>, &mut Runtime)) {
+        let runtime = args.1;
+        let new = self.create_inst(args.0, runtime);
+        runtime.push(new);
     }
 }
 
@@ -128,5 +137,27 @@ impl StdType {
 
     fn name(&self) -> &String {
         &self.name
+    }
+
+    fn index(&self, name: &Name) -> u32 {
+        if let StdVarMethod::Standard(a) = self.static_methods[name] {
+            a
+        } else {
+            panic!();
+        }
+    }
+
+    fn create(&'static self, args: Vec<Variable>, runtime: &mut Runtime) -> Variable {
+        let instance = StdVariable::new(self, HashMap::new());
+        let method = self.methods.get(&Name::Operator(Operator::New)).unwrap();
+        StdMethod::new(instance.clone(), method.clone()).call((args, runtime));
+        return Variable::Standard(instance);
+    }
+
+    pub(crate) fn get_method(&self, name: Name) -> StdVarMethod {
+        match self.methods.get(&name) {
+            Option::Some(T) => T.clone(),
+            Option::None => default_methods(name),
+        }
     }
 }

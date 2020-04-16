@@ -1,4 +1,4 @@
-#[derive(Clone, Copy, FromPrimitive)]
+#[derive(Debug, Clone, Copy, FromPrimitive)]
 pub enum Bytecode {
     Nop = 0x0,
     LoadNull = 0x1,
@@ -133,9 +133,11 @@ pub fn bytecode_size(b: Bytecode) -> usize {
         | Bytecode::JumpTrue
         | Bytecode::JumpNN
         | Bytecode::JumpNull => 4,
-        Bytecode::CallMethod | Bytecode::CallTos => 2,
+        Bytecode::CallMethod => 4,
+        Bytecode::CallTos => 2,
         Bytecode::CallFunction => 2 + 2,
-        Bytecode::TailMethod | Bytecode::TailTos => 2,
+        Bytecode::TailMethod => 4,
+        Bytecode::TailTos => 2,
         Bytecode::TailFunction => 2 + 2,
         Bytecode::Return => 2,
         Bytecode::Throw => 0,

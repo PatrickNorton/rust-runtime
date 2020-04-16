@@ -100,18 +100,11 @@ impl Runtime {
     }
 
     pub fn push_stack(&mut self, var_count: u16, fn_no: u16, args: Vec<Variable>, info: usize) {
-        let native = self.is_native();
-        if Rc::ptr_eq(&self.files[info], self.file_stack.last().unwrap()) {
-            self.frames.push(StackFrame::new(var_count, fn_no, args));
-        } else {
-            self.frames
-                .push(StackFrame::new_file(var_count, fn_no, args));
-            self.file_stack.push(self.files[info].clone());
-        }
-        if native {
-            executor::execute(self);
-            assert!(self.is_native());
-        }
+        self.push_stack_with_file(var_count, fn_no, args, self.files[info].clone())
+    }
+
+    pub fn push_native(&mut self) {
+        self.frames.push(StackFrame::native());
     }
 
     fn push_stack_with_file(

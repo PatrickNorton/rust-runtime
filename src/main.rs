@@ -23,6 +23,7 @@ mod runtime;
 mod stack_frame;
 mod std_type;
 mod std_variable;
+mod string_functions;
 mod variable;
 
 fn main() {

@@ -43,6 +43,18 @@ impl StackFrame {
         }
     }
 
+    pub fn native() -> StackFrame {
+        StackFrame {
+            exception_handlers: HashSet::new(),
+            variables: vec![],
+            function_number: 0,
+            location: 0,
+            native: true,
+            new_file: false,
+            parent: Option::None,
+        }
+    }
+
     fn size(&self) -> usize {
         self.variables.len()
             + if self.parent.is_some() {

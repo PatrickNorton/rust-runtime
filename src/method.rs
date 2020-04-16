@@ -6,7 +6,7 @@ use std::vec::Vec;
 use crate::runtime::Runtime;
 use crate::variable::Variable;
 
-#[derive(Clone)]
+#[derive(Copy, Clone)]
 pub enum InnerMethod<T> {
     Standard(u32),
     Native(fn(&T, Vec<Variable>, &mut Runtime)),
@@ -54,7 +54,7 @@ impl Hash for Box<dyn Method> {
 #[derive(Clone)]
 pub struct StdMethod<T>
 where
-    T: Clone,
+    T: Clone + Into<Variable>,
 {
     value: T,
     method: InnerMethod<T>,
@@ -62,7 +62,7 @@ where
 
 impl<T> StdMethod<T>
 where
-    T: Clone,
+    T: Clone + Into<Variable>,
 {
     pub(crate) fn new(value: T, method: InnerMethod<T>) -> StdMethod<T> {
         StdMethod { value, method }
@@ -71,12 +71,22 @@ where
 
 impl<T: 'static> Method for StdMethod<T>
 where
-    T: Clone,
+    T: Clone + Into<Variable>,
 {
-    fn call(&self, args: (Vec<Variable>, &mut Runtime)) {
+    fn call(&self, mut args: (Vec<Variable>, &mut Runtime)) {
         match &self.method {
-            InnerMethod::Standard(index) => unimplemented!(),
-            InnerMethod::Native(func) => func(&self.value, args.0, args.1),
+            InnerMethod::Standard(index) => {
+                let runtime = args.1; // FIXME: Insert type as argument
+                let var: Variable = self.value.clone().into();
+                args.0.insert(0, Variable::Type(var.get_type()));
+                args.0.insert(0, var);
+                runtime.push_stack(0, *index as u16, args.0, 0);
+            }
+            InnerMethod::Native(func) => {
+                args.1.push_native();
+                func(&self.value, args.0, args.1);
+                args.1.pop_stack();
+            }
         }
     }
 }

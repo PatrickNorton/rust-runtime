@@ -22,7 +22,7 @@ pub fn get_operator(this: &BigInt, o: Operator) -> Variable {
         Operator::LessThan => less_than,
         Operator::Str => to_str,
         Operator::Int => to_int,
-        _ => unimplemented!(format!("Operator::{:?} unimplemented", o)),
+        _ => unimplemented!("Operator::{:?} unimplemented", o),
     };
     Variable::Method(Box::new(StdMethod::new(
         this.clone(),

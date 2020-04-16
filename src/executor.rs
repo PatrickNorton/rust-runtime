@@ -193,7 +193,16 @@ fn parse(b: Bytecode, bytes: &Vec<u8>, runtime: &mut Runtime) {
                 runtime.goto(bytes_to::<u32>(bytes))
             }
         }
-        Bytecode::CallMethod => unimplemented!(),
+        Bytecode::CallMethod => {
+            let mut index = 0;
+            let fn_index = bytes_index::<u16>(bytes, &mut index);
+            let fn_var = runtime.load_const(fn_index).clone();
+            let fn_name = fn_var.str(runtime);
+            let argc = bytes_index::<u16>(bytes, &mut index);
+            let args = runtime.load_args(argc);
+            let var = runtime.pop();
+            var.index(Name::Attribute(fn_name)).call((args, runtime));
+        }
         Bytecode::CallTos => {
             let argc = bytes_to::<u16>(bytes);
             runtime.call_tos(argc)
@@ -202,6 +211,6 @@ fn parse(b: Bytecode, bytes: &Vec<u8>, runtime: &mut Runtime) {
         Bytecode::TailMethod => unimplemented!(),
         Bytecode::TailTos => unimplemented!(),
         Bytecode::Return => runtime.pop_stack(),
-        _ => unimplemented!(),
+        _ => unimplemented!("Bytecode {:?} not implemented", b),
     }
 }
