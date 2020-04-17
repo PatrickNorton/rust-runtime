@@ -87,8 +87,7 @@ impl Runtime {
     }
 
     pub fn advance(&mut self, pos: u32) {
-        let jump = self.current_pos() as u32 + pos;
-        self.goto(jump);
+        self.frames.last_mut().unwrap().advance(pos);
     }
 
     pub fn load_args(&mut self, argc: u16) -> Vec<Variable> {
