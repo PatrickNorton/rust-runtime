@@ -10,6 +10,7 @@ use crate::method::{InnerMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::{StdType, Type};
+use crate::string_var::StringVar;
 use crate::variable::{Name, Variable};
 
 pub type StdVarMethod = InnerMethod<StdVariable>;
@@ -32,7 +33,7 @@ impl StdVariable {
         }
     }
 
-    pub fn str(&mut self, runtime: &mut Runtime) -> String {
+    pub fn str(&mut self, runtime: &mut Runtime) -> StringVar {
         self.call_operator(Operator::Str, runtime);
         return runtime.pop().str(runtime);
     }
@@ -62,7 +63,7 @@ impl StdVariable {
         }
     }
 
-    pub fn set(&self, index: String, value: Variable) {
+    pub fn set(&self, index: StringVar, value: Variable) {
         self.value
             .borrow_mut()
             .values

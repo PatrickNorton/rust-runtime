@@ -120,7 +120,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) {
             let value = runtime.pop();
             let attr_name = runtime.load_const(bytes_0 as u16).clone();
             let str_name = attr_name.str(runtime);
-            value.set(str_name, stored, runtime);
+            value.set(str_name.into(), stored, runtime);
         }
         Bytecode::Plus => call_operator(Operator::Add, 1, runtime),
         Bytecode::Minus => call_operator(Operator::Subtract, 1, runtime),

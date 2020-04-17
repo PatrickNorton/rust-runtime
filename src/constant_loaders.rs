@@ -27,7 +27,7 @@ pub fn load_std_str(data: &Vec<u8>, index: &mut usize) -> String {
 }
 
 pub fn load_str(data: &Vec<u8>, index: &mut usize) -> Variable {
-    Variable::String(load_std_str(data, index))
+    Variable::String(load_std_str(data, index).into())
 }
 
 pub fn load_builtin(data: &Vec<u8>, index: &mut usize) -> Variable {
@@ -159,7 +159,7 @@ fn merge_maps(
         result.insert(Name::Operator(i.0), i.1);
     }
     for i in strings {
-        result.insert(Name::Attribute(i.0), i.1);
+        result.insert(Name::Attribute(i.0.into()), i.1);
     }
     result
 }

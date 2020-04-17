@@ -94,7 +94,7 @@ fn less_than(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) {
 
 fn to_str(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) {
     debug_assert!(args.is_empty());
-    runtime.push(Variable::String(this.to_str_radix(10)))
+    runtime.push(Variable::String(this.to_str_radix(10).into()))
 }
 
 fn to_int(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) {

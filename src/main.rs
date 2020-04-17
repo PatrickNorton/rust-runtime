@@ -24,6 +24,7 @@ mod stack_frame;
 mod std_type;
 mod std_variable;
 mod string_functions;
+mod string_var;
 mod variable;
 
 fn main() {

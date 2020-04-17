@@ -36,7 +36,7 @@ pub fn default_methods(name: Name) -> StdVarMethod {
 fn default_repr(this: &StdVariable, args: Vec<Variable>, runtime: &mut Runtime) {
     debug_assert!(args.is_empty());
     let result = format!("<{}: {}>", this.get_type().to_string(), this.var_ptr());
-    runtime.push(Variable::String(result));
+    runtime.push(Variable::String(result.into()));
 }
 
 fn default_str(this: &StdVariable, args: Vec<Variable>, runtime: &mut Runtime) {

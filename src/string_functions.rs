@@ -1,10 +1,11 @@
 use crate::method::{InnerMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
+use crate::string_var::StringVar;
 use crate::variable::Variable;
 
-pub fn get_operator(this: &String, o: Operator) -> Variable {
-    let func: fn(&String, Vec<Variable>, &mut Runtime) = match o {
+pub fn get_operator(this: &StringVar, o: Operator) -> Variable {
+    let func: fn(&StringVar, Vec<Variable>, &mut Runtime) = match o {
         Operator::Add => add,
         _ => unimplemented!("Operator::{:?} unimplemented", o),
     };
@@ -14,10 +15,10 @@ pub fn get_operator(this: &String, o: Operator) -> Variable {
     )))
 }
 
-fn add(this: &String, args: Vec<Variable>, runtime: &mut Runtime) {
-    let mut result = this.clone();
+fn add(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) {
+    let mut result: String = this.parse().unwrap();
     for arg in args {
         result += arg.str(runtime).as_ref();
     }
-    runtime.push(Variable::String(result));
+    runtime.push(Variable::String(result.into()));
 }

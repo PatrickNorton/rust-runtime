@@ -12,15 +12,17 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::std_variable::StdVariable;
 use crate::string_functions;
+use crate::string_var::StringVar;
 use num::bigint::BigInt;
 use num::BigRational;
 use num_traits::Zero;
 use std::hash::{Hash, Hasher};
 use std::ptr;
+use std::rc::Rc;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum Name {
-    Attribute(String),
+    Attribute(StringVar),
     Operator(Operator),
 }
 
@@ -35,7 +37,7 @@ pub enum Variable {
     Null(),
     Bool(bool),
     Bigint(BigInt),
-    String(String),
+    String(StringVar),
     Decimal(BigRational),
     Type(Type),
     Standard(StdVariable),
@@ -45,14 +47,14 @@ pub enum Variable {
 }
 
 impl Variable {
-    pub fn str(&self, runtime: &mut Runtime) -> String {
+    pub fn str(&self, runtime: &mut Runtime) -> StringVar {
         return match self {
-            Variable::Null() => String::from("null"),
-            Variable::Bool(val) => String::from(if *val { "true" } else { "false" }),
+            Variable::Null() => "null".into(),
+            Variable::Bool(val) => (if *val { "true" } else { "false" }).into(),
             Variable::String(val) => val.clone(),
-            Variable::Bigint(val) => val.to_str_radix(10),
-            Variable::Decimal(val) => val.to_string(),
-            Variable::Type(val) => val.to_string(),
+            Variable::Bigint(val) => val.to_str_radix(10).into(),
+            Variable::Decimal(val) => val.to_string().into(),
+            Variable::Type(val) => val.to_string().into(),
             Variable::Standard(val) => val.clone().str(runtime),
             _ => unimplemented!(),
         };
@@ -113,7 +115,7 @@ impl Variable {
         };
     }
 
-    pub fn set(&self, index: String, value: Variable, _runtime: &mut Runtime) {
+    pub fn set(&self, index: StringVar, value: Variable, _runtime: &mut Runtime) {
         match self {
             Variable::Standard(val) => val.set(index, value),
             Variable::Custom() => unimplemented!(),
@@ -290,6 +292,12 @@ impl From<StdVariable> for Variable {
 
 impl From<String> for Variable {
     fn from(x: String) -> Self {
+        Variable::String(x.into())
+    }
+}
+
+impl From<StringVar> for Variable {
+    fn from(x: StringVar) -> Self {
         Variable::String(x)
     }
 }
