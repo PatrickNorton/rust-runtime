@@ -85,8 +85,9 @@ fn modulo(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) {
 
 fn less_than(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) {
     for arg in args {
-        if *this > arg.int(runtime) {
+        if *this >= arg.int(runtime) {
             runtime.push(Variable::Bool(false));
+            return;
         }
     }
     runtime.push(Variable::Bool(true));
