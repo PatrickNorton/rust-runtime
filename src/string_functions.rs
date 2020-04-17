@@ -2,7 +2,6 @@ use crate::method::{InnerMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::variable::Variable;
-use std::ops::{Add, AddAssign};
 
 pub fn get_operator(this: &String, o: Operator) -> Variable {
     let func: fn(&String, Vec<Variable>, &mut Runtime) = match o {

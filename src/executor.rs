@@ -1,5 +1,5 @@
 use crate::bytecode::{bytecode_size, Bytecode};
-use crate::int_tools::{bytes_index, bytes_to};
+use crate::int_tools::bytes_index;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::variable::{Name, Variable};

@@ -42,7 +42,7 @@ impl StdVariable {
         runtime.pop().to_bool(runtime)
     }
 
-    pub fn call_operator(&mut self, op: Operator, runtime: &mut Runtime) {
+    pub fn call_operator(&mut self, _op: Operator, _runtime: &mut Runtime) {
         unimplemented!()
     }
 

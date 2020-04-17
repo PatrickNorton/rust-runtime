@@ -4,7 +4,6 @@ use std::cmp::PartialEq;
 use std::string::String;
 use std::vec::Vec;
 
-use crate::bytecode::Bytecode::TailTos;
 use crate::file_info::FileInfo;
 use crate::int_functions::get_operator;
 use crate::method::Method;
@@ -13,8 +12,8 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::std_variable::StdVariable;
 use crate::string_functions;
-use num::bigint::{BigInt, ToBigInt};
-use num::{BigRational, Rational};
+use num::bigint::BigInt;
+use num::BigRational;
 use num_traits::Zero;
 use std::hash::{Hash, Hasher};
 use std::ptr;
@@ -74,7 +73,7 @@ impl Variable {
             Variable::String(val) => !val.is_empty(),
             Variable::Bigint(val) => val == &BigInt::zero(),
             Variable::Decimal(val) => val == &BigRational::zero(),
-            Variable::Type(val) => true,
+            Variable::Type(_) => true,
             Variable::Standard(val) => val.clone().bool(_runtime),
             Variable::Method(_) => true,
             Variable::Function(_) => true,
@@ -109,6 +108,7 @@ impl Variable {
                     unimplemented!()
                 }
             }
+            Variable::Type(t) => t.index(index),
             _ => unimplemented!(),
         };
     }
@@ -291,5 +291,11 @@ impl From<StdVariable> for Variable {
 impl From<String> for Variable {
     fn from(x: String) -> Self {
         Variable::String(x)
+    }
+}
+
+impl From<Type> for Variable {
+    fn from(x: Type) -> Self {
+        Variable::Type(x)
     }
 }

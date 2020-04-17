@@ -5,7 +5,6 @@ use crate::method::{InnerMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::variable::Variable;
-use crate::variable::Variable::Bigint;
 use num::bigint::{BigInt, BigUint};
 use num::traits::Pow;
 use num::{BigRational, Zero};

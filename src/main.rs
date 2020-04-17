@@ -27,7 +27,7 @@ mod string_functions;
 mod variable;
 
 fn main() {
-    let args: Vec<String> = std::env::args().collect();
+    let _args: Vec<String> = std::env::args().collect();
     let mut files: Vec<Rc<FileInfo>> = vec![];
     // let index = parse_file(args[1].clone(), &mut files);
     const FILE_NAME: &str =

@@ -1,13 +1,13 @@
+use std::collections::HashMap;
+use std::hash::{Hash, Hasher};
+use std::string::{String, ToString};
+
 use crate::builtins::default_methods;
-use crate::method::{Method, StdMethod};
+use crate::method::{InnerMethod, Method, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_variable::{StdVarMethod, StdVariable};
 use crate::variable::{Name, Variable};
-use std::collections::HashMap;
-use std::hash::{Hash, Hasher};
-use std::rc::Rc;
-use std::string::{String, ToString};
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub enum Type {
@@ -73,6 +73,17 @@ impl Type {
         let runtime = args.1;
         let new = self.create_inst(args.0, runtime);
         runtime.push(new);
+    }
+
+    pub fn index(&self, index: Name) -> Variable {
+        return match self {
+            Type::Standard(std_t) => {
+                let inner_m = InnerMethod::Standard(std_t.index(&index));
+                let n = StdMethod::new(self.clone(), inner_m);
+                Variable::Method(Box::new(n))
+            }
+            _ => unimplemented!(),
+        };
     }
 }
 
@@ -156,7 +167,7 @@ impl StdType {
 
     pub(crate) fn get_method(&self, name: Name) -> StdVarMethod {
         match self.methods.get(&name) {
-            Option::Some(T) => T.clone(),
+            Option::Some(t) => t.clone(),
             Option::None => default_methods(name),
         }
     }

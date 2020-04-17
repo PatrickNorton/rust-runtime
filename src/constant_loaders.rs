@@ -1,17 +1,14 @@
 use crate::base_fn::BaseFunction;
 use crate::builtins::builtin_of;
-use crate::file_info::FileInfo;
-use crate::int_tools::{bytes_index, bytes_to};
-use crate::method::StdMethod;
+use crate::int_tools::bytes_index;
 use crate::operator::Operator;
-use crate::std_type::{StdType, Type};
+use crate::std_type::Type;
 use crate::std_variable::StdVarMethod;
 use crate::variable::{Name, Variable};
 use num::bigint::Sign;
 use num::traits::pow::pow;
 use num::{BigInt, BigRational, FromPrimitive};
 use std::collections::{HashMap, HashSet};
-use std::fs::read;
 
 pub fn load_std_str(data: &Vec<u8>, index: &mut usize) -> String {
     let size = bytes_index::<u32>(data, index);
@@ -177,14 +174,14 @@ pub fn load_class(
     if bytes_index::<u32>(data, index) != 0 {
         panic!("Supers not allowed yet")
     }
-    let generic_size = bytes_index::<u16>(data, index);
+    let _generic_size = bytes_index::<u16>(data, index);
     get_variables(data, index);
     get_variables(data, index);
     let operators = get_operators(data, index, functions);
     let static_operators = get_operators(data, index, functions);
     let methods = get_methods(data, index, functions);
     let static_methods = get_methods(data, index, functions);
-    let properties = get_properties(data, index, functions);
+    let _properties = get_properties(data, index, functions);
 
     Variable::Type(Type::new_std(
         name,

@@ -46,7 +46,7 @@ impl PartialEq for Box<dyn Method> {
 impl Eq for Box<dyn Method> {}
 
 impl Hash for Box<dyn Method> {
-    fn hash<H: Hasher>(&self, state: &mut H) {
+    fn hash<H: Hasher>(&self, _state: &mut H) {
         unimplemented!()
     }
 }

@@ -51,13 +51,13 @@ pub fn parse_file(name: String, files: &mut Vec<Rc<FileInfo>>) -> usize {
 
     // static mut FILES: HashMap<String, &'static FileInfo> = HashMap::new();
     let import_count = bytes_index::<u32>(&data, &mut index);
-    let imports: Vec<Variable> = Vec::with_capacity(import_count as usize);
+    let _imports: Vec<Variable> = Vec::with_capacity(import_count as usize);
     if import_count != 0 {
         panic!("Imports not implemented yet")
     }
 
     let export_count = bytes_index::<u32>(&data, &mut index);
-    let exports: Vec<Variable> = Vec::with_capacity(export_count as usize);
+    let _exports: Vec<Variable> = Vec::with_capacity(export_count as usize);
     if export_count != 0 {
         panic!("Exports not implemented yet")
     }
