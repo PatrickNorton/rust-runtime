@@ -5,6 +5,8 @@ use crate::executor;
 use crate::file_info::FileInfo;
 use crate::operator::Operator;
 use crate::stack_frame::StackFrame;
+use crate::std_type::Type;
+use crate::string_var::StringVar;
 use crate::variable::{FnResult, Name, Variable};
 use std::collections::{HashMap, VecDeque};
 
@@ -13,10 +15,16 @@ pub struct Runtime {
     variables: Vec<Variable>,
     frames: Vec<StackFrame>,
     file_stack: Vec<Rc<FileInfo>>,
-    exception_frames: HashMap<Variable, Vec<(u32, u32)>>,
+    exception_frames: HashMap<Variable, Vec<(u32, usize)>>,
     exception_stack: Vec<Variable>,
 
     files: Vec<Rc<FileInfo>>,
+}
+
+#[derive(Debug)]
+enum InnerException {
+    Std(Variable),
+    UnConstructed(Type, StringVar),
 }
 
 impl Runtime {
@@ -156,5 +164,64 @@ impl Runtime {
 
     pub fn is_bottom_stack(&self) -> bool {
         self.frames.len() == 1
+    }
+
+    pub fn throw(&mut self, exception: Variable) -> FnResult {
+        let frame = self
+            .exception_frames
+            .get(&Variable::Type(exception.get_type()));
+        match frame {
+            Option::Some(vec) => match vec.last() {
+                Option::Some(pair) => {
+                    let pair2 = pair.clone();
+                    self.unwind_to_height(pair2.0, pair2.1, InnerException::Std(exception))
+                }
+                Option::None => panic!("{}", exception.str(self).unwrap()),
+            },
+            Option::None => panic!("{}", exception.str(self).unwrap()),
+        }
+    }
+
+    pub fn throw_quick(&mut self, exc_type: Type, message: StringVar) -> FnResult {
+        let frame = self.exception_frames.get(&Variable::Type(exc_type.clone()));
+        match frame {
+            Option::Some(vec) => match vec.last() {
+                Option::Some(pair) => {
+                    let pair2 = pair.clone();
+                    self.unwind_to_height(
+                        pair2.0,
+                        pair2.1,
+                        InnerException::UnConstructed(exc_type, message),
+                    )
+                }
+                Option::None => panic!("{}", message),
+            },
+            Option::None => panic!("{}", message),
+        }
+    }
+
+    fn unwind_to_height(
+        &mut self,
+        location: u32,
+        frame_height: usize,
+        exception: InnerException,
+    ) -> FnResult {
+        while self.frames.len() > frame_height {
+            let last_frame = self.frames.last().unwrap();
+            if last_frame.is_native() {
+                let true_exc = match exception {
+                    InnerException::Std(e) => e,
+                    InnerException::UnConstructed(t, s) => {
+                        t.create_inst(vec![Variable::String(s)], self).unwrap()
+                    }
+                };
+                self.push(true_exc);
+                return FnResult::Err(());
+            } else {
+                self.pop_stack();
+            }
+        }
+        self.goto(location);
+        FnResult::Ok(())
     }
 }

@@ -217,8 +217,23 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         Bytecode::CallFunction => runtime.call_quick(bytes_0 as u16)?,
         Bytecode::TailMethod => unimplemented!(),
         Bytecode::TailTos => unimplemented!(),
+        Bytecode::TailFunction => unimplemented!(),
         Bytecode::Return => runtime.pop_stack(),
-        _ => unimplemented!("Bytecode {:?} not implemented", b),
+        Bytecode::Throw => {
+            let result = runtime.pop();
+            return runtime.throw(result);
+        }
+        Bytecode::ThrowQuick => {
+            let msg = runtime.pop();
+            let exc_type = runtime.pop();
+            if let Variable::Type(t) = exc_type {
+                let msg_str = msg.str(runtime).unwrap();
+                return runtime.throw_quick(t, msg_str);
+            } else {
+                panic!("ThrowQuick must be called with a type, not {:?}", exc_type);
+            }
+        }
+        _ => unimplemented!(),
     }
     FnResult::Ok(())
 }
