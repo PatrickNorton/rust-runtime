@@ -76,7 +76,7 @@ fn mul(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
 fn floor_div(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let mut ratio = this.clone();
     for arg in args {
-        ratio *= arg.int(runtime)?
+        ratio /= arg.int(runtime)?
     }
     runtime.push(Variable::Bigint(ratio));
     FnResult::Ok(())
@@ -85,7 +85,7 @@ fn floor_div(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnRes
 fn div(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let mut ratio = BigRational::from_integer(this.clone());
     for arg in args {
-        ratio *= BigRational::from_integer(arg.int(runtime)?)
+        ratio /= BigRational::from_integer(arg.int(runtime)?)
     }
     runtime.push(Variable::Decimal(ratio));
     FnResult::Ok(())
