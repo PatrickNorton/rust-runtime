@@ -1,6 +1,12 @@
 use crate::bytecode::{bytecode_size, Bytecode};
 use crate::int_tools::bytes_index;
 use crate::operator::Operator;
+use crate::quick_functions::{
+    quick_add, quick_bitwise_and, quick_bitwise_not, quick_bitwise_or, quick_bitwise_xor,
+    quick_div, quick_equals, quick_floor_div, quick_greater_equal, quick_greater_than,
+    quick_left_bitshift, quick_less_equal, quick_less_than, quick_mod, quick_mul, quick_power,
+    quick_right_bitshift, quick_sub, quick_subscript, quick_u_minus, QuickResult,
+};
 use crate::runtime::Runtime;
 use crate::variable::{FnResult, Name, Variable};
 use num_traits::FromPrimitive;
@@ -46,6 +52,26 @@ fn bool_op(b: Bytecode, runtime: &mut Runtime) -> Result<bool, ()> {
         Bytecode::BoolXor => x ^ y,
         _ => unreachable!(),
     })
+}
+
+#[inline]
+fn quick_op_1(runtime: &mut Runtime, func: fn(Variable, &mut Runtime) -> QuickResult) -> FnResult {
+    let x = runtime.pop();
+    let result = func(x, runtime)?;
+    runtime.push(result);
+    FnResult::Ok(())
+}
+
+#[inline]
+fn quick_op_2(
+    runtime: &mut Runtime,
+    func: fn(Variable, Variable, &mut Runtime) -> QuickResult,
+) -> FnResult {
+    let y = runtime.pop();
+    let x = runtime.pop();
+    let result = func(x, y, runtime)?;
+    runtime.push(result);
+    FnResult::Ok(())
 }
 
 fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnResult {
@@ -123,23 +149,23 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let str_name = attr_name.str(runtime)?;
             value.set(str_name.into(), stored, runtime);
         }
-        Bytecode::Plus => call_operator(Operator::Add, 1, runtime)?,
-        Bytecode::Minus => call_operator(Operator::Subtract, 1, runtime)?,
-        Bytecode::Times => call_operator(Operator::Multiply, 1, runtime)?,
-        Bytecode::Divide => call_operator(Operator::Divide, 1, runtime)?,
-        Bytecode::FloorDiv => call_operator(Operator::FloorDiv, 1, runtime)?,
-        Bytecode::Mod => call_operator(Operator::Modulo, 1, runtime)?,
-        Bytecode::Subscript => call_operator(Operator::GetAttr, 1, runtime)?,
-        Bytecode::Power => call_operator(Operator::Power, 1, runtime)?,
-        Bytecode::LBitshift => call_operator(Operator::LeftBitshift, 1, runtime)?,
-        Bytecode::RBitshift => call_operator(Operator::RightBitshift, 1, runtime)?,
-        Bytecode::BitwiseAnd => call_operator(Operator::BitwiseAnd, 1, runtime)?,
-        Bytecode::BitwiseOr => call_operator(Operator::BitwiseOr, 1, runtime)?,
-        Bytecode::BitwiseXor => call_operator(Operator::BitwiseXor, 1, runtime)?,
+        Bytecode::Plus => quick_op_2(runtime, quick_add)?,
+        Bytecode::Minus => quick_op_2(runtime, quick_sub)?,
+        Bytecode::Times => quick_op_2(runtime, quick_mul)?,
+        Bytecode::Divide => quick_op_2(runtime, quick_div)?,
+        Bytecode::FloorDiv => quick_op_2(runtime, quick_floor_div)?,
+        Bytecode::Mod => quick_op_2(runtime, quick_mod)?,
+        Bytecode::Subscript => quick_op_2(runtime, quick_subscript)?,
+        Bytecode::Power => quick_op_2(runtime, quick_power)?,
+        Bytecode::LBitshift => quick_op_2(runtime, quick_left_bitshift)?,
+        Bytecode::RBitshift => quick_op_2(runtime, quick_right_bitshift)?,
+        Bytecode::BitwiseAnd => quick_op_2(runtime, quick_bitwise_and)?,
+        Bytecode::BitwiseOr => quick_op_2(runtime, quick_bitwise_or)?,
+        Bytecode::BitwiseXor => quick_op_2(runtime, quick_bitwise_xor)?,
         Bytecode::Compare => call_operator(Operator::Compare, 1, runtime)?,
         Bytecode::DelSubscript => call_operator(Operator::DelAttr, 2, runtime)?,
-        Bytecode::UMinus => call_operator(Operator::USubtract, 0, runtime)?,
-        Bytecode::BitwiseNot => call_operator(Operator::BitwiseNot, 0, runtime)?,
+        Bytecode::UMinus => quick_op_1(runtime, quick_u_minus)?,
+        Bytecode::BitwiseNot => quick_op_1(runtime, quick_bitwise_not)?,
         Bytecode::BoolAnd => {
             let result = bool_op(Bytecode::BoolAnd, runtime)?;
             runtime.push(Variable::Bool(result))
@@ -173,11 +199,11 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         }
         Bytecode::PackTuple => unimplemented!(),
         Bytecode::UnpackTuple => unimplemented!(),
-        Bytecode::Equal => call_operator(Operator::Equals, 1, runtime)?,
-        Bytecode::LessThan => call_operator(Operator::LessThan, 1, runtime)?,
-        Bytecode::GreaterThan => call_operator(Operator::GreaterThan, 1, runtime)?,
-        Bytecode::LessEqual => call_operator(Operator::LessEqual, 1, runtime)?,
-        Bytecode::GreaterEqual => call_operator(Operator::GreaterEqual, 1, runtime)?,
+        Bytecode::Equal => quick_op_2(runtime, quick_equals)?,
+        Bytecode::LessThan => quick_op_2(runtime, quick_less_than)?,
+        Bytecode::GreaterThan => quick_op_2(runtime, quick_greater_than)?,
+        Bytecode::LessEqual => quick_op_2(runtime, quick_less_equal)?,
+        Bytecode::GreaterEqual => quick_op_2(runtime, quick_greater_equal)?,
         Bytecode::Contains => call_operator(Operator::In, 1, runtime)?,
         Bytecode::Jump => runtime.goto(bytes_0),
         Bytecode::JumpTrue => {

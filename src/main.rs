@@ -19,6 +19,7 @@ mod int_functions;
 mod int_tools;
 mod method;
 mod operator;
+mod quick_functions;
 mod runtime;
 mod stack_frame;
 mod std_type;
