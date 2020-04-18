@@ -7,7 +7,7 @@ use crate::variable::Variable;
 use std::cell::RefCell;
 use std::ops::{Index, IndexMut};
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StackFrame {
     exception_handlers: HashSet<Variable>,
     variables: Vec<Variable>,

@@ -4,20 +4,22 @@ use std::hash::{Hash, Hasher};
 use std::vec::Vec;
 
 use crate::runtime::Runtime;
-use crate::variable::Variable;
+use crate::variable::{FnResult, Variable};
+use std::convert::TryFrom;
+use std::fmt::{Arguments, Debug, Formatter};
 
 #[derive(Copy, Clone)]
 pub enum InnerMethod<T> {
     Standard(u32),
-    Native(fn(&T, Vec<Variable>, &mut Runtime)),
+    Native(fn(&T, Vec<Variable>, &mut Runtime) -> FnResult),
 }
 
 pub trait MethodClone {
     fn clone_box(&self) -> Box<dyn Method>;
 }
 
-pub trait Method: MethodClone {
-    fn call(&self, args: (Vec<Variable>, &mut Runtime));
+pub trait Method: MethodClone + Debug {
+    fn call(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult;
 }
 
 impl<T> MethodClone for T
@@ -51,7 +53,7 @@ impl Hash for Box<dyn Method> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct StdMethod<T>
 where
     T: Clone + Into<Variable>,
@@ -69,24 +71,38 @@ where
     }
 }
 
-impl<T: 'static> Method for StdMethod<T>
+impl<T: 'static + Debug> Method for StdMethod<T>
 where
     T: Clone + Into<Variable>,
 {
-    fn call(&self, mut args: (Vec<Variable>, &mut Runtime)) {
+    fn call(&self, mut args: (Vec<Variable>, &mut Runtime)) -> FnResult {
         match &self.method {
             InnerMethod::Standard(index) => {
                 let runtime = args.1; // FIXME: Insert type as argument
                 let var: Variable = self.value.clone().into();
                 args.0.insert(0, Variable::Type(var.get_type()));
                 args.0.insert(0, var);
-                runtime.push_stack(0, *index as u16, args.0, 0);
+                runtime.push_stack(0, *index as u16, args.0, 0)?;
+                FnResult::Ok(())
             }
             InnerMethod::Native(func) => {
                 args.1.push_native();
-                func(&self.value, args.0, args.1);
+                let result = func(&self.value, args.0, args.1);
                 args.1.pop_stack();
+                result
             }
+        }
+    }
+}
+
+impl<T> Debug for InnerMethod<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            InnerMethod::Standard(i) => f.debug_tuple("Standard").field(i).finish(),
+            InnerMethod::Native(fn_) => f
+                .debug_tuple("Native")
+                .field(&format!("fn@{}", *fn_ as usize))
+                .finish(),
         }
     }
 }

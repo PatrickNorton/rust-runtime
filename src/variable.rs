@@ -16,9 +16,11 @@ use crate::string_var::StringVar;
 use num::bigint::BigInt;
 use num::BigRational;
 use num_traits::Zero;
+use std::fmt::{Debug, Formatter};
 use std::hash::{Hash, Hasher};
 use std::ptr;
-use std::rc::Rc;
+
+pub type FnResult = Result<(), ()>;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum Name {
@@ -29,10 +31,10 @@ pub enum Name {
 #[derive(Clone)]
 pub enum Function {
     Standard(usize, u32),
-    Native(fn(Vec<Variable>, &mut Runtime)),
+    Native(fn(Vec<Variable>, &mut Runtime) -> FnResult),
 }
 
-#[derive(Clone, Hash)]
+#[derive(Debug, Clone, Hash)]
 pub enum Variable {
     Null(),
     Bool(bool),
@@ -47,43 +49,43 @@ pub enum Variable {
 }
 
 impl Variable {
-    pub fn str(&self, runtime: &mut Runtime) -> StringVar {
+    pub fn str(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
         return match self {
-            Variable::Null() => "null".into(),
-            Variable::Bool(val) => (if *val { "true" } else { "false" }).into(),
-            Variable::String(val) => val.clone(),
-            Variable::Bigint(val) => val.to_str_radix(10).into(),
-            Variable::Decimal(val) => val.to_string().into(),
-            Variable::Type(val) => val.to_string().into(),
+            Variable::Null() => Result::Ok("null".into()),
+            Variable::Bool(val) => Result::Ok((if *val { "true" } else { "false" }).into()),
+            Variable::String(val) => Result::Ok(val.clone()),
+            Variable::Bigint(val) => Result::Ok(val.to_str_radix(10).into()),
+            Variable::Decimal(val) => Result::Ok(val.to_string().into()),
+            Variable::Type(val) => Result::Ok(val.to_string().into()),
             Variable::Standard(val) => val.clone().str(runtime),
             _ => unimplemented!(),
         };
     }
 
-    pub fn int(&self, _runtime: &Runtime) -> BigInt {
+    pub fn int(&self, _runtime: &Runtime) -> Result<BigInt, ()> {
         return match self {
-            Variable::Bigint(val) => val.clone(),
-            Variable::Decimal(val) => val.to_integer(),
+            Variable::Bigint(val) => Result::Ok(val.clone()),
+            Variable::Decimal(val) => Result::Ok(val.to_integer()),
             _ => unimplemented!(),
         };
     }
 
-    pub fn to_bool(&self, _runtime: &mut Runtime) -> bool {
+    pub fn to_bool(&self, _runtime: &mut Runtime) -> Result<bool, ()> {
         return match self {
-            Variable::Null() => false,
-            Variable::Bool(val) => *val,
-            Variable::String(val) => !val.is_empty(),
-            Variable::Bigint(val) => val == &BigInt::zero(),
-            Variable::Decimal(val) => val == &BigRational::zero(),
-            Variable::Type(_) => true,
+            Variable::Null() => Result::Ok(false),
+            Variable::Bool(val) => Result::Ok(*val),
+            Variable::String(val) => Result::Ok(!val.is_empty()),
+            Variable::Bigint(val) => Result::Ok(val == &BigInt::zero()),
+            Variable::Decimal(val) => Result::Ok(val == &BigRational::zero()),
+            Variable::Type(_) => Result::Ok(true),
             Variable::Standard(val) => val.clone().bool(_runtime),
-            Variable::Method(_) => true,
-            Variable::Function(_) => true,
+            Variable::Method(_) => Result::Ok(true),
+            Variable::Function(_) => Result::Ok(true),
             Variable::Custom() => unimplemented!(),
         };
     }
 
-    pub fn call(&self, args: (Vec<Variable>, &mut Runtime)) {
+    pub fn call(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
         match self {
             Variable::Standard(val) => val.call(args),
             Variable::Method(method) => method.call(args),
@@ -242,12 +244,18 @@ impl Hash for &'static FileInfo {
 }
 
 impl Function {
-    fn call(&self, args: (Vec<Variable>, &mut Runtime)) {
+    fn call(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
         match self {
             Function::Standard(file_no, fn_no) => {
-                args.1.push_stack(0, *fn_no as u16, args.0, *file_no);
+                args.1.push_stack(0, *fn_no as u16, args.0, *file_no)?;
+                FnResult::Ok(())
             }
-            Function::Native(func) => func(args.0, args.1),
+            Function::Native(func) => {
+                args.1.push_native();
+                let result = func(args.0, args.1);
+                args.1.pop_stack();
+                result
+            }
         }
     }
 }
@@ -305,5 +313,17 @@ impl From<StringVar> for Variable {
 impl From<Type> for Variable {
     fn from(x: Type) -> Self {
         Variable::Type(x)
+    }
+}
+
+impl Debug for Function {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Function::Standard(i, j) => f.debug_tuple("Standard").field(i).field(j).finish(),
+            Function::Native(fn_) => f
+                .debug_tuple("Native")
+                .field(&format!("fn@{}", *fn_ as usize))
+                .finish(),
+        }
     }
 }

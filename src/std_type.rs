@@ -7,9 +7,9 @@ use crate::method::{InnerMethod, Method, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_variable::{StdVarMethod, StdVariable};
-use crate::variable::{Name, Variable};
+use crate::variable::{FnResult, Name, Variable};
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Type {
     Standard(&'static StdType),
     Null(),
@@ -20,6 +20,7 @@ pub enum Type {
     Type(),
 }
 
+#[derive(Debug)]
 pub struct StdType {
     name: String,
     file_no: usize,
@@ -57,22 +58,23 @@ impl Type {
         var.get_type().is_subclass(self)
     }
 
-    pub fn create_inst(&self, args: Vec<Variable>, runtime: &mut Runtime) -> Variable {
-        return match self {
-            Type::Standard(std_t) => std_t.create(args, runtime),
+    pub fn create_inst(&self, args: Vec<Variable>, runtime: &mut Runtime) -> Result<Variable, ()> {
+        Result::Ok(match self {
+            Type::Standard(std_t) => std_t.create(args, runtime)?,
             Type::Null() => Variable::Null(),
-            Type::Bool() => Variable::Bool(args[0].to_bool(runtime)),
-            Type::Bigint() => Variable::Bigint(args[0].int(runtime)),
-            Type::String() => Variable::String(args[0].str(runtime)),
+            Type::Bool() => Variable::Bool(args[0].to_bool(runtime)?),
+            Type::Bigint() => Variable::Bigint(args[0].int(runtime)?),
+            Type::String() => Variable::String(args[0].str(runtime)?),
             Type::Decimal() => unimplemented!(),
             Type::Type() => Variable::Type(args[0].get_type()),
-        };
+        })
     }
 
-    pub fn push_create(&self, args: (Vec<Variable>, &mut Runtime)) {
+    pub fn push_create(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
         let runtime = args.1;
-        let new = self.create_inst(args.0, runtime);
+        let new = self.create_inst(args.0, runtime)?;
         runtime.push(new);
+        FnResult::Ok(())
     }
 
     pub fn index(&self, index: Name) -> Variable {
@@ -158,11 +160,11 @@ impl StdType {
         }
     }
 
-    fn create(&'static self, args: Vec<Variable>, runtime: &mut Runtime) -> Variable {
+    fn create(&'static self, args: Vec<Variable>, runtime: &mut Runtime) -> Result<Variable, ()> {
         let instance = StdVariable::new(self, HashMap::new());
         let method = self.methods.get(&Name::Operator(Operator::New)).unwrap();
-        StdMethod::new(instance.clone(), method.clone()).call((args, runtime));
-        return Variable::Standard(instance);
+        StdMethod::new(instance.clone(), method.clone()).call((args, runtime))?;
+        return Result::Ok(Variable::Standard(instance));
     }
 
     pub(crate) fn get_method(&self, name: Name) -> StdVarMethod {

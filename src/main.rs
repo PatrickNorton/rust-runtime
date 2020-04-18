@@ -34,5 +34,9 @@ fn main() {
     const FILE_NAME: &str =
         "/Users/patricknorton/Projects/Python files/__ncache__/HelloWorld.nbyte";
     let index = parse_file(FILE_NAME.to_string(), &mut files);
-    execute(&mut Runtime::new(files, index));
+    let mut runtime = Runtime::new(files, index);
+    let result = execute(&mut runtime);
+    if let Result::Err(e) = result {
+        panic!("Too many errors!")
+    }
 }

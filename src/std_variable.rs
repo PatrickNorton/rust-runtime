@@ -3,7 +3,6 @@ use std::cmp::{Eq, PartialEq};
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
-use std::string::String;
 use std::vec::Vec;
 
 use crate::method::{InnerMethod, StdMethod};
@@ -11,16 +10,16 @@ use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::{StdType, Type};
 use crate::string_var::StringVar;
-use crate::variable::{Name, Variable};
+use crate::variable::{FnResult, Name, Variable};
 
 pub type StdVarMethod = InnerMethod<StdVariable>;
 
-#[derive(Clone, Eq)]
+#[derive(Debug, Clone, Eq)]
 pub struct StdVariable {
     value: Rc<RefCell<InnerVar>>,
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 struct InnerVar {
     pub cls: &'static StdType,
     pub values: HashMap<Name, Variable>,
@@ -33,22 +32,23 @@ impl StdVariable {
         }
     }
 
-    pub fn str(&mut self, runtime: &mut Runtime) -> StringVar {
-        self.call_operator(Operator::Str, runtime);
-        return runtime.pop().str(runtime);
+    pub fn str(&mut self, runtime: &mut Runtime) -> Result<StringVar, ()> {
+        self.call_operator(Operator::Str, runtime)?;
+        runtime.pop().str(runtime)
     }
 
-    pub fn bool(&mut self, runtime: &mut Runtime) -> bool {
-        self.call_operator(Operator::Bool, runtime);
+    pub fn bool(&mut self, runtime: &mut Runtime) -> Result<bool, ()> {
+        self.call_operator(Operator::Bool, runtime)?;
         runtime.pop().to_bool(runtime)
     }
 
-    pub fn call_operator(&mut self, _op: Operator, _runtime: &mut Runtime) {
+    pub fn call_operator(&mut self, _op: Operator, _runtime: &mut Runtime) -> Result<(), ()> {
         unimplemented!()
     }
 
-    pub fn call(&self, args: (Vec<Variable>, &mut Runtime)) {
-        self.value.borrow_mut().values[&Name::Operator(Operator::Call)].call(args)
+    pub fn call(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
+        self.value.borrow_mut().values[&Name::Operator(Operator::Call)].call(args)?;
+        FnResult::Ok(())
     }
 
     pub fn index(&self, index: Name) -> Variable {

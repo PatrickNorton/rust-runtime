@@ -5,9 +5,10 @@ use crate::executor;
 use crate::file_info::FileInfo;
 use crate::operator::Operator;
 use crate::stack_frame::StackFrame;
-use crate::variable::{Name, Variable};
+use crate::variable::{FnResult, Name, Variable};
 use std::collections::{HashMap, VecDeque};
 
+#[derive(Debug)]
 pub struct Runtime {
     variables: Vec<Variable>,
     frames: Vec<StackFrame>,
@@ -38,7 +39,7 @@ impl Runtime {
         self.variables.pop().unwrap()
     }
 
-    pub fn pop_bool(&mut self) -> bool {
+    pub fn pop_bool(&mut self) -> Result<bool, ()> {
         self.variables.pop().unwrap().to_bool(self)
     }
 
@@ -58,18 +59,18 @@ impl Runtime {
         self.frames.last_mut().unwrap()[index as usize] = value;
     }
 
-    pub fn call_quick(&mut self, fn_no: u16) {
-        self.push_stack_with_file(0, fn_no, vec![], self.file_stack.last().unwrap().clone());
+    pub fn call_quick(&mut self, fn_no: u16) -> FnResult {
+        self.push_stack_with_file(0, fn_no, vec![], self.file_stack.last().unwrap().clone())
     }
 
-    pub fn call_tos(&mut self, argc: u16) {
+    pub fn call_tos(&mut self, argc: u16) -> FnResult {
         let args = self.load_args(argc);
         let callee = self.pop();
-        callee.call((args, self));
+        callee.call((args, self))
     }
 
-    pub fn call_op(&mut self, var: Variable, o: Operator, args: Vec<Variable>) {
-        var.index(Name::Operator(o)).call((args, self));
+    pub fn call_op(&mut self, var: Variable, o: Operator, args: Vec<Variable>) -> FnResult {
+        var.index(Name::Operator(o)).call((args, self))
     }
 
     pub fn goto(&mut self, pos: u32) {
@@ -98,7 +99,13 @@ impl Runtime {
         return args.into();
     }
 
-    pub fn push_stack(&mut self, var_count: u16, fn_no: u16, args: Vec<Variable>, info: usize) {
+    pub fn push_stack(
+        &mut self,
+        var_count: u16,
+        fn_no: u16,
+        args: Vec<Variable>,
+        info: usize,
+    ) -> FnResult {
         self.push_stack_with_file(var_count, fn_no, args, self.files[info].clone())
     }
 
@@ -112,7 +119,7 @@ impl Runtime {
         fn_no: u16,
         args: Vec<Variable>,
         info: Rc<FileInfo>,
-    ) {
+    ) -> FnResult {
         let native = self.is_native();
         if Rc::ptr_eq(&info, self.file_stack.last().unwrap()) {
             self.frames.push(StackFrame::new(var_count, fn_no, args));
@@ -122,9 +129,10 @@ impl Runtime {
             self.file_stack.push(info);
         }
         if native {
-            executor::execute(self);
+            executor::execute(self)?;
             assert!(self.is_native());
         }
+        Result::Ok(())
     }
 
     pub fn pop_stack(&mut self) {

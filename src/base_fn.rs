@@ -3,6 +3,7 @@ use crate::int_tools::bytes_index;
 use std::string::String;
 use std::vec::Vec;
 
+#[derive(Debug)]
 pub struct BaseFunction {
     name: String,
     local_count: u16,

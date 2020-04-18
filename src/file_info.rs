@@ -5,6 +5,7 @@ use std::vec::Vec;
 use crate::base_fn::BaseFunction;
 use crate::variable::Variable;
 
+#[derive(Debug)]
 pub struct FileInfo {
     name: String,
     constants: Vec<Variable>,
