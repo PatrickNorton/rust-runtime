@@ -7,6 +7,7 @@ use crate::method::{InnerMethod, Method, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_variable::{StdVarMethod, StdVariable};
+use crate::string_var::StringVar;
 use crate::variable::{FnResult, Name, Variable};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -22,7 +23,7 @@ pub enum Type {
 
 #[derive(Debug)]
 pub struct StdType {
-    name: String,
+    name: StringVar,
     file_no: usize,
     supers: Vec<Type>,
     methods: HashMap<Name, StdVarMethod>,
@@ -31,7 +32,7 @@ pub struct StdType {
 
 impl Type {
     pub fn new_std(
-        name: String,
+        name: StringVar,
         file_no: usize,
         methods: HashMap<Name, StdVarMethod>,
         static_methods: HashMap<Name, StdVarMethod>,
@@ -87,12 +88,24 @@ impl Type {
             _ => unimplemented!(),
         };
     }
+
+    pub fn str(&self) -> StringVar {
+        return match self {
+            Type::Standard(t) => t.name().clone(),
+            Type::Null() => "null".into(),
+            Type::Bool() => "bool".into(),
+            Type::Bigint() => "int".into(),
+            Type::String() => "str".into(),
+            Type::Decimal() => "dec".into(),
+            Type::Type() => "type".into(),
+        };
+    }
 }
 
 impl ToString for Type {
     fn to_string(&self) -> String {
         return match self {
-            Type::Standard(t) => t.name().clone(),
+            Type::Standard(t) => t.name().to_string(),
             Type::Null() => "null".to_string(),
             Type::Bool() => "bool".to_string(),
             Type::Bigint() => "int".to_string(),
@@ -120,7 +133,7 @@ impl Hash for StdType {
 
 impl StdType {
     pub fn new(
-        name: String,
+        name: StringVar,
         file_no: usize,
         methods: HashMap<Name, StdVarMethod>,
         static_methods: HashMap<Name, StdVarMethod>,
@@ -148,7 +161,7 @@ impl StdType {
         false
     }
 
-    fn name(&self) -> &String {
+    fn name(&self) -> &StringVar {
         &self.name
     }
 

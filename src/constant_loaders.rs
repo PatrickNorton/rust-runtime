@@ -4,6 +4,7 @@ use crate::int_tools::bytes_index;
 use crate::operator::Operator;
 use crate::std_type::Type;
 use crate::std_variable::StdVarMethod;
+use crate::string_var::StringVar;
 use crate::variable::{Name, Variable};
 use num::bigint::Sign;
 use num::traits::pow::pow;
@@ -184,7 +185,7 @@ pub fn load_class(
     let _properties = get_properties(data, index, functions);
 
     Variable::Type(Type::new_std(
-        name,
+        name.into(),
         file_no,
         merge_maps(operators, methods),
         merge_maps(static_operators, static_methods),
