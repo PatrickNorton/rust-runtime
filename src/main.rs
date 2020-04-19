@@ -12,6 +12,7 @@ mod base_fn;
 mod builtins;
 mod bytecode;
 mod constant_loaders;
+mod custom_var;
 mod executor;
 mod file_info;
 mod file_parsing;

@@ -1,7 +1,7 @@
 use crate::base_fn::BaseFunction;
 use crate::constant_loaders::{
-    function_index, load_bigint, load_bool, load_builtin, load_class, load_decimal, load_int,
-    load_str,
+    class_index, function_index, load_bigint, load_bool, load_builtin, load_class, load_decimal,
+    load_int, load_str,
 };
 use crate::file_info::FileInfo;
 use crate::int_tools::{bytes_index, bytes_to};
@@ -11,12 +11,12 @@ use std::fs::read;
 use std::path::Path;
 use std::rc::Rc;
 
-fn load_constant(
-    data: &Vec<u8>,
-    index: &mut usize,
-    functions: &mut Vec<u32>,
-    classes: &mut Vec<u32>,
-) -> Variable {
+enum LoadType {
+    Function(u32),
+    Class(u32),
+}
+
+fn load_constant(data: &Vec<u8>, index: &mut usize, load_later: &mut Vec<LoadType>) -> Variable {
     *index += 1;
     match data[*index - 1] {
         0 => load_str(data, index),
@@ -26,13 +26,13 @@ fn load_constant(
         4 => unimplemented!(), // import
         5 => load_builtin(data, index),
         6 => {
-            functions.push(function_index(data, index));
+            load_later.push(LoadType::Function(function_index(data, index)));
             Variable::Null()
         }
         7 => load_bool(data, index),
         8 => {
-            classes.push(function_index(data, index));
-            Variable::Custom()
+            load_later.push(LoadType::Class(class_index(data, index)));
+            Variable::Null()
         }
         _ => unimplemented!(),
     }
@@ -64,15 +64,9 @@ pub fn parse_file(name: String, files: &mut Vec<Rc<FileInfo>>) -> usize {
 
     let constant_count = bytes_index::<u32>(&data, &mut index);
     let mut constants: Vec<Variable> = Vec::with_capacity(constant_count as usize);
-    let mut fn_indices: Vec<u32> = Vec::new();
-    let mut class_indices: Vec<u32> = Vec::new();
+    let mut loaded_later: Vec<LoadType> = Vec::new();
     for _ in 0..constant_count {
-        constants.push(load_constant(
-            &data,
-            &mut index,
-            &mut fn_indices,
-            &mut class_indices,
-        ));
+        constants.push(load_constant(&data, &mut index, &mut loaded_later));
     }
 
     let fn_count = bytes_index::<u32>(&data, &mut index);
@@ -87,15 +81,14 @@ pub fn parse_file(name: String, files: &mut Vec<Rc<FileInfo>>) -> usize {
         classes.push(load_class(file_no, &data, &mut index, &mut functions));
     }
 
-    let mut fn_count: usize = 0;
-    let mut cls_count: usize = 0;
+    let mut load_count: usize = 0;
     for c in &mut constants {
         if let Variable::Null() = c {
-            *c = Variable::Function(Function::Standard(file_no, fn_indices[fn_count]));
-            fn_count += 1;
-        } else if let Variable::Custom() = c {
-            *c = classes[cls_count].clone();
-            cls_count += 1;
+            *c = match loaded_later[load_count] {
+                LoadType::Function(d) => Variable::Function(Function::Standard(file_no, d)),
+                LoadType::Class(d) => classes[d as usize].clone(),
+            };
+            load_count += 1;
         }
     }
 

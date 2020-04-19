@@ -36,7 +36,7 @@ pub fn quick_add(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
         }
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
-        Variable::Custom() => unimplemented!(),
+        Variable::Custom(_) => unimplemented!(),
     };
 }
 
@@ -63,7 +63,7 @@ pub fn quick_sub(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
         }
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
-        Variable::Custom() => unimplemented!(),
+        Variable::Custom(_) => unimplemented!(),
     };
 }
 
@@ -84,7 +84,7 @@ pub fn quick_u_minus(this: Variable, runtime: &mut Runtime) -> QuickResult {
         }
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
-        Variable::Custom() => unimplemented!(),
+        Variable::Custom(_) => unimplemented!(),
     };
 }
 
@@ -117,7 +117,7 @@ pub fn quick_mul(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
         }
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
-        Variable::Custom() => unimplemented!(),
+        Variable::Custom(_) => unimplemented!(),
     };
 }
 
@@ -147,7 +147,7 @@ pub fn quick_div(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
         }
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
-        Variable::Custom() => unimplemented!(),
+        Variable::Custom(_) => unimplemented!(),
     };
 }
 
@@ -174,7 +174,7 @@ pub fn quick_floor_div(this: Variable, other: Variable, runtime: &mut Runtime) -
         }
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
-        Variable::Custom() => unimplemented!(),
+        Variable::Custom(_) => unimplemented!(),
     };
 }
 
@@ -201,7 +201,7 @@ pub fn quick_mod(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
         }
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
-        Variable::Custom() => unimplemented!(),
+        Variable::Custom(_) => unimplemented!(),
     };
 }
 
@@ -220,7 +220,7 @@ pub fn quick_subscript(this: Variable, other: Variable, runtime: &mut Runtime) -
         }
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
-        Variable::Custom() => unimplemented!(),
+        Variable::Custom(_) => unimplemented!(),
     };
 }
 
@@ -249,7 +249,7 @@ pub fn quick_power(this: Variable, other: Variable, runtime: &mut Runtime) -> Qu
         }
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
-        Variable::Custom() => unimplemented!(),
+        Variable::Custom(_) => unimplemented!(),
     };
 }
 
@@ -280,7 +280,7 @@ pub fn quick_left_bitshift(this: Variable, other: Variable, runtime: &mut Runtim
         }
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
-        Variable::Custom() => unimplemented!(),
+        Variable::Custom(_) => unimplemented!(),
     };
 }
 
@@ -311,7 +311,7 @@ pub fn quick_right_bitshift(this: Variable, other: Variable, runtime: &mut Runti
         }
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
-        Variable::Custom() => unimplemented!(),
+        Variable::Custom(_) => unimplemented!(),
     };
 }
 
@@ -330,7 +330,7 @@ pub fn quick_bitwise_and(this: Variable, other: Variable, runtime: &mut Runtime)
         }
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
-        Variable::Custom() => unimplemented!(),
+        Variable::Custom(_) => unimplemented!(),
     };
 }
 
@@ -349,7 +349,7 @@ pub fn quick_bitwise_or(this: Variable, other: Variable, runtime: &mut Runtime) 
         }
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
-        Variable::Custom() => unimplemented!(),
+        Variable::Custom(_) => unimplemented!(),
     };
 }
 
@@ -368,7 +368,7 @@ pub fn quick_bitwise_xor(this: Variable, other: Variable, runtime: &mut Runtime)
         }
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
-        Variable::Custom() => unimplemented!(),
+        Variable::Custom(_) => unimplemented!(),
     };
 }
 
@@ -387,7 +387,7 @@ pub fn quick_bitwise_not(this: Variable, runtime: &mut Runtime) -> QuickResult {
         }
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
-        Variable::Custom() => unimplemented!(),
+        Variable::Custom(_) => unimplemented!(),
     };
 }
 
@@ -425,7 +425,7 @@ pub fn quick_less_than(this: Variable, other: Variable, runtime: &mut Runtime) -
         }
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
-        Variable::Custom() => unimplemented!(),
+        Variable::Custom(_) => unimplemented!(),
     };
 }
 
@@ -452,7 +452,7 @@ pub fn quick_greater_than(this: Variable, other: Variable, runtime: &mut Runtime
         }
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
-        Variable::Custom() => unimplemented!(),
+        Variable::Custom(_) => unimplemented!(),
     };
 }
 
@@ -479,7 +479,7 @@ pub fn quick_less_equal(this: Variable, other: Variable, runtime: &mut Runtime) 
         }
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
-        Variable::Custom() => unimplemented!(),
+        Variable::Custom(_) => unimplemented!(),
     };
 }
 
@@ -506,6 +506,6 @@ pub fn quick_greater_equal(this: Variable, other: Variable, runtime: &mut Runtim
         }
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
-        Variable::Custom() => unimplemented!(),
+        Variable::Custom(_) => unimplemented!(),
     };
 }

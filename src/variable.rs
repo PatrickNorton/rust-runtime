@@ -4,6 +4,7 @@ use std::cmp::PartialEq;
 use std::string::String;
 use std::vec::Vec;
 
+use crate::custom_var::CustomVarWrapper;
 use crate::file_info::FileInfo;
 use crate::int_functions::get_operator;
 use crate::method::Method;
@@ -45,7 +46,7 @@ pub enum Variable {
     Standard(StdVariable),
     Method(Box<dyn Method>),
     Function(Function),
-    Custom(),
+    Custom(CustomVarWrapper),
 }
 
 impl Variable {
@@ -81,7 +82,7 @@ impl Variable {
             Variable::Standard(val) => val.clone().bool(_runtime),
             Variable::Method(_) => Result::Ok(true),
             Variable::Function(_) => Result::Ok(true),
-            Variable::Custom() => unimplemented!(),
+            Variable::Custom(_) => unimplemented!(),
         };
     }
 
@@ -120,7 +121,7 @@ impl Variable {
     pub fn set(&self, index: StringVar, value: Variable, _runtime: &mut Runtime) {
         match self {
             Variable::Standard(val) => val.set(index, value),
-            Variable::Custom() => unimplemented!(),
+            Variable::Custom(_) => unimplemented!(),
             _ => unimplemented!(),
         }
     }
@@ -136,7 +137,7 @@ impl Variable {
             Variable::Method(_) => unimplemented!(),
             Variable::Standard(a) => a.get_type(),
             Variable::Function(_) => unimplemented!(),
-            Variable::Custom() => unimplemented!(),
+            Variable::Custom(_) => unimplemented!(),
         }
     }
 
@@ -150,7 +151,7 @@ impl Variable {
             (Variable::Type(a), Variable::Type(b)) => a == b,
             (Variable::Standard(a), Variable::Standard(b)) => a.identical(b),
             (Variable::Method(a), Variable::Method(b)) => a == b,
-            (Variable::Custom(), Variable::Custom()) => unimplemented!(),
+            (Variable::Custom(_), Variable::Custom(_)) => unimplemented!(),
             _ => false,
         };
     }
@@ -230,7 +231,7 @@ impl PartialEq for Variable {
                     false
                 }
             }
-            Variable::Custom() => unimplemented!(),
+            Variable::Custom(_) => unimplemented!(),
         };
     }
 }
