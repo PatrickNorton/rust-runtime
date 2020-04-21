@@ -143,6 +143,11 @@ impl Runtime {
         Result::Ok(())
     }
 
+    pub fn pop_native(&mut self) {
+        debug_assert!(self.is_native());
+        self.pop_stack();
+    }
+
     pub fn pop_stack(&mut self) {
         for v in self.frames.last().unwrap().get_exceptions() {
             assert_eq!(

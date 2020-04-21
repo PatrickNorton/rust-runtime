@@ -254,7 +254,7 @@ impl Function {
             Function::Native(func) => {
                 args.1.push_native();
                 let result = func(args.0, args.1);
-                args.1.pop_stack();
+                args.1.pop_native();
                 result
             }
         }

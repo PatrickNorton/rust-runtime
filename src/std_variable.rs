@@ -61,7 +61,7 @@ impl StdVariable {
             StdVarMethod::Native(func) => {
                 runtime.push_native();
                 let result = func(self, args, runtime);
-                runtime.pop_stack();
+                runtime.pop_native();
                 result
             }
         };
