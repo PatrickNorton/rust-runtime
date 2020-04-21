@@ -13,6 +13,7 @@ pub fn get_operator(this: &StringVar, o: Operator) -> Variable {
         Operator::Bool => bool,
         Operator::Int => int,
         Operator::Str => str,
+        Operator::Repr => repr,
         _ => unimplemented!("Operator::{:?} unimplemented", o),
     };
     Variable::Method(Box::new(StdMethod::new(
@@ -60,5 +61,11 @@ fn int(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult
 fn str(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     runtime.push(Variable::String(this.clone()));
+    FnResult::Ok(())
+}
+
+fn repr(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert!(args.is_empty());
+    runtime.push(Variable::String(format!("{:?}", this.as_str()).into()));
     FnResult::Ok(())
 }

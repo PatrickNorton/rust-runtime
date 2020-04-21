@@ -8,6 +8,15 @@ pub enum StringVar {
     Other(Rc<Box<str>>),
 }
 
+impl StringVar {
+    pub fn as_str(&self) -> &str {
+        return match self {
+            StringVar::Literal(a) => *a,
+            StringVar::Other(x) => x.deref().deref(),
+        };
+    }
+}
+
 impl From<&'static str> for StringVar {
     fn from(x: &'static str) -> Self {
         StringVar::Literal(x)

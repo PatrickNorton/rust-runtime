@@ -32,6 +32,7 @@ pub fn get_operator(this: &BigInt, o: Operator) -> Variable {
         Operator::BitwiseXor => bitwise_xor,
         Operator::Str => to_str,
         Operator::Int => to_int,
+        Operator::Repr => to_str,
         _ => unimplemented!("Operator::{:?} unimplemented", o),
     };
     Variable::Method(Box::new(StdMethod::new(
