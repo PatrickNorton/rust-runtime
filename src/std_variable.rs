@@ -33,22 +33,26 @@ impl StdVariable {
     }
 
     pub fn str(&mut self, runtime: &mut Runtime) -> Result<StringVar, ()> {
-        self.call_operator(Operator::Str, runtime)?;
+        self.call_operator(Operator::Str, vec![], runtime)?;
         runtime.pop().str(runtime)
     }
 
     pub fn bool(&mut self, runtime: &mut Runtime) -> Result<bool, ()> {
-        self.call_operator(Operator::Bool, runtime)?;
+        self.call_operator(Operator::Bool, vec![], runtime)?;
         runtime.pop().to_bool(runtime)
     }
 
-    pub fn call_operator(&mut self, _op: Operator, _runtime: &mut Runtime) -> Result<(), ()> {
-        unimplemented!()
+    pub fn call_operator(
+        &self,
+        op: Operator,
+        args: Vec<Variable>,
+        runtime: &mut Runtime,
+    ) -> FnResult {
+        self.value.borrow().values[&Name::Operator(op)].call((args, runtime))
     }
 
     pub fn call(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
-        self.value.borrow_mut().values[&Name::Operator(Operator::Call)].call(args)?;
-        FnResult::Ok(())
+        self.call_operator(Operator::Call, args.0, args.1)
     }
 
     pub fn index(&self, index: Name) -> Variable {
