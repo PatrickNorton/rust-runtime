@@ -1,7 +1,7 @@
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::string_var::StringVar;
-use crate::variable::{Name, Variable};
+use crate::variable::Variable;
 use num::traits::Pow;
 use num::{BigInt, BigRational, BigUint, FromPrimitive, ToPrimitive, Zero};
 use std::rc::Rc;
@@ -30,8 +30,7 @@ pub fn quick_add(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
         }
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
-            v.index(Name::Operator(Operator::Add))
-                .call((vec![other], runtime))?;
+            v.call_operator(Operator::Add, vec![other], runtime)?;
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -57,8 +56,7 @@ pub fn quick_sub(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
         }
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
-            v.index(Name::Operator(Operator::Subtract))
-                .call((vec![other], runtime))?;
+            v.call_operator(Operator::Subtract, vec![other], runtime)?;
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -78,8 +76,7 @@ pub fn quick_u_minus(this: Variable, runtime: &mut Runtime) -> QuickResult {
         Variable::Decimal(d) => Result::Ok(Variable::Decimal(-d)),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
-            v.index(Name::Operator(Operator::USubtract))
-                .call((vec![], runtime))?;
+            v.call_operator(Operator::USubtract, Vec::new(), runtime)?;
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -111,8 +108,7 @@ pub fn quick_mul(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
         }
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
-            v.index(Name::Operator(Operator::Multiply))
-                .call((vec![other], runtime))?;
+            v.call_operator(Operator::Multiply, vec![other], runtime)?;
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -141,8 +137,7 @@ pub fn quick_div(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
         }
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
-            v.index(Name::Operator(Operator::Divide))
-                .call((vec![other], runtime))?;
+            v.call_operator(Operator::Divide, vec![other], runtime)?;
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -168,8 +163,7 @@ pub fn quick_floor_div(this: Variable, other: Variable, runtime: &mut Runtime) -
         }
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
-            v.index(Name::Operator(Operator::FloorDiv))
-                .call((vec![other], runtime))?;
+            v.call_operator(Operator::FloorDiv, vec![other], runtime)?;
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -195,8 +189,7 @@ pub fn quick_mod(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
         }
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
-            v.index(Name::Operator(Operator::Modulo))
-                .call((vec![other], runtime))?;
+            v.call_operator(Operator::Modulo, vec![other], runtime)?;
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -214,8 +207,7 @@ pub fn quick_subscript(this: Variable, other: Variable, runtime: &mut Runtime) -
         Variable::Decimal(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
-            v.index(Name::Operator(Operator::GetAttr))
-                .call((vec![other], runtime))?;
+            v.call_operator(Operator::GetAttr, vec![other], runtime)?;
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -243,8 +235,7 @@ pub fn quick_power(this: Variable, other: Variable, runtime: &mut Runtime) -> Qu
         Variable::Decimal(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
-            v.index(Name::Operator(Operator::Power))
-                .call((vec![other], runtime))?;
+            v.call_operator(Operator::Power, vec![other], runtime)?;
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -274,8 +265,7 @@ pub fn quick_left_bitshift(this: Variable, other: Variable, runtime: &mut Runtim
         Variable::Decimal(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
-            v.index(Name::Operator(Operator::LeftBitshift))
-                .call((vec![other], runtime))?;
+            v.call_operator(Operator::LeftBitshift, vec![other], runtime)?;
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -305,8 +295,7 @@ pub fn quick_right_bitshift(this: Variable, other: Variable, runtime: &mut Runti
         Variable::Decimal(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
-            v.index(Name::Operator(Operator::RightBitshift))
-                .call((vec![other], runtime))?;
+            v.call_operator(Operator::RightBitshift, vec![other], runtime)?;
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -324,8 +313,7 @@ pub fn quick_bitwise_and(this: Variable, other: Variable, runtime: &mut Runtime)
         Variable::Decimal(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
-            v.index(Name::Operator(Operator::BitwiseAnd))
-                .call((vec![other], runtime))?;
+            v.call_operator(Operator::BitwiseAnd, vec![other], runtime)?;
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -343,8 +331,7 @@ pub fn quick_bitwise_or(this: Variable, other: Variable, runtime: &mut Runtime) 
         Variable::Decimal(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
-            v.index(Name::Operator(Operator::BitwiseOr))
-                .call((vec![other], runtime))?;
+            v.call_operator(Operator::BitwiseOr, vec![other], runtime)?;
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -362,8 +349,7 @@ pub fn quick_bitwise_xor(this: Variable, other: Variable, runtime: &mut Runtime)
         Variable::Decimal(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
-            v.index(Name::Operator(Operator::BitwiseXor))
-                .call((vec![other], runtime))?;
+            v.call_operator(Operator::BitwiseXor, vec![other], runtime)?;
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -381,8 +367,7 @@ pub fn quick_bitwise_not(this: Variable, runtime: &mut Runtime) -> QuickResult {
         Variable::Decimal(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
-            v.index(Name::Operator(Operator::BitwiseNot))
-                .call((vec![], runtime))?;
+            v.call_operator(Operator::BitwiseNot, Vec::new(), runtime)?;
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -394,8 +379,7 @@ pub fn quick_bitwise_not(this: Variable, runtime: &mut Runtime) -> QuickResult {
 pub fn quick_equals(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
     return match this {
         Variable::Standard(v) => {
-            v.index(Name::Operator(Operator::Equals))
-                .call((vec![], runtime))?;
+            v.call_operator(Operator::Equals, Vec::new(), runtime)?;
             QuickResult::Ok(runtime.pop())
         }
         _ => QuickResult::Ok(Variable::Bool(this == other)),
@@ -419,8 +403,7 @@ pub fn quick_less_than(this: Variable, other: Variable, runtime: &mut Runtime) -
         }
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
-            v.index(Name::Operator(Operator::LessThan))
-                .call((vec![other], runtime))?;
+            v.call_operator(Operator::LessThan, vec![other], runtime)?;
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -446,8 +429,7 @@ pub fn quick_greater_than(this: Variable, other: Variable, runtime: &mut Runtime
         }
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
-            v.index(Name::Operator(Operator::GreaterThan))
-                .call((vec![other], runtime))?;
+            v.call_operator(Operator::GreaterThan, vec![other], runtime)?;
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -473,8 +455,7 @@ pub fn quick_less_equal(this: Variable, other: Variable, runtime: &mut Runtime) 
         }
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
-            v.index(Name::Operator(Operator::LessEqual))
-                .call((vec![other], runtime))?;
+            v.call_operator(Operator::LessEqual, vec![other], runtime)?;
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -500,8 +481,7 @@ pub fn quick_greater_equal(this: Variable, other: Variable, runtime: &mut Runtim
         }
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
-            v.index(Name::Operator(Operator::GreaterEqual))
-                .call((vec![other], runtime))?;
+            v.call_operator(Operator::GreaterEqual, vec![other], runtime)?;
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
