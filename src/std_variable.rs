@@ -95,7 +95,7 @@ impl StdVariable {
     }
 
     pub fn get_type(&self) -> Type {
-        Type::Standard(self.value.borrow_mut().cls)
+        Type::Standard(self.value.borrow().cls)
     }
 
     pub fn var_ptr(&self) -> usize {
