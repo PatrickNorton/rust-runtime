@@ -45,10 +45,26 @@ impl StdVariable {
     pub fn call_operator(
         &self,
         op: Operator,
-        args: Vec<Variable>,
+        mut args: Vec<Variable>,
         runtime: &mut Runtime,
     ) -> FnResult {
-        self.value.borrow().values[&Name::Operator(op)].call((args, runtime))
+        let inner_method = self.value.borrow().cls.get_method(Name::Operator(op));
+        return match inner_method {
+            StdVarMethod::Standard(fn_no) => {
+                let var: Variable = Variable::Standard(self.clone());
+                args.reserve(2);
+                args.insert(0, Variable::Type(var.get_type()));
+                args.insert(0, var);
+                runtime.push_stack(0, fn_no as u16, args, 0)?;
+                FnResult::Ok(())
+            }
+            StdVarMethod::Native(func) => {
+                runtime.push_native();
+                let result = func(self, args, runtime);
+                runtime.pop_stack();
+                result
+            }
+        };
     }
 
     pub fn call(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
