@@ -11,6 +11,7 @@ use crate::runtime::Runtime;
 use crate::std_type::{StdType, Type};
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Name, Variable};
+use num::BigInt;
 
 pub type StdVarMethod = InnerMethod<StdVariable>;
 
@@ -32,14 +33,19 @@ impl StdVariable {
         }
     }
 
-    pub fn str(&mut self, runtime: &mut Runtime) -> Result<StringVar, ()> {
+    pub fn str(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
         self.call_operator(Operator::Str, vec![], runtime)?;
         runtime.pop().str(runtime)
     }
 
-    pub fn bool(&mut self, runtime: &mut Runtime) -> Result<bool, ()> {
+    pub fn bool(&self, runtime: &mut Runtime) -> Result<bool, ()> {
         self.call_operator(Operator::Bool, vec![], runtime)?;
         runtime.pop().to_bool(runtime)
+    }
+
+    pub fn int(&self, runtime: &mut Runtime) -> Result<BigInt, ()> {
+        self.call_operator(Operator::Bool, vec![], runtime)?;
+        runtime.pop().int(runtime)
     }
 
     pub fn call_operator(

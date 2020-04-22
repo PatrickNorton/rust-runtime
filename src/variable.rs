@@ -20,6 +20,7 @@ use num_traits::Zero;
 use std::fmt::{Debug, Formatter};
 use std::hash::{Hash, Hasher};
 use std::ptr;
+use std::str::FromStr;
 
 pub type FnResult = Result<(), ()>;
 
@@ -58,21 +59,24 @@ impl Variable {
             Variable::Bigint(val) => Result::Ok(val.to_str_radix(10).into()),
             Variable::Decimal(val) => Result::Ok(val.to_string().into()),
             Variable::Type(val) => Result::Ok(val.to_string().into()),
-            Variable::Standard(val) => val.clone().str(runtime),
+            Variable::Standard(val) => val.str(runtime),
             Variable::Function(val) => Result::Ok(val.to_str(runtime)),
             _ => unimplemented!(),
         };
     }
 
-    pub fn int(&self, _runtime: &Runtime) -> Result<BigInt, ()> {
+    pub fn int(&self, runtime: &mut Runtime) -> Result<BigInt, ()> {
         return match self {
+            Variable::Bool(val) => Result::Ok(if *val { 1 } else { 0 }.into()),
             Variable::Bigint(val) => Result::Ok(val.clone()),
             Variable::Decimal(val) => Result::Ok(val.to_integer()),
+            Variable::Standard(val) => val.int(runtime),
+            Variable::String(val) => BigInt::from_str(val).or(Result::Err(())),
             _ => unimplemented!(),
         };
     }
 
-    pub fn to_bool(&self, _runtime: &mut Runtime) -> Result<bool, ()> {
+    pub fn to_bool(&self, runtime: &mut Runtime) -> Result<bool, ()> {
         return match self {
             Variable::Null() => Result::Ok(false),
             Variable::Bool(val) => Result::Ok(*val),
@@ -80,7 +84,7 @@ impl Variable {
             Variable::Bigint(val) => Result::Ok(val != &BigInt::zero()),
             Variable::Decimal(val) => Result::Ok(val != &BigRational::zero()),
             Variable::Type(_) => Result::Ok(true),
-            Variable::Standard(val) => val.clone().bool(_runtime),
+            Variable::Standard(val) => val.bool(runtime),
             Variable::Method(_) => Result::Ok(true),
             Variable::Function(_) => Result::Ok(true),
             Variable::Custom(_) => unimplemented!(),
