@@ -30,7 +30,9 @@ pub fn quick_add(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
         }
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
+            runtime.push_native();
             v.call_operator(Operator::Add, vec![other], runtime)?;
+            runtime.pop_native();
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -56,7 +58,9 @@ pub fn quick_sub(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
         }
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
+            runtime.push_native();
             v.call_operator(Operator::Subtract, vec![other], runtime)?;
+            runtime.pop_native();
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -76,7 +80,9 @@ pub fn quick_u_minus(this: Variable, runtime: &mut Runtime) -> QuickResult {
         Variable::Decimal(d) => Result::Ok(Variable::Decimal(-d)),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
+            runtime.push_native();
             v.call_operator(Operator::USubtract, Vec::new(), runtime)?;
+            runtime.pop_native();
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -108,7 +114,9 @@ pub fn quick_mul(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
         }
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
+            runtime.push_native();
             v.call_operator(Operator::Multiply, vec![other], runtime)?;
+            runtime.pop_native();
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -137,7 +145,9 @@ pub fn quick_div(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
         }
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
+            runtime.push_native();
             v.call_operator(Operator::Divide, vec![other], runtime)?;
+            runtime.pop_native();
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -163,7 +173,9 @@ pub fn quick_floor_div(this: Variable, other: Variable, runtime: &mut Runtime) -
         }
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
+            runtime.push_native();
             v.call_operator(Operator::FloorDiv, vec![other], runtime)?;
+            runtime.pop_native();
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -189,7 +201,9 @@ pub fn quick_mod(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
         }
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
+            runtime.push_native();
             v.call_operator(Operator::Modulo, vec![other], runtime)?;
+            runtime.pop_native();
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -207,7 +221,9 @@ pub fn quick_subscript(this: Variable, other: Variable, runtime: &mut Runtime) -
         Variable::Decimal(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
+            runtime.push_native();
             v.call_operator(Operator::GetAttr, vec![other], runtime)?;
+            runtime.pop_native();
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -235,7 +251,9 @@ pub fn quick_power(this: Variable, other: Variable, runtime: &mut Runtime) -> Qu
         Variable::Decimal(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
+            runtime.push_native();
             v.call_operator(Operator::Power, vec![other], runtime)?;
+            runtime.pop_native();
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -265,7 +283,9 @@ pub fn quick_left_bitshift(this: Variable, other: Variable, runtime: &mut Runtim
         Variable::Decimal(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
+            runtime.push_native();
             v.call_operator(Operator::LeftBitshift, vec![other], runtime)?;
+            runtime.pop_native();
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -295,7 +315,9 @@ pub fn quick_right_bitshift(this: Variable, other: Variable, runtime: &mut Runti
         Variable::Decimal(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
+            runtime.push_native();
             v.call_operator(Operator::RightBitshift, vec![other], runtime)?;
+            runtime.pop_native();
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -313,7 +335,9 @@ pub fn quick_bitwise_and(this: Variable, other: Variable, runtime: &mut Runtime)
         Variable::Decimal(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
+            runtime.push_native();
             v.call_operator(Operator::BitwiseAnd, vec![other], runtime)?;
+            runtime.pop_native();
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -331,7 +355,9 @@ pub fn quick_bitwise_or(this: Variable, other: Variable, runtime: &mut Runtime) 
         Variable::Decimal(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
+            runtime.push_native();
             v.call_operator(Operator::BitwiseOr, vec![other], runtime)?;
+            runtime.pop_native();
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -349,7 +375,9 @@ pub fn quick_bitwise_xor(this: Variable, other: Variable, runtime: &mut Runtime)
         Variable::Decimal(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
+            runtime.push_native();
             v.call_operator(Operator::BitwiseXor, vec![other], runtime)?;
+            runtime.pop_native();
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -367,7 +395,9 @@ pub fn quick_bitwise_not(this: Variable, runtime: &mut Runtime) -> QuickResult {
         Variable::Decimal(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
+            runtime.push_native();
             v.call_operator(Operator::BitwiseNot, Vec::new(), runtime)?;
+            runtime.pop_native();
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -379,7 +409,9 @@ pub fn quick_bitwise_not(this: Variable, runtime: &mut Runtime) -> QuickResult {
 pub fn quick_equals(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
     return match this {
         Variable::Standard(v) => {
+            runtime.push_native();
             v.call_operator(Operator::Equals, Vec::new(), runtime)?;
+            runtime.pop_native();
             QuickResult::Ok(runtime.pop())
         }
         _ => QuickResult::Ok(Variable::Bool(this == other)),
@@ -403,7 +435,9 @@ pub fn quick_less_than(this: Variable, other: Variable, runtime: &mut Runtime) -
         }
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
+            runtime.push_native();
             v.call_operator(Operator::LessThan, vec![other], runtime)?;
+            runtime.pop_native();
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -429,7 +463,9 @@ pub fn quick_greater_than(this: Variable, other: Variable, runtime: &mut Runtime
         }
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
+            runtime.push_native();
             v.call_operator(Operator::GreaterThan, vec![other], runtime)?;
+            runtime.pop_native();
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -455,7 +491,9 @@ pub fn quick_less_equal(this: Variable, other: Variable, runtime: &mut Runtime) 
         }
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
+            runtime.push_native();
             v.call_operator(Operator::LessEqual, vec![other], runtime)?;
+            runtime.pop_native();
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
@@ -481,7 +519,9 @@ pub fn quick_greater_equal(this: Variable, other: Variable, runtime: &mut Runtim
         }
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
+            runtime.push_native();
             v.call_operator(Operator::GreaterEqual, vec![other], runtime)?;
+            runtime.pop_native();
             QuickResult::Ok(runtime.pop())
         }
         Variable::Method(_) => unimplemented!(),
