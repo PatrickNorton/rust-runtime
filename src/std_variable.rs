@@ -56,12 +56,12 @@ impl StdVariable {
     ) -> FnResult {
         let inner_method = self.value.borrow().cls.get_method(Name::Operator(op));
         return match inner_method {
-            StdVarMethod::Standard(fn_no) => {
+            StdVarMethod::Standard(file_no, fn_no) => {
                 let var: Variable = Variable::Standard(self.clone());
                 args.reserve(2);
                 args.insert(0, Variable::Type(var.get_type()));
                 args.insert(0, var);
-                runtime.push_stack(0, fn_no as u16, args, 0)?;
+                runtime.push_stack(0, fn_no as u16, args, file_no)?;
                 FnResult::Ok(())
             }
             StdVarMethod::Native(func) => {

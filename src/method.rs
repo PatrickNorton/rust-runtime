@@ -9,7 +9,7 @@ use std::fmt::{Debug, Formatter};
 
 #[derive(Copy, Clone)]
 pub enum InnerMethod<T> {
-    Standard(u32),
+    Standard(usize, u32),
     Native(fn(&T, Vec<Variable>, &mut Runtime) -> FnResult),
 }
 
@@ -76,12 +76,12 @@ where
 {
     fn call(&self, mut args: (Vec<Variable>, &mut Runtime)) -> FnResult {
         match &self.method {
-            InnerMethod::Standard(index) => {
+            InnerMethod::Standard(file, index) => {
                 let runtime = args.1; // FIXME: Insert type as argument
                 let var: Variable = self.value.clone().into();
                 args.0.insert(0, Variable::Type(var.get_type()));
                 args.0.insert(0, var);
-                runtime.push_stack(0, *index as u16, args.0, 0)?;
+                runtime.push_stack(0, *index as u16, args.0, *file)?;
                 FnResult::Ok(())
             }
             InnerMethod::Native(func) => {
@@ -97,7 +97,7 @@ where
 impl<T> Debug for InnerMethod<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            InnerMethod::Standard(i) => f.debug_tuple("Standard").field(i).finish(),
+            InnerMethod::Standard(i, j) => f.debug_tuple("Standard").field(i).field(j).finish(),
             InnerMethod::Native(fn_) => f
                 .debug_tuple("Native")
                 .field(&format!("fn@{}", *fn_ as usize))

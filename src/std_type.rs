@@ -81,7 +81,8 @@ impl Type {
     pub fn index(&self, index: Name) -> Variable {
         return match self {
             Type::Standard(std_t) => {
-                let inner_m = InnerMethod::Standard(std_t.index(&index));
+                let index_pair = std_t.index(&index);
+                let inner_m = InnerMethod::Standard(index_pair.0, index_pair.1);
                 let n = StdMethod::new(self.clone(), inner_m);
                 Variable::Method(Box::new(n))
             }
@@ -165,9 +166,9 @@ impl StdType {
         &self.name
     }
 
-    fn index(&self, name: &Name) -> u32 {
-        if let StdVarMethod::Standard(a) = self.static_methods[name] {
-            a
+    fn index(&self, name: &Name) -> (usize, u32) {
+        if let StdVarMethod::Standard(f, a) = self.static_methods[name] {
+            (f, a)
         } else {
             panic!();
         }

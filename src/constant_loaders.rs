@@ -88,6 +88,7 @@ fn get_variables(data: &Vec<u8>, index: &mut usize) -> HashSet<String> {
 
 fn get_operators(
     data: &Vec<u8>,
+    file_no: usize,
     index: &mut usize,
     functions: &mut Vec<BaseFunction>,
 ) -> HashMap<Operator, StdVarMethod> {
@@ -99,7 +100,7 @@ fn get_operators(
         let method_size = bytes_index::<u32>(data, index);
         let values = data[*index..*index + method_size as usize].to_vec();
         *index += method_size as usize;
-        operators.insert(op, StdVarMethod::Standard(functions.len() as u32));
+        operators.insert(op, StdVarMethod::Standard(file_no, functions.len() as u32));
         functions.push(BaseFunction::new(String::new(), 0, values));
     }
     operators
@@ -107,6 +108,7 @@ fn get_operators(
 
 fn get_methods(
     data: &Vec<u8>,
+    file_no: usize,
     index: &mut usize,
     functions: &mut Vec<BaseFunction>,
 ) -> HashMap<String, StdVarMethod> {
@@ -117,7 +119,10 @@ fn get_methods(
         let method_size = bytes_index::<u32>(data, index);
         let values = data[*index..*index + method_size as usize].to_vec();
         *index += method_size as usize;
-        methods.insert(name, StdVarMethod::Standard(functions.len() as u32));
+        methods.insert(
+            name,
+            StdVarMethod::Standard(file_no, functions.len() as u32),
+        );
         functions.push(BaseFunction::new(String::new(), 0, values));
     }
     methods
@@ -177,10 +182,10 @@ pub fn load_class(
     let _generic_size = bytes_index::<u16>(data, index);
     get_variables(data, index);
     get_variables(data, index);
-    let operators = get_operators(data, index, functions);
-    let static_operators = get_operators(data, index, functions);
-    let methods = get_methods(data, index, functions);
-    let static_methods = get_methods(data, index, functions);
+    let operators = get_operators(data, file_no, index, functions);
+    let static_operators = get_operators(data, file_no, index, functions);
+    let methods = get_methods(data, file_no, index, functions);
+    let static_methods = get_methods(data, file_no, index, functions);
     let _properties = get_properties(data, index, functions);
 
     Variable::Type(Type::new_std(
