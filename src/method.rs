@@ -5,8 +5,7 @@ use std::vec::Vec;
 
 use crate::runtime::Runtime;
 use crate::variable::{FnResult, Variable};
-use std::convert::TryFrom;
-use std::fmt::{Arguments, Debug, Formatter};
+use std::fmt::{Debug, Formatter};
 
 #[derive(Copy, Clone)]
 pub enum InnerMethod<T> {

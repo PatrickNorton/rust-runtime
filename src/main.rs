@@ -38,7 +38,7 @@ fn main() {
     let index = parse_file(FILE_NAME.to_string(), &mut files);
     let mut runtime = Runtime::new(files, index);
     let result = execute(&mut runtime);
-    if let Result::Err(e) = result {
+    if let Result::Err(_) = result {
         panic!("Too many errors!")
     }
 }

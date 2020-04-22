@@ -1,7 +1,6 @@
 use crate::method::{InnerMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
-use crate::std_type::StdType;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use num::{BigInt, ToPrimitive};

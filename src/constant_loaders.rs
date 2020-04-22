@@ -4,7 +4,6 @@ use crate::int_tools::bytes_index;
 use crate::operator::Operator;
 use crate::std_type::Type;
 use crate::std_variable::StdVarMethod;
-use crate::string_var::StringVar;
 use crate::variable::{Name, Variable};
 use num::bigint::Sign;
 use num::traits::pow::pow;
