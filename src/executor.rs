@@ -9,7 +9,7 @@ use crate::quick_functions::{
 };
 use crate::runtime::Runtime;
 use crate::variable::{FnResult, Name, Variable};
-use num_traits::FromPrimitive;
+use num::traits::FromPrimitive;
 
 pub fn execute(runtime: &mut Runtime) -> FnResult {
     while !runtime.is_native() && runtime.current_pos() as usize != runtime.current_fn().len() {

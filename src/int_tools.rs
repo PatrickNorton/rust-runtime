@@ -1,4 +1,4 @@
-use num_traits::{FromPrimitive, PrimInt};
+use num::traits::{FromPrimitive, PrimInt};
 use std::mem::size_of;
 
 #[inline]
