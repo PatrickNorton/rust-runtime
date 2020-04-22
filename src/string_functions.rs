@@ -1,6 +1,7 @@
 use crate::method::{InnerMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
+use crate::std_type::StdType;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use num::{BigInt, ToPrimitive};
@@ -52,9 +53,10 @@ fn bool(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResul
 
 fn int(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.push(Variable::Bigint(
-        BigInt::from_str(this).expect("Cannot get int value"),
-    ));
+    match BigInt::from_str(this) {
+        Ok(val) => runtime.push(Variable::Bigint(val)),
+        Err(_) => runtime.throw(Variable::String("Error in string conversion".into()))?,
+    }
     FnResult::Ok(())
 }
 
