@@ -59,6 +59,7 @@ impl Variable {
             Variable::Decimal(val) => Result::Ok(val.to_string().into()),
             Variable::Type(val) => Result::Ok(val.to_string().into()),
             Variable::Standard(val) => val.clone().str(runtime),
+            Variable::Function(val) => Result::Ok(val.to_str(runtime)),
             _ => unimplemented!(),
         };
     }
@@ -257,6 +258,13 @@ impl Function {
                 args.1.pop_native();
                 result
             }
+        }
+    }
+
+    fn to_str(&self, runtime: &mut Runtime) -> StringVar {
+        match self {
+            Function::Standard(file_no, fn_no) => runtime.get_fn_name(*file_no, *fn_no),
+            Function::Native(func) => format!("fn@{}", *func as usize).into(),
         }
     }
 }

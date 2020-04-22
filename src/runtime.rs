@@ -171,6 +171,13 @@ impl Runtime {
         self.frames.len() == 1
     }
 
+    pub fn get_fn_name(&self, file_no: usize, fn_no: u32) -> StringVar {
+        return self.files[file_no].get_functions()[fn_no as usize]
+            .get_name()
+            .clone()
+            .into();
+    }
+
     pub fn throw(&mut self, exception: Variable) -> FnResult {
         let frame = self
             .exception_frames

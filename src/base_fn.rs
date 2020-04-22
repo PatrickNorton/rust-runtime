@@ -28,11 +28,11 @@ impl BaseFunction {
         BaseFunction::new(name, var_count, values)
     }
 
-    fn get_name(&self) -> &String {
+    pub fn get_name(&self) -> &String {
         &self.name
     }
 
-    fn get_local_count(&self) -> u16 {
+    pub fn get_local_count(&self) -> u16 {
         self.local_count
     }
 

@@ -37,6 +37,10 @@ impl FileInfo {
         }
     }
 
+    pub fn get_name(&self) -> &String {
+        &self.name
+    }
+
     pub fn get_constants(&self) -> &Vec<Variable> {
         &self.constants
     }
