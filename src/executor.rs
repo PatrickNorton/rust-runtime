@@ -1,4 +1,5 @@
 use crate::bytecode::{bytecode_size, Bytecode};
+use crate::custom_types::list::List;
 use crate::int_tools::bytes_index;
 use crate::operator::Operator;
 use crate::quick_functions::{
@@ -258,6 +259,11 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             } else {
                 panic!("ThrowQuick must be called with a type, not {:?}", exc_type);
             }
+        }
+        Bytecode::ListCreate => {
+            let argc = bytes_0 as u16;
+            let value = List::from_values(runtime.load_args(argc));
+            runtime.push(value.into())
         }
         _ => unimplemented!(),
     }
