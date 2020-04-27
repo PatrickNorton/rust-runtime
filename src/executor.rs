@@ -1,4 +1,5 @@
 use crate::bytecode::{bytecode_size, Bytecode};
+use crate::custom_types::dict::Dict;
 use crate::custom_types::list::List;
 use crate::int_tools::bytes_index;
 use crate::operator::Operator;
@@ -263,6 +264,17 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         Bytecode::ListCreate => {
             let argc = bytes_0 as u16;
             let value = List::from_values(runtime.load_args(argc));
+            runtime.push(value.into())
+        }
+        Bytecode::DictCreate => {
+            let count = bytes_0 as u16;
+            let mut keys: Vec<Variable> = Vec::with_capacity(count as usize);
+            let mut values: Vec<Variable> = Vec::with_capacity(count as usize);
+            for _ in 0..count {
+                keys.push(runtime.pop());
+                values.push(runtime.pop());
+            }
+            let value = Dict::from_args(keys, values, runtime);
             runtime.push(value.into())
         }
         _ => unimplemented!(),

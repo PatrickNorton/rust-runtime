@@ -9,6 +9,7 @@ use crate::file_info::FileInfo;
 use crate::int_functions::get_operator;
 use crate::method::Method;
 use crate::operator::Operator;
+use crate::quick_functions::quick_equals;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::std_variable::StdVariable;
@@ -16,7 +17,7 @@ use crate::string_functions;
 use crate::string_var::StringVar;
 use num::bigint::BigInt;
 use num::traits::Zero;
-use num::BigRational;
+use num::{BigRational, ToPrimitive};
 use std::fmt::{Debug, Formatter};
 use std::hash::{Hash, Hasher};
 use std::ptr;
@@ -161,12 +162,53 @@ impl Variable {
         };
     }
 
+    pub fn equals(&self, other: Variable, runtime: &mut Runtime) -> bool {
+        return quick_equals(self.clone(), other, runtime)
+            .expect("Dict creation threw exception")
+            .to_bool(runtime)
+            .expect("Dict creation threw exception");
+    }
+
     pub fn is_type_of(&self, other: &Variable) -> bool {
         if let Variable::Type(t) = self {
             t.is_type_of(other)
         } else {
             false
         }
+    }
+
+    pub fn hash(&self, runtime: &mut Runtime) -> Result<usize, ()> {
+        return match self {
+            Variable::Null() => Result::Ok(0),
+            Variable::Bool(b) => Result::Ok(if *b { 0 } else { 1 }),
+            Variable::Bigint(i) => {
+                let max = BigInt::from(std::usize::MAX) + 1;
+                let hash: BigInt = i % &max;
+                Result::Ok(hash.to_usize().unwrap())
+            }
+            Variable::String(s) => {
+                let mut result = 0;
+                for c in s.chars() {
+                    result += c as usize;
+                }
+                Result::Ok(result)
+            }
+            Variable::Decimal(d) => {
+                let max = BigInt::from(std::usize::MAX) + 1;
+                let hash: BigInt = d.to_integer() % &max;
+                Result::Ok(hash.to_usize().unwrap())
+            }
+            Variable::Type(_) => unimplemented!(),
+            Variable::Standard(v) => {
+                runtime.push_native();
+                v.call_operator(Operator::Hash, Vec::new(), runtime)?;
+                runtime.pop_native();
+                Result::Ok(BigInt::from(runtime.pop()).to_usize().unwrap())
+            }
+            Variable::Method(_) => unimplemented!(),
+            Variable::Function(_) => unimplemented!(),
+            Variable::Custom(_) => unimplemented!(),
+        };
     }
 }
 

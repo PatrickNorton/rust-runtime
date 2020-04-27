@@ -68,6 +68,16 @@ where
     pub(crate) fn new(value: T, method: InnerMethod<T>) -> StdMethod<T> {
         StdMethod { value, method }
     }
+
+    pub fn new_native(
+        value: T,
+        method: fn(&T, Vec<Variable>, &mut Runtime) -> FnResult,
+    ) -> Box<StdMethod<T>> {
+        Box::new(StdMethod {
+            value,
+            method: InnerMethod::Native(method),
+        })
+    }
 }
 
 impl<T: 'static + Debug> Method for StdMethod<T>
