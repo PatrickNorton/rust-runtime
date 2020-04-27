@@ -329,6 +329,36 @@ impl From<Type> for Variable {
     }
 }
 
+impl From<Variable> for BigInt {
+    fn from(var: Variable) -> Self {
+        match var {
+            Variable::Bigint(i) => i,
+            Variable::Bool(b) => if b { 1 } else { 0 }.into(),
+            _ => panic!("Attempted to turn a variable not a superclass of int into an int"),
+        }
+    }
+}
+
+impl From<Variable> for StringVar {
+    fn from(var: Variable) -> Self {
+        if let Variable::String(s) = var {
+            s
+        } else {
+            panic!("Attempted to turn a variable not a superclass of str into a str")
+        }
+    }
+}
+
+impl From<Variable> for bool {
+    fn from(var: Variable) -> Self {
+        if let Variable::Bool(b) = var {
+            b
+        } else {
+            panic!("Attempted to turn a variable not a superclass of bool into a bool")
+        }
+    }
+}
+
 impl Debug for Function {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {

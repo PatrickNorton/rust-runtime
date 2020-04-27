@@ -4,7 +4,7 @@ use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::variable::{FnResult, Name, Variable};
-use num::ToPrimitive;
+use num::{BigInt, ToPrimitive};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -55,7 +55,7 @@ impl List {
 
     fn list_index(&self, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
-        let index = args[0].int(runtime)?;
+        let index = BigInt::from(args[0].clone());
         if index > self.value.borrow().len().into() {
             runtime.throw(Variable::String("index out of range".into()))
         } else {

@@ -25,7 +25,7 @@ pub fn get_operator(this: &StringVar, o: Operator) -> Variable {
 fn add(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let mut result: String = this.parse().unwrap();
     for arg in args {
-        result += arg.str(runtime)?.as_ref();
+        result += StringVar::from(arg).as_ref();
     }
     runtime.push(Variable::String(result.into()));
     FnResult::Ok(())
@@ -35,7 +35,7 @@ fn multiply(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnR
     let mut result: String = this.parse().unwrap();
     for arg in args {
         result = result.repeat(
-            arg.int(runtime)?
+            BigInt::from(arg)
                 .to_usize()
                 .expect("Too many string repetitions"),
         );

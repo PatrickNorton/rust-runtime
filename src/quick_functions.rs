@@ -12,9 +12,9 @@ pub fn quick_add(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
     return match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bigint(
-            other.int(runtime)? + if b { 1 } else { 0 },
+            BigInt::from(other) + if b { 1 } else { 0 },
         )),
-        Variable::Bigint(i) => Result::Ok(Variable::Bigint(i + other.int(runtime)?)),
+        Variable::Bigint(i) => Result::Ok(Variable::Bigint(i + BigInt::from(other))),
         Variable::String(s) => {
             let result = format!("{}{}", s, other.str(runtime)?);
             QuickResult::Ok(Variable::String(StringVar::Other(Rc::new(
@@ -45,9 +45,9 @@ pub fn quick_sub(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
     return match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bigint(
-            if b { 1 } else { 0 } - other.int(runtime)?,
+            if b { 1 } else { 0 } - BigInt::from(other),
         )),
-        Variable::Bigint(i) => Result::Ok(Variable::Bigint(i - other.int(runtime)?)),
+        Variable::Bigint(i) => Result::Ok(Variable::Bigint(i - BigInt::from(other))),
         Variable::String(_) => unimplemented!(),
         Variable::Decimal(d1) => {
             if let Variable::Decimal(d2) = other {
@@ -95,12 +95,11 @@ pub fn quick_mul(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
     return match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bigint(
-            other.int(runtime)? * if b { 1 } else { 0 },
+            BigInt::from(other) * if b { 1 } else { 0 },
         )),
-        Variable::Bigint(i) => Result::Ok(Variable::Bigint(i * other.int(runtime)?)),
+        Variable::Bigint(i) => Result::Ok(Variable::Bigint(i * BigInt::from(other))),
         Variable::String(s) => {
-            let result = other
-                .int(runtime)?
+            let result = BigInt::from(other)
                 .to_usize()
                 .expect("Too many repetitions");
             Result::Ok(Variable::String(s.repeat(result).into()))
@@ -130,10 +129,10 @@ pub fn quick_div(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Decimal(BigRational::new(
             if b { 1 } else { 0 }.into(),
-            other.int(runtime)?,
+            BigInt::from(other),
         ))),
         Variable::Bigint(i) => {
-            Result::Ok(Variable::Decimal(BigRational::new(i, other.int(runtime)?)))
+            Result::Ok(Variable::Decimal(BigRational::new(i, BigInt::from(other))))
         }
         Variable::String(_) => unimplemented!(),
         Variable::Decimal(d1) => {
@@ -160,9 +159,9 @@ pub fn quick_floor_div(this: Variable, other: Variable, runtime: &mut Runtime) -
     return match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bigint(
-            if b { 1 } else { 0 } / other.int(runtime)?,
+            if b { 1 } else { 0 } / BigInt::from(other),
         )),
-        Variable::Bigint(i) => Result::Ok(Variable::Bigint(i / other.int(runtime)?)),
+        Variable::Bigint(i) => Result::Ok(Variable::Bigint(i / BigInt::from(other))),
         Variable::String(_) => unimplemented!(),
         Variable::Decimal(d1) => {
             if let Variable::Decimal(d2) = other {
@@ -188,9 +187,9 @@ pub fn quick_mod(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
     return match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bigint(
-            if b { 1 } else { 0 } % other.int(runtime)?,
+            if b { 1 } else { 0 } % BigInt::from(other),
         )),
-        Variable::Bigint(i) => Result::Ok(Variable::Bigint(i % other.int(runtime)?)),
+        Variable::Bigint(i) => Result::Ok(Variable::Bigint(i % BigInt::from(other))),
         Variable::String(_) => unimplemented!(),
         Variable::Decimal(d1) => {
             if let Variable::Decimal(d2) = other {
@@ -236,13 +235,12 @@ pub fn quick_power(this: Variable, other: Variable, runtime: &mut Runtime) -> Qu
     return match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => {
-            other.int(runtime)?; // Since this can be only 1 or 0, no
+            BigInt::from(other); // Since this can be only 1 or 0, no
             Result::Ok(Variable::Bigint(if b { 1 } else { 0 }.into()))
         }
         Variable::Bigint(i) => Result::Ok(Variable::Bigint(
             i.pow(
-                other
-                    .int(runtime)?
+                BigInt::from(other)
                     .to_biguint()
                     .unwrap_or_else(BigUint::zero),
             ),
@@ -267,15 +265,13 @@ pub fn quick_left_bitshift(this: Variable, other: Variable, runtime: &mut Runtim
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bigint(
             (if b { 1 } else { 0 }
-                << other
-                    .int(runtime)?
+                << BigInt::from(other)
                     .to_usize()
                     .expect("Value too big to shift"))
             .into(),
         )),
         Variable::Bigint(i) => Result::Ok(Variable::Bigint(
-            i << other
-                .int(runtime)?
+            i << BigInt::from(other)
                 .to_usize()
                 .expect("Value too big to shift"),
         )),
@@ -299,15 +295,13 @@ pub fn quick_right_bitshift(this: Variable, other: Variable, runtime: &mut Runti
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bigint(
             (if b { 1 } else { 0 }
-                >> other
-                    .int(runtime)?
+                >> BigInt::from(other)
                     .to_usize()
                     .expect("Value too big to shift"))
             .into(),
         )),
         Variable::Bigint(i) => Result::Ok(Variable::Bigint(
-            i >> other
-                .int(runtime)?
+            i >> BigInt::from(other)
                 .to_usize()
                 .expect("Value too big to shift"),
         )),
@@ -330,7 +324,7 @@ pub fn quick_bitwise_and(this: Variable, other: Variable, runtime: &mut Runtime)
     return match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bool(b & other.to_bool(runtime)?)),
-        Variable::Bigint(i) => Result::Ok(Variable::Bigint(i & &other.int(runtime)?)),
+        Variable::Bigint(i) => Result::Ok(Variable::Bigint(i & &BigInt::from(other))),
         Variable::String(_) => unimplemented!(),
         Variable::Decimal(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
@@ -350,7 +344,7 @@ pub fn quick_bitwise_or(this: Variable, other: Variable, runtime: &mut Runtime) 
     return match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bool(b | other.to_bool(runtime)?)),
-        Variable::Bigint(i) => Result::Ok(Variable::Bigint(i | &other.int(runtime)?)),
+        Variable::Bigint(i) => Result::Ok(Variable::Bigint(i | &BigInt::from(other))),
         Variable::String(_) => unimplemented!(),
         Variable::Decimal(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
@@ -370,7 +364,7 @@ pub fn quick_bitwise_xor(this: Variable, other: Variable, runtime: &mut Runtime)
     return match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bool(b ^ other.to_bool(runtime)?)),
-        Variable::Bigint(i) => Result::Ok(Variable::Bigint(i ^ &other.int(runtime)?)),
+        Variable::Bigint(i) => Result::Ok(Variable::Bigint(i ^ &BigInt::from(other))),
         Variable::String(_) => unimplemented!(),
         Variable::Decimal(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
@@ -422,9 +416,9 @@ pub fn quick_less_than(this: Variable, other: Variable, runtime: &mut Runtime) -
     return match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bool(
-            BigInt::from(if b { 1 } else { 0 }) < other.int(runtime)?,
+            BigInt::from(if b { 1 } else { 0 }) < BigInt::from(other),
         )),
-        Variable::Bigint(i) => Result::Ok(Variable::Bool(i < other.int(runtime)?)),
+        Variable::Bigint(i) => Result::Ok(Variable::Bool(i < BigInt::from(other))),
         Variable::String(_) => unimplemented!(),
         Variable::Decimal(d1) => {
             if let Variable::Decimal(d2) = other {
@@ -450,9 +444,9 @@ pub fn quick_greater_than(this: Variable, other: Variable, runtime: &mut Runtime
     return match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bool(
-            BigInt::from(if b { 1 } else { 0 }) > other.int(runtime)?,
+            BigInt::from(if b { 1 } else { 0 }) > BigInt::from(other),
         )),
-        Variable::Bigint(i) => Result::Ok(Variable::Bool(i > other.int(runtime)?)),
+        Variable::Bigint(i) => Result::Ok(Variable::Bool(i > BigInt::from(other))),
         Variable::String(_) => unimplemented!(),
         Variable::Decimal(d1) => {
             if let Variable::Decimal(d2) = other {
@@ -478,9 +472,9 @@ pub fn quick_less_equal(this: Variable, other: Variable, runtime: &mut Runtime) 
     return match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bool(
-            BigInt::from(if b { 1 } else { 0 }) <= other.int(runtime)?,
+            BigInt::from(if b { 1 } else { 0 }) <= BigInt::from(other),
         )),
-        Variable::Bigint(i) => Result::Ok(Variable::Bool(i <= other.int(runtime)?)),
+        Variable::Bigint(i) => Result::Ok(Variable::Bool(i <= BigInt::from(other))),
         Variable::String(_) => unimplemented!(),
         Variable::Decimal(d1) => {
             if let Variable::Decimal(d2) = other {
@@ -506,9 +500,9 @@ pub fn quick_greater_equal(this: Variable, other: Variable, runtime: &mut Runtim
     return match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bool(
-            BigInt::from(if b { 1 } else { 0 }) >= other.int(runtime)?,
+            BigInt::from(if b { 1 } else { 0 }) >= BigInt::from(other),
         )),
-        Variable::Bigint(i) => Result::Ok(Variable::Bool(i >= other.int(runtime)?)),
+        Variable::Bigint(i) => Result::Ok(Variable::Bool(i >= BigInt::from(other))),
         Variable::String(_) => unimplemented!(),
         Variable::Decimal(d1) => {
             if let Variable::Decimal(d2) = other {
