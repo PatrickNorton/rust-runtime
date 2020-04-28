@@ -1,6 +1,7 @@
 use crate::bytecode::{bytecode_size, Bytecode};
 use crate::custom_types::dict::Dict;
 use crate::custom_types::list::List;
+use crate::custom_types::set::Set;
 use crate::int_tools::bytes_index;
 use crate::operator::Operator;
 use crate::quick_functions::{
@@ -266,6 +267,12 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let value = List::from_values(runtime.load_args(argc));
             runtime.push(value.into())
         }
+        Bytecode::SetCreate => {
+            let argc = bytes_0 as u16;
+            let argv = runtime.load_args(argc);
+            let value = Set::new(argv, runtime)?;
+            runtime.push(value.into())
+        }
         Bytecode::DictCreate => {
             let count = bytes_0 as u16;
             let mut keys: Vec<Variable> = Vec::with_capacity(count as usize);
@@ -282,6 +289,12 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let list = runtime.pop();
             runtime.call_attr(list.clone(), "add".into(), vec![added])?;
             runtime.push(list)
+        }
+        Bytecode::SetAdd => {
+            let added = runtime.pop();
+            let set = runtime.pop();
+            runtime.call_attr(set.clone(), "add".into(), vec![added])?;
+            runtime.push(set)
         }
         Bytecode::DictAdd => {
             let value = runtime.pop();
