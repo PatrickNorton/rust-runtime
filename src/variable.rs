@@ -6,6 +6,7 @@ use std::vec::Vec;
 
 use crate::custom_var::CustomVarWrapper;
 use crate::file_info::FileInfo;
+use crate::function::Function;
 use crate::int_functions::get_operator;
 use crate::method::Method;
 use crate::operator::Operator;
@@ -18,7 +19,7 @@ use crate::string_var::StringVar;
 use num::bigint::BigInt;
 use num::traits::Zero;
 use num::{BigRational, ToPrimitive};
-use std::fmt::{Debug, Formatter};
+use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 use std::ptr;
 use std::str::FromStr;
@@ -29,12 +30,6 @@ pub type FnResult = Result<(), ()>;
 pub enum Name {
     Attribute(StringVar),
     Operator(Operator),
-}
-
-#[derive(Clone)]
-pub enum Function {
-    Standard(usize, u32),
-    Native(fn(Vec<Variable>, &mut Runtime) -> FnResult),
 }
 
 #[derive(Debug, Clone, Hash)]
@@ -291,56 +286,6 @@ impl Hash for &'static FileInfo {
     }
 }
 
-impl Function {
-    fn call(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
-        match self {
-            Function::Standard(file_no, fn_no) => {
-                args.1.push_stack(0, *fn_no as u16, args.0, *file_no)?;
-                FnResult::Ok(())
-            }
-            Function::Native(func) => {
-                args.1.push_native();
-                let result = func(args.0, args.1);
-                args.1.pop_native();
-                result
-            }
-        }
-    }
-
-    fn to_str(&self, runtime: &mut Runtime) -> StringVar {
-        match self {
-            Function::Standard(file_no, fn_no) => runtime.get_fn_name(*file_no, *fn_no),
-            Function::Native(func) => format!("fn@{}", *func as usize).into(),
-        }
-    }
-}
-
-impl PartialEq for Function {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Function::Standard(a1, a2), Function::Standard(b1, b2)) => a1 == b1 && a2 == b2,
-            (Function::Native(x), Function::Native(y)) => *x as usize == *y as usize,
-            _ => false,
-        }
-    }
-}
-
-impl Eq for Function {}
-
-impl Hash for Function {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        match self {
-            Function::Standard(a, b) => {
-                a.hash(state);
-                b.hash(state);
-            }
-            Function::Native(a) => {
-                state.write_usize(*a as usize);
-            }
-        }
-    }
-}
-
 impl From<BigInt> for Variable {
     fn from(x: BigInt) -> Self {
         Variable::Bigint(x)
@@ -403,18 +348,6 @@ impl From<Variable> for bool {
             b
         } else {
             panic!("Attempted to turn a variable not a superclass of bool into a bool")
-        }
-    }
-}
-
-impl Debug for Function {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Function::Standard(i, j) => f.debug_tuple("Standard").field(i).field(j).finish(),
-            Function::Native(fn_) => f
-                .debug_tuple("Native")
-                .field(&format!("fn@{}", *fn_ as usize))
-                .finish(),
         }
     }
 }

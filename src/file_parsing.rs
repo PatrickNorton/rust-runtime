@@ -4,8 +4,9 @@ use crate::constant_loaders::{
     load_int, load_str,
 };
 use crate::file_info::FileInfo;
+use crate::function::Function;
 use crate::int_tools::{bytes_index, bytes_to};
-use crate::variable::{Function, Variable};
+use crate::variable::Variable;
 use std::collections::HashMap;
 use std::fs::read;
 use std::path::Path;

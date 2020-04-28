@@ -17,6 +17,7 @@ mod custom_var;
 mod executor;
 mod file_info;
 mod file_parsing;
+mod function;
 mod int_functions;
 mod int_tools;
 mod method;

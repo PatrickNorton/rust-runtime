@@ -1,7 +1,8 @@
+use crate::function::Function;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_variable::{StdVarMethod, StdVariable};
-use crate::variable::{FnResult, Function, Name, Variable};
+use crate::variable::{FnResult, Name, Variable};
 
 fn print() -> Variable {
     Variable::Function(Function::Native(print_impl))
