@@ -81,6 +81,10 @@ impl Runtime {
         var.index(Name::Operator(o)).call((args, self))
     }
 
+    pub fn call_attr(&mut self, var: Variable, s: StringVar, args: Vec<Variable>) -> FnResult {
+        var.index(Name::Attribute(s)).call((args, self))
+    }
+
     pub fn goto(&mut self, pos: u32) {
         self.frames.last_mut().unwrap().jump(pos)
     }

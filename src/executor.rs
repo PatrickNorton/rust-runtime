@@ -277,6 +277,19 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let value = Dict::from_args(keys, values, runtime)?;
             runtime.push(value.into())
         }
+        Bytecode::ListAdd => {
+            let added = runtime.pop();
+            let list = runtime.pop();
+            runtime.call_attr(list.clone(), "add".into(), vec![added])?;
+            runtime.push(list)
+        }
+        Bytecode::DictAdd => {
+            let value = runtime.pop();
+            let key = runtime.pop();
+            let dict = runtime.pop();
+            runtime.call_op(dict.clone(), Operator::SetAttr, vec![key, value])?;
+            runtime.push(dict);
+        }
         _ => unimplemented!(),
     }
     FnResult::Ok(())
