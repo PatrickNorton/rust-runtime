@@ -371,6 +371,12 @@ impl From<Type> for Variable {
     }
 }
 
+impl From<bool> for Variable {
+    fn from(x: bool) -> Self {
+        Variable::Bool(x)
+    }
+}
+
 impl From<Variable> for BigInt {
     fn from(var: Variable) -> Self {
         match var {

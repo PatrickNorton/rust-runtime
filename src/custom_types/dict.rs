@@ -38,10 +38,14 @@ fn vec_size(len: usize) -> usize {
 }
 
 impl Dict {
-    pub fn from_args(keys: Vec<Variable>, values: Vec<Variable>, runtime: &mut Runtime) -> Dict {
-        Dict {
-            value: Rc::new(RefCell::new(InnerDict::from_args(keys, values, runtime))),
-        }
+    pub fn from_args(
+        keys: Vec<Variable>,
+        values: Vec<Variable>,
+        runtime: &mut Runtime,
+    ) -> Result<Dict, ()> {
+        Result::Ok(Dict {
+            value: Rc::new(RefCell::new(InnerDict::from_args(keys, values, runtime)?)),
+        })
     }
 
     fn get_op(&self, o: Operator) -> Variable {
@@ -49,6 +53,17 @@ impl Dict {
             Operator::GetAttr => Dict::index,
             Operator::Repr => Dict::repr,
             Operator::Str => Dict::repr,
+            Operator::Bool => Dict::bool,
+            Operator::SetAttr => Dict::set,
+            _ => unimplemented!(),
+        };
+        Variable::Method(StdMethod::new_native(self.clone(), func))
+    }
+
+    fn get_attr(&self, s: StringVar) -> Variable {
+        let func = match s.as_str() {
+            "clear" => Dict::clear,
+            "length" => return Variable::Bigint(self.len().into()),
             _ => unimplemented!(),
         };
         Variable::Method(StdMethod::new_native(self.clone(), func))
@@ -63,41 +78,36 @@ impl Dict {
 
     fn repr(&self, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        let repr = self.true_repr(runtime)?;
+        let repr = (*self.value).borrow().true_repr(runtime)?;
         runtime.push(repr.into());
         FnResult::Ok(())
     }
 
-    fn true_repr(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
-        if self.is_empty() {
-            return Result::Ok("{:}".into());
-        }
-        let mut result = String::new();
-        result += "{";
-        for val in (*self.value).borrow().get_entries() {
-            if let Option::Some(o) = val {
-                result += o.get_key().str(runtime)?.as_str();
-                result += ": ";
-                result += o.get_value().str(runtime)?.as_str();
-                result += ", ";
-                let mut p = o.get_next().as_ref();
-                while let Option::Some(q) = p {
-                    result += q.get_key().str(runtime)?.as_str();
-                    result += ": ";
-                    result += q.get_value().str(runtime)?.as_str();
-                    result += ", ";
-                    p = q.get_next().as_ref()
-                }
-            }
-        }
-        result.remove(result.len() - 1);
-        result.remove(result.len() - 1);
-        result += "}";
-        Result::Ok(result.into())
+    fn bool(&self, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        runtime.push((!self.is_empty()).into());
+        FnResult::Ok(())
+    }
+
+    fn set(&self, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        let val = args.remove(1); // Reverse order to avoid move
+        let key = args.remove(0);
+        (*self.value).borrow_mut().set(key, val, runtime)
+    }
+
+    fn clear(&self, args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        self.value.borrow_mut().clear();
+        FnResult::Ok(())
     }
 
     fn is_empty(&self) -> bool {
         (*self.value).borrow().is_empty()
+    }
+
+    fn len(&self) -> usize {
+        (*self.value).borrow().size
     }
 }
 
@@ -106,29 +116,17 @@ impl InnerDict {
         keys: Vec<Variable>,
         values: Vec<Variable>,
         runtime: &mut Runtime,
-    ) -> InnerDict {
+    ) -> Result<InnerDict, ()> {
         debug_assert!(keys.len() == values.len());
         let vec_capacity = vec_size(keys.len());
         let mut value = InnerDict {
-            size: keys.len(),
+            size: 0,
             entries: Vec::with_capacity(vec_capacity as usize),
         };
         for (x, y) in keys.into_iter().zip(values) {
-            let entry = Entry::new(x, y, 0);
-            value.add_var(entry, runtime);
+            value.set(x, y, runtime)?;
         }
-        value
-    }
-
-    fn add_var(&mut self, value: Entry, runtime: &mut Runtime) -> bool {
-        let index = value.get_hash() % self.entries.len();
-        return match &mut self.entries[index] {
-            Option::None => {
-                self.entries[index] = Option::Some(value);
-                true
-            }
-            Option::Some(v) => v.set_entry(value, runtime),
-        };
+        Result::Ok(value)
     }
 
     pub fn get(&self, key: Variable, runtime: &mut Runtime) -> Result<Variable, ()> {
@@ -139,46 +137,65 @@ impl InnerDict {
         };
     }
 
-    pub fn is_empty(&self) -> bool {
-        self.size == 0
+    fn true_repr(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
+        if self.is_empty() {
+            return Result::Ok("{:}".into());
+        }
+        let mut result = String::new();
+        result += "{";
+        self.for_each(&mut |x, y| {
+            result += x.str(runtime)?.as_str();
+            result += ": ";
+            result += y.str(runtime)?.as_str();
+            result += ", ";
+            FnResult::Ok(())
+        })?;
+        result.remove(result.len() - 1);
+        result.remove(result.len() - 1);
+        result += "}";
+        Result::Ok(result.into())
     }
 
-    pub(self) fn get_entries(&self) -> &Vec<Option<Entry>> {
-        &self.entries
+    fn for_each(&self, func: &mut dyn FnMut(&Variable, &Variable) -> FnResult) -> FnResult {
+        for val in &self.entries {
+            if let Option::Some(o) = val {
+                func(o.get_key(), o.get_value())?;
+                let mut p = o.get_next().as_ref();
+                while let Option::Some(q) = p {
+                    func(o.get_key(), o.get_value())?;
+                    p = q.get_next().as_ref()
+                }
+            }
+        }
+        FnResult::Ok(())
+    }
+
+    pub fn set(&mut self, key: Variable, val: Variable, runtime: &mut Runtime) -> FnResult {
+        let hash = key.hash(runtime)?;
+        let len = self.entries.len();
+        match &mut self.entries[hash % len] {
+            Option::None => Result::Err(()),
+            Option::Some(e) => {
+                let val = e.set(key, val, runtime).ok_or(())?;
+                if val {
+                    self.size += 1;
+                }
+                Result::Ok(())
+            }
+        }
+    }
+
+    pub fn clear(&mut self) {
+        self.size = 0;
+        self.entries.clear();
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.size == 0
     }
 }
 
 impl Entry {
-    pub fn new(key: Variable, value: Variable, hash: usize) -> Entry {
-        Entry {
-            key,
-            value,
-            hash,
-            next: Option::None,
-        }
-    }
-
-    pub fn get_hash(&self) -> &usize {
-        &self.hash
-    }
-
-    pub fn set_entry(&mut self, entry: Entry, runtime: &mut Runtime) -> bool {
-        let replace_this = self.value.equals(entry.value.clone(), runtime);
-        if replace_this {
-            debug_assert_eq!(self.hash, entry.hash);
-            self.value = entry.value;
-            false
-        } else {
-            return match &mut self.next {
-                Option::None => {
-                    self.next = Option::Some(Box::new(entry));
-                    true
-                }
-                Option::Some(e) => e.set_entry(entry, runtime),
-            };
-        }
-    }
-
     pub fn get(&self, key: Variable, runtime: &mut Runtime) -> Option<Variable> {
         if key.equals(self.value.clone(), runtime) {
             Option::Some(self.value.clone())
@@ -186,6 +203,27 @@ impl Entry {
             return match &self.next {
                 Option::None => Option::None,
                 Option::Some(e) => e.get(key, runtime),
+            };
+        }
+    }
+
+    pub fn set(&mut self, key: Variable, val: Variable, runtime: &mut Runtime) -> Option<bool> {
+        if key.equals(self.value.clone(), runtime) {
+            self.value = val;
+            Option::Some(false)
+        } else {
+            return match &mut self.next {
+                Option::None => {
+                    let hash = key.hash(runtime).ok()?;
+                    self.next = Option::Some(Box::new(Entry {
+                        key,
+                        value: val,
+                        hash,
+                        next: Option::None,
+                    }));
+                    Option::Some(true)
+                }
+                Option::Some(e) => e.set(key, val, runtime),
             };
         }
     }
@@ -207,7 +245,7 @@ impl CustomVar for Dict {
     fn get_attr(&self, name: Name) -> Variable {
         match name {
             Name::Operator(o) => self.get_op(o),
-            Name::Attribute(_) => unimplemented!(),
+            Name::Attribute(s) => self.get_attr(s),
         }
     }
 

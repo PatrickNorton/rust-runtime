@@ -274,7 +274,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
                 keys.push(runtime.pop());
                 values.push(runtime.pop());
             }
-            let value = Dict::from_args(keys, values, runtime);
+            let value = Dict::from_args(keys, values, runtime)?;
             runtime.push(value.into())
         }
         _ => unimplemented!(),
