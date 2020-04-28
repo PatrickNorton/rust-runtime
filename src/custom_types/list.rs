@@ -1,3 +1,4 @@
+use crate::custom_types::types::CustomType;
 use crate::custom_var::CustomVar;
 use crate::method::{InnerMethod, StdMethod};
 use crate::operator::Operator;
@@ -6,6 +7,7 @@ use crate::std_type::Type;
 use crate::variable::{FnResult, Name, Variable};
 use num::{BigInt, ToPrimitive};
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::rc::Rc;
 
 #[derive(Debug, Clone)]
@@ -63,6 +65,24 @@ impl List {
             Result::Ok(())
         }
     }
+
+    pub fn create(&self, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty()); // TODO: List of a value
+        runtime.push(List::from_values(vec![]).into());
+        FnResult::Ok(())
+    }
+
+    pub fn list_type() -> Type {
+        lazy_static! {
+            static ref TYPE: CustomType<List> = CustomType::new(
+                "list".into(),
+                Vec::new(),
+                InnerMethod::Native(List::create),
+                HashMap::new()
+            );
+        }
+        Type::Custom(&*TYPE)
+    }
 }
 
 impl CustomVar for List {
@@ -73,12 +93,12 @@ impl CustomVar for List {
         };
     }
 
-    fn set(&mut self, name: Name, object: Variable) {
+    fn set(&mut self, _name: Name, _object: Variable) {
         unimplemented!()
     }
 
     fn get_type(&self) -> Type {
-        unimplemented!()
+        List::list_type()
     }
 }
 

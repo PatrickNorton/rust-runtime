@@ -1,6 +1,8 @@
+use crate::custom_types::list::List;
 use crate::function::Function;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
+use crate::std_type::Type;
 use crate::std_variable::{StdVarMethod, StdVariable};
 use crate::variable::{FnResult, Name, Variable};
 
@@ -18,7 +20,20 @@ fn print_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
 pub fn builtin_of(index: usize) -> Variable {
     return match index {
         0 => print(),
-        _ => todo!(),
+        1 => todo!("Callable"),
+        2 => Type::Bigint().into(),
+        3 => Type::String().into(),
+        4 => Type::Bool().into(),
+        5 => todo!("range"),
+        6 => Type::Type().into(),
+        7 => todo!("iter"),
+        8 => todo!("repr"),
+        9 => todo!("input"),
+        10 => List::list_type().into(),
+        11 => todo!("set"),
+        12 => todo!("char"),
+        13 => todo!("open"),
+        _ => unimplemented!(),
     };
 }
 

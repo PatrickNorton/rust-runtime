@@ -3,14 +3,16 @@ use std::hash::{Hash, Hasher};
 use std::string::{String, ToString};
 
 use crate::builtins::default_methods;
+use crate::custom_types::types::CustomTypeImpl;
 use crate::method::{InnerMethod, Method, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_variable::{StdVarMethod, StdVariable};
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Name, Variable};
+use std::ptr;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub enum Type {
     Standard(&'static StdType),
     Null(),
@@ -19,6 +21,7 @@ pub enum Type {
     String(),
     Decimal(),
     Type(),
+    Custom(&'static dyn CustomTypeImpl),
 }
 
 #[derive(Debug)]
@@ -51,6 +54,7 @@ impl Type {
             (Type::String(), Type::String()) => true,
             (Type::Decimal(), Type::Decimal()) => true,
             (Type::Type(), Type::Type()) => true,
+            (Type::Custom(_), Type::Custom(_)) => todo!(),
             _ => false,
         }
     }
@@ -68,6 +72,7 @@ impl Type {
             Type::String() => Variable::String(args[0].str(runtime)?),
             Type::Decimal() => unimplemented!(),
             Type::Type() => Variable::Type(args[0].get_type()),
+            Type::Custom(_) => todo!(),
         })
     }
 
@@ -99,6 +104,7 @@ impl Type {
             Type::String() => "str".into(),
             Type::Decimal() => "dec".into(),
             Type::Type() => "type".into(),
+            Type::Custom(_) => todo!(),
         };
     }
 }
@@ -113,6 +119,7 @@ impl ToString for Type {
             Type::String() => "str".to_string(),
             Type::Decimal() => "dec".to_string(),
             Type::Type() => "type".to_string(),
+            Type::Custom(_) => todo!(),
         };
     }
 }
@@ -133,7 +140,7 @@ impl Hash for StdType {
 }
 
 impl StdType {
-    pub fn new(
+    pub const fn new(
         name: StringVar,
         file_no: usize,
         methods: HashMap<Name, StdVarMethod>,
@@ -142,7 +149,7 @@ impl StdType {
         StdType {
             name,
             file_no,
-            supers: vec![],
+            supers: Vec::new(),
             methods,
             static_methods,
         }
@@ -185,6 +192,39 @@ impl StdType {
         match self.methods.get(&name) {
             Option::Some(t) => t.clone(),
             Option::None => default_methods(name),
+        }
+    }
+}
+
+impl PartialEq for Type {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Type::Standard(a), Type::Standard(b)) => ptr::eq(a, b),
+            (Type::Null(), Type::Null()) => true,
+            (Type::Bool(), Type::Bool()) => true,
+            (Type::Bigint(), Type::Bigint()) => true,
+            (Type::String(), Type::String()) => true,
+            (Type::Decimal(), Type::Decimal()) => true,
+            (Type::Type(), Type::Type()) => true,
+            (Type::Custom(a), Type::Custom(b)) => ptr::eq(a, b),
+            _ => false,
+        }
+    }
+}
+
+impl Eq for Type {}
+
+impl Hash for Type {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            Type::Standard(a) => a.hash(state),
+            Type::Null() => 0.hash(state),
+            Type::Bool() => 1.hash(state),
+            Type::Bigint() => 2.hash(state),
+            Type::String() => 3.hash(state),
+            Type::Decimal() => 4.hash(state),
+            Type::Type() => 5.hash(state),
+            Type::Custom(b) => ptr::hash(b, state),
         }
     }
 }

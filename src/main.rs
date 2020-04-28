@@ -1,6 +1,8 @@
 extern crate num;
 #[macro_use]
 extern crate num_derive;
+#[macro_use]
+extern crate lazy_static;
 
 use crate::executor::execute;
 use crate::file_info::FileInfo;
@@ -30,6 +32,9 @@ mod std_variable;
 mod string_functions;
 mod string_var;
 mod variable;
+
+#[macro_use]
+mod macros;
 
 fn main() {
     let _args: Vec<String> = std::env::args().collect();

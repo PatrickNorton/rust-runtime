@@ -1,10 +1,8 @@
 use crate::operator::Operator;
 use crate::runtime::Runtime;
-use crate::string_var::StringVar;
 use crate::variable::Variable;
 use num::traits::Pow;
 use num::{BigInt, BigRational, BigUint, FromPrimitive, ToPrimitive, Zero};
-use std::rc::Rc;
 
 pub type QuickResult = Result<Variable, ()>;
 
@@ -17,9 +15,7 @@ pub fn quick_add(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
         Variable::Bigint(i) => Result::Ok(Variable::Bigint(i + BigInt::from(other))),
         Variable::String(s) => {
             let result = format!("{}{}", s, other.str(runtime)?);
-            QuickResult::Ok(Variable::String(StringVar::Other(Rc::new(
-                result.into_boxed_str(),
-            ))))
+            QuickResult::Ok(Variable::String(result.into()))
         }
         Variable::Decimal(d1) => {
             if let Variable::Decimal(d2) = other {

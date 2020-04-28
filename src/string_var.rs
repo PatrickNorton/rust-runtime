@@ -1,11 +1,11 @@
 use std::fmt::{Debug, Formatter};
 use std::ops::Deref;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum StringVar {
     Literal(&'static str),
-    Other(Rc<Box<str>>),
+    Other(Arc<Box<str>>),
 }
 
 impl StringVar {
@@ -25,7 +25,7 @@ impl From<&'static str> for StringVar {
 
 impl From<String> for StringVar {
     fn from(x: String) -> Self {
-        StringVar::Other(Rc::new(x.into_boxed_str()))
+        StringVar::Other(Arc::new(x.into_boxed_str()))
     }
 }
 
