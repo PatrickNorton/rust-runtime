@@ -209,72 +209,7 @@ impl Variable {
 
 impl PartialEq for Variable {
     fn eq(&self, other: &Self) -> bool {
-        return match self {
-            Variable::Null() => {
-                if let Variable::Null() = other {
-                    true
-                } else {
-                    false
-                }
-            }
-            Variable::Bool(val) => {
-                if let Variable::Bool(o) = other {
-                    val == o
-                } else {
-                    false
-                }
-            }
-            Variable::Bigint(val) => {
-                if let Variable::Bigint(o) = other {
-                    val == o
-                } else {
-                    false
-                }
-            }
-            Variable::String(val) => {
-                if let Variable::String(o) = other {
-                    val == o
-                } else {
-                    false
-                }
-            }
-            Variable::Decimal(val) => {
-                if let Variable::Decimal(o) = other {
-                    val == o
-                } else {
-                    false
-                }
-            }
-            Variable::Type(val) => {
-                if let Variable::Type(o) = other {
-                    val == o
-                } else {
-                    false
-                }
-            }
-            Variable::Standard(val) => {
-                if let Variable::Standard(o) = other {
-                    val == o
-                } else {
-                    false
-                }
-            }
-            Variable::Method(val) => {
-                if let Variable::Method(o) = other {
-                    val == o
-                } else {
-                    false
-                }
-            }
-            Variable::Function(val) => {
-                if let Variable::Function(o) = other {
-                    val == o
-                } else {
-                    false
-                }
-            }
-            Variable::Custom(_) => unimplemented!(),
-        };
+        self.identical(other)
     }
 }
 
