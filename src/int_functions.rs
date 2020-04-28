@@ -4,10 +4,11 @@ use std::vec::Vec;
 use crate::method::{InnerMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
+use crate::std_type::Type;
 use crate::variable::{FnResult, Variable};
 use num::bigint::{BigInt, BigUint};
 use num::traits::Pow;
-use num::{BigRational, ToPrimitive, Zero};
+use num::{BigRational, Signed, ToPrimitive, Zero};
 
 pub fn get_operator(this: &BigInt, o: Operator) -> Variable {
     let func = match o {
@@ -164,20 +165,44 @@ fn greater_equal(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> F
 
 fn left_bs(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.len() == 1);
-    let result = this
-        << BigInt::from(args[0].clone())
-            .to_usize()
-            .expect("Value too big to shift");
+    let big_value = BigInt::from(args[0].clone());
+    let result = match big_value.to_usize() {
+        Option::None => {
+            let msg = if big_value.is_negative() {
+                format!("Cannot shift by {} (min shift value is 0)", big_value)
+            } else {
+                format!(
+                    "Cannot shift by {} (max shift value is {})",
+                    big_value,
+                    std::usize::MAX
+                )
+            };
+            return runtime.throw_quick(Type::String(), msg.into());
+        }
+        Option::Some(b) => this << b,
+    };
     runtime.push(Variable::Bigint(result));
     FnResult::Ok(())
 }
 
 fn right_bs(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.len() == 1);
-    let result = this
-        >> BigInt::from(args[0].clone())
-            .to_usize()
-            .expect("Value too big to shift");
+    let big_value = BigInt::from(args[0].clone());
+    let result = match big_value.to_usize() {
+        Option::None => {
+            let msg = if big_value.is_negative() {
+                format!("Cannot shift by {} (min shift value is 0)", big_value)
+            } else {
+                format!(
+                    "Cannot shift by {} (max shift value is {})",
+                    big_value,
+                    std::usize::MAX
+                )
+            };
+            return runtime.throw_quick(Type::String(), msg.into());
+        }
+        Option::Some(b) => this >> b,
+    };
     runtime.push(Variable::Bigint(result));
     FnResult::Ok(())
 }

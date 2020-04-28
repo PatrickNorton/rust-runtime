@@ -95,7 +95,7 @@ fn get_operators(
     let mut operators: HashMap<Operator, StdVarMethod> = HashMap::new();
     let byte_size = bytes_index::<u32>(data, index);
     for _ in 0..byte_size {
-        let op: Operator = FromPrimitive::from_u8(data[*index]).unwrap();
+        let op: Operator = FromPrimitive::from_u8(data[*index]).expect("Invalid operator");
         *index += 1;
         let method_size = bytes_index::<u32>(data, index);
         let values = data[*index..*index + method_size as usize].to_vec();
