@@ -12,7 +12,7 @@ impl StringVar {
     pub fn as_str(&self) -> &str {
         return match self {
             StringVar::Literal(a) => *a,
-            StringVar::Other(x) => x.deref().deref(),
+            StringVar::Other(x) => &x,
         };
     }
 }
