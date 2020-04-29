@@ -4,7 +4,7 @@ use crate::variable::{FnResult, Variable};
 use std::fmt::{Debug, Formatter};
 use std::hash::{Hash, Hasher};
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub enum Function {
     Standard(usize, u32),
     Native(fn(Vec<Variable>, &mut Runtime) -> FnResult),
