@@ -241,7 +241,7 @@ impl CustomVar for Set {
         }
     }
 
-    fn set(&mut self, _name: Name, _object: Variable) {
+    fn set(&self, _name: Name, _object: Variable) {
         unimplemented!()
     }
 

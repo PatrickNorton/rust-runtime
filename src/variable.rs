@@ -57,6 +57,7 @@ impl Variable {
             Variable::Type(val) => Result::Ok(val.str()),
             Variable::Standard(val) => val.str(runtime),
             Variable::Function(val) => Result::Ok(val.to_str(runtime)),
+            Variable::Custom(val) => val.str(runtime),
             _ => unimplemented!(),
         }
     }
@@ -68,6 +69,7 @@ impl Variable {
             Variable::Decimal(val) => Result::Ok(val.to_integer()),
             Variable::Standard(val) => val.int(runtime),
             Variable::String(val) => BigInt::from_str(val).or(Result::Err(())),
+            Variable::Custom(val) => val.int(runtime),
             _ => unimplemented!(),
         }
     }
@@ -83,7 +85,7 @@ impl Variable {
             Variable::Standard(val) => val.bool(runtime),
             Variable::Method(_) => Result::Ok(true),
             Variable::Function(_) => Result::Ok(true),
-            Variable::Custom(_) => unimplemented!(),
+            Variable::Custom(val) => val.bool(runtime),
         }
     }
 
@@ -93,6 +95,7 @@ impl Variable {
             Variable::Method(method) => method.call(args),
             Variable::Function(func) => func.call(args),
             Variable::Type(t) => t.push_create(args),
+            Variable::Custom(val) => val.call(args.0, args.1),
             _ => unimplemented!(),
         }
     }
@@ -115,6 +118,7 @@ impl Variable {
                 }
             }
             Variable::Type(t) => t.index(index),
+            Variable::Custom(val) => val.get_attr(index),
             _ => unimplemented!(),
         }
     }
@@ -122,7 +126,7 @@ impl Variable {
     pub fn set(&self, index: StringVar, value: Variable, _runtime: &mut Runtime) {
         match self {
             Variable::Standard(val) => val.set(index, value),
-            Variable::Custom(_) => unimplemented!(),
+            Variable::Custom(val) => val.set(Name::Attribute(index), value),
             _ => unimplemented!(),
         }
     }
@@ -138,7 +142,7 @@ impl Variable {
             Variable::Method(_) => unimplemented!(),
             Variable::Standard(a) => a.get_type(),
             Variable::Function(_) => unimplemented!(),
-            Variable::Custom(_) => unimplemented!(),
+            Variable::Custom(a) => a.get_type(),
         }
     }
 
@@ -202,7 +206,12 @@ impl Variable {
             }
             Variable::Method(_) => unimplemented!(),
             Variable::Function(_) => unimplemented!(),
-            Variable::Custom(_) => unimplemented!(),
+            Variable::Custom(val) => {
+                runtime.push_native();
+                val.call_op(Operator::Hash, Vec::new(), runtime)?;
+                runtime.pop_native();
+                Result::Ok(BigInt::from(runtime.pop()).to_usize().unwrap())
+            }
         }
     }
 }

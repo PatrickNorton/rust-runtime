@@ -34,34 +34,29 @@ impl Clone for Box<dyn CustomVar> {
 
 pub trait CustomVar: Debug + CloneBox {
     fn get_attr(&self, name: Name) -> Variable;
-    fn set(&mut self, name: Name, object: Variable);
+    fn set(&self, name: Name, object: Variable);
     fn get_type(&self) -> Type;
 
-    fn call(&mut self, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn call(&self, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         self.call_op(Operator::Call, args, runtime)
     }
 
-    fn call_op(
-        &mut self,
-        operator: Operator,
-        args: Vec<Variable>,
-        runtime: &mut Runtime,
-    ) -> FnResult {
+    fn call_op(&self, operator: Operator, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         self.get_attr(Name::Operator(operator))
             .call((args, runtime))
     }
 
-    fn str(&mut self, runtime: &mut Runtime) -> Result<StringVar, ()> {
+    fn str(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
         self.call_op(Operator::Str, vec![], runtime)?;
         runtime.pop().str(runtime)
     }
 
-    fn int(&mut self, runtime: &mut Runtime) -> Result<BigInt, ()> {
+    fn int(&self, runtime: &mut Runtime) -> Result<BigInt, ()> {
         self.call_op(Operator::Int, vec![], runtime)?;
         runtime.pop().int(runtime)
     }
 
-    fn bool(&mut self, runtime: &mut Runtime) -> Result<bool, ()> {
+    fn bool(&self, runtime: &mut Runtime) -> Result<bool, ()> {
         self.call_op(Operator::Bool, vec![], runtime)?;
         runtime.pop().to_bool(runtime)
     }

@@ -53,6 +53,7 @@ impl List {
             }
         }
         value += "]";
+        runtime.push(value.into());
         FnResult::Ok(())
     }
 
@@ -94,7 +95,7 @@ impl CustomVar for List {
         }
     }
 
-    fn set(&mut self, _name: Name, _object: Variable) {
+    fn set(&self, _name: Name, _object: Variable) {
         unimplemented!()
     }
 
