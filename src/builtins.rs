@@ -17,6 +17,32 @@ fn print_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     FnResult::Ok(())
 }
 
+fn input() -> Variable {
+    Variable::Function(Function::Native(input_impl))
+}
+
+fn input_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert_eq!(args.len(), 1);
+    print!("{}", args[0].str(runtime)?);
+    let mut input = String::new();
+    match std::io::stdin().read_line(&mut input) {
+        Ok(_) => {
+            runtime.push(Variable::String(input.into()));
+        }
+        Err(_) => panic!("Could not read from stdin"),
+    }
+    FnResult::Ok(())
+}
+
+fn repr() -> Variable {
+    Variable::Function(Function::Native(repr_impl))
+}
+
+fn repr_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert_eq!(args.len(), 1);
+    runtime.call_op(args[0].clone(), Operator::Repr, Vec::new())
+}
+
 pub fn builtin_of(index: usize) -> Variable {
     return match index {
         0 => print(),
@@ -27,8 +53,8 @@ pub fn builtin_of(index: usize) -> Variable {
         5 => todo!("range"),
         6 => Type::Type().into(),
         7 => todo!("iter"),
-        8 => todo!("repr"),
-        9 => todo!("input"),
+        8 => repr(),
+        9 => input(),
         10 => List::list_type().into(),
         11 => todo!("set"),
         12 => todo!("char"),
