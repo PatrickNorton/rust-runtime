@@ -1,6 +1,7 @@
 use crate::custom_types::types::CustomType;
 use crate::custom_var::CustomVar;
 use crate::function::Function;
+use crate::int_tools::next_power_2;
 use crate::method::StdMethod;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
@@ -107,18 +108,9 @@ impl Set {
     }
 }
 
-fn vec_size(len: usize) -> usize {
-    if len == 0 {
-        return 0;
-    }
-    let leading0s: u32 = len.leading_zeros();
-    const TOTAL_ZEROS: u32 = usize::leading_zeros(0);
-    (1 as usize) << (TOTAL_ZEROS - leading0s) as usize
-}
-
 impl InnerSet {
     pub fn new(args: Vec<Variable>, runtime: &mut Runtime) -> Result<InnerSet, ()> {
-        let vec_capacity = vec_size(args.len());
+        let vec_capacity = next_power_2(args.len());
         let mut value = InnerSet {
             size: 0,
             values: Vec::with_capacity(vec_capacity),
