@@ -69,6 +69,8 @@ pub fn default_methods(name: Name) -> StdVarMethod {
         let result = match o {
             Operator::Repr => default_repr,
             Operator::Str => default_str,
+            Operator::Equals => default_eq,
+            Operator::Bool => default_bool,
             _ => unimplemented!("name {:?} not found", name),
         };
         StdVarMethod::Native(result)
@@ -88,4 +90,22 @@ fn default_str(this: &StdVariable, args: Vec<Variable>, runtime: &mut Runtime) -
     debug_assert!(args.is_empty());
     runtime.call_op(Variable::Standard(this.clone()), Operator::Repr, args)?;
     FnResult::Ok(())
+}
+
+fn default_bool(_this: &StdVariable, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert!(args.is_empty());
+    runtime.push(Variable::Bool(true));
+    FnResult::Ok(())
+}
+
+fn default_eq(this: &StdVariable, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    let this_var = Variable::Standard(this.clone());
+    for arg in args {
+        if this_var != arg {
+            runtime.push(Variable::Bool(false));
+            return FnResult::Ok(());
+        }
+    }
+    runtime.push(Variable::Bool(true));
+    return FnResult::Ok(());
 }
