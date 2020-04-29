@@ -11,9 +11,10 @@ use crate::variable::{FnResult, Name, Variable};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::iter::Iterator;
+use std::mem::replace;
 use std::rc::Rc;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Entry {
     key: Variable,
     value: Variable,
@@ -135,7 +136,7 @@ impl InnerDict {
         let vec_capacity = next_power_2(keys.len());
         let mut value = InnerDict {
             size: 0,
-            entries: Vec::with_capacity(vec_capacity as usize),
+            entries: vec![Option::None; vec_capacity],
         };
         for (x, y) in keys.into_iter().zip(values) {
             value.set(x, y, runtime)?;
@@ -187,6 +188,7 @@ impl InnerDict {
     pub fn set(&mut self, key: Variable, val: Variable, runtime: &mut Runtime) -> FnResult {
         let hash = key.hash(runtime)?;
         let len = self.entries.len();
+        self.resize(next_power_2(self.size + 1), runtime)?;
         match &mut self.entries[hash % len] {
             Option::None => Result::Err(()),
             Option::Some(e) => {
@@ -197,6 +199,33 @@ impl InnerDict {
                 Result::Ok(())
             }
         }
+    }
+
+    fn resize(&mut self, new_size: usize, runtime: &mut Runtime) -> FnResult {
+        let current_size = self.entries.len();
+        if current_size >= new_size {
+            return FnResult::Ok(());
+        }
+        let old_vec = replace(&mut self.entries, vec![Option::None; new_size]);
+        for entry in old_vec {
+            if let Option::Some(mut e) = entry {
+                loop {
+                    let (entry, next) = Self::split_entries(e);
+                    self.set(entry.key, entry.value, runtime)?;
+                    if let Option::Some(x) = next {
+                        e = *x;
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+        FnResult::Ok(())
+    }
+
+    fn split_entries(mut e: Entry) -> (Entry, Option<Box<Entry>>) {
+        let next = replace(&mut e.next, Option::None);
+        (e, next)
     }
 
     pub fn clear(&mut self) {

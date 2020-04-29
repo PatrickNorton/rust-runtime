@@ -10,6 +10,7 @@ use crate::string_var::StringVar;
 use crate::variable::{FnResult, Name, Variable};
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::mem::replace;
 use std::rc::Rc;
 
 #[derive(Debug, Clone)]
@@ -23,7 +24,7 @@ pub struct InnerSet {
     values: Vec<Option<Entry>>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Entry {
     val: Variable,
     hash: usize,
@@ -113,7 +114,7 @@ impl InnerSet {
         let vec_capacity = next_power_2(args.len());
         let mut value = InnerSet {
             size: 0,
-            values: Vec::with_capacity(vec_capacity),
+            values: vec![Option::None; vec_capacity],
         };
         for x in args {
             value.add(x, runtime)?;
@@ -124,6 +125,7 @@ impl InnerSet {
     pub fn add(&mut self, arg: Variable, runtime: &mut Runtime) -> FnResult {
         let hash = arg.hash(runtime)?;
         let len = self.values.len();
+        self.resize(next_power_2(self.size + 1), runtime)?;
         match &mut self.values[hash % len] {
             Option::None => {
                 self.values[hash % len] = Option::Some(Entry::new(arg, hash));
@@ -181,6 +183,33 @@ impl InnerSet {
             }
         }
         FnResult::Ok(())
+    }
+
+    fn resize(&mut self, new_size: usize, runtime: &mut Runtime) -> FnResult {
+        let current_size = self.values.len();
+        if current_size >= new_size {
+            return FnResult::Ok(());
+        }
+        let old_vec = replace(&mut self.values, vec![Option::None; new_size]);
+        for entry in old_vec {
+            if let Option::Some(mut e) = entry {
+                loop {
+                    let (entry, next) = Self::split_entries(e);
+                    self.add(entry.val, runtime)?;
+                    if let Option::Some(x) = next {
+                        e = *x;
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+        FnResult::Ok(())
+    }
+
+    fn split_entries(mut e: Entry) -> (Entry, Option<Box<Entry>>) {
+        let next = replace(&mut e.next, Option::None);
+        (e, next)
     }
 
     pub fn is_empty(&self) -> bool {
