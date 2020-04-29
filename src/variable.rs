@@ -54,7 +54,7 @@ impl Variable {
             Variable::String(val) => Result::Ok(val.clone()),
             Variable::Bigint(val) => Result::Ok(val.to_str_radix(10).into()),
             Variable::Decimal(val) => Result::Ok(val.to_string().into()),
-            Variable::Type(val) => Result::Ok(val.to_string().into()),
+            Variable::Type(val) => Result::Ok(val.str()),
             Variable::Standard(val) => val.str(runtime),
             Variable::Function(val) => Result::Ok(val.to_str(runtime)),
             _ => unimplemented!(),

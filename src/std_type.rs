@@ -21,6 +21,7 @@ pub enum Type {
     String,
     Decimal,
     Type,
+    Object,
     Custom(&'static dyn CustomTypeImpl),
 }
 
@@ -54,6 +55,7 @@ impl Type {
             (Type::String, Type::String) => true,
             (Type::Decimal, Type::Decimal) => true,
             (Type::Type, Type::Type) => true,
+            (Type::Object, _) => true,
             (Type::Custom(t), _) => t.is_subclass(other),
             _ => false,
         }
@@ -72,6 +74,7 @@ impl Type {
             Type::String => Variable::String(args[0].str(runtime)?),
             Type::Decimal => unimplemented!(),
             Type::Type => Variable::Type(args[0].get_type()),
+            Type::Object => unimplemented!(),
             Type::Custom(t) => t.create(args, runtime)?,
         })
     }
@@ -104,6 +107,7 @@ impl Type {
             Type::String => "str".into(),
             Type::Decimal => "dec".into(),
             Type::Type => "type".into(),
+            Type::Object => "object".into(),
             Type::Custom(t) => t.get_name().clone(),
         }
     }
@@ -111,16 +115,7 @@ impl Type {
 
 impl ToString for Type {
     fn to_string(&self) -> String {
-        match self {
-            Type::Standard(t) => t.name().to_string(),
-            Type::Null => "null".to_string(),
-            Type::Bool => "bool".to_string(),
-            Type::Bigint => "int".to_string(),
-            Type::String => "str".to_string(),
-            Type::Decimal => "dec".to_string(),
-            Type::Type => "type".to_string(),
-            Type::Custom(t) => t.get_name().to_string(),
-        }
+        self.str().to_string()
     }
 }
 
@@ -224,6 +219,7 @@ impl Hash for Type {
             Type::String => 3.hash(state),
             Type::Decimal => 4.hash(state),
             Type::Type => 5.hash(state),
+            Type::Object => 6.hash(state),
             Type::Custom(b) => ptr::hash(b, state),
         }
     }
