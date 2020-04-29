@@ -1,4 +1,6 @@
+use crate::custom_types::types::CustomType;
 use crate::custom_var::{CustomVar, CustomVarWrapper};
+use crate::function::Function;
 use crate::method::StdMethod;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
@@ -6,6 +8,7 @@ use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Name, Variable};
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::iter::Iterator;
 use std::rc::Rc;
 
@@ -100,6 +103,25 @@ impl Dict {
         debug_assert!(args.is_empty());
         self.value.borrow_mut().clear();
         FnResult::Ok(())
+    }
+
+    pub fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty()); // TODO: List of a value
+        let dict = Dict::from_args(Vec::new(), Vec::new(), runtime)?;
+        runtime.push(dict.into());
+        FnResult::Ok(())
+    }
+
+    pub fn dict_type() -> Type {
+        lazy_static! {
+            static ref TYPE: CustomType<Dict> = CustomType::new(
+                "list".into(),
+                Vec::new(),
+                Function::Native(Dict::create),
+                HashMap::new()
+            );
+        }
+        Type::Custom(&*TYPE)
     }
 
     fn is_empty(&self) -> bool {
@@ -254,7 +276,7 @@ impl CustomVar for Dict {
     }
 
     fn get_type(&self) -> Type {
-        unimplemented!()
+        Dict::dict_type()
     }
 }
 
