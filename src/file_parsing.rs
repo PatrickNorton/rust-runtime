@@ -12,6 +12,7 @@ use std::fs::read;
 use std::path::Path;
 use std::rc::Rc;
 
+#[derive(Debug, Copy, Clone)]
 enum LoadType {
     Function(u32),
     Class(u32),
