@@ -177,7 +177,7 @@ fn left_bs(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResul
                     std::usize::MAX
                 )
             };
-            return runtime.throw_quick(Type::String(), msg.into());
+            return runtime.throw_quick(Type::String, msg.into());
         }
         Option::Some(b) => this << b,
     };
@@ -199,7 +199,7 @@ fn right_bs(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
                     std::usize::MAX
                 )
             };
-            return runtime.throw_quick(Type::String(), msg.into());
+            return runtime.throw_quick(Type::String, msg.into());
         }
         Option::Some(b) => this >> b,
     };

@@ -129,12 +129,12 @@ impl Variable {
 
     pub fn get_type(&self) -> Type {
         match self {
-            Variable::Null() => Type::Null(),
-            Variable::Bool(_) => Type::Bool(),
-            Variable::String(_) => Type::String(),
-            Variable::Bigint(_) => Type::Bigint(),
-            Variable::Decimal(_) => Type::Decimal(),
-            Variable::Type(_) => Type::Type(),
+            Variable::Null() => Type::Null,
+            Variable::Bool(_) => Type::Bool,
+            Variable::String(_) => Type::String,
+            Variable::Bigint(_) => Type::Bigint,
+            Variable::Decimal(_) => Type::Decimal,
+            Variable::Type(_) => Type::Type,
             Variable::Method(_) => unimplemented!(),
             Variable::Standard(a) => a.get_type(),
             Variable::Function(_) => unimplemented!(),

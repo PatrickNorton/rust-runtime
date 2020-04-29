@@ -15,12 +15,12 @@ use std::ptr;
 #[derive(Debug, Clone)]
 pub enum Type {
     Standard(&'static StdType),
-    Null(),
-    Bool(),
-    Bigint(),
-    String(),
-    Decimal(),
-    Type(),
+    Null,
+    Bool,
+    Bigint,
+    String,
+    Decimal,
+    Type,
     Custom(&'static dyn CustomTypeImpl),
 }
 
@@ -47,13 +47,13 @@ impl Type {
     pub fn is_subclass(&self, other: &Type) -> bool {
         match (self, other) {
             (Type::Standard(t), _) => t.is_subclass(other),
-            (Type::Null(), Type::Null()) => true,
-            (Type::Bool(), Type::Bool()) => true,
-            (Type::Bool(), Type::Bigint()) => true,
-            (Type::Bigint(), Type::Bigint()) => true,
-            (Type::String(), Type::String()) => true,
-            (Type::Decimal(), Type::Decimal()) => true,
-            (Type::Type(), Type::Type()) => true,
+            (Type::Null, Type::Null) => true,
+            (Type::Bool, Type::Bool) => true,
+            (Type::Bool, Type::Bigint) => true,
+            (Type::Bigint, Type::Bigint) => true,
+            (Type::String, Type::String) => true,
+            (Type::Decimal, Type::Decimal) => true,
+            (Type::Type, Type::Type) => true,
             (Type::Custom(_), Type::Custom(_)) => todo!(),
             _ => false,
         }
@@ -66,12 +66,12 @@ impl Type {
     pub fn create_inst(&self, args: Vec<Variable>, runtime: &mut Runtime) -> Result<Variable, ()> {
         Result::Ok(match self {
             Type::Standard(std_t) => std_t.create(args, runtime)?,
-            Type::Null() => Variable::Null(),
-            Type::Bool() => Variable::Bool(args[0].to_bool(runtime)?),
-            Type::Bigint() => Variable::Bigint(args[0].int(runtime)?),
-            Type::String() => Variable::String(args[0].str(runtime)?),
-            Type::Decimal() => unimplemented!(),
-            Type::Type() => Variable::Type(args[0].get_type()),
+            Type::Null => Variable::Null(),
+            Type::Bool => Variable::Bool(args[0].to_bool(runtime)?),
+            Type::Bigint => Variable::Bigint(args[0].int(runtime)?),
+            Type::String => Variable::String(args[0].str(runtime)?),
+            Type::Decimal => unimplemented!(),
+            Type::Type => Variable::Type(args[0].get_type()),
             Type::Custom(_) => todo!(),
         })
     }
@@ -98,12 +98,12 @@ impl Type {
     pub fn str(&self) -> StringVar {
         return match self {
             Type::Standard(t) => t.name().clone(),
-            Type::Null() => "null".into(),
-            Type::Bool() => "bool".into(),
-            Type::Bigint() => "int".into(),
-            Type::String() => "str".into(),
-            Type::Decimal() => "dec".into(),
-            Type::Type() => "type".into(),
+            Type::Null => "null".into(),
+            Type::Bool => "bool".into(),
+            Type::Bigint => "int".into(),
+            Type::String => "str".into(),
+            Type::Decimal => "dec".into(),
+            Type::Type => "type".into(),
             Type::Custom(_) => todo!(),
         };
     }
@@ -113,12 +113,12 @@ impl ToString for Type {
     fn to_string(&self) -> String {
         return match self {
             Type::Standard(t) => t.name().to_string(),
-            Type::Null() => "null".to_string(),
-            Type::Bool() => "bool".to_string(),
-            Type::Bigint() => "int".to_string(),
-            Type::String() => "str".to_string(),
-            Type::Decimal() => "dec".to_string(),
-            Type::Type() => "type".to_string(),
+            Type::Null => "null".to_string(),
+            Type::Bool => "bool".to_string(),
+            Type::Bigint => "int".to_string(),
+            Type::String => "str".to_string(),
+            Type::Decimal => "dec".to_string(),
+            Type::Type => "type".to_string(),
             Type::Custom(_) => todo!(),
         };
     }
@@ -200,12 +200,12 @@ impl PartialEq for Type {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Type::Standard(a), Type::Standard(b)) => ptr::eq(a, b),
-            (Type::Null(), Type::Null()) => true,
-            (Type::Bool(), Type::Bool()) => true,
-            (Type::Bigint(), Type::Bigint()) => true,
-            (Type::String(), Type::String()) => true,
-            (Type::Decimal(), Type::Decimal()) => true,
-            (Type::Type(), Type::Type()) => true,
+            (Type::Null, Type::Null) => true,
+            (Type::Bool, Type::Bool) => true,
+            (Type::Bigint, Type::Bigint) => true,
+            (Type::String, Type::String) => true,
+            (Type::Decimal, Type::Decimal) => true,
+            (Type::Type, Type::Type) => true,
             (Type::Custom(a), Type::Custom(b)) => ptr::eq(a, b),
             _ => false,
         }
@@ -218,12 +218,12 @@ impl Hash for Type {
     fn hash<H: Hasher>(&self, state: &mut H) {
         match self {
             Type::Standard(a) => a.hash(state),
-            Type::Null() => 0.hash(state),
-            Type::Bool() => 1.hash(state),
-            Type::Bigint() => 2.hash(state),
-            Type::String() => 3.hash(state),
-            Type::Decimal() => 4.hash(state),
-            Type::Type() => 5.hash(state),
+            Type::Null => 0.hash(state),
+            Type::Bool => 1.hash(state),
+            Type::Bigint => 2.hash(state),
+            Type::String => 3.hash(state),
+            Type::Decimal => 4.hash(state),
+            Type::Type => 5.hash(state),
             Type::Custom(b) => ptr::hash(b, state),
         }
     }
