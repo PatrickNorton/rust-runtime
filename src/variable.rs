@@ -48,7 +48,7 @@ pub enum Variable {
 
 impl Variable {
     pub fn str(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
-        return match self {
+        match self {
             Variable::Null() => Result::Ok("null".into()),
             Variable::Bool(val) => Result::Ok((if *val { "true" } else { "false" }).into()),
             Variable::String(val) => Result::Ok(val.clone()),
@@ -58,22 +58,22 @@ impl Variable {
             Variable::Standard(val) => val.str(runtime),
             Variable::Function(val) => Result::Ok(val.to_str(runtime)),
             _ => unimplemented!(),
-        };
+        }
     }
 
     pub fn int(&self, runtime: &mut Runtime) -> Result<BigInt, ()> {
-        return match self {
+        match self {
             Variable::Bool(val) => Result::Ok(if *val { 1 } else { 0 }.into()),
             Variable::Bigint(val) => Result::Ok(val.clone()),
             Variable::Decimal(val) => Result::Ok(val.to_integer()),
             Variable::Standard(val) => val.int(runtime),
             Variable::String(val) => BigInt::from_str(val).or(Result::Err(())),
             _ => unimplemented!(),
-        };
+        }
     }
 
     pub fn to_bool(&self, runtime: &mut Runtime) -> Result<bool, ()> {
-        return match self {
+        match self {
             Variable::Null() => Result::Ok(false),
             Variable::Bool(val) => Result::Ok(*val),
             Variable::String(val) => Result::Ok(!val.is_empty()),
@@ -84,7 +84,7 @@ impl Variable {
             Variable::Method(_) => Result::Ok(true),
             Variable::Function(_) => Result::Ok(true),
             Variable::Custom(_) => unimplemented!(),
-        };
+        }
     }
 
     pub fn call(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
@@ -98,7 +98,7 @@ impl Variable {
     }
 
     pub fn index(&self, index: Name) -> Variable {
-        return match self {
+        match self {
             Variable::Standard(val) => val.index(index),
             Variable::Bigint(val) => {
                 if let Name::Operator(o) = index {
@@ -116,7 +116,7 @@ impl Variable {
             }
             Variable::Type(t) => t.index(index),
             _ => unimplemented!(),
-        };
+        }
     }
 
     pub fn set(&self, index: StringVar, value: Variable, _runtime: &mut Runtime) {
@@ -143,7 +143,7 @@ impl Variable {
     }
 
     pub fn identical(&self, other: &Variable) -> bool {
-        return match (self, other) {
+        match (self, other) {
             (Variable::Null(), Variable::Null()) => true,
             (Variable::Bool(a), Variable::Bool(b)) => a == b,
             (Variable::String(a), Variable::String(b)) => a == b,
@@ -154,7 +154,7 @@ impl Variable {
             (Variable::Method(a), Variable::Method(b)) => a == b,
             (Variable::Custom(_), Variable::Custom(_)) => unimplemented!(),
             _ => false,
-        };
+        }
     }
 
     pub fn equals(&self, other: Variable, runtime: &mut Runtime) -> bool {
@@ -173,7 +173,7 @@ impl Variable {
     }
 
     pub fn hash(&self, runtime: &mut Runtime) -> Result<usize, ()> {
-        return match self {
+        match self {
             Variable::Null() => Result::Ok(0),
             Variable::Bool(b) => Result::Ok(if *b { 0 } else { 1 }),
             Variable::Bigint(i) => {
@@ -203,7 +203,7 @@ impl Variable {
             Variable::Method(_) => unimplemented!(),
             Variable::Function(_) => unimplemented!(),
             Variable::Custom(_) => unimplemented!(),
-        };
+        }
     }
 }
 

@@ -86,7 +86,7 @@ pub enum Bytecode {
 }
 
 pub fn bytecode_size(b: Bytecode) -> (usize, usize) {
-    return match b {
+    match b {
         Bytecode::Nop | Bytecode::LoadNull => (0, 0),
         Bytecode::LoadConst
         | Bytecode::LoadValue
@@ -154,5 +154,5 @@ pub fn bytecode_size(b: Bytecode) -> (usize, usize) {
         Bytecode::ListAdd | Bytecode::SetAdd | Bytecode::DictAdd => (0, 0),
         Bytecode::Dotimes => (4, 0),
         Bytecode::LoadFunction => (2, 0),
-    };
+    }
 }

@@ -32,12 +32,12 @@ pub fn execute(runtime: &mut Runtime) -> FnResult {
 }
 
 fn get_bytes(bytes: &Vec<u8>, mut start: usize, byte_count: usize) -> u32 {
-    return match byte_count {
+    match byte_count {
         0 => 0,
         2 => bytes_index::<u16>(bytes, &mut start) as u32,
         4 => bytes_index::<u32>(bytes, &mut start),
         _ => panic!("Invalid number for bytes: {}", byte_count),
-    };
+    }
 }
 
 fn call_operator(o: Operator, argc: u16, runtime: &mut Runtime) -> FnResult {

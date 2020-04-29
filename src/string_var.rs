@@ -10,10 +10,10 @@ pub enum StringVar {
 
 impl StringVar {
     pub fn as_str(&self) -> &str {
-        return match self {
+        match self {
             StringVar::Literal(a) => *a,
             StringVar::Other(x) => &x,
-        };
+        }
     }
 }
 
@@ -33,10 +33,10 @@ impl Deref for StringVar {
     type Target = str;
 
     fn deref(&self) -> &Self::Target {
-        return match self {
+        match self {
             StringVar::Literal(s) => *s,
             StringVar::Other(s) => &s.as_ref(),
-        };
+        }
     }
 }
 

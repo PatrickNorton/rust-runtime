@@ -7,7 +7,7 @@ use num::{BigInt, BigRational, BigUint, FromPrimitive, ToPrimitive, Zero};
 pub type QuickResult = Result<Variable, ()>;
 
 pub fn quick_add(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
-    return match this {
+    match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bigint(
             BigInt::from(other) + if b { 1 } else { 0 },
@@ -34,11 +34,11 @@ pub fn quick_add(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
         Variable::Custom(_) => unimplemented!(),
-    };
+    }
 }
 
 pub fn quick_sub(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
-    return match this {
+    match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bigint(
             if b { 1 } else { 0 } - BigInt::from(other),
@@ -62,11 +62,11 @@ pub fn quick_sub(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
         Variable::Custom(_) => unimplemented!(),
-    };
+    }
 }
 
 pub fn quick_u_minus(this: Variable, runtime: &mut Runtime) -> QuickResult {
-    return match this {
+    match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bigint(
             BigInt::from_i8(if b { -1 } else { 0 }).unwrap(),
@@ -84,11 +84,11 @@ pub fn quick_u_minus(this: Variable, runtime: &mut Runtime) -> QuickResult {
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
         Variable::Custom(_) => unimplemented!(),
-    };
+    }
 }
 
 pub fn quick_mul(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
-    return match this {
+    match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bigint(
             BigInt::from(other) * if b { 1 } else { 0 },
@@ -117,11 +117,11 @@ pub fn quick_mul(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
         Variable::Custom(_) => unimplemented!(),
-    };
+    }
 }
 
 pub fn quick_div(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
-    return match this {
+    match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Decimal(BigRational::new(
             if b { 1 } else { 0 }.into(),
@@ -148,11 +148,11 @@ pub fn quick_div(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
         Variable::Custom(_) => unimplemented!(),
-    };
+    }
 }
 
 pub fn quick_floor_div(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
-    return match this {
+    match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bigint(
             if b { 1 } else { 0 } / BigInt::from(other),
@@ -176,11 +176,11 @@ pub fn quick_floor_div(this: Variable, other: Variable, runtime: &mut Runtime) -
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
         Variable::Custom(_) => unimplemented!(),
-    };
+    }
 }
 
 pub fn quick_mod(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
-    return match this {
+    match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bigint(
             if b { 1 } else { 0 } % BigInt::from(other),
@@ -204,11 +204,11 @@ pub fn quick_mod(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
         Variable::Custom(_) => unimplemented!(),
-    };
+    }
 }
 
 pub fn quick_subscript(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
-    return match this {
+    match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(_) => unimplemented!(),
         Variable::Bigint(_) => unimplemented!(),
@@ -224,11 +224,11 @@ pub fn quick_subscript(this: Variable, other: Variable, runtime: &mut Runtime) -
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
         Variable::Custom(_) => unimplemented!(),
-    };
+    }
 }
 
 pub fn quick_power(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
-    return match this {
+    match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => {
             BigInt::from(other); // Since this can be only 1 or 0, no
@@ -253,11 +253,11 @@ pub fn quick_power(this: Variable, other: Variable, runtime: &mut Runtime) -> Qu
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
         Variable::Custom(_) => unimplemented!(),
-    };
+    }
 }
 
 pub fn quick_left_bitshift(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
-    return match this {
+    match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bigint(
             (if b { 1 } else { 0 }
@@ -283,11 +283,11 @@ pub fn quick_left_bitshift(this: Variable, other: Variable, runtime: &mut Runtim
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
         Variable::Custom(_) => unimplemented!(),
-    };
+    }
 }
 
 pub fn quick_right_bitshift(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
-    return match this {
+    match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bigint(
             (if b { 1 } else { 0 }
@@ -313,11 +313,11 @@ pub fn quick_right_bitshift(this: Variable, other: Variable, runtime: &mut Runti
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
         Variable::Custom(_) => unimplemented!(),
-    };
+    }
 }
 
 pub fn quick_bitwise_and(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
-    return match this {
+    match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bool(b & other.to_bool(runtime)?)),
         Variable::Bigint(i) => Result::Ok(Variable::Bigint(i & &BigInt::from(other))),
@@ -333,11 +333,11 @@ pub fn quick_bitwise_and(this: Variable, other: Variable, runtime: &mut Runtime)
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
         Variable::Custom(_) => unimplemented!(),
-    };
+    }
 }
 
 pub fn quick_bitwise_or(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
-    return match this {
+    match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bool(b | other.to_bool(runtime)?)),
         Variable::Bigint(i) => Result::Ok(Variable::Bigint(i | &BigInt::from(other))),
@@ -353,11 +353,11 @@ pub fn quick_bitwise_or(this: Variable, other: Variable, runtime: &mut Runtime) 
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
         Variable::Custom(_) => unimplemented!(),
-    };
+    }
 }
 
 pub fn quick_bitwise_xor(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
-    return match this {
+    match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bool(b ^ other.to_bool(runtime)?)),
         Variable::Bigint(i) => Result::Ok(Variable::Bigint(i ^ &BigInt::from(other))),
@@ -373,11 +373,11 @@ pub fn quick_bitwise_xor(this: Variable, other: Variable, runtime: &mut Runtime)
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
         Variable::Custom(_) => unimplemented!(),
-    };
+    }
 }
 
 pub fn quick_bitwise_not(this: Variable, runtime: &mut Runtime) -> QuickResult {
-    return match this {
+    match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => QuickResult::Ok(Variable::Bool(!b)),
         Variable::Bigint(i) => QuickResult::Ok(Variable::Bigint(!i)),
@@ -393,11 +393,11 @@ pub fn quick_bitwise_not(this: Variable, runtime: &mut Runtime) -> QuickResult {
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
         Variable::Custom(_) => unimplemented!(),
-    };
+    }
 }
 
 pub fn quick_equals(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
-    return match this {
+    match this {
         Variable::Standard(v) => {
             runtime.push_native();
             v.call_operator(Operator::Equals, Vec::new(), runtime)?;
@@ -405,11 +405,11 @@ pub fn quick_equals(this: Variable, other: Variable, runtime: &mut Runtime) -> Q
             QuickResult::Ok(runtime.pop())
         }
         _ => QuickResult::Ok(Variable::Bool(this == other)),
-    };
+    }
 }
 
 pub fn quick_less_than(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
-    return match this {
+    match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bool(
             BigInt::from(if b { 1 } else { 0 }) < BigInt::from(other),
@@ -433,11 +433,11 @@ pub fn quick_less_than(this: Variable, other: Variable, runtime: &mut Runtime) -
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
         Variable::Custom(_) => unimplemented!(),
-    };
+    }
 }
 
 pub fn quick_greater_than(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
-    return match this {
+    match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bool(
             BigInt::from(if b { 1 } else { 0 }) > BigInt::from(other),
@@ -461,11 +461,11 @@ pub fn quick_greater_than(this: Variable, other: Variable, runtime: &mut Runtime
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
         Variable::Custom(_) => unimplemented!(),
-    };
+    }
 }
 
 pub fn quick_less_equal(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
-    return match this {
+    match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bool(
             BigInt::from(if b { 1 } else { 0 }) <= BigInt::from(other),
@@ -489,11 +489,11 @@ pub fn quick_less_equal(this: Variable, other: Variable, runtime: &mut Runtime) 
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
         Variable::Custom(_) => unimplemented!(),
-    };
+    }
 }
 
 pub fn quick_greater_equal(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
-    return match this {
+    match this {
         Variable::Null() => unimplemented!(),
         Variable::Bool(b) => Result::Ok(Variable::Bool(
             BigInt::from(if b { 1 } else { 0 }) >= BigInt::from(other),
@@ -517,5 +517,5 @@ pub fn quick_greater_equal(this: Variable, other: Variable, runtime: &mut Runtim
         Variable::Method(_) => unimplemented!(),
         Variable::Function(_) => unimplemented!(),
         Variable::Custom(_) => unimplemented!(),
-    };
+    }
 }

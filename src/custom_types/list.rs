@@ -88,10 +88,10 @@ impl List {
 
 impl CustomVar for List {
     fn get_attr(&self, name: Name) -> Variable {
-        return match name {
+        match name {
             Name::Operator(o) => self.get_operator(o),
             Name::Attribute(_) => unimplemented!(),
-        };
+        }
     }
 
     fn set(&mut self, _name: Name, _object: Variable) {

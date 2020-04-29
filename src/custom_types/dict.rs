@@ -145,10 +145,10 @@ impl InnerDict {
 
     pub fn get(&self, key: Variable, runtime: &mut Runtime) -> Result<Variable, ()> {
         let hash = key.hash(runtime)?;
-        return match &self.entries[hash % self.entries.len()] {
+        match &self.entries[hash % self.entries.len()] {
             Option::None => Result::Err(()),
             Option::Some(e) => e.get(key, runtime).ok_or(()),
-        };
+        }
     }
 
     fn true_repr(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
@@ -214,10 +214,10 @@ impl Entry {
         if key.equals(self.value.clone(), runtime) {
             Option::Some(self.value.clone())
         } else {
-            return match &self.next {
+            match &self.next {
                 Option::None => Option::None,
                 Option::Some(e) => e.get(key, runtime),
-            };
+            }
         }
     }
 
@@ -226,7 +226,7 @@ impl Entry {
             self.value = val;
             Option::Some(false)
         } else {
-            return match &mut self.next {
+            match &mut self.next {
                 Option::None => {
                     let hash = key.hash(runtime).ok()?;
                     self.next = Option::Some(Box::new(Entry {
@@ -238,7 +238,7 @@ impl Entry {
                     Option::Some(true)
                 }
                 Option::Some(e) => e.set(key, val, runtime),
-            };
+            }
         }
     }
 

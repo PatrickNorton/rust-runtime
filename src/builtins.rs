@@ -45,7 +45,7 @@ fn repr_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
 }
 
 pub fn builtin_of(index: usize) -> Variable {
-    return match index {
+    match index {
         0 => print(),
         1 => todo!("Callable"),
         2 => Type::Bigint.into(),
@@ -61,7 +61,7 @@ pub fn builtin_of(index: usize) -> Variable {
         12 => todo!("char"),
         13 => todo!("open"),
         _ => unimplemented!(),
-    };
+    }
 }
 
 pub fn default_methods(name: Name) -> StdVarMethod {

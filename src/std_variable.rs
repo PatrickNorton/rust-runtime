@@ -55,7 +55,7 @@ impl StdVariable {
         runtime: &mut Runtime,
     ) -> FnResult {
         let inner_method = self.value.borrow().cls.get_method(Name::Operator(op));
-        return match inner_method {
+        match inner_method {
             StdVarMethod::Standard(file_no, fn_no) => {
                 let var: Variable = Variable::Standard(self.clone());
                 args.reserve(2);
@@ -70,7 +70,7 @@ impl StdVariable {
                 runtime.pop_native();
                 result
             }
-        };
+        }
     }
 
     pub fn call(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {

@@ -84,7 +84,7 @@ impl Type {
     }
 
     pub fn index(&self, index: Name) -> Variable {
-        return match self {
+        match self {
             Type::Standard(std_t) => {
                 let index_pair = std_t.index(&index);
                 let inner_m = InnerMethod::Standard(index_pair.0, index_pair.1);
@@ -92,11 +92,11 @@ impl Type {
                 Variable::Method(Box::new(n))
             }
             _ => unimplemented!(),
-        };
+        }
     }
 
     pub fn str(&self) -> StringVar {
-        return match self {
+        match self {
             Type::Standard(t) => t.name().clone(),
             Type::Null => "null".into(),
             Type::Bool => "bool".into(),
@@ -105,13 +105,13 @@ impl Type {
             Type::Decimal => "dec".into(),
             Type::Type => "type".into(),
             Type::Custom(t) => t.get_name().clone(),
-        };
+        }
     }
 }
 
 impl ToString for Type {
     fn to_string(&self) -> String {
-        return match self {
+        match self {
             Type::Standard(t) => t.name().to_string(),
             Type::Null => "null".to_string(),
             Type::Bool => "bool".to_string(),
@@ -120,7 +120,7 @@ impl ToString for Type {
             Type::Decimal => "dec".to_string(),
             Type::Type => "type".to_string(),
             Type::Custom(t) => t.get_name().to_string(),
-        };
+        }
     }
 }
 
