@@ -24,6 +24,7 @@ pub fn quick_add(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
                 unimplemented!()
             }
         }
+        Variable::Char(c1) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
             runtime.push_native();
@@ -52,6 +53,7 @@ pub fn quick_sub(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
                 unimplemented!()
             }
         }
+        Variable::Char(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
             runtime.push_native();
@@ -74,6 +76,7 @@ pub fn quick_u_minus(this: Variable, runtime: &mut Runtime) -> QuickResult {
         Variable::Bigint(i) => Result::Ok(Variable::Bigint(-i)),
         Variable::String(_) => unimplemented!(),
         Variable::Decimal(d) => Result::Ok(Variable::Decimal(-d)),
+        Variable::Char(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
             runtime.push_native();
@@ -107,6 +110,7 @@ pub fn quick_mul(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
                 unimplemented!()
             }
         }
+        Variable::Char(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
             runtime.push_native();
@@ -138,6 +142,7 @@ pub fn quick_div(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
                 unimplemented!()
             }
         }
+        Variable::Char(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
             runtime.push_native();
@@ -166,6 +171,7 @@ pub fn quick_floor_div(this: Variable, other: Variable, runtime: &mut Runtime) -
                 unimplemented!()
             }
         }
+        Variable::Char(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
             runtime.push_native();
@@ -194,6 +200,7 @@ pub fn quick_mod(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
                 unimplemented!()
             }
         }
+        Variable::Char(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
             runtime.push_native();
@@ -214,6 +221,7 @@ pub fn quick_subscript(this: Variable, other: Variable, runtime: &mut Runtime) -
         Variable::Bigint(_) => unimplemented!(),
         Variable::String(_) => unimplemented!(),
         Variable::Decimal(_) => unimplemented!(),
+        Variable::Char(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
             runtime.push_native();
@@ -243,6 +251,7 @@ pub fn quick_power(this: Variable, other: Variable, runtime: &mut Runtime) -> Qu
         )),
         Variable::String(_) => unimplemented!(),
         Variable::Decimal(_) => unimplemented!(),
+        Variable::Char(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
             runtime.push_native();
@@ -273,6 +282,7 @@ pub fn quick_left_bitshift(this: Variable, other: Variable, runtime: &mut Runtim
         )),
         Variable::String(_) => unimplemented!(),
         Variable::Decimal(_) => unimplemented!(),
+        Variable::Char(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
             runtime.push_native();
@@ -303,6 +313,7 @@ pub fn quick_right_bitshift(this: Variable, other: Variable, runtime: &mut Runti
         )),
         Variable::String(_) => unimplemented!(),
         Variable::Decimal(_) => unimplemented!(),
+        Variable::Char(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
             runtime.push_native();
@@ -323,6 +334,7 @@ pub fn quick_bitwise_and(this: Variable, other: Variable, runtime: &mut Runtime)
         Variable::Bigint(i) => Result::Ok(Variable::Bigint(i & &BigInt::from(other))),
         Variable::String(_) => unimplemented!(),
         Variable::Decimal(_) => unimplemented!(),
+        Variable::Char(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
             runtime.push_native();
@@ -343,6 +355,7 @@ pub fn quick_bitwise_or(this: Variable, other: Variable, runtime: &mut Runtime) 
         Variable::Bigint(i) => Result::Ok(Variable::Bigint(i | &BigInt::from(other))),
         Variable::String(_) => unimplemented!(),
         Variable::Decimal(_) => unimplemented!(),
+        Variable::Char(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
             runtime.push_native();
@@ -363,6 +376,7 @@ pub fn quick_bitwise_xor(this: Variable, other: Variable, runtime: &mut Runtime)
         Variable::Bigint(i) => Result::Ok(Variable::Bigint(i ^ &BigInt::from(other))),
         Variable::String(_) => unimplemented!(),
         Variable::Decimal(_) => unimplemented!(),
+        Variable::Char(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
             runtime.push_native();
@@ -383,6 +397,7 @@ pub fn quick_bitwise_not(this: Variable, runtime: &mut Runtime) -> QuickResult {
         Variable::Bigint(i) => QuickResult::Ok(Variable::Bigint(!i)),
         Variable::String(_) => unimplemented!(),
         Variable::Decimal(_) => unimplemented!(),
+        Variable::Char(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
             runtime.push_native();
@@ -423,6 +438,7 @@ pub fn quick_less_than(this: Variable, other: Variable, runtime: &mut Runtime) -
                 unimplemented!()
             }
         }
+        Variable::Char(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
             runtime.push_native();
@@ -451,6 +467,7 @@ pub fn quick_greater_than(this: Variable, other: Variable, runtime: &mut Runtime
                 unimplemented!()
             }
         }
+        Variable::Char(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
             runtime.push_native();
@@ -479,6 +496,7 @@ pub fn quick_less_equal(this: Variable, other: Variable, runtime: &mut Runtime) 
                 unimplemented!()
             }
         }
+        Variable::Char(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
             runtime.push_native();
@@ -507,6 +525,7 @@ pub fn quick_greater_equal(this: Variable, other: Variable, runtime: &mut Runtim
                 unimplemented!()
             }
         }
+        Variable::Char(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
             runtime.push_native();

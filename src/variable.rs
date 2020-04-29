@@ -39,6 +39,7 @@ pub enum Variable {
     Bigint(BigInt),
     String(StringVar),
     Decimal(BigRational),
+    Char(char),
     Type(Type),
     Standard(StdVariable),
     Method(Box<dyn Method>),
@@ -54,6 +55,7 @@ impl Variable {
             Variable::String(val) => Result::Ok(val.clone()),
             Variable::Bigint(val) => Result::Ok(val.to_str_radix(10).into()),
             Variable::Decimal(val) => Result::Ok(val.to_string().into()),
+            Variable::Char(val) => Result::Ok(val.to_string().into()),
             Variable::Type(val) => Result::Ok(val.str()),
             Variable::Standard(val) => val.str(runtime),
             Variable::Function(val) => Result::Ok(val.to_str(runtime)),
@@ -67,6 +69,7 @@ impl Variable {
             Variable::Bool(val) => Result::Ok(if *val { 1 } else { 0 }.into()),
             Variable::Bigint(val) => Result::Ok(val.clone()),
             Variable::Decimal(val) => Result::Ok(val.to_integer()),
+            Variable::Char(val) => Result::Ok((*val as u32).into()),
             Variable::Standard(val) => val.int(runtime),
             Variable::String(val) => BigInt::from_str(val).or(Result::Err(())),
             Variable::Custom(val) => val.int(runtime),
@@ -81,6 +84,7 @@ impl Variable {
             Variable::String(val) => Result::Ok(!val.is_empty()),
             Variable::Bigint(val) => Result::Ok(val != &BigInt::zero()),
             Variable::Decimal(val) => Result::Ok(val != &BigRational::zero()),
+            Variable::Char(val) => Result::Ok(val != &'\0'),
             Variable::Type(_) => Result::Ok(true),
             Variable::Standard(val) => val.bool(runtime),
             Variable::Method(_) => Result::Ok(true),
@@ -138,6 +142,7 @@ impl Variable {
             Variable::String(_) => Type::String,
             Variable::Bigint(_) => Type::Bigint,
             Variable::Decimal(_) => Type::Decimal,
+            Variable::Char(_) => Type::Char,
             Variable::Type(_) => Type::Type,
             Variable::Method(_) => unimplemented!(),
             Variable::Standard(a) => a.get_type(),
@@ -153,6 +158,7 @@ impl Variable {
             (Variable::String(a), Variable::String(b)) => a == b,
             (Variable::Bigint(a), Variable::Bigint(b)) => a == b,
             (Variable::Decimal(a), Variable::Decimal(b)) => a == b,
+            (Variable::Char(a), Variable::Char(b)) => a == b,
             (Variable::Type(a), Variable::Type(b)) => a == b,
             (Variable::Standard(a), Variable::Standard(b)) => a.identical(b),
             (Variable::Method(a), Variable::Method(b)) => a == b,
@@ -197,6 +203,7 @@ impl Variable {
                 let hash: BigInt = d.to_integer() % &max;
                 Result::Ok(hash.to_usize().unwrap())
             }
+            Variable::Char(c) => Result::Ok(*c as usize),
             Variable::Type(_) => unimplemented!(),
             Variable::Standard(v) => {
                 runtime.push_native();
@@ -263,6 +270,12 @@ impl From<Type> for Variable {
 impl From<bool> for Variable {
     fn from(x: bool) -> Self {
         Variable::Bool(x)
+    }
+}
+
+impl From<char> for Variable {
+    fn from(x: char) -> Self {
+        Variable::Char(x)
     }
 }
 

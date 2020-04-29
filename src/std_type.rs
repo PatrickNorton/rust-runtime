@@ -20,6 +20,7 @@ pub enum Type {
     Bigint,
     String,
     Decimal,
+    Char,
     Type,
     Object,
     Custom(&'static dyn CustomTypeImpl),
