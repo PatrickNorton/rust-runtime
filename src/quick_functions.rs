@@ -1,5 +1,6 @@
 use crate::operator::Operator;
 use crate::runtime::Runtime;
+use crate::std_type::Type;
 use crate::variable::Variable;
 use num::traits::Pow;
 use num::{BigInt, BigRational, BigUint, FromPrimitive, ToPrimitive, Zero};
@@ -24,7 +25,7 @@ pub fn quick_add(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
                 unimplemented!()
             }
         }
-        Variable::Char(c1) => unimplemented!(),
+        Variable::Char(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),
         Variable::Standard(v) => {
             runtime.push_native();
@@ -219,7 +220,17 @@ pub fn quick_subscript(this: Variable, other: Variable, runtime: &mut Runtime) -
         Variable::Null() => unimplemented!(),
         Variable::Bool(_) => unimplemented!(),
         Variable::Bigint(_) => unimplemented!(),
-        Variable::String(_) => unimplemented!(),
+        Variable::String(val) => {
+            let index = BigInt::from(other).to_usize().unwrap();
+            match val.chars().nth(index) {
+                Option::None => {
+                    runtime.push_native();
+                    runtime.throw_quick(Type::String, "Index out of bounds".into())?;
+                    unreachable!() // Native frame will always return FnResult::Err
+                }
+                Option::Some(value) => Result::Ok(value.into()),
+            }
+        }
         Variable::Decimal(_) => unimplemented!(),
         Variable::Char(_) => unimplemented!(),
         Variable::Type(_) => unimplemented!(),

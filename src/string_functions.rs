@@ -1,9 +1,11 @@
 use crate::method::{InnerMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
+use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use num::{BigInt, ToPrimitive};
+use std::mem::replace;
 use std::str::FromStr;
 
 pub fn get_operator(this: &StringVar, o: Operator) -> Variable {
@@ -14,6 +16,7 @@ pub fn get_operator(this: &StringVar, o: Operator) -> Variable {
         Operator::Int => int,
         Operator::Str => str,
         Operator::Repr => repr,
+        Operator::GetAttr => index,
         _ => unimplemented!("Operator::{:?} unimplemented", o),
     };
     Variable::Method(Box::new(StdMethod::new(
@@ -69,4 +72,18 @@ fn repr(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResul
     debug_assert!(args.is_empty());
     runtime.push(Variable::String(format!("{:?}", this.as_str()).into()));
     FnResult::Ok(())
+}
+
+fn index(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert_eq!(args.len(), 1);
+    let index = BigInt::from(replace(&mut args[0], Variable::Null()))
+        .to_usize()
+        .unwrap();
+    match this.chars().nth(index) {
+        Option::None => runtime.throw_quick(Type::String, "Index out of bounds".into()),
+        Option::Some(value) => {
+            runtime.push(value.into());
+            FnResult::Ok(())
+        }
+    }
 }
