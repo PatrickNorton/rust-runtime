@@ -1,11 +1,13 @@
+use crate::custom_types::types::CustomType;
 use crate::custom_var::{CustomVar, CustomVarWrapper};
-use crate::method::StdMethod;
+use crate::method::{InnerMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Name, Variable};
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::rc::Rc;
 
 #[derive(Debug, Clone)]
@@ -78,6 +80,25 @@ impl Set {
         let val = args.remove(0);
         (*self.value).borrow_mut().add(val, runtime)?;
         FnResult::Ok(())
+    }
+
+    fn create(&self, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty()); // TODO: Set of a value
+        let set = Set::new(vec![], runtime)?;
+        runtime.push(set.into());
+        FnResult::Ok(())
+    }
+
+    pub fn set_type() -> Type {
+        lazy_static! {
+            static ref TYPE: CustomType<Set> = CustomType::new(
+                "list".into(),
+                Vec::new(),
+                InnerMethod::Native(Set::create),
+                HashMap::new()
+            );
+        }
+        Type::Custom(&*TYPE)
     }
 
     pub fn is_empty(&self) -> bool {
@@ -232,12 +253,12 @@ impl CustomVar for Set {
     }
 
     fn get_type(&self) -> Type {
-        unimplemented!()
+        Set::set_type()
     }
 }
 
-impl From<Set> for Variable {
-    fn from(val: Set) -> Self {
-        Variable::Custom(CustomVarWrapper::new(Box::new(val)))
+impl Into<Variable> for Set {
+    fn into(self) -> Variable {
+        Box::new(self).into()
     }
 }

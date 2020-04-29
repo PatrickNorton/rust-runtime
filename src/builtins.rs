@@ -1,4 +1,5 @@
 use crate::custom_types::list::List;
+use crate::custom_types::set::Set;
 use crate::function::Function;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
@@ -56,7 +57,7 @@ pub fn builtin_of(index: usize) -> Variable {
         8 => repr(),
         9 => input(),
         10 => List::list_type().into(),
-        11 => todo!("set"),
+        11 => Set::set_type().into(),
         12 => todo!("char"),
         13 => todo!("open"),
         _ => unimplemented!(),
