@@ -1,5 +1,6 @@
 use crate::custom_types::types::CustomType;
 use crate::custom_var::CustomVar;
+use crate::function::Function;
 use crate::method::{InnerMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
@@ -66,7 +67,7 @@ impl List {
         }
     }
 
-    pub fn create(&self, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    pub fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty()); // TODO: List of a value
         runtime.push(List::from_values(vec![]).into());
         FnResult::Ok(())
@@ -77,7 +78,7 @@ impl List {
             static ref TYPE: CustomType<List> = CustomType::new(
                 "list".into(),
                 Vec::new(),
-                InnerMethod::Native(List::create),
+                Function::Native(List::create),
                 HashMap::new()
             );
         }

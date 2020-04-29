@@ -1,6 +1,7 @@
 use crate::custom_types::types::CustomType;
-use crate::custom_var::{CustomVar, CustomVarWrapper};
-use crate::method::{InnerMethod, StdMethod};
+use crate::custom_var::CustomVar;
+use crate::function::Function;
+use crate::method::StdMethod;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
@@ -82,7 +83,7 @@ impl Set {
         FnResult::Ok(())
     }
 
-    fn create(&self, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty()); // TODO: Set of a value
         let set = Set::new(vec![], runtime)?;
         runtime.push(set.into());
@@ -94,7 +95,7 @@ impl Set {
             static ref TYPE: CustomType<Set> = CustomType::new(
                 "list".into(),
                 Vec::new(),
-                InnerMethod::Native(Set::create),
+                Function::Native(Set::create),
                 HashMap::new()
             );
         }

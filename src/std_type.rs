@@ -12,7 +12,7 @@ use crate::string_var::StringVar;
 use crate::variable::{FnResult, Name, Variable};
 use std::ptr;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum Type {
     Standard(&'static StdType),
     Null,
@@ -54,7 +54,7 @@ impl Type {
             (Type::String, Type::String) => true,
             (Type::Decimal, Type::Decimal) => true,
             (Type::Type, Type::Type) => true,
-            (Type::Custom(_), Type::Custom(_)) => todo!(),
+            (Type::Custom(t), _) => t.is_subclass(other),
             _ => false,
         }
     }
@@ -72,7 +72,7 @@ impl Type {
             Type::String => Variable::String(args[0].str(runtime)?),
             Type::Decimal => unimplemented!(),
             Type::Type => Variable::Type(args[0].get_type()),
-            Type::Custom(_) => todo!(),
+            Type::Custom(t) => t.create(args, runtime)?,
         })
     }
 
@@ -104,7 +104,7 @@ impl Type {
             Type::String => "str".into(),
             Type::Decimal => "dec".into(),
             Type::Type => "type".into(),
-            Type::Custom(_) => todo!(),
+            Type::Custom(t) => t.get_name().clone(),
         };
     }
 }
@@ -119,7 +119,7 @@ impl ToString for Type {
             Type::String => "str".to_string(),
             Type::Decimal => "dec".to_string(),
             Type::Type => "type".to_string(),
-            Type::Custom(_) => todo!(),
+            Type::Custom(t) => t.get_name().to_string(),
         };
     }
 }
