@@ -4,7 +4,6 @@ use crate::string_var::StringVar;
 use crate::variable::Name;
 use std::collections::HashMap;
 use std::fmt::Debug;
-use std::hash::Hash;
 
 pub trait CustomTypeImpl: Debug + Sync {}
 
@@ -31,13 +30,5 @@ impl<T> CustomType<T> {
         }
     }
 }
-
-impl<T> PartialEq for CustomType<T> {
-    fn eq(&self, other: &Self) -> bool {
-        unimplemented!()
-    }
-}
-
-impl<T> Eq for CustomType<T> {}
 
 impl<T> CustomTypeImpl for CustomType<T> where T: Debug {}
