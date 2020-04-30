@@ -19,7 +19,7 @@ pub struct Set {
 }
 
 #[derive(Debug)]
-pub struct InnerSet {
+struct InnerSet {
     size: usize,
     values: Vec<Option<Entry>>,
 }

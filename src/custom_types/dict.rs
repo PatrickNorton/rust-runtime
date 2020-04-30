@@ -28,7 +28,7 @@ pub struct Dict {
 }
 
 #[derive(Debug)]
-pub struct InnerDict {
+struct InnerDict {
     size: usize,
     entries: Vec<Option<Entry>>,
 }
@@ -98,7 +98,7 @@ impl Dict {
         FnResult::Ok(())
     }
 
-    pub fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty()); // TODO: List of a value
         let dict = Dict::from_args(Vec::new(), Vec::new(), runtime)?;
         runtime.push(dict.into());
