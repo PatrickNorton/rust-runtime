@@ -13,9 +13,9 @@ use std::collections::HashMap;
 use std::mem::replace;
 use std::rc::Rc;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Set {
-    value: Rc<RefCell<InnerSet>>,
+    value: RefCell<InnerSet>,
 }
 
 #[derive(Debug)]
@@ -32,13 +32,13 @@ struct Entry {
 }
 
 impl Set {
-    pub fn new(args: Vec<Variable>, runtime: &mut Runtime) -> Result<Set, ()> {
-        Result::Ok(Set {
-            value: Rc::new(RefCell::new(InnerSet::new(args, runtime)?)),
-        })
+    pub fn new(args: Vec<Variable>, runtime: &mut Runtime) -> Result<Rc<Set>, ()> {
+        Result::Ok(Rc::new(Set {
+            value: RefCell::new(InnerSet::new(args, runtime)?),
+        }))
     }
 
-    fn get_operator(&self, o: Operator) -> Variable {
+    fn get_operator(self: &Rc<Self>, o: Operator) -> Variable {
         let func = match o {
             Operator::Bool => Self::bool,
             Operator::Str => Self::repr,
@@ -49,7 +49,7 @@ impl Set {
         Variable::Method(StdMethod::new_native(self.clone(), func))
     }
 
-    fn get_attr(&self, s: StringVar) -> Variable {
+    fn get_attribute(self: &Rc<Self>, s: StringVar) -> Variable {
         let func = match s.as_str() {
             "add" => Self::add,
             _ => unimplemented!(),
@@ -57,31 +57,31 @@ impl Set {
         Variable::Method(StdMethod::new_native(self.clone(), func))
     }
 
-    fn bool(&self, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn bool(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         runtime.push(self.is_empty().into());
         FnResult::Ok(())
     }
 
-    fn repr(&self, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn repr(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        let repr = (*self.value).borrow().repr(runtime)?;
+        let repr = self.value.borrow().repr(runtime)?;
         runtime.push(repr.into());
         FnResult::Ok(())
     }
 
-    fn contains(&self, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn contains(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         let val = args.remove(0);
-        let is_contained = (*self.value).borrow().contains(val, runtime)?;
+        let is_contained = self.value.borrow().contains(val, runtime)?;
         runtime.push(is_contained.into());
         FnResult::Ok(())
     }
 
-    fn add(&self, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn add(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         let val = args.remove(0);
-        (*self.value).borrow_mut().add(val, runtime)?;
+        self.value.borrow_mut().add(val, runtime)?;
         FnResult::Ok(())
     }
 
@@ -105,7 +105,7 @@ impl Set {
     }
 
     pub fn is_empty(&self) -> bool {
-        (*self.value).borrow().is_empty()
+        self.value.borrow().is_empty()
     }
 }
 
@@ -263,24 +263,18 @@ impl Entry {
 }
 
 impl CustomVar for Set {
-    fn get_attr(&self, name: Name) -> Variable {
+    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
         match name {
-            Name::Attribute(s) => self.get_attr(s),
+            Name::Attribute(s) => self.get_attribute(s),
             Name::Operator(o) => self.get_operator(o),
         }
     }
 
-    fn set(&self, _name: Name, _object: Variable) {
+    fn set(self: Rc<Self>, _name: Name, _object: Variable) {
         unimplemented!()
     }
 
-    fn get_type(&self) -> Type {
+    fn get_type(self: Rc<Self>) -> Type {
         Set::set_type()
-    }
-}
-
-impl Into<Variable> for Set {
-    fn into(self) -> Variable {
-        Box::new(self).into()
     }
 }

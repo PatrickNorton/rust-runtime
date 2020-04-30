@@ -59,7 +59,7 @@ impl Variable {
             Variable::Type(val) => Result::Ok(val.str()),
             Variable::Standard(val) => val.str(runtime),
             Variable::Function(val) => Result::Ok(val.to_str(runtime)),
-            Variable::Custom(val) => val.str(runtime),
+            Variable::Custom(val) => (**val).clone().str(runtime),
             _ => unimplemented!(),
         }
     }
@@ -72,7 +72,7 @@ impl Variable {
             Variable::Char(val) => Result::Ok((*val as u32).into()),
             Variable::Standard(val) => val.int(runtime),
             Variable::String(val) => BigInt::from_str(val).or(Result::Err(())),
-            Variable::Custom(val) => val.int(runtime),
+            Variable::Custom(val) => (**val).clone().int(runtime),
             _ => unimplemented!(),
         }
     }
@@ -89,7 +89,7 @@ impl Variable {
             Variable::Standard(val) => val.bool(runtime),
             Variable::Method(_) => Result::Ok(true),
             Variable::Function(_) => Result::Ok(true),
-            Variable::Custom(val) => val.bool(runtime),
+            Variable::Custom(val) => (**val).clone().bool(runtime),
         }
     }
 
@@ -99,7 +99,7 @@ impl Variable {
             Variable::Method(method) => method.call(args),
             Variable::Function(func) => func.call(args),
             Variable::Type(t) => t.push_create(args),
-            Variable::Custom(val) => val.call(args.0, args.1),
+            Variable::Custom(val) => (**val).clone().call(args.0, args.1),
             _ => unimplemented!(),
         }
     }
@@ -122,7 +122,7 @@ impl Variable {
                 }
             }
             Variable::Type(t) => t.index(index),
-            Variable::Custom(val) => val.get_attr(index),
+            Variable::Custom(val) => (**val).clone().get_attr(index),
             _ => unimplemented!(),
         }
     }
@@ -130,7 +130,7 @@ impl Variable {
     pub fn set(&self, index: StringVar, value: Variable, _runtime: &mut Runtime) {
         match self {
             Variable::Standard(val) => val.set(index, value),
-            Variable::Custom(val) => val.set(Name::Attribute(index), value),
+            Variable::Custom(val) => (**val).clone().set(Name::Attribute(index), value),
             _ => unimplemented!(),
         }
     }
@@ -147,7 +147,7 @@ impl Variable {
             Variable::Method(_) => unimplemented!(),
             Variable::Standard(a) => a.get_type(),
             Variable::Function(_) => unimplemented!(),
-            Variable::Custom(a) => a.get_type(),
+            Variable::Custom(a) => (**a).clone().get_type(),
         }
     }
 
@@ -215,7 +215,9 @@ impl Variable {
             Variable::Function(_) => unimplemented!(),
             Variable::Custom(val) => {
                 runtime.push_native();
-                val.call_op(Operator::Hash, Vec::new(), runtime)?;
+                (**val)
+                    .clone()
+                    .call_op(Operator::Hash, Vec::new(), runtime)?;
                 runtime.pop_native();
                 Result::Ok(BigInt::from(runtime.pop()).to_usize().unwrap())
             }

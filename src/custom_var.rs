@@ -7,69 +7,56 @@ use num::BigInt;
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 use std::ops::Deref;
+use std::rc::Rc;
 
-#[derive(Debug, Clone)]
-pub struct CustomVarWrapper {
-    value: Box<dyn CustomVar>,
-}
+pub trait CustomVar: Debug {
+    fn get_attr(self: Rc<Self>, name: Name) -> Variable;
+    fn set(self: Rc<Self>, name: Name, object: Variable);
+    fn get_type(self: Rc<Self>) -> Type;
 
-pub trait CloneBox {
-    fn clone_box(&self) -> Box<dyn CustomVar>;
-}
-
-impl<T> CloneBox for T
-where
-    T: 'static + CustomVar + Clone,
-{
-    fn clone_box(&self) -> Box<dyn CustomVar> {
-        Box::new(self.clone())
-    }
-}
-
-impl Clone for Box<dyn CustomVar> {
-    fn clone(&self) -> Box<dyn CustomVar> {
-        self.clone_box()
-    }
-}
-
-pub trait CustomVar: Debug + CloneBox {
-    fn get_attr(&self, name: Name) -> Variable;
-    fn set(&self, name: Name, object: Variable);
-    fn get_type(&self) -> Type;
-
-    fn call(&self, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn call(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         self.call_op(Operator::Call, args, runtime)
     }
 
-    fn call_op(&self, operator: Operator, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn call_op(
+        self: Rc<Self>,
+        operator: Operator,
+        args: Vec<Variable>,
+        runtime: &mut Runtime,
+    ) -> FnResult {
         self.get_attr(Name::Operator(operator))
             .call((args, runtime))
     }
 
-    fn str(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
+    fn str(self: Rc<Self>, runtime: &mut Runtime) -> Result<StringVar, ()> {
         self.call_op(Operator::Str, vec![], runtime)?;
         runtime.pop().str(runtime)
     }
 
-    fn int(&self, runtime: &mut Runtime) -> Result<BigInt, ()> {
+    fn int(self: Rc<Self>, runtime: &mut Runtime) -> Result<BigInt, ()> {
         self.call_op(Operator::Int, vec![], runtime)?;
         runtime.pop().int(runtime)
     }
 
-    fn bool(&self, runtime: &mut Runtime) -> Result<bool, ()> {
+    fn bool(self: Rc<Self>, runtime: &mut Runtime) -> Result<bool, ()> {
         self.call_op(Operator::Bool, vec![], runtime)?;
         runtime.pop().to_bool(runtime)
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct CustomVarWrapper {
+    value: Rc<dyn CustomVar>,
+}
+
 impl CustomVarWrapper {
-    pub fn new(value: Box<dyn CustomVar>) -> CustomVarWrapper {
+    pub fn new(value: Rc<dyn CustomVar>) -> CustomVarWrapper {
         CustomVarWrapper { value }
     }
 }
 
 impl Deref for CustomVarWrapper {
-    type Target = Box<dyn CustomVar>;
+    type Target = Rc<dyn CustomVar>;
 
     fn deref(&self) -> &Self::Target {
         &self.value
@@ -77,16 +64,22 @@ impl Deref for CustomVarWrapper {
 }
 
 impl Hash for CustomVarWrapper {
-    fn hash<H: Hasher>(&self, _state: &mut H) {
-        unimplemented!()
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        (Rc::into_raw(self.value.clone()) as *const () as usize).hash(state)
     }
 }
 
-impl<T: 'static> From<Box<T>> for Variable
+impl From<Rc<dyn CustomVar>> for Variable {
+    fn from(x: Rc<dyn CustomVar>) -> Self {
+        Variable::Custom(CustomVarWrapper::new(x))
+    }
+}
+
+impl<T> From<Rc<T>> for Variable
 where
-    T: CustomVar,
+    T: CustomVar + 'static,
 {
-    fn from(value: Box<T>) -> Self {
-        Variable::Custom(CustomVarWrapper::new(value))
+    fn from(val: Rc<T>) -> Self {
+        Variable::Custom(CustomVarWrapper::new(val))
     }
 }

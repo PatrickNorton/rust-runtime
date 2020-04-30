@@ -1,5 +1,5 @@
 use crate::custom_types::types::CustomType;
-use crate::custom_var::{CustomVar, CustomVarWrapper};
+use crate::custom_var::CustomVar;
 use crate::function::Function;
 use crate::int_tools::next_power_2;
 use crate::method::StdMethod;
@@ -22,9 +22,9 @@ struct Entry {
     next: Option<Box<Entry>>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Dict {
-    value: Rc<RefCell<InnerDict>>,
+    value: RefCell<InnerDict>,
 }
 
 #[derive(Debug)]
@@ -38,13 +38,13 @@ impl Dict {
         keys: Vec<Variable>,
         values: Vec<Variable>,
         runtime: &mut Runtime,
-    ) -> Result<Dict, ()> {
-        Result::Ok(Dict {
-            value: Rc::new(RefCell::new(InnerDict::from_args(keys, values, runtime)?)),
-        })
+    ) -> Result<Rc<Dict>, ()> {
+        Result::Ok(Rc::new(Dict {
+            value: RefCell::new(InnerDict::from_args(keys, values, runtime)?),
+        }))
     }
 
-    fn get_op(&self, o: Operator) -> Variable {
+    fn get_op(self: &Rc<Self>, o: Operator) -> Variable {
         let func = match o {
             Operator::GetAttr => Dict::index,
             Operator::Repr => Dict::repr,
@@ -56,7 +56,7 @@ impl Dict {
         Variable::Method(StdMethod::new_native(self.clone(), func))
     }
 
-    fn get_attr(&self, s: StringVar) -> Variable {
+    fn get_attribute(self: &Rc<Self>, s: StringVar) -> Variable {
         let func = match s.as_str() {
             "clear" => Dict::clear,
             "length" => return Variable::Bigint(self.len().into()),
@@ -65,34 +65,34 @@ impl Dict {
         Variable::Method(StdMethod::new_native(self.clone(), func))
     }
 
-    fn index(&self, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn index(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        let result = (*self.value).borrow().get(args.remove(0), runtime)?;
+        let result = self.value.borrow().get(args.remove(0), runtime)?;
         runtime.push(result);
         FnResult::Ok(())
     }
 
-    fn repr(&self, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn repr(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        let repr = (*self.value).borrow().true_repr(runtime)?;
+        let repr = self.value.borrow().true_repr(runtime)?;
         runtime.push(repr.into());
         FnResult::Ok(())
     }
 
-    fn bool(&self, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn bool(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         runtime.push((!self.is_empty()).into());
         FnResult::Ok(())
     }
 
-    fn set(&self, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn set(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         let val = args.remove(1); // Reverse order to avoid move
         let key = args.remove(0);
-        (*self.value).borrow_mut().set(key, val, runtime)
+        self.value.borrow_mut().set(key, val, runtime)
     }
 
-    fn clear(&self, args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
+    fn clear(self: &Rc<Self>, args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         self.value.borrow_mut().clear();
         FnResult::Ok(())
@@ -118,11 +118,11 @@ impl Dict {
     }
 
     fn is_empty(&self) -> bool {
-        (*self.value).borrow().is_empty()
+        self.value.borrow().is_empty()
     }
 
     fn len(&self) -> usize {
-        (*self.value).borrow().size
+        self.value.borrow().size
     }
 }
 
@@ -285,24 +285,18 @@ impl Entry {
 }
 
 impl CustomVar for Dict {
-    fn get_attr(&self, name: Name) -> Variable {
+    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
         match name {
             Name::Operator(o) => self.get_op(o),
-            Name::Attribute(s) => self.get_attr(s),
+            Name::Attribute(s) => self.get_attribute(s),
         }
     }
 
-    fn set(&self, _name: Name, _object: Variable) {
+    fn set(self: Rc<Self>, _name: Name, _object: Variable) {
         unimplemented!()
     }
 
-    fn get_type(&self) -> Type {
+    fn get_type(self: Rc<Self>) -> Type {
         Dict::dict_type()
-    }
-}
-
-impl From<Dict> for Variable {
-    fn from(val: Dict) -> Self {
-        Variable::Custom(CustomVarWrapper::new(Box::new(val)))
     }
 }
