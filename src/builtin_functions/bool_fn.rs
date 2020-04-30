@@ -1,4 +1,4 @@
-use crate::int_functions;
+use crate::builtin_functions::int_fn;
 use crate::method::{InnerMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
@@ -16,12 +16,7 @@ pub fn get_operator(this: bool, o: Operator) -> Variable {
         Operator::BitwiseOr => bitwise_or,
         Operator::BitwiseNot => bitwise_not,
         Operator::BitwiseXor => bitwise_xor,
-        _ => {
-            return int_functions::get_operator(
-                BigInt::from_i32(if this { 1 } else { 0 }).unwrap(),
-                o,
-            )
-        }
+        _ => return int_fn::get_operator(BigInt::from_i32(if this { 1 } else { 0 }).unwrap(), o),
     };
     Variable::Method(Box::new(StdMethod::new(this, InnerMethod::Native(func))))
 }
@@ -101,7 +96,7 @@ fn bitwise_or(this: &bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
 
 fn bitwise_not(this: &bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.push(Variable::Bool(!this));
+    runtime.push(Variable::Bool(!*this));
     FnResult::Ok(())
 }
 

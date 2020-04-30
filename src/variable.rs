@@ -1,3 +1,4 @@
+use crate::builtin_functions::{bool_fn, char_fn, dec_fn, int_fn, string_fn};
 use crate::custom_var::CustomVarWrapper;
 use crate::file_info::FileInfo;
 use crate::function::Function;
@@ -8,8 +9,6 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::std_variable::StdVariable;
 use crate::string_var::StringVar;
-use crate::{bool_functions, char_functions, int_functions};
-use crate::{dec_functions, string_functions};
 use num::bigint::BigInt;
 use num::traits::Zero;
 use num::{BigRational, ToPrimitive};
@@ -108,35 +107,35 @@ impl Variable {
             Variable::Standard(val) => val.index(index),
             Variable::Bool(val) => {
                 if let Name::Operator(o) = index {
-                    bool_functions::get_operator(val, o)
+                    bool_fn::get_operator(val, o)
                 } else {
                     unimplemented!()
                 }
             }
             Variable::Bigint(val) => {
                 if let Name::Operator(o) = index {
-                    int_functions::get_operator(val, o)
+                    int_fn::get_operator(val, o)
                 } else {
                     unimplemented!()
                 }
             }
             Variable::String(val) => {
                 if let Name::Operator(o) = index {
-                    string_functions::get_operator(val, o)
+                    string_fn::get_operator(val, o)
                 } else {
                     unimplemented!()
                 }
             }
             Variable::Decimal(val) => {
                 if let Name::Operator(o) = index {
-                    dec_functions::get_operator(val, o)
+                    dec_fn::get_operator(val, o)
                 } else {
                     unimplemented!()
                 }
             }
             Variable::Char(val) => {
                 if let Name::Operator(o) = index {
-                    char_functions::get_operator(val, o)
+                    char_fn::get_operator(val, o)
                 } else {
                     unimplemented!()
                 }
