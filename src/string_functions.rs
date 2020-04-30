@@ -8,7 +8,7 @@ use num::{BigInt, ToPrimitive};
 use std::mem::replace;
 use std::str::FromStr;
 
-pub fn get_operator(this: &StringVar, o: Operator) -> Variable {
+pub fn get_operator(this: StringVar, o: Operator) -> Variable {
     let func = match o {
         Operator::Add => add,
         Operator::Multiply => multiply,
@@ -19,10 +19,7 @@ pub fn get_operator(this: &StringVar, o: Operator) -> Variable {
         Operator::GetAttr => index,
         _ => unimplemented!("Operator::{:?} unimplemented", o),
     };
-    Variable::Method(Box::new(StdMethod::new(
-        this.clone(),
-        InnerMethod::Native(func),
-    )))
+    Variable::Method(Box::new(StdMethod::new(this, InnerMethod::Native(func))))
 }
 
 fn add(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

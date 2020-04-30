@@ -18,7 +18,7 @@ pub fn get_operator(this: bool, o: Operator) -> Variable {
         Operator::BitwiseXor => bitwise_xor,
         _ => {
             return int_functions::get_operator(
-                &BigInt::from_i32(if this { 1 } else { 0 }).unwrap(),
+                BigInt::from_i32(if this { 1 } else { 0 }).unwrap(),
                 o,
             )
         }

@@ -103,12 +103,12 @@ impl Variable {
         }
     }
 
-    pub fn index(&self, index: Name) -> Variable {
+    pub fn index(self, index: Name) -> Variable {
         match self {
             Variable::Standard(val) => val.index(index),
             Variable::Bool(val) => {
                 if let Name::Operator(o) = index {
-                    bool_functions::get_operator(*val, o)
+                    bool_functions::get_operator(val, o)
                 } else {
                     unimplemented!()
                 }
@@ -135,7 +135,7 @@ impl Variable {
                 }
             }
             Variable::Type(t) => t.index(index),
-            Variable::Custom(val) => (**val).clone().get_attr(index),
+            Variable::Custom(val) => (*val).clone().get_attr(index),
             _ => unimplemented!(),
         }
     }

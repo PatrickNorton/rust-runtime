@@ -9,7 +9,7 @@ use num::{BigRational, Signed, ToPrimitive, Zero};
 use std::boxed::Box;
 use std::vec::Vec;
 
-pub fn get_operator(this: &BigInt, o: Operator) -> Variable {
+pub fn get_operator(this: BigInt, o: Operator) -> Variable {
     let func = match o {
         Operator::Add => add,
         Operator::Subtract => sub,
@@ -35,10 +35,7 @@ pub fn get_operator(this: &BigInt, o: Operator) -> Variable {
         Operator::Repr => to_str,
         _ => unimplemented!("Operator::{:?} unimplemented", o),
     };
-    Variable::Method(Box::new(StdMethod::new(
-        this.clone(),
-        InnerMethod::Native(func),
-    )))
+    Variable::Method(Box::new(StdMethod::new(this, InnerMethod::Native(func))))
 }
 
 fn add(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

@@ -4,7 +4,7 @@ use crate::runtime::Runtime;
 use crate::variable::{FnResult, Variable};
 use num::BigRational;
 
-pub fn get_operator(this: &BigRational, o: Operator) -> Variable {
+pub fn get_operator(this: BigRational, o: Operator) -> Variable {
     let func = match o {
         Operator::Add => add,
         Operator::Subtract => sub,
@@ -21,10 +21,7 @@ pub fn get_operator(this: &BigRational, o: Operator) -> Variable {
         Operator::Int => to_int,
         _ => unimplemented!(),
     };
-    Variable::Method(Box::new(StdMethod::new(
-        this.clone(),
-        InnerMethod::Native(func),
-    )))
+    Variable::Method(Box::new(StdMethod::new(this, InnerMethod::Native(func))))
 }
 
 fn add(this: &BigRational, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
