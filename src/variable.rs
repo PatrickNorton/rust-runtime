@@ -8,7 +8,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::std_variable::StdVariable;
 use crate::string_var::StringVar;
-use crate::{bool_functions, int_functions};
+use crate::{bool_functions, char_functions, int_functions};
 use crate::{dec_functions, string_functions};
 use num::bigint::BigInt;
 use num::traits::Zero;
@@ -130,6 +130,13 @@ impl Variable {
             Variable::Decimal(val) => {
                 if let Name::Operator(o) = index {
                     dec_functions::get_operator(val, o)
+                } else {
+                    unimplemented!()
+                }
+            }
+            Variable::Char(val) => {
+                if let Name::Operator(o) = index {
+                    char_functions::get_operator(val, o)
                 } else {
                     unimplemented!()
                 }
@@ -336,6 +343,16 @@ impl From<Variable> for bool {
             b
         } else {
             panic!("Attempted to turn a variable not a superclass of bool into a bool")
+        }
+    }
+}
+
+impl From<Variable> for char {
+    fn from(var: Variable) -> Self {
+        if let Variable::Char(b) = var {
+            b
+        } else {
+            panic!("Attempted to turn a variable not a superclass of char into a char")
         }
     }
 }

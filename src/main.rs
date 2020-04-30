@@ -14,6 +14,7 @@ mod base_fn;
 mod bool_functions;
 mod builtins;
 mod bytecode;
+mod char_functions;
 mod constant_loaders;
 mod custom_types;
 mod custom_var;
