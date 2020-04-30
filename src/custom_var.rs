@@ -69,6 +69,14 @@ impl Hash for CustomVarWrapper {
     }
 }
 
+impl PartialEq for CustomVarWrapper {
+    fn eq(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.value, &other.value)
+    }
+}
+
+impl Eq for CustomVarWrapper {}
+
 impl From<Rc<dyn CustomVar>> for Variable {
     fn from(x: Rc<dyn CustomVar>) -> Self {
         Variable::Custom(CustomVarWrapper::new(x))

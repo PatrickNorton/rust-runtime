@@ -162,7 +162,7 @@ impl Variable {
             (Variable::Type(a), Variable::Type(b)) => a == b,
             (Variable::Standard(a), Variable::Standard(b)) => a.identical(b),
             (Variable::Method(a), Variable::Method(b)) => a == b,
-            (Variable::Custom(_), Variable::Custom(_)) => unimplemented!(),
+            (Variable::Custom(a), Variable::Custom(b)) => a == b,
             _ => false,
         }
     }
