@@ -1,7 +1,6 @@
 use crate::custom_var::CustomVarWrapper;
 use crate::file_info::FileInfo;
 use crate::function::Function;
-use crate::int_functions::get_operator;
 use crate::method::Method;
 use crate::operator::Operator;
 use crate::quick_functions::quick_equals;
@@ -9,6 +8,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::std_variable::StdVariable;
 use crate::string_var::StringVar;
+use crate::{bool_functions, int_functions};
 use crate::{dec_functions, string_functions};
 use num::bigint::BigInt;
 use num::traits::Zero;
@@ -106,9 +106,16 @@ impl Variable {
     pub fn index(&self, index: Name) -> Variable {
         match self {
             Variable::Standard(val) => val.index(index),
+            Variable::Bool(val) => {
+                if let Name::Operator(o) = index {
+                    bool_functions::get_operator(*val, o)
+                } else {
+                    unimplemented!()
+                }
+            }
             Variable::Bigint(val) => {
                 if let Name::Operator(o) = index {
-                    get_operator(val, o)
+                    int_functions::get_operator(val, o)
                 } else {
                     unimplemented!()
                 }
