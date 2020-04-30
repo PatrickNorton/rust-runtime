@@ -1,11 +1,10 @@
+use crate::variable::Variable;
+use std::cell::RefCell;
 use std::collections::HashSet;
+use std::ops::{Index, IndexMut};
 use std::option::Option;
 use std::rc::Rc;
 use std::vec::Vec;
-
-use crate::variable::Variable;
-use std::cell::RefCell;
-use std::ops::{Index, IndexMut};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StackFrame {

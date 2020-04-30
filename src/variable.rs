@@ -1,9 +1,3 @@
-use std::boxed::Box;
-use std::clone::Clone;
-use std::cmp::PartialEq;
-use std::string::String;
-use std::vec::Vec;
-
 use crate::custom_var::CustomVarWrapper;
 use crate::file_info::FileInfo;
 use crate::function::Function;
@@ -19,10 +13,15 @@ use crate::string_var::StringVar;
 use num::bigint::BigInt;
 use num::traits::Zero;
 use num::{BigRational, ToPrimitive};
+use std::boxed::Box;
+use std::clone::Clone;
+use std::cmp::PartialEq;
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 use std::ptr;
 use std::str::FromStr;
+use std::string::String;
+use std::vec::Vec;
 
 pub type FnResult = Result<(), ()>;
 

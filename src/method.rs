@@ -1,11 +1,10 @@
-use std::boxed::Box;
-use std::cmp::{Eq, PartialEq};
-use std::hash::{Hash, Hasher};
-use std::vec::Vec;
-
 use crate::runtime::Runtime;
 use crate::variable::{FnResult, Variable};
+use std::boxed::Box;
+use std::cmp::{Eq, PartialEq};
 use std::fmt::{Debug, Formatter};
+use std::hash::{Hash, Hasher};
+use std::vec::Vec;
 
 #[derive(Copy, Clone)]
 pub enum InnerMethod<T> {

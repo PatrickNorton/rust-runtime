@@ -1,9 +1,8 @@
+use crate::base_fn::BaseFunction;
+use crate::variable::Variable;
 use std::collections::HashMap;
 use std::string::String;
 use std::vec::Vec;
-
-use crate::base_fn::BaseFunction;
-use crate::variable::Variable;
 
 #[derive(Debug)]
 pub struct FileInfo {

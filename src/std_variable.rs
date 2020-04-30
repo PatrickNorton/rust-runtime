@@ -1,10 +1,3 @@
-use std::cell::RefCell;
-use std::cmp::{Eq, PartialEq};
-use std::collections::HashMap;
-use std::hash::{Hash, Hasher};
-use std::rc::Rc;
-use std::vec::Vec;
-
 use crate::method::{InnerMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
@@ -12,6 +5,12 @@ use crate::std_type::{StdType, Type};
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Name, Variable};
 use num::BigInt;
+use std::cell::RefCell;
+use std::cmp::{Eq, PartialEq};
+use std::collections::HashMap;
+use std::hash::{Hash, Hasher};
+use std::rc::Rc;
+use std::vec::Vec;
 
 pub type StdVarMethod = InnerMethod<StdVariable>;
 

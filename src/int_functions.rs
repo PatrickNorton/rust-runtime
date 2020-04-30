@@ -1,6 +1,3 @@
-use std::boxed::Box;
-use std::vec::Vec;
-
 use crate::method::{InnerMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
@@ -9,6 +6,8 @@ use crate::variable::{FnResult, Variable};
 use num::bigint::{BigInt, BigUint};
 use num::traits::Pow;
 use num::{BigRational, Signed, ToPrimitive, Zero};
+use std::boxed::Box;
+use std::vec::Vec;
 
 pub fn get_operator(this: &BigInt, o: Operator) -> Variable {
     let func = match o {

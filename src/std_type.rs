@@ -1,7 +1,3 @@
-use std::collections::HashMap;
-use std::hash::{Hash, Hasher};
-use std::string::{String, ToString};
-
 use crate::builtins::default_methods;
 use crate::custom_types::types::CustomTypeImpl;
 use crate::method::{InnerMethod, Method, StdMethod};
@@ -10,7 +6,10 @@ use crate::runtime::Runtime;
 use crate::std_variable::{StdVarMethod, StdVariable};
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Name, Variable};
+use std::collections::HashMap;
+use std::hash::{Hash, Hasher};
 use std::ptr;
+use std::string::{String, ToString};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Type {

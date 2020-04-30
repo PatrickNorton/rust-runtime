@@ -1,6 +1,3 @@
-use std::rc::Rc;
-use std::vec::Vec;
-
 use crate::executor;
 use crate::file_info::FileInfo;
 use crate::operator::Operator;
@@ -9,6 +6,8 @@ use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Name, Variable};
 use std::collections::{HashMap, VecDeque};
+use std::rc::Rc;
+use std::vec::Vec;
 
 #[derive(Debug)]
 pub struct Runtime {
