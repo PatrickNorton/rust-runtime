@@ -22,6 +22,16 @@ pub fn get_operator(this: StringVar, o: Operator) -> Variable {
     Variable::Method(Box::new(StdMethod::new(this, InnerMethod::Native(func))))
 }
 
+pub fn get_attr(this: StringVar, s: StringVar) -> Variable {
+    let func = match s.as_str() {
+        "length" => return Variable::Bigint(this.len().into()),
+        "upper" => upper,
+        "lower" => lower,
+        _ => unimplemented!(),
+    };
+    Variable::Method(StdMethod::new_native(this, func))
+}
+
 fn add(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let mut result: String = this.parse().unwrap();
     for arg in args {
@@ -83,4 +93,16 @@ fn index(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> Fn
             FnResult::Ok(())
         }
     }
+}
+
+fn upper(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert!(args.is_empty());
+    runtime.push(this.to_uppercase().into());
+    FnResult::Ok(())
+}
+
+fn lower(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert!(args.is_empty());
+    runtime.push(this.to_lowercase().into());
+    FnResult::Ok(())
 }

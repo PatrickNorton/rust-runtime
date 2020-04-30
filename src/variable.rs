@@ -119,13 +119,10 @@ impl Variable {
                     unimplemented!()
                 }
             }
-            Variable::String(val) => {
-                if let Name::Operator(o) = index {
-                    string_fn::get_operator(val, o)
-                } else {
-                    unimplemented!()
-                }
-            }
+            Variable::String(val) => match index {
+                Name::Operator(o) => string_fn::get_operator(val, o),
+                Name::Attribute(s) => string_fn::get_attr(val, s),
+            },
             Variable::Decimal(val) => {
                 if let Name::Operator(o) = index {
                     dec_fn::get_operator(val, o)
