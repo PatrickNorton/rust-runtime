@@ -5,6 +5,7 @@ use crate::method::{InnerMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
+use crate::string_var::StringVar;
 use crate::variable::{FnResult, Name, Variable};
 use num::{BigInt, ToPrimitive};
 use std::cell::RefCell;
@@ -34,6 +35,15 @@ impl List {
             self.clone(),
             InnerMethod::Native(value),
         )))
+    }
+
+    fn get_attribute(self: Rc<Self>, name: StringVar) -> Variable {
+        let value = match name.as_str() {
+            "length" => return Variable::Bigint(self.value.borrow().len().into()),
+            "get" => Self::list_get,
+            _ => unimplemented!(),
+        };
+        Variable::Method(StdMethod::new_native(self.clone(), value))
     }
 
     fn list_bool(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -68,6 +78,19 @@ impl List {
         }
     }
 
+    fn list_get(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 2);
+        let index = BigInt::from(args[0].clone());
+        runtime.push(match index.to_usize() {
+            Option::None => args[1].clone(),
+            Option::Some(i) => match self.value.borrow().get(i) {
+                Option::None => args[1].clone(),
+                Option::Some(val) => val.clone(),
+            },
+        });
+        FnResult::Ok(())
+    }
+
     pub fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty()); // TODO: List of a value
         runtime.push(List::from_values(vec![]).into());
@@ -91,7 +114,7 @@ impl CustomVar for List {
     fn get_attr(self: Rc<Self>, name: Name) -> Variable {
         match name {
             Name::Operator(o) => self.get_operator(o),
-            Name::Attribute(_) => unimplemented!(),
+            Name::Attribute(s) => self.get_attribute(s),
         }
     }
 

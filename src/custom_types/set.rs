@@ -52,6 +52,7 @@ impl Set {
     fn get_attribute(self: &Rc<Self>, s: StringVar) -> Variable {
         let func = match s.as_str() {
             "add" => Self::add,
+            "length" => return Variable::Bigint(self.value.borrow().size().into()),
             _ => unimplemented!(),
         };
         Variable::Method(StdMethod::new_native(self.clone(), func))
@@ -215,6 +216,10 @@ impl InnerSet {
     pub fn is_empty(&self) -> bool {
         self.size == 0
     }
+
+    pub fn size(&self) -> usize {
+        self.size
+    }
 }
 
 impl Entry {
@@ -227,7 +232,7 @@ impl Entry {
     }
 
     pub fn add(&mut self, val: Variable, runtime: &mut Runtime) -> Result<bool, ()> {
-        if self.val.equals(val.clone(), runtime) {
+        if self.val.equals(val.clone(), runtime)? {
             self.val = val;
             Result::Ok(false)
         } else {
@@ -251,7 +256,7 @@ impl Entry {
     }
 
     pub fn contains(&self, val: Variable, runtime: &mut Runtime) -> Result<bool, ()> {
-        if self.val.equals(val.clone(), runtime) {
+        if self.val.equals(val.clone(), runtime)? {
             Result::Ok(true)
         } else {
             match &self.next {

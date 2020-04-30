@@ -183,11 +183,8 @@ impl Variable {
         }
     }
 
-    pub fn equals(&self, other: Variable, runtime: &mut Runtime) -> bool {
-        return quick_equals(self.clone(), other, runtime)
-            .expect("Dict creation threw exception")
-            .to_bool(runtime)
-            .expect("Dict creation threw exception");
+    pub fn equals(&self, other: Variable, runtime: &mut Runtime) -> Result<bool, ()> {
+        return quick_equals(self.clone(), other, runtime)?.to_bool(runtime);
     }
 
     pub fn is_type_of(&self, other: &Variable) -> bool {

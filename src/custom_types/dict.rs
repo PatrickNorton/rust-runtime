@@ -51,6 +51,7 @@ impl Dict {
             Operator::Str => Dict::repr,
             Operator::Bool => Dict::bool,
             Operator::SetAttr => Dict::set,
+            Operator::In => Dict::contains,
             _ => unimplemented!(),
         };
         Variable::Method(StdMethod::new_native(self.clone(), func))
@@ -59,6 +60,7 @@ impl Dict {
     fn get_attribute(self: &Rc<Self>, s: StringVar) -> Variable {
         let func = match s.as_str() {
             "clear" => Dict::clear,
+            "get" => Dict::get,
             "length" => return Variable::Bigint(self.len().into()),
             _ => unimplemented!(),
         };
@@ -67,9 +69,13 @@ impl Dict {
 
     fn index(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        let result = self.value.borrow().get(args.remove(0), runtime)?;
-        runtime.push(result);
-        FnResult::Ok(())
+        match self.value.borrow().get(args.remove(0), runtime)? {
+            Option::Some(result) => {
+                runtime.push(result);
+                FnResult::Ok(())
+            }
+            Option::None => runtime.throw_quick(Type::String, "Value not found".into()),
+        }
     }
 
     fn repr(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -86,15 +92,33 @@ impl Dict {
     }
 
     fn set(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        debug_assert_eq!(args.len(), 1);
+        debug_assert_eq!(args.len(), 2);
         let val = args.remove(1); // Reverse order to avoid move
         let key = args.remove(0);
         self.value.borrow_mut().set(key, val, runtime)
     }
 
+    fn contains(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        let val = args.remove(0);
+        let is_in = self.value.borrow().get(val, runtime)?.is_some();
+        runtime.push(is_in.into());
+        FnResult::Ok(())
+    }
+
     fn clear(self: &Rc<Self>, args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         self.value.borrow_mut().clear();
+        FnResult::Ok(())
+    }
+
+    fn get(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 2);
+        let val = match self.value.borrow().get(args[0].clone(), runtime)? {
+            Option::Some(value) => value,
+            Option::None => args[1].clone(),
+        };
+        runtime.push(val);
         FnResult::Ok(())
     }
 
@@ -144,11 +168,11 @@ impl InnerDict {
         Result::Ok(value)
     }
 
-    pub fn get(&self, key: Variable, runtime: &mut Runtime) -> Result<Variable, ()> {
+    pub fn get(&self, key: Variable, runtime: &mut Runtime) -> Result<Option<Variable>, ()> {
         let hash = key.hash(runtime)?;
         match &self.entries[hash % self.entries.len()] {
             Option::None => Result::Err(()),
-            Option::Some(e) => e.get(key, runtime).ok_or(()),
+            Option::Some(e) => e.get(key, runtime),
         }
     }
 
@@ -239,19 +263,19 @@ impl InnerDict {
 }
 
 impl Entry {
-    pub fn get(&self, key: Variable, runtime: &mut Runtime) -> Option<Variable> {
-        if key.equals(self.value.clone(), runtime) {
-            Option::Some(self.value.clone())
+    pub fn get(&self, key: Variable, runtime: &mut Runtime) -> Result<Option<Variable>, ()> {
+        if key.equals(self.value.clone(), runtime)? {
+            Result::Ok(Option::Some(self.value.clone()))
         } else {
             match &self.next {
-                Option::None => Option::None,
+                Option::None => Result::Ok(Option::None),
                 Option::Some(e) => e.get(key, runtime),
             }
         }
     }
 
     pub fn set(&mut self, key: Variable, val: Variable, runtime: &mut Runtime) -> Option<bool> {
-        if key.equals(self.value.clone(), runtime) {
+        if key.equals(self.value.clone(), runtime).ok()? {
             self.value = val;
             Option::Some(false)
         } else {
