@@ -8,8 +8,8 @@ use crate::quick_functions::quick_equals;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::std_variable::StdVariable;
-use crate::string_functions;
 use crate::string_var::StringVar;
+use crate::{dec_functions, string_functions};
 use num::bigint::BigInt;
 use num::traits::Zero;
 use num::{BigRational, ToPrimitive};
@@ -116,6 +116,13 @@ impl Variable {
             Variable::String(val) => {
                 if let Name::Operator(o) = index {
                     string_functions::get_operator(val, o)
+                } else {
+                    unimplemented!()
+                }
+            }
+            Variable::Decimal(val) => {
+                if let Name::Operator(o) = index {
+                    dec_functions::get_operator(val, o)
                 } else {
                     unimplemented!()
                 }
@@ -244,6 +251,12 @@ impl From<BigInt> for Variable {
     }
 }
 
+impl From<BigRational> for Variable {
+    fn from(x: BigRational) -> Self {
+        Variable::Decimal(x)
+    }
+}
+
 impl From<StdVariable> for Variable {
     fn from(x: StdVariable) -> Self {
         Variable::Standard(x)
@@ -286,6 +299,16 @@ impl From<Variable> for BigInt {
             Variable::Bigint(i) => i,
             Variable::Bool(b) => if b { 1 } else { 0 }.into(),
             _ => panic!("Attempted to turn a variable not a superclass of int into an int"),
+        }
+    }
+}
+
+impl From<Variable> for BigRational {
+    fn from(var: Variable) -> Self {
+        if let Variable::Decimal(d) = var {
+            d
+        } else {
+            panic!("Attempted to turn a variable not a superclass of dec into a dec")
         }
     }
 }

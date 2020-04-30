@@ -16,6 +16,7 @@ mod bytecode;
 mod constant_loaders;
 mod custom_types;
 mod custom_var;
+mod dec_functions;
 mod executor;
 mod file_info;
 mod file_parsing;
