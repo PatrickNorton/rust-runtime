@@ -58,7 +58,7 @@ pub fn builtin_of(index: usize) -> Variable {
         9 => input(),
         10 => List::list_type().into(),
         11 => Set::set_type().into(),
-        12 => todo!("char"),
+        12 => Type::Char.into(),
         13 => todo!("open"),
         _ => unimplemented!(),
     }
