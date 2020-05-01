@@ -1,6 +1,13 @@
 use num::traits::{FromPrimitive, PrimInt};
 use std::mem::size_of;
 
+/// Convert a [`Vec`](std::vec::Vec)`<u8>` to a primitive int, in big-endian
+/// format.
+///
+/// Unlike its friend, [`bytes_index`](crate::int_tools::bytes_index), this
+/// will check the length of the Vec to ensure it is the correct length for the
+/// int. It also will use the whole Vec instead of starting at an index.
+///
 #[inline]
 pub fn bytes_to<T>(bytes: &Vec<u8>) -> T
 where
@@ -16,6 +23,10 @@ where
     result
 }
 
+/// Convert a `Vec<u8>` to a primitive int, beginning at the index specified.
+///
+/// Unlike [`bytes_to`], this will not check the length and will not attempt to
+/// parse the entire Vec.
 pub fn bytes_index<T>(bytes: &Vec<u8>, index: &mut usize) -> T
 where
     T: PrimInt + FromPrimitive,
@@ -30,6 +41,8 @@ where
     result
 }
 
+/// Return the next power of 2 greater than the number given.
+/// If the number is 0, 0 will be returned.
 pub fn next_power_2(len: usize) -> usize {
     if len == 0 {
         return 0;
