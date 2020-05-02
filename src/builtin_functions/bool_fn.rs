@@ -1,9 +1,24 @@
 use crate::builtin_functions::int_fn;
-use crate::method::{InnerMethod, StdMethod};
+use crate::method::{InnerMethod, NativeMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::variable::{FnResult, Variable};
 use num::{BigInt, FromPrimitive};
+
+pub fn op_fn(o: Operator) -> NativeMethod<bool> {
+    match o {
+        Operator::Equals => eq,
+        Operator::LessThan => less_than,
+        Operator::GreaterThan => greater_than,
+        Operator::LessEqual => less_equal,
+        Operator::GreaterEqual => greater_equal,
+        Operator::BitwiseAnd => bitwise_and,
+        Operator::BitwiseOr => bitwise_or,
+        Operator::BitwiseNot => bitwise_not,
+        Operator::BitwiseXor => bitwise_xor,
+        _ => unimplemented!(),
+    }
+}
 
 pub fn get_operator(this: bool, o: Operator) -> Variable {
     let func = match o {

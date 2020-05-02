@@ -1,4 +1,4 @@
-use crate::method::{InnerMethod, StdMethod};
+use crate::method::{InnerMethod, NativeMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
@@ -9,8 +9,8 @@ use num::{BigRational, Signed, ToPrimitive, Zero};
 use std::boxed::Box;
 use std::vec::Vec;
 
-pub fn get_operator(this: BigInt, o: Operator) -> Variable {
-    let func = match o {
+pub fn op_fn(o: Operator) -> NativeMethod<BigInt> {
+    match o {
         Operator::Add => add,
         Operator::Subtract => sub,
         Operator::USubtract => u_minus,
@@ -34,7 +34,11 @@ pub fn get_operator(this: BigInt, o: Operator) -> Variable {
         Operator::Int => to_int,
         Operator::Repr => to_str,
         _ => unimplemented!("Operator::{:?} unimplemented", o),
-    };
+    }
+}
+
+pub fn get_operator(this: BigInt, o: Operator) -> Variable {
+    let func = op_fn(o);
     Variable::Method(Box::new(StdMethod::new(this, InnerMethod::Native(func))))
 }
 

@@ -236,6 +236,22 @@ impl Variable {
             }
         }
     }
+
+    pub fn call_op(self, name: Operator, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        match self {
+            Variable::Null() => self.index(Name::Operator(name)).call((args, runtime)),
+            Variable::Bool(b) => runtime.call_native_method(bool_fn::op_fn(name), &b, args),
+            Variable::Bigint(b) => runtime.call_native_method(int_fn::op_fn(name), &b, args),
+            Variable::String(s) => runtime.call_native_method(string_fn::op_fn(name), &s, args),
+            Variable::Decimal(d) => runtime.call_native_method(dec_fn::op_fn(name), &d, args),
+            Variable::Char(c) => runtime.call_native_method(char_fn::op_fn(name), &c, args),
+            Variable::Type(_) => self.index(Name::Operator(name)).call((args, runtime)),
+            Variable::Standard(s) => s.call_operator(name, args, runtime),
+            Variable::Method(_) => self.index(Name::Operator(name)).call((args, runtime)),
+            Variable::Function(_) => self.index(Name::Operator(name)).call((args, runtime)),
+            Variable::Custom(c) => (*c).clone().call_op(name, args, runtime),
+        }
+    }
 }
 
 impl PartialEq for Variable {

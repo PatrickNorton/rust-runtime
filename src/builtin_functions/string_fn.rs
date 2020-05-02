@@ -1,4 +1,4 @@
-use crate::method::{InnerMethod, StdMethod};
+use crate::method::{InnerMethod, NativeMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
@@ -8,8 +8,8 @@ use num::{BigInt, ToPrimitive};
 use std::mem::replace;
 use std::str::FromStr;
 
-pub fn get_operator(this: StringVar, o: Operator) -> Variable {
-    let func = match o {
+pub fn op_fn(o: Operator) -> NativeMethod<StringVar> {
+    match o {
         Operator::Add => add,
         Operator::Multiply => multiply,
         Operator::Bool => bool,
@@ -18,7 +18,11 @@ pub fn get_operator(this: StringVar, o: Operator) -> Variable {
         Operator::Repr => repr,
         Operator::GetAttr => index,
         _ => unimplemented!("Operator::{:?} unimplemented", o),
-    };
+    }
+}
+
+pub fn get_operator(this: StringVar, o: Operator) -> Variable {
+    let func = op_fn(o);
     Variable::Method(Box::new(StdMethod::new(this, InnerMethod::Native(func))))
 }
 

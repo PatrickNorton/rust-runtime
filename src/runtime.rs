@@ -1,5 +1,6 @@
 use crate::executor;
 use crate::file_info::FileInfo;
+use crate::method::NativeMethod;
 use crate::operator::Operator;
 use crate::stack_frame::StackFrame;
 use crate::std_type::Type;
@@ -77,11 +78,23 @@ impl Runtime {
     }
 
     pub fn call_op(&mut self, var: Variable, o: Operator, args: Vec<Variable>) -> FnResult {
-        var.index(Name::Operator(o)).call((args, self))
+        var.call_op(o, args, self)
     }
 
     pub fn call_attr(&mut self, var: Variable, s: StringVar, args: Vec<Variable>) -> FnResult {
         var.index(Name::Attribute(s)).call((args, self))
+    }
+
+    pub fn call_native_method<T>(
+        &mut self,
+        func: NativeMethod<T>,
+        this: &T,
+        args: Vec<Variable>,
+    ) -> FnResult {
+        self.push_native();
+        let result = func(this, args, self);
+        self.pop_native();
+        result
     }
 
     pub fn goto(&mut self, pos: u32) {

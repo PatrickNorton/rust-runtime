@@ -1,11 +1,11 @@
-use crate::method::{InnerMethod, StdMethod};
+use crate::method::{InnerMethod, NativeMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::variable::{FnResult, Variable};
 use num::BigRational;
 
-pub fn get_operator(this: BigRational, o: Operator) -> Variable {
-    let func = match o {
+pub fn op_fn(o: Operator) -> NativeMethod<BigRational> {
+    match o {
         Operator::Add => add,
         Operator::Subtract => sub,
         Operator::USubtract => u_minus,
@@ -20,7 +20,11 @@ pub fn get_operator(this: BigRational, o: Operator) -> Variable {
         Operator::Str => to_str,
         Operator::Int => to_int,
         _ => unimplemented!(),
-    };
+    }
+}
+
+pub fn get_operator(this: BigRational, o: Operator) -> Variable {
+    let func = op_fn(o);
     Variable::Method(Box::new(StdMethod::new(this, InnerMethod::Native(func))))
 }
 

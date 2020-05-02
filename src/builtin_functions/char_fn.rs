@@ -1,13 +1,17 @@
-use crate::method::{InnerMethod, StdMethod};
+use crate::method::{InnerMethod, NativeMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::variable::{FnResult, Variable};
 
-pub fn get_operator(this: char, o: Operator) -> Variable {
-    let func = match o {
+pub fn op_fn(o: Operator) -> NativeMethod<char> {
+    match o {
         Operator::Equals => eq,
         _ => unimplemented!(),
-    };
+    }
+}
+
+pub fn get_operator(this: char, o: Operator) -> Variable {
+    let func = op_fn(o);
     Variable::Method(Box::new(StdMethod::new(this, InnerMethod::Native(func))))
 }
 

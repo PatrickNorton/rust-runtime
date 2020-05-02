@@ -6,10 +6,12 @@ use std::fmt::{Debug, Formatter};
 use std::hash::{Hash, Hasher};
 use std::vec::Vec;
 
+pub type NativeMethod<T> = fn(&T, Vec<Variable>, &mut Runtime) -> FnResult;
+
 #[derive(Copy, Clone)]
 pub enum InnerMethod<T> {
     Standard(usize, u32),
-    Native(fn(&T, Vec<Variable>, &mut Runtime) -> FnResult),
+    Native(NativeMethod<T>),
 }
 
 pub trait MethodClone {
