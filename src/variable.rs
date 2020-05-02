@@ -102,6 +102,17 @@ impl Variable {
         }
     }
 
+    pub fn call_or_goto(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
+        match self {
+            Variable::Standard(val) => val.call_or_goto(args),
+            Variable::Method(method) => method.call_or_goto(args),
+            Variable::Function(func) => func.call(args),
+            Variable::Type(t) => t.push_create(args),
+            Variable::Custom(val) => (**val).clone().call_or_goto(args.0, args.1),
+            _ => unimplemented!(),
+        }
+    }
+
     pub fn index(self, index: Name) -> Variable {
         match self {
             Variable::Standard(val) => val.index(index),
@@ -250,6 +261,16 @@ impl Variable {
             Variable::Method(_) => self.index(Name::Operator(name)).call((args, runtime)),
             Variable::Function(_) => self.index(Name::Operator(name)).call((args, runtime)),
             Variable::Custom(c) => (*c).clone().call_op(name, args, runtime),
+        }
+    }
+    
+    pub fn call_op_or_goto(self, name: Operator, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        match self {
+            Variable::Standard(s) => s.call_op_or_goto(name, args, runtime),
+            Variable::Method(_) => self.index(Name::Operator(name)).call_or_goto((args, runtime)),
+            Variable::Function(_) => self.index(Name::Operator(name)).call_or_goto((args, runtime)),
+            Variable::Custom(c) => (*c).clone().call_op_or_goto(name, args, runtime),
+            _ => self.call_op(name, args, runtime)
         }
     }
 }

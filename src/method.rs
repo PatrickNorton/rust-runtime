@@ -20,6 +20,7 @@ pub trait MethodClone {
 
 pub trait Method: MethodClone + Debug {
     fn call(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult;
+    fn call_or_goto(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult;
 }
 
 impl<T> MethodClone for T
@@ -88,12 +89,25 @@ where
     fn call(&self, mut args: (Vec<Variable>, &mut Runtime)) -> FnResult {
         match &self.method {
             InnerMethod::Standard(file, index) => {
-                let runtime = args.1; // FIXME: Insert type as argument
+                let runtime = args.1;
                 let var: Variable = self.value.clone().into();
                 args.0.insert(0, Variable::Type(var.get_type()));
                 args.0.insert(0, var);
-                runtime.push_stack(0, *index as u16, args.0, *file)?;
+                runtime.push_stack(0, *index as u16, args.0, *file);
                 FnResult::Ok(())
+            }
+            InnerMethod::Native(func) => args.1.call_native_method(*func, &self.value, args.0),
+        }
+    }
+
+    fn call_or_goto(&self, mut args: (Vec<Variable>, &mut Runtime)) -> FnResult {
+        match &self.method {
+            InnerMethod::Standard(file, index) => {
+                let runtime = args.1;
+                let var: Variable = self.value.clone().into();
+                args.0.insert(0, Variable::Type(var.get_type()));
+                args.0.insert(0, var);
+                runtime.call_now(0, *index as u16, args.0, *file)
             }
             InnerMethod::Native(func) => args.1.call_native_method(*func, &self.value, args.0),
         }

@@ -68,14 +68,14 @@ impl Runtime {
         self.frames.last_mut().unwrap()[index as usize] = value;
     }
 
-    pub fn call_quick(&mut self, fn_no: u16) -> FnResult {
-        self.push_stack_with_file(0, fn_no, vec![], self.file_stack.last().unwrap().clone())
+    pub fn call_quick(&mut self, fn_no: u16) {
+        self.frames.push(StackFrame::new(0, fn_no, Vec::new()));
     }
 
-    pub fn call_tos(&mut self, argc: u16) -> FnResult {
+    pub fn call_tos_or_goto(&mut self, argc: u16) -> FnResult {
         let args = self.load_args(argc);
         let callee = self.pop();
-        callee.call((args, self))
+        callee.call_or_goto((args, self))
     }
 
     pub fn call_op(&mut self, var: Variable, o: Operator, args: Vec<Variable>) -> FnResult {
@@ -131,28 +131,22 @@ impl Runtime {
         return args.into();
     }
 
-    pub fn push_stack(
+    pub fn call_now(
         &mut self,
         var_count: u16,
         fn_no: u16,
         args: Vec<Variable>,
-        info: usize,
+        info_no: usize,
     ) -> FnResult {
-        self.push_stack_with_file(var_count, fn_no, args, self.files[info].clone())
+        self.push_native();
+        self.push_stack(var_count, fn_no, args, info_no);
+        let result = executor::execute(self);
+        self.pop_native();
+        result
     }
 
-    pub fn push_native(&mut self) {
-        self.frames.push(StackFrame::native());
-    }
-
-    fn push_stack_with_file(
-        &mut self,
-        var_count: u16,
-        fn_no: u16,
-        args: Vec<Variable>,
-        info: Rc<FileInfo>,
-    ) -> FnResult {
-        let native = self.is_native();
+    pub fn push_stack(&mut self, var_count: u16, fn_no: u16, args: Vec<Variable>, info_no: usize) {
+        let info = self.files[info_no].clone();
         if Rc::ptr_eq(&info, self.file_stack.last().unwrap()) {
             self.frames.push(StackFrame::new(var_count, fn_no, args));
         } else {
@@ -160,11 +154,10 @@ impl Runtime {
                 .push(StackFrame::new_file(var_count, fn_no, args));
             self.file_stack.push(info);
         }
-        if native {
-            executor::execute(self)?;
-            assert!(self.is_native());
-        }
-        Result::Ok(())
+    }
+
+    pub fn push_native(&mut self) {
+        self.frames.push(StackFrame::native());
     }
 
     pub fn pop_native(&mut self) {
@@ -175,7 +168,7 @@ impl Runtime {
     pub fn pop_stack(&mut self) {
         for v in self.frames.last().unwrap().get_exceptions() {
             assert_eq!(
-                self.exception_frames[v].last().unwrap().1 as usize,
+                self.exception_frames[v].last().unwrap().1,
                 self.frames.len() - 1
             );
             self.exception_frames.get_mut(v).unwrap().pop();

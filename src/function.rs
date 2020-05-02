@@ -1,3 +1,4 @@
+use crate::executor::execute;
 use crate::runtime::Runtime;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
@@ -16,7 +17,16 @@ impl Function {
     pub fn call(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
         match self {
             Function::Standard(file_no, fn_no) => {
-                args.1.push_stack(0, *fn_no as u16, args.0, *file_no)?;
+                args.1.call_now(0, *fn_no as u16, args.0, *file_no)
+            }
+            Function::Native(func) => args.1.call_native(*func, args.0),
+        }
+    }
+
+    pub fn call_or_goto(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
+        match self {
+            Function::Standard(file_no, fn_no) => {
+                args.1.push_stack(0, *fn_no as u16, args.0, *file_no);
                 FnResult::Ok(())
             }
             Function::Native(func) => args.1.call_native(*func, args.0),

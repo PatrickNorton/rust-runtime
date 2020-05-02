@@ -43,7 +43,7 @@ fn get_bytes(bytes: &Vec<u8>, mut start: usize, byte_count: usize) -> u32 {
 fn call_operator(o: Operator, argc: u16, runtime: &mut Runtime) -> FnResult {
     let argv = runtime.load_args(argc);
     let caller = runtime.pop();
-    runtime.call_op(caller, o, argv)
+    caller.call_op_or_goto(o, argv, runtime)
 }
 
 fn bool_op(b: Bytecode, runtime: &mut Runtime) -> Result<bool, ()> {
@@ -237,13 +237,14 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let argc = bytes_1 as u16;
             let args = runtime.load_args(argc);
             let var = runtime.pop();
-            var.index(Name::Attribute(fn_name)).call((args, runtime))?;
+            var.index(Name::Attribute(fn_name))
+                .call_or_goto((args, runtime))?;
         }
         Bytecode::CallTos => {
             let argc = bytes_0 as u16;
-            runtime.call_tos(argc)?;
+            runtime.call_tos_or_goto(argc)?;
         }
-        Bytecode::CallFunction => runtime.call_quick(bytes_0 as u16)?,
+        Bytecode::CallFunction => runtime.call_quick(bytes_0 as u16),
         Bytecode::TailMethod => unimplemented!(),
         Bytecode::TailTos => unimplemented!(),
         Bytecode::TailFunction => unimplemented!(),

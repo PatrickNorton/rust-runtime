@@ -18,6 +18,10 @@ pub trait CustomVar: Debug {
         self.call_op(Operator::Call, args, runtime)
     }
 
+    fn call_or_goto(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        self.call_op_or_goto(Operator::Call, args, runtime)
+    }
+
     fn call_op(
         self: Rc<Self>,
         operator: Operator,
@@ -26,6 +30,16 @@ pub trait CustomVar: Debug {
     ) -> FnResult {
         self.get_attr(Name::Operator(operator))
             .call((args, runtime))
+    }
+
+    fn call_op_or_goto(
+        self: Rc<Self>,
+        operator: Operator,
+        args: Vec<Variable>,
+        runtime: &mut Runtime,
+    ) -> FnResult {
+        self.get_attr(Name::Operator(operator))
+            .call_or_goto((args, runtime))
     }
 
     fn str(self: Rc<Self>, runtime: &mut Runtime) -> Result<StringVar, ()> {
