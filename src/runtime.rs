@@ -92,10 +92,15 @@ impl Runtime {
         this: &T,
         args: Vec<Variable>,
     ) -> FnResult {
-        self.push_native();
-        let result = func(this, args, self);
-        self.pop_native();
-        result
+        let native = self.is_native();
+        if native {
+            self.push_native();
+            let result = func(this, args, self);
+            self.pop_native();
+            result
+        } else {
+            func(this, args, self)
+        }
     }
 
     pub fn call_native(&mut self, func: NativeFunction, args: Vec<Variable>) -> FnResult {
