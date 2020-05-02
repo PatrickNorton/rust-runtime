@@ -13,6 +13,8 @@ use crate::quick_functions::{
 use crate::runtime::Runtime;
 use crate::variable::{FnResult, Name, Variable};
 use num::traits::FromPrimitive;
+use num::{BigInt, Zero};
+use std::ops::{Sub, SubAssign};
 
 pub fn execute(runtime: &mut Runtime) -> FnResult {
     while !runtime.is_native() && runtime.current_pos() as usize != runtime.current_fn().len() {
@@ -303,6 +305,16 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let dict = runtime.pop();
             runtime.call_op(dict.clone(), Operator::SetAttr, vec![key, value])?;
             runtime.push(dict);
+        }
+        Bytecode::Dotimes => {
+            let mut value = runtime.pop().int(runtime)?;
+            let jump = bytes_0;
+            if !value.is_zero() {
+                runtime.goto(jump);
+            } else {
+                value.sub_assign(1);
+                runtime.push(value.into());
+            }
         }
         _ => unimplemented!(),
     }
