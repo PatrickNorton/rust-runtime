@@ -63,12 +63,7 @@ impl StdVariable {
                 runtime.push_stack(0, fn_no as u16, args, file_no)?;
                 FnResult::Ok(())
             }
-            StdVarMethod::Native(func) => {
-                runtime.push_native();
-                let result = func(self, args, runtime);
-                runtime.pop_native();
-                result
-            }
+            StdVarMethod::Native(func) => runtime.call_native_method(func, self, args),
         }
     }
 

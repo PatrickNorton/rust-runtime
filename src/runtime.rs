@@ -1,5 +1,6 @@
 use crate::executor;
 use crate::file_info::FileInfo;
+use crate::function::NativeFunction;
 use crate::method::NativeMethod;
 use crate::operator::Operator;
 use crate::stack_frame::StackFrame;
@@ -93,6 +94,13 @@ impl Runtime {
     ) -> FnResult {
         self.push_native();
         let result = func(this, args, self);
+        self.pop_native();
+        result
+    }
+
+    pub fn call_native(&mut self, func: NativeFunction, args: Vec<Variable>) -> FnResult {
+        self.push_native();
+        let result = func(args, self);
         self.pop_native();
         result
     }

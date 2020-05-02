@@ -4,10 +4,12 @@ use crate::variable::{FnResult, Variable};
 use std::fmt::{Debug, Formatter};
 use std::hash::{Hash, Hasher};
 
+pub type NativeFunction = fn(Vec<Variable>, &mut Runtime) -> FnResult;
+
 #[derive(Clone, Copy)]
 pub enum Function {
     Standard(usize, u32),
-    Native(fn(Vec<Variable>, &mut Runtime) -> FnResult),
+    Native(NativeFunction),
 }
 
 impl Function {
@@ -17,12 +19,7 @@ impl Function {
                 args.1.push_stack(0, *fn_no as u16, args.0, *file_no)?;
                 FnResult::Ok(())
             }
-            Function::Native(func) => {
-                args.1.push_native();
-                let result = func(args.0, args.1);
-                args.1.pop_native();
-                result
-            }
+            Function::Native(func) => args.1.call_native(*func, args.0),
         }
     }
 

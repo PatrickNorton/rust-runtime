@@ -95,12 +95,7 @@ where
                 runtime.push_stack(0, *index as u16, args.0, *file)?;
                 FnResult::Ok(())
             }
-            InnerMethod::Native(func) => {
-                args.1.push_native();
-                let result = func(&self.value, args.0, args.1);
-                args.1.pop_native();
-                result
-            }
+            InnerMethod::Native(func) => args.1.call_native_method(*func, &self.value, args.0),
         }
     }
 }
