@@ -1,4 +1,4 @@
-use crate::builtin_functions::{bool_fn, char_fn, dec_fn, int_fn, string_fn};
+use crate::builtin_functions::{bool_fn, char_fn, dec_fn, int_fn, null_fn, string_fn};
 use crate::custom_var::CustomVarWrapper;
 use crate::file_info::FileInfo;
 use crate::function::Function;
@@ -115,6 +115,13 @@ impl Variable {
 
     pub fn index(self, index: Name) -> Variable {
         match self {
+            Variable::Null() => {
+                if let Name::Operator(o) = index {
+                    null_fn::get_operator(o)
+                } else {
+                    unimplemented!()
+                }
+            }
             Variable::Standard(val) => val.index(index),
             Variable::Bool(val) => {
                 if let Name::Operator(o) = index {
@@ -250,7 +257,7 @@ impl Variable {
 
     pub fn call_op(self, name: Operator, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         match self {
-            Variable::Null() => self.index(Name::Operator(name)).call((args, runtime)),
+            Variable::Null() => runtime.call_native_method(null_fn::op_fn(name), &(), args),
             Variable::Bool(b) => runtime.call_native_method(bool_fn::op_fn(name), &b, args),
             Variable::Bigint(b) => runtime.call_native_method(int_fn::op_fn(name), &b, args),
             Variable::String(s) => runtime.call_native_method(string_fn::op_fn(name), &s, args),
@@ -343,6 +350,12 @@ impl From<bool> for Variable {
 impl From<char> for Variable {
     fn from(x: char) -> Self {
         Variable::Char(x)
+    }
+}
+
+impl From<()> for Variable {
+    fn from(_: ()) -> Self {
+        Variable::Null()
     }
 }
 
