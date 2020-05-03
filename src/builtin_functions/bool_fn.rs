@@ -16,6 +16,8 @@ pub fn op_fn(o: Operator) -> NativeMethod<bool> {
         Operator::BitwiseOr => bitwise_or,
         Operator::BitwiseNot => bitwise_not,
         Operator::BitwiseXor => bitwise_xor,
+        Operator::Str => str,
+        Operator::Repr => str,
         _ => unimplemented!(),
     }
 }
@@ -31,6 +33,8 @@ pub fn get_operator(this: bool, o: Operator) -> Variable {
         Operator::BitwiseOr => bitwise_or,
         Operator::BitwiseNot => bitwise_not,
         Operator::BitwiseXor => bitwise_xor,
+        Operator::Str => str,
+        Operator::Repr => str,
         _ => return int_fn::get_operator(BigInt::from_i32(if this { 1 } else { 0 }).unwrap(), o),
     };
     Variable::Method(Box::new(StdMethod::new(this, InnerMethod::Native(func))))
@@ -121,5 +125,13 @@ fn bitwise_xor(this: &bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnRes
         sum ^= &bool::from(arg)
     }
     runtime.push(Variable::Bool(sum));
+    FnResult::Ok(())
+}
+
+fn str(this: &bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert!(args.is_empty());
+    runtime.push(Variable::String(
+        if *this { "true" } else { "false" }.into(),
+    ));
     FnResult::Ok(())
 }

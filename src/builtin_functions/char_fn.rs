@@ -6,6 +6,8 @@ use crate::variable::{FnResult, Variable};
 pub fn op_fn(o: Operator) -> NativeMethod<char> {
     match o {
         Operator::Equals => eq,
+        Operator::Str => str,
+        Operator::Repr => str,
         _ => unimplemented!(),
     }
 }
@@ -23,5 +25,11 @@ fn eq(this: &char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         }
     }
     runtime.push(Variable::Bool(true));
+    FnResult::Ok(())
+}
+
+fn str(this: &char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert!(args.is_empty());
+    runtime.push(Variable::String(this.to_string().into()));
     FnResult::Ok(())
 }
