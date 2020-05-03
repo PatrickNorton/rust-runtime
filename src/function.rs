@@ -1,4 +1,3 @@
-use crate::executor::execute;
 use crate::runtime::Runtime;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};

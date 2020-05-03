@@ -13,8 +13,8 @@ use crate::quick_functions::{
 use crate::runtime::Runtime;
 use crate::variable::{FnResult, Name, Variable};
 use num::traits::FromPrimitive;
-use num::{BigInt, Zero};
-use std::ops::{Sub, SubAssign};
+use num::Zero;
+use std::ops::SubAssign;
 
 pub fn execute(runtime: &mut Runtime) -> FnResult {
     while !runtime.is_native() && runtime.current_pos() as usize != runtime.current_fn().len() {
