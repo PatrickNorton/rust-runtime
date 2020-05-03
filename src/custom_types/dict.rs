@@ -195,10 +195,7 @@ impl InnerDict {
         Result::Ok(result.into())
     }
 
-    fn for_each<T>(&self, mut func: T) -> FnResult
-    where
-        T: FnMut(&Variable, &Variable) -> FnResult,
-    {
+    fn for_each(&self, mut func: impl FnMut(&Variable, &Variable) -> FnResult) -> FnResult {
         for val in &self.entries {
             if let Option::Some(o) = val {
                 func(o.get_key(), o.get_value())?;

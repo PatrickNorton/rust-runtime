@@ -172,10 +172,7 @@ impl InnerSet {
         }
     }
 
-    fn for_each<T>(&self, mut func: T) -> FnResult
-    where
-        T: FnMut(&Variable) -> FnResult,
-    {
+    fn for_each(&self, mut func: impl FnMut(&Variable) -> FnResult) -> FnResult {
         for val in &self.values {
             if let Option::Some(o) = val {
                 func(o.get_val())?;
