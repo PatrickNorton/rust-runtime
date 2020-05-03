@@ -1,7 +1,7 @@
 use crate::base_fn::BaseFunction;
 use crate::constant_loaders::{
     class_index, function_index, load_bigint, load_bool, load_builtin, load_class, load_decimal,
-    load_int, load_str,
+    load_int, load_std_str, load_str,
 };
 use crate::file_info::FileInfo;
 use crate::function::Function;
@@ -12,20 +12,27 @@ use std::fs::read;
 use std::path::Path;
 use std::rc::Rc;
 
+const FILE_EXTENSION: &str = ".nbyte";
+
 #[derive(Debug, Copy, Clone)]
 enum LoadType {
     Function(u32),
     Class(u32),
 }
 
-fn load_constant(data: &Vec<u8>, index: &mut usize, load_later: &mut Vec<LoadType>) -> Variable {
+fn load_constant(
+    data: &Vec<u8>,
+    index: &mut usize,
+    load_later: &mut Vec<LoadType>,
+    imports: &Vec<Variable>,
+) -> Variable {
     *index += 1;
     match data[*index - 1] {
         0 => load_str(data, index),
         1 => load_int(data, index),
         2 => load_bigint(data, index),
         3 => load_decimal(data, index),
-        4 => unimplemented!(), // import
+        4 => imports[bytes_index::<u32>(data, index) as usize].clone(),
         5 => load_builtin(data, index),
         6 => {
             load_later.push(LoadType::Function(function_index(data, index)));
@@ -36,7 +43,7 @@ fn load_constant(data: &Vec<u8>, index: &mut usize, load_later: &mut Vec<LoadTyp
             load_later.push(LoadType::Class(class_index(data, index)));
             Variable::Null()
         }
-        _ => unimplemented!(),
+        _ => panic!("Invalid value for constant: {}", data[*index - 1]),
     }
 }
 
@@ -51,24 +58,42 @@ pub fn parse_file(name: String, files: &mut Vec<Rc<FileInfo>>) -> usize {
         panic!("File does not start with the magic number")
     }
 
-    // static mut FILES: HashMap<String, &'static FileInfo> = HashMap::new();
     let import_count = bytes_index::<u32>(&data, &mut index);
-    let _imports: Vec<Variable> = Vec::with_capacity(import_count as usize);
-    if import_count != 0 {
-        panic!("Imports not implemented yet")
+    let mut imports: Vec<Variable> = Vec::with_capacity(import_count as usize);
+    for i in 0..import_count {
+        let _used_name = load_std_str(&data, &mut index);
+        let full_name = load_std_str(&data, &mut index);
+        let names: Vec<&str> = full_name.split(".").collect();
+        let folder_split: Vec<&str> = name.rsplitn(2, "/").collect();
+        let parent_folder = folder_split[0];
+        let file_name = parent_folder.to_owned() + "/" + names[0] + FILE_EXTENSION;
+        let file_index = files
+            .iter()
+            .position(|a| a.get_name() == &file_name)
+            .unwrap_or_else(|| parse_file(file_name, files));
+        let other_file = files[file_index].clone();
+        // TODO: Get nested dots
+        imports[i as usize] = other_file.get_export(&names[1].to_owned()).clone();
     }
 
     let export_count = bytes_index::<u32>(&data, &mut index);
-    let _exports: Vec<Variable> = Vec::with_capacity(export_count as usize);
-    if export_count != 0 {
-        panic!("Exports not implemented yet")
+    let mut exports: HashMap<String, u32> = HashMap::with_capacity(export_count as usize);
+    for _ in 0..export_count {
+        let export_name = load_std_str(&data, &mut index);
+        let const_no = bytes_index::<u32>(&data, &mut index);
+        exports.insert(export_name, const_no);
     }
 
     let constant_count = bytes_index::<u32>(&data, &mut index);
     let mut constants: Vec<Variable> = Vec::with_capacity(constant_count as usize);
     let mut loaded_later: Vec<LoadType> = Vec::new();
     for _ in 0..constant_count {
-        constants.push(load_constant(&data, &mut index, &mut loaded_later));
+        constants.push(load_constant(
+            &data,
+            &mut index,
+            &mut loaded_later,
+            &imports,
+        ));
     }
 
     let fn_count = bytes_index::<u32>(&data, &mut index);
@@ -94,6 +119,6 @@ pub fn parse_file(name: String, files: &mut Vec<Rc<FileInfo>>) -> usize {
         }
     }
 
-    files[file_no] = Rc::new(FileInfo::new(name, constants, functions, HashMap::new()));
+    files[file_no] = Rc::new(FileInfo::new(name, constants, functions, exports));
     return file_no;
 }
