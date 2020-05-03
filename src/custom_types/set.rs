@@ -149,7 +149,7 @@ impl InnerSet {
         }
         let mut result = String::new();
         result += "{";
-        self.for_each(&mut |x| {
+        self.for_each(|x| {
             result += x.str(runtime)?.as_str();
             result += ", ";
             FnResult::Ok(())
@@ -172,7 +172,10 @@ impl InnerSet {
         }
     }
 
-    fn for_each(&self, func: &mut dyn FnMut(&Variable) -> FnResult) -> FnResult {
+    fn for_each<T>(&self, mut func: T) -> FnResult
+    where
+        T: FnMut(&Variable) -> FnResult,
+    {
         for val in &self.values {
             if let Option::Some(o) = val {
                 func(o.get_val())?;

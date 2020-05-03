@@ -182,7 +182,7 @@ impl InnerDict {
         }
         let mut result = String::new();
         result += "{";
-        self.for_each(&mut |x, y| {
+        self.for_each(|x, y| {
             result += x.str(runtime)?.as_str();
             result += ": ";
             result += y.str(runtime)?.as_str();
@@ -195,7 +195,10 @@ impl InnerDict {
         Result::Ok(result.into())
     }
 
-    fn for_each(&self, func: &mut dyn FnMut(&Variable, &Variable) -> FnResult) -> FnResult {
+    fn for_each<T>(&self, mut func: T) -> FnResult
+    where
+        T: FnMut(&Variable, &Variable) -> FnResult,
+    {
         for val in &self.entries {
             if let Option::Some(o) = val {
                 func(o.get_key(), o.get_value())?;
