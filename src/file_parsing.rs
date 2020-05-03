@@ -48,7 +48,7 @@ fn load_constant(
 }
 
 pub fn parse_file(name: String, files: &mut Vec<Rc<FileInfo>>) -> usize {
-    let data = read(Path::new(&name)).expect("File not found");
+    let data = read(Path::new(&name)).expect(format!("File {} not found", &name).as_ref());
     let file_no = files.len();
     files.push(Rc::new(FileInfo::temp()));
     let mut index: usize = 0;
@@ -60,12 +60,12 @@ pub fn parse_file(name: String, files: &mut Vec<Rc<FileInfo>>) -> usize {
 
     let import_count = bytes_index::<u32>(&data, &mut index);
     let mut imports: Vec<Variable> = Vec::with_capacity(import_count as usize);
-    for i in 0..import_count {
+    for _ in 0..import_count {
         let _used_name = load_std_str(&data, &mut index);
         let full_name = load_std_str(&data, &mut index);
         let names: Vec<&str> = full_name.split(".").collect();
         let folder_split: Vec<&str> = name.rsplitn(2, "/").collect();
-        let parent_folder = folder_split[0];
+        let parent_folder = folder_split[1];
         let file_name = parent_folder.to_owned() + "/" + names[0] + FILE_EXTENSION;
         let file_index = files
             .iter()
@@ -73,7 +73,7 @@ pub fn parse_file(name: String, files: &mut Vec<Rc<FileInfo>>) -> usize {
             .unwrap_or_else(|| parse_file(file_name, files));
         let other_file = files[file_index].clone();
         // TODO: Get nested dots
-        imports[i as usize] = other_file.get_export(&names[1].to_owned()).clone();
+        imports.push(other_file.get_export(&names[1].to_owned()).clone());
     }
 
     let export_count = bytes_index::<u32>(&data, &mut index);
