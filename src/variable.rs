@@ -408,3 +408,9 @@ impl From<Variable> for char {
         }
     }
 }
+
+impl Default for Variable {
+    fn default() -> Self {
+        Variable::Null()
+    }
+}
