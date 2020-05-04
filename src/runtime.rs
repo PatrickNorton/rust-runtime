@@ -7,7 +7,7 @@ use crate::stack_frame::StackFrame;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Name, Variable};
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, VecDeque, HashSet};
 use std::rc::Rc;
 use std::vec::Vec;
 
@@ -18,6 +18,7 @@ pub struct Runtime {
     file_stack: Vec<Rc<FileInfo>>,
     exception_frames: HashMap<Variable, Vec<(u32, usize)>>,
     exception_stack: Vec<Variable>,
+    completed_statics: HashSet<(usize, u16, u32)>,
 
     files: Vec<Rc<FileInfo>>,
 }
@@ -36,6 +37,7 @@ impl Runtime {
             file_stack: vec![files[starting_no].clone()],
             exception_frames: HashMap::new(),
             exception_stack: vec![],
+            completed_statics: HashSet::new(),
             files,
         }
     }
@@ -232,6 +234,12 @@ impl Runtime {
             },
             Option::None => panic!("{}", message),
         }
+    }
+
+    pub fn do_static(&mut self) -> bool {
+        let last_frame = self.frames.last().unwrap();  // FIXME: File number
+        let triplet = (0, last_frame.get_fn_number(), last_frame.current_pos());
+        self.completed_statics.insert(triplet)
     }
 
     fn unwind_to_height(

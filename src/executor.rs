@@ -320,6 +320,11 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let value = runtime.pop();
             runtime.push(value.get_type().into());
         }
+        Bytecode::DoStatic => {
+            if !runtime.do_static() {
+                runtime.goto(bytes_0);
+            }
+        }
         _ => unimplemented!(),
     }
     FnResult::Ok(())
