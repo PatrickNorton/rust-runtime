@@ -83,6 +83,7 @@ pub enum Bytecode {
     Dotimes = 0x57,
     // Misc.
     LoadFunction = 0x60,
+    GetType = 0x61,
 }
 
 pub fn bytecode_size(b: Bytecode) -> (usize, usize) {
@@ -154,5 +155,6 @@ pub fn bytecode_size(b: Bytecode) -> (usize, usize) {
         Bytecode::ListAdd | Bytecode::SetAdd | Bytecode::DictAdd => (0, 0),
         Bytecode::Dotimes => (4, 0),
         Bytecode::LoadFunction => (2, 0),
+        Bytecode::GetType => (0, 0),
     }
 }

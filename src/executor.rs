@@ -316,6 +316,10 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
                 runtime.push(value.into());
             }
         }
+        Bytecode::GetType => {
+            let value = runtime.pop();
+            runtime.push(value.get_type().into());
+        }
         _ => unimplemented!(),
     }
     FnResult::Ok(())
