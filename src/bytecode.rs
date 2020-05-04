@@ -81,10 +81,13 @@ pub enum Bytecode {
     SetAdd = 0x55,
     DictAdd = 0x56,
     Dotimes = 0x57,
+    // Statics
+    DoStatic = 0x60,
+    StoreStatic = 0x61,
+    LoadStatic = 0x62,
     // Misc.
-    LoadFunction = 0x60,
-    GetType = 0x61,
-    DoStatic = 0x62,
+    LoadFunction = 0x70,
+    GetType = 0x71,
 }
 
 pub fn bytecode_size(b: Bytecode) -> (usize, usize) {
@@ -155,8 +158,10 @@ pub fn bytecode_size(b: Bytecode) -> (usize, usize) {
         Bytecode::ListCreate | Bytecode::SetCreate | Bytecode::DictCreate => (2, 0),
         Bytecode::ListAdd | Bytecode::SetAdd | Bytecode::DictAdd => (0, 0),
         Bytecode::Dotimes => (4, 0),
+        Bytecode::DoStatic => (4, 0),
+        Bytecode::StoreStatic
+        | Bytecode::LoadStatic => (2, 0),
         Bytecode::LoadFunction => (2, 0),
         Bytecode::GetType => (0, 0),
-        Bytecode::DoStatic => (4, 0),
     }
 }

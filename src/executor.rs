@@ -316,14 +316,22 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
                 runtime.push(value.into());
             }
         }
-        Bytecode::GetType => {
-            let value = runtime.pop();
-            runtime.push(value.get_type().into());
-        }
         Bytecode::DoStatic => {
             if !runtime.do_static() {
                 runtime.goto(bytes_0);
             }
+        }
+        Bytecode::StoreStatic => {
+            let var = runtime.pop();
+            runtime.store_static(bytes_0 as usize, var);
+        }
+        Bytecode::LoadStatic => {
+            let var = runtime.load_static(bytes_0 as usize);
+            runtime.push(var);
+        }
+        Bytecode::GetType => {
+            let value = runtime.pop();
+            runtime.push(value.get_type().into());
         }
         _ => unimplemented!(),
     }
