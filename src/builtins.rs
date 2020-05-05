@@ -45,6 +45,15 @@ fn repr_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     runtime.call_op(args[0].clone(), Operator::Repr, Vec::new())
 }
 
+fn iter() -> Variable {
+    Variable::Function(Function::Native(iter_impl))
+}
+
+fn iter_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert_eq!(args.len(), 1);
+    runtime.call_op(args[0].clone(), Operator::Iter, Vec::new())
+}
+
 pub fn builtin_of(index: usize) -> Variable {
     match index {
         0 => print(),
@@ -54,7 +63,7 @@ pub fn builtin_of(index: usize) -> Variable {
         4 => Type::Bool.into(),
         5 => Range::range_type().into(),
         6 => Type::Type.into(),
-        7 => todo!("iter"),
+        7 => iter(),
         8 => repr(),
         9 => input(),
         10 => List::list_type().into(),
