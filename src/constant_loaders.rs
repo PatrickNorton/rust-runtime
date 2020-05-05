@@ -4,6 +4,7 @@ use crate::int_tools::bytes_index;
 use crate::operator::Operator;
 use crate::std_type::Type;
 use crate::std_variable::StdVarMethod;
+use crate::string_var::StringVar;
 use crate::variable::{Name, Variable};
 use num::bigint::Sign;
 use num::traits::pow::pow;
@@ -132,8 +133,8 @@ fn get_properties(
     data: &Vec<u8>,
     index: &mut usize,
     functions: &mut Vec<BaseFunction>,
-) -> HashMap<String, (u32, u32)> {
-    let mut properties: HashMap<String, (u32, u32)> = HashMap::new();
+) -> HashMap<StringVar, (u32, u32)> {
+    let mut properties: HashMap<StringVar, (u32, u32)> = HashMap::new();
     let byte_size = bytes_index::<u32>(data, index);
     for _ in 0..byte_size {
         let name = load_std_str(data, index);
@@ -150,7 +151,7 @@ fn get_properties(
         let setter_index = functions.len();
         functions.push(BaseFunction::new(name.clone(), 0, setter));
 
-        properties.insert(name.clone(), (getter_index as u32, setter_index as u32));
+        properties.insert(name.into(), (getter_index as u32, setter_index as u32));
     }
     properties
 }
@@ -186,13 +187,14 @@ pub fn load_class(
     let static_operators = get_operators(data, file_no, index, functions);
     let methods = get_methods(data, file_no, index, functions);
     let static_methods = get_methods(data, file_no, index, functions);
-    let _properties = get_properties(data, index, functions);
+    let properties = get_properties(data, index, functions);
 
     Variable::Type(Type::new_std(
         name.into(),
         file_no,
         merge_maps(operators, methods),
         merge_maps(static_operators, static_methods),
+        properties,
     ))
 }
 

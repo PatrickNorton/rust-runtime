@@ -32,6 +32,7 @@ pub struct StdType {
     supers: Vec<Type>,
     methods: HashMap<Name, StdVarMethod>,
     static_methods: HashMap<Name, StdVarMethod>,
+    properties: HashMap<StringVar, (u32, u32)>,
 }
 
 impl Type {
@@ -40,8 +41,15 @@ impl Type {
         file_no: usize,
         methods: HashMap<Name, StdVarMethod>,
         static_methods: HashMap<Name, StdVarMethod>,
+        properties: HashMap<StringVar, (u32, u32)>,
     ) -> Type {
-        let t = Box::new(StdType::new(name, file_no, methods, static_methods));
+        let t = Box::new(StdType::new(
+            name,
+            file_no,
+            methods,
+            static_methods,
+            properties,
+        ));
         Type::Standard(Box::leak(t)) // Classes live forever, why worry about cleanup?
     }
 
@@ -143,6 +151,7 @@ impl StdType {
         file_no: usize,
         methods: HashMap<Name, StdVarMethod>,
         static_methods: HashMap<Name, StdVarMethod>,
+        properties: HashMap<StringVar, (u32, u32)>,
     ) -> StdType {
         StdType {
             name,
@@ -150,6 +159,7 @@ impl StdType {
             supers: Vec::new(),
             methods,
             static_methods,
+            properties,
         }
     }
 
