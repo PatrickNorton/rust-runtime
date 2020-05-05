@@ -1,6 +1,6 @@
+use crate::custom_types::exceptions::index_error;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
-use crate::std_type::Type;
 use crate::variable::Variable;
 use num::traits::Pow;
 use num::{BigInt, BigRational, BigUint, FromPrimitive, ToPrimitive, Zero};
@@ -211,7 +211,7 @@ pub fn quick_subscript(this: Variable, other: Variable, runtime: &mut Runtime) -
             match val.chars().nth(index) {
                 Option::None => {
                     runtime.push_native();
-                    runtime.throw_quick(Type::String, "Index out of bounds".into())?;
+                    runtime.throw_quick(index_error(), "Index out of bounds".into())?;
                     unreachable!() // Native frame will always return FnResult::Err
                 }
                 Option::Some(value) => Result::Ok(value.into()),

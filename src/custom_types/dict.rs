@@ -1,3 +1,4 @@
+use crate::custom_types::exceptions::key_error;
 use crate::custom_types::types::CustomType;
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::function::Function;
@@ -12,7 +13,6 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::iter::Iterator;
 use std::mem::replace;
-use std::ops::Deref;
 use std::rc::Rc;
 
 #[derive(Debug, Clone)]
@@ -76,7 +76,7 @@ impl Dict {
                 runtime.push(result);
                 FnResult::Ok(())
             }
-            Option::None => runtime.throw_quick(Type::String, "Value not found".into()),
+            Option::None => runtime.throw_quick(key_error(), "Value not found".into()),
         }
     }
 

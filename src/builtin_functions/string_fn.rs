@@ -1,7 +1,7 @@
+use crate::custom_types::exceptions::index_error;
 use crate::method::{InnerMethod, NativeMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
-use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use num::{BigInt, ToPrimitive};
@@ -91,7 +91,7 @@ fn index(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> Fn
         .to_usize()
         .unwrap();
     match this.chars().nth(index) {
-        Option::None => runtime.throw_quick(Type::String, "Index out of bounds".into()),
+        Option::None => runtime.throw_quick(index_error(), "Index out of bounds".into()),
         Option::Some(value) => {
             runtime.push(value.into());
             FnResult::Ok(())

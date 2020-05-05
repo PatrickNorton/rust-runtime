@@ -1,7 +1,7 @@
+use crate::custom_types::exceptions::arithmetic_error;
 use crate::method::{InnerMethod, NativeMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
-use crate::std_type::Type;
 use crate::variable::{FnResult, Variable};
 use num::bigint::{BigInt, BigUint};
 use num::traits::Pow;
@@ -177,7 +177,7 @@ fn left_bs(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResul
                     std::usize::MAX
                 )
             };
-            return runtime.throw_quick(Type::String, msg.into());
+            return runtime.throw_quick(arithmetic_error(), msg.into());
         }
         Option::Some(b) => this << b,
     };
@@ -199,7 +199,7 @@ fn right_bs(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
                     std::usize::MAX
                 )
             };
-            return runtime.throw_quick(Type::String, msg.into());
+            return runtime.throw_quick(arithmetic_error(), msg.into());
         }
         Option::Some(b) => this >> b,
     };

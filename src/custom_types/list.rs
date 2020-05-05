@@ -1,3 +1,4 @@
+use crate::custom_types::exceptions::stop_iteration;
 use crate::custom_types::types::CustomType;
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::function::Function;
@@ -198,7 +199,7 @@ impl ListIter {
                 runtime.push(value.into());
                 FnResult::Ok(())
             }
-            Option::None => runtime.throw_quick(Type::String, "".into()),
+            Option::None => runtime.throw_quick(stop_iteration(), "".into()),
         }
     }
 
