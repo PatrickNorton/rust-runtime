@@ -1,4 +1,5 @@
 use crate::custom_types::list::List;
+use crate::custom_types::range::Range;
 use crate::custom_types::set::Set;
 use crate::function::Function;
 use crate::operator::Operator;
@@ -51,7 +52,7 @@ pub fn builtin_of(index: usize) -> Variable {
         2 => Type::Bigint.into(),
         3 => Type::String.into(),
         4 => Type::Bool.into(),
-        5 => todo!("range"),
+        5 => Range::range_type().into(),
         6 => Type::Type.into(),
         7 => todo!("iter"),
         8 => repr(),
