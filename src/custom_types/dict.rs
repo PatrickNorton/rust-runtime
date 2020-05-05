@@ -152,15 +152,7 @@ impl Dict {
     }
 
     pub fn dict_type() -> Type {
-        lazy_static! {
-            static ref TYPE: CustomType<Dict> = CustomType::new(
-                "list".into(),
-                Vec::new(),
-                Function::Native(Dict::create),
-                HashMap::new()
-            );
-        }
-        Type::Custom(&*TYPE)
+        custom_class!(Dict, create, "dict")
     }
 
     fn is_empty(&self) -> bool {

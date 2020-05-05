@@ -80,15 +80,7 @@ impl Range {
     }
 
     pub fn range_type() -> Type {
-        lazy_static! {
-            static ref TYPE: CustomType<Range> = CustomType::new(
-                "list".into(),
-                Vec::new(),
-                Function::Native(Range::create),
-                HashMap::new()
-            );
-        }
-        Type::Custom(&*TYPE)
+        custom_class!(Range, create, "range")
     }
 }
 
@@ -157,15 +149,7 @@ impl RangeIter {
     }
 
     fn range_iter_type() -> Type {
-        lazy_static! {
-            static ref TYPE: CustomType<RangeIter> = CustomType::new(
-                "list".into(),
-                Vec::new(),
-                Function::Native(RangeIter::create),
-                HashMap::new()
-            );
-        }
-        Type::Custom(&*TYPE)
+        custom_class!(RangeIter, create, "RangeIter")
     }
 }
 

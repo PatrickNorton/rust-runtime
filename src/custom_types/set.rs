@@ -112,15 +112,7 @@ impl Set {
     }
 
     pub fn set_type() -> Type {
-        lazy_static! {
-            static ref TYPE: CustomType<Set> = CustomType::new(
-                "list".into(),
-                Vec::new(),
-                Function::Native(Set::create),
-                HashMap::new()
-            );
-        }
-        Type::Custom(&*TYPE)
+        custom_class!(Set, create, "set")
     }
 
     pub fn is_empty(&self) -> bool {
