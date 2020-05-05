@@ -1,5 +1,5 @@
 use crate::custom_types::types::CustomType;
-use crate::custom_var::CustomVar;
+use crate::custom_var::{downcast_var, CustomVar};
 use crate::function::Function;
 use crate::int_tools::next_power_2;
 use crate::method::StdMethod;
@@ -12,6 +12,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::iter::Iterator;
 use std::mem::replace;
+use std::ops::Deref;
 use std::rc::Rc;
 
 #[derive(Debug, Clone)]
@@ -52,6 +53,7 @@ impl Dict {
             Operator::Bool => Dict::bool,
             Operator::SetAttr => Dict::set,
             Operator::In => Dict::contains,
+            Operator::Equals => Dict::eq,
             _ => unimplemented!(),
         };
         Variable::Method(StdMethod::new_native(self.clone(), func))
@@ -119,6 +121,26 @@ impl Dict {
             Option::None => args[1].clone(),
         };
         runtime.push(val);
+        FnResult::Ok(())
+    }
+
+    fn eq(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        for arg in args {
+            match downcast_var::<Dict>(arg) {
+                Option::None => {
+                    runtime.push(false.into());
+                    return FnResult::Ok(());
+                }
+                Option::Some(other) => {
+                    let self_val = self.value.borrow();
+                    if !self_val.equals(&*other.value.borrow(), runtime)? {
+                        runtime.push(false.into());
+                        return FnResult::Ok(());
+                    }
+                }
+            };
+        }
+        runtime.push(true.into());
         FnResult::Ok(())
     }
 
@@ -245,6 +267,38 @@ impl InnerDict {
             }
         }
         FnResult::Ok(())
+    }
+
+    pub fn equals(&self, other: &InnerDict, runtime: &mut Runtime) -> Result<bool, ()> {
+        if self.size != other.size {
+            return Result::Ok(false);
+        }
+        for val in &self.entries {
+            if let Option::Some(o) = val {
+                if !Self::contains_and_eq(o, other, runtime)? {
+                    return Result::Ok(false);
+                }
+                let mut p = o.get_next().as_ref();
+                while let Option::Some(q) = p {
+                    if !Self::contains_and_eq(q.as_ref(), other, runtime)? {
+                        return Result::Ok(false);
+                    }
+                    p = q.get_next().as_ref()
+                }
+            }
+        }
+        Result::Ok(true)
+    }
+
+    fn contains_and_eq(
+        entry: &Entry,
+        other: &InnerDict,
+        runtime: &mut Runtime,
+    ) -> Result<bool, ()> {
+        match other.get(entry.key.clone(), runtime)? {
+            Option::Some(val) => val.equals(entry.value.clone(), runtime),
+            Option::None => Result::Ok(false),
+        }
     }
 
     fn split_entries(mut e: Entry) -> (Entry, Option<Box<Entry>>) {

@@ -1,5 +1,5 @@
 use crate::custom_types::types::CustomType;
-use crate::custom_var::CustomVar;
+use crate::custom_var::{downcast_var, CustomVar};
 use crate::function::Function;
 use crate::int_tools::next_power_2;
 use crate::method::StdMethod;
@@ -44,6 +44,7 @@ impl Set {
             Operator::Str => Self::repr,
             Operator::Repr => Self::repr,
             Operator::In => Self::contains,
+            Operator::Equals => Self::eq,
             _ => unimplemented!(),
         };
         Variable::Method(StdMethod::new_native(self.clone(), func))
@@ -83,6 +84,23 @@ impl Set {
         debug_assert_eq!(args.len(), 1);
         let val = args.remove(0);
         self.value.borrow_mut().add(val, runtime)?;
+        FnResult::Ok(())
+    }
+
+    fn eq(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        for arg in args {
+            if !match downcast_var::<Set>(arg) {
+                Option::None => false,
+                Option::Some(other) => {
+                    let self_val = self.value.borrow();
+                    self_val.equals(&*other.value.borrow(), runtime)?
+                }
+            } {
+                runtime.push(false.into());
+                return FnResult::Ok(());
+            }
+        }
+        runtime.push(true.into());
         FnResult::Ok(())
     }
 
@@ -206,6 +224,27 @@ impl InnerSet {
             }
         }
         FnResult::Ok(())
+    }
+
+    pub fn equals(&self, other: &InnerSet, runtime: &mut Runtime) -> Result<bool, ()> {
+        if self.size != other.size {
+            return Result::Ok(false);
+        }
+        for val in &self.values {
+            if let Option::Some(o) = val {
+                if !other.contains(o.val.clone(), runtime)? {
+                    return Result::Ok(false);
+                }
+                let mut p = o.get_next().as_ref();
+                while let Option::Some(q) = p {
+                    if !other.contains(q.val.clone(), runtime)? {
+                        return Result::Ok(false);
+                    }
+                    p = q.get_next().as_ref()
+                }
+            }
+        }
+        Result::Ok(true)
     }
 
     fn split_entries(mut e: Entry) -> (Entry, Option<Box<Entry>>) {

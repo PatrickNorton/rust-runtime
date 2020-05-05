@@ -1,5 +1,5 @@
 use crate::custom_types::types::CustomType;
-use crate::custom_var::CustomVar;
+use crate::custom_var::{downcast_var, CustomVar};
 use crate::function::Function;
 use crate::method::{InnerMethod, StdMethod};
 use crate::operator::Operator;
@@ -29,6 +29,7 @@ impl List {
             Operator::Bool => List::list_bool,
             Operator::Str => List::list_str,
             Operator::GetAttr => List::list_index,
+            Operator::Equals => List::eq,
             _ => unimplemented!(),
         };
         Variable::Method(Box::new(StdMethod::new(
@@ -89,6 +90,40 @@ impl List {
             },
         });
         FnResult::Ok(())
+    }
+
+    fn eq(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        for arg in args {
+            if !match downcast_var::<List>(arg) {
+                Option::None => false,
+                Option::Some(other) => {
+                    let self_val = self.value.borrow();
+                    let other_val = other.value.borrow();
+                    self_val.len() == other_val.len()
+                        && Self::vec_eq(&*self_val, &*other_val, runtime)?
+                }
+            } {
+                runtime.push(false.into());
+                return FnResult::Ok(());
+            }
+        }
+        runtime.push(true.into());
+        FnResult::Ok(())
+    }
+
+    fn vec_eq(
+        first: &Vec<Variable>,
+        second: &Vec<Variable>,
+        runtime: &mut Runtime,
+    ) -> Result<bool, ()> {
+        let mut is_eq = true;
+        for (a, b) in first.iter().zip(second.iter()) {
+            if !a.equals(b.clone(), runtime)? {
+                is_eq = false;
+                break;
+            }
+        }
+        Result::Ok(is_eq)
     }
 
     pub fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
