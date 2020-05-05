@@ -30,6 +30,7 @@ impl List {
             Operator::Str => List::list_str,
             Operator::GetAttr => List::list_index,
             Operator::Equals => List::eq,
+            Operator::Iter => List::iter,
             _ => unimplemented!(),
         };
         Variable::Method(Box::new(StdMethod::new(
@@ -126,6 +127,12 @@ impl List {
         Result::Ok(is_eq)
     }
 
+    fn iter(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        runtime.push(Rc::new(ListIter::new(self.clone())).into());
+        FnResult::Ok(())
+    }
+
     pub fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty()); // TODO: List of a value
         runtime.push(List::from_values(vec![]).into());
@@ -159,5 +166,82 @@ impl CustomVar for List {
 
     fn get_type(self: Rc<Self>) -> Type {
         List::list_type()
+    }
+}
+
+#[derive(Debug)]
+struct ListIter {
+    current: RefCell<usize>,
+    value: Rc<List>,
+}
+
+impl ListIter {
+    pub fn new(value: Rc<List>) -> ListIter {
+        ListIter {
+            current: RefCell::new(0),
+            value,
+        }
+    }
+
+    fn get_attribute(self: &Rc<Self>, val: StringVar) -> Variable {
+        let func = match val.as_str() {
+            "next" => Self::next_fn,
+            _ => unimplemented!(),
+        };
+        Variable::Method(StdMethod::new_native(self.clone(), func))
+    }
+
+    fn next_fn(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        match self.next() {
+            Option::Some(value) => {
+                runtime.push(value.into());
+                FnResult::Ok(())
+            }
+            Option::None => runtime.throw_quick(Type::String, "".into()),
+        }
+    }
+
+    fn next(&self) -> Option<Variable> {
+        if *self.current.borrow() != self.value.value.borrow().len() {
+            let result = self.value.value.borrow()[*self.current.borrow()].clone();
+            *self.current.borrow_mut() += 1;
+            Option::Some(result)
+        } else {
+            Option::None
+        }
+    }
+
+    fn create(_args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
+        unimplemented!()
+    }
+
+    fn range_iter_type() -> Type {
+        lazy_static! {
+            static ref TYPE: CustomType<ListIter> = CustomType::new(
+                "list".into(),
+                Vec::new(),
+                Function::Native(ListIter::create),
+                HashMap::new()
+            );
+        }
+        Type::Custom(&*TYPE)
+    }
+}
+
+impl CustomVar for ListIter {
+    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
+        match name {
+            Name::Operator(_) => unimplemented!(),
+            Name::Attribute(s) => self.get_attribute(s),
+        }
+    }
+
+    fn set(self: Rc<Self>, _name: Name, _object: Variable) {
+        unimplemented!()
+    }
+
+    fn get_type(self: Rc<Self>) -> Type {
+        Self::range_iter_type()
     }
 }
