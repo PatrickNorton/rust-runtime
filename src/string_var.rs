@@ -5,7 +5,7 @@ use std::sync::Arc;
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum StringVar {
     Literal(&'static str),
-    Other(Arc<Box<str>>),
+    Other(Arc<str>),
 }
 
 impl StringVar {
@@ -29,7 +29,7 @@ impl From<&'static str> for StringVar {
 
 impl From<String> for StringVar {
     fn from(x: String) -> Self {
-        StringVar::Other(Arc::new(x.into_boxed_str()))
+        StringVar::Other(Arc::from(x.as_str()))
     }
 }
 
