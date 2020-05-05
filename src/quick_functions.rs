@@ -398,6 +398,11 @@ pub fn quick_equals(this: Variable, other: Variable, runtime: &mut Runtime) -> Q
             v.call_operator(Operator::Equals, Vec::new(), runtime)?;
             QuickResult::Ok(runtime.pop())
         }
+        Variable::Custom(c) => {
+            (*c).clone()
+                .call_op(Operator::Equals, vec![other], runtime)?;
+            QuickResult::Ok(runtime.pop())
+        }
         _ => QuickResult::Ok(Variable::Bool(this == other)),
     }
 }

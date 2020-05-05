@@ -3,6 +3,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Name, Variable};
+use downcast_rs::Downcast;
 use num::BigInt;
 use std::any::Any;
 use std::fmt::Debug;
@@ -10,7 +11,7 @@ use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 use std::rc::Rc;
 
-pub trait CustomVar: Debug {
+pub trait CustomVar: Debug + Any + Downcast {
     fn get_attr(self: Rc<Self>, name: Name) -> Variable;
     fn set(self: Rc<Self>, name: Name, object: Variable);
     fn get_type(self: Rc<Self>) -> Type;
@@ -58,6 +59,8 @@ pub trait CustomVar: Debug {
         runtime.pop().to_bool(runtime)
     }
 }
+
+impl_downcast!(CustomVar);
 
 #[derive(Debug, Clone)]
 pub struct CustomVarWrapper {
@@ -107,23 +110,12 @@ where
     }
 }
 
-trait AsAny {
-    fn as_any(&self) -> &dyn Any;
-}
-
-impl AsAny for Rc<dyn CustomVar> {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-}
-
 pub fn downcast_var<T>(var: Variable) -> Option<Rc<T>>
 where
     T: 'static + CustomVar,
 {
     if let Variable::Custom(wrapper) = var {
-        let val = Any::downcast_ref::<Rc<T>>(wrapper.as_any())?;
-        Option::Some(val.clone())
+        (*wrapper).clone().downcast_rc::<T>().ok()
     } else {
         Option::None
     }
