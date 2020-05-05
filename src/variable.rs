@@ -11,7 +11,7 @@ use crate::std_variable::StdVariable;
 use crate::string_var::StringVar;
 use num::bigint::BigInt;
 use num::traits::Zero;
-use num::{BigRational, ToPrimitive};
+use num::{BigRational, FromPrimitive, ToPrimitive};
 use std::boxed::Box;
 use std::clone::Clone;
 use std::cmp::PartialEq;
@@ -258,7 +258,12 @@ impl Variable {
     pub fn call_op(self, name: Operator, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         match self {
             Variable::Null() => runtime.call_native_method(null_fn::op_fn(name), &(), args),
-            Variable::Bool(b) => runtime.call_native_method(bool_fn::op_fn(name), &b, args),
+            Variable::Bool(b) => match bool_fn::op_fn(name) {
+                Option::Some(val) => runtime.call_native_method(val, &b, args),
+                Option::None => {
+                    runtime.call_native_method(int_fn::op_fn(name), &BigInt::from_bool(b), args)
+                }
+            },
             Variable::Bigint(b) => runtime.call_native_method(int_fn::op_fn(name), &b, args),
             Variable::String(s) => runtime.call_native_method(string_fn::op_fn(name), &s, args),
             Variable::Decimal(d) => runtime.call_native_method(dec_fn::op_fn(name), &d, args),
@@ -412,5 +417,15 @@ impl From<Variable> for char {
 impl Default for Variable {
     fn default() -> Self {
         Variable::Null()
+    }
+}
+
+pub(crate) trait FromBool {
+    fn from_bool(x: bool) -> Self;
+}
+
+impl FromBool for BigInt {
+    fn from_bool(x: bool) -> Self {
+        if x { 1u8 } else { 0u8 }.into()
     }
 }

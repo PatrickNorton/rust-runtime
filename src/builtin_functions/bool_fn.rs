@@ -1,12 +1,12 @@
 use crate::builtin_functions::int_fn;
-use crate::method::{InnerMethod, NativeMethod, StdMethod};
+use crate::method::{NativeMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
-use crate::variable::{FnResult, Variable};
-use num::{BigInt, FromPrimitive};
+use crate::variable::{FnResult, FromBool, Variable};
+use num::BigInt;
 
-pub fn op_fn(o: Operator) -> NativeMethod<bool> {
-    match o {
+pub fn op_fn(o: Operator) -> Option<NativeMethod<bool>> {
+    Option::Some(match o {
         Operator::Equals => eq,
         Operator::LessThan => less_than,
         Operator::GreaterThan => greater_than,
@@ -18,26 +18,15 @@ pub fn op_fn(o: Operator) -> NativeMethod<bool> {
         Operator::BitwiseXor => bitwise_xor,
         Operator::Str => str,
         Operator::Repr => str,
-        _ => unimplemented!(),
-    }
+        _ => return Option::None,
+    })
 }
 
 pub fn get_operator(this: bool, o: Operator) -> Variable {
-    let func = match o {
-        Operator::Equals => eq,
-        Operator::LessThan => less_than,
-        Operator::GreaterThan => greater_than,
-        Operator::LessEqual => less_equal,
-        Operator::GreaterEqual => greater_equal,
-        Operator::BitwiseAnd => bitwise_and,
-        Operator::BitwiseOr => bitwise_or,
-        Operator::BitwiseNot => bitwise_not,
-        Operator::BitwiseXor => bitwise_xor,
-        Operator::Str => str,
-        Operator::Repr => str,
-        _ => return int_fn::get_operator(BigInt::from_i32(if this { 1 } else { 0 }).unwrap(), o),
-    };
-    Variable::Method(Box::new(StdMethod::new(this, InnerMethod::Native(func))))
+    match op_fn(o) {
+        Option::Some(func) => Variable::Method(StdMethod::new_native(this, func)),
+        Option::None => int_fn::get_operator(BigInt::from_bool(this), o),
+    }
 }
 
 fn eq(this: &bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
