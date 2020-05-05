@@ -15,6 +15,10 @@ impl StringVar {
             StringVar::Other(x) => &x,
         }
     }
+
+    pub fn from_leak(var: String) -> StringVar {
+        StringVar::Literal(Box::leak(var.into_boxed_str()))
+    }
 }
 
 impl From<&'static str> for StringVar {

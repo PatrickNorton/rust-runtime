@@ -28,7 +28,7 @@ pub fn load_std_str(data: &Vec<u8>, index: &mut usize) -> String {
 }
 
 pub fn load_str(data: &Vec<u8>, index: &mut usize) -> Variable {
-    Variable::String(load_std_str(data, index).into())
+    Variable::String(StringVar::from_leak(load_std_str(data, index)))
 }
 
 pub fn load_builtin(data: &Vec<u8>, index: &mut usize) -> Variable {
@@ -151,7 +151,10 @@ fn get_properties(
         let setter_index = functions.len();
         functions.push(BaseFunction::new(name.clone(), 0, setter));
 
-        properties.insert(name.into(), (getter_index as u32, setter_index as u32));
+        properties.insert(
+            StringVar::from_leak(name),
+            (getter_index as u32, setter_index as u32),
+        );
     }
     properties
 }
@@ -165,7 +168,7 @@ fn merge_maps(
         result.insert(Name::Operator(i.0), i.1);
     }
     for i in strings {
-        result.insert(Name::Attribute(i.0.into()), i.1);
+        result.insert(Name::Attribute(StringVar::from_leak(i.0)), i.1);
     }
     result
 }
@@ -190,29 +193,10 @@ pub fn load_class(
     let properties = get_properties(data, index, functions);
 
     Variable::Type(Type::new_std(
-        name.into(),
+        StringVar::from_leak(name),
         file_no,
         merge_maps(operators, methods),
         merge_maps(static_operators, static_methods),
         properties,
     ))
 }
-
-/*
-    Type loadClass(FileInfo* file, const std::vector<uint8_t>& data, size_t& index, std::vector<BaseFunction>& functions) {
-        auto name = loadStdStr(data, index);
-        if (IntTools::bytesTo<uint32_t>(data, index) != 0) { // No supers allowed yet
-            throw std::runtime_error("Supers not allowed yet");
-        }
-        auto genericSize = IntTools::bytesTo<uint16_t>(data, index);
-        getVariables(data, index);
-        getVariables(data, index);
-        auto operators = getOperators(data, index, functions);
-        auto staticOperators = getOperators(data, index, functions);
-        auto methods = getMethods(data, index, functions);
-        auto staticMethods = getMethods(data, index, functions);
-        auto properties = getProperties(data, index, functions);
-
-        return std::make_shared<Constants::StdType>(name, file, genericSize, operators, staticOperators, methods, staticMethods, properties);
-    }
-*/
