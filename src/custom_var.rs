@@ -4,6 +4,7 @@ use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Name, Variable};
 use num::BigInt;
+use std::any::Any;
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 use std::ops::Deref;
@@ -103,5 +104,27 @@ where
 {
     fn from(val: Rc<T>) -> Self {
         Variable::Custom(CustomVarWrapper::new(val))
+    }
+}
+
+trait AsAny {
+    fn as_any(&self) -> &dyn Any;
+}
+
+impl AsAny for Rc<dyn CustomVar> {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+pub fn downcast_var<T>(var: Variable) -> Option<Rc<T>>
+where
+    T: 'static + CustomVar,
+{
+    if let Variable::Custom(wrapper) = var {
+        let val = Any::downcast_ref::<Rc<T>>(wrapper.as_any())?;
+        Option::Some(val.clone())
+    } else {
+        Option::None
     }
 }
