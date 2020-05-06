@@ -2,6 +2,7 @@ use crate::builtin_functions::{bool_fn, char_fn, dec_fn, int_fn, null_fn, string
 use crate::custom_var::CustomVarWrapper;
 use crate::file_info::FileInfo;
 use crate::function::Function;
+use crate::int_var::IntVar;
 use crate::method::Method;
 use crate::operator::Operator;
 use crate::quick_functions::quick_equals;
@@ -11,13 +12,14 @@ use crate::std_variable::StdVariable;
 use crate::string_var::StringVar;
 use num::bigint::BigInt;
 use num::traits::Zero;
-use num::{BigRational, FromPrimitive, ToPrimitive};
+use num::{BigRational, ToPrimitive};
 use std::boxed::Box;
 use std::clone::Clone;
 use std::cmp::PartialEq;
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 use std::ptr;
+use std::rc::Rc;
 use std::str::FromStr;
 use std::string::String;
 use std::vec::Vec;
@@ -34,7 +36,7 @@ pub enum Name {
 pub enum Variable {
     Null(),
     Bool(bool),
-    Bigint(BigInt),
+    Bigint(IntVar),
     String(StringVar),
     Decimal(BigRational),
     Char(char),
@@ -51,7 +53,7 @@ impl Variable {
             Variable::Null() => Result::Ok("null".into()),
             Variable::Bool(val) => Result::Ok((if *val { "true" } else { "false" }).into()),
             Variable::String(val) => Result::Ok(val.clone()),
-            Variable::Bigint(val) => Result::Ok(val.to_str_radix(10).into()),
+            Variable::Bigint(val) => Result::Ok(val.to_string().into()),
             Variable::Decimal(val) => Result::Ok(val.to_string().into()),
             Variable::Char(val) => Result::Ok(val.to_string().into()),
             Variable::Type(val) => Result::Ok(val.str()),
@@ -62,14 +64,14 @@ impl Variable {
         }
     }
 
-    pub fn int(&self, runtime: &mut Runtime) -> Result<BigInt, ()> {
+    pub fn int(&self, runtime: &mut Runtime) -> Result<IntVar, ()> {
         match self {
             Variable::Bool(val) => Result::Ok(if *val { 1 } else { 0 }.into()),
             Variable::Bigint(val) => Result::Ok(val.clone()),
-            Variable::Decimal(val) => Result::Ok(val.to_integer()),
+            Variable::Decimal(val) => Result::Ok(val.to_integer().into()),
             Variable::Char(val) => Result::Ok((*val as u32).into()),
             Variable::Standard(val) => val.int(runtime),
-            Variable::String(val) => BigInt::from_str(val).or(Result::Err(())),
+            Variable::String(val) => Result::Ok(IntVar::from_str(val)?.into()),
             Variable::Custom(val) => (**val).clone().int(runtime),
             _ => unimplemented!(),
         }
@@ -80,7 +82,7 @@ impl Variable {
             Variable::Null() => Result::Ok(false),
             Variable::Bool(val) => Result::Ok(*val),
             Variable::String(val) => Result::Ok(!val.is_empty()),
-            Variable::Bigint(val) => Result::Ok(val != &BigInt::zero()),
+            Variable::Bigint(val) => Result::Ok(!val.is_zero()),
             Variable::Decimal(val) => Result::Ok(val != &BigRational::zero()),
             Variable::Char(val) => Result::Ok(val != &'\0'),
             Variable::Type(_) => Result::Ok(true),
@@ -218,8 +220,8 @@ impl Variable {
             Variable::Null() => Result::Ok(0),
             Variable::Bool(b) => Result::Ok(if *b { 0 } else { 1 }),
             Variable::Bigint(i) => {
-                let max = BigInt::from(std::usize::MAX) + 1;
-                let hash: BigInt = i % &max;
+                let max = IntVar::Big(Rc::new(BigInt::from(std::usize::MAX) + 1));
+                let hash = i.clone() % max;
                 Result::Ok(hash.to_usize().unwrap())
             }
             Variable::String(s) => {
@@ -240,7 +242,7 @@ impl Variable {
                 runtime.push_native();
                 v.call_operator(Operator::Hash, Vec::new(), runtime)?;
                 runtime.pop_native();
-                Result::Ok(BigInt::from(runtime.pop()).to_usize().unwrap())
+                Result::Ok(IntVar::from(runtime.pop()).to_usize().unwrap())
             }
             Variable::Method(_) => unimplemented!(),
             Variable::Function(_) => unimplemented!(),
@@ -250,7 +252,7 @@ impl Variable {
                     .clone()
                     .call_op(Operator::Hash, Vec::new(), runtime)?;
                 runtime.pop_native();
-                Result::Ok(BigInt::from(runtime.pop()).to_usize().unwrap())
+                Result::Ok(IntVar::from(runtime.pop()).to_usize().unwrap())
             }
         }
     }
@@ -261,7 +263,7 @@ impl Variable {
             Variable::Bool(b) => match bool_fn::op_fn(name) {
                 Option::Some(val) => runtime.call_native_method(val, &b, args),
                 Option::None => {
-                    runtime.call_native_method(int_fn::op_fn(name), &BigInt::from_bool(b), args)
+                    runtime.call_native_method(int_fn::op_fn(name), &IntVar::from_bool(b), args)
                 }
             },
             Variable::Bigint(b) => runtime.call_native_method(int_fn::op_fn(name), &b, args),
@@ -310,8 +312,8 @@ impl Hash for &'static FileInfo {
     }
 }
 
-impl From<BigInt> for Variable {
-    fn from(x: BigInt) -> Self {
+impl From<IntVar> for Variable {
+    fn from(x: IntVar) -> Self {
         Variable::Bigint(x)
     }
 }
@@ -364,7 +366,7 @@ impl From<()> for Variable {
     }
 }
 
-impl From<Variable> for BigInt {
+impl From<Variable> for IntVar {
     fn from(var: Variable) -> Self {
         match var {
             Variable::Bigint(i) => i,
@@ -425,6 +427,12 @@ pub(crate) trait FromBool {
 }
 
 impl FromBool for BigInt {
+    fn from_bool(x: bool) -> Self {
+        if x { 1u8 } else { 0u8 }.into()
+    }
+}
+
+impl FromBool for IntVar {
     fn from_bool(x: bool) -> Self {
         if x { 1u8 } else { 0u8 }.into()
     }

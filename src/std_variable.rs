@@ -1,10 +1,10 @@
+use crate::int_var::IntVar;
 use crate::method::{InnerMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::{StdType, Type};
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Name, Variable};
-use num::BigInt;
 use std::cell::RefCell;
 use std::cmp::{Eq, PartialEq};
 use std::collections::HashMap;
@@ -42,7 +42,7 @@ impl StdVariable {
         runtime.pop().to_bool(runtime)
     }
 
-    pub fn int(&self, runtime: &mut Runtime) -> Result<BigInt, ()> {
+    pub fn int(&self, runtime: &mut Runtime) -> Result<IntVar, ()> {
         self.call_operator(Operator::Bool, vec![], runtime)?;
         runtime.pop().int(runtime)
     }

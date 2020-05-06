@@ -1,6 +1,7 @@
 use crate::base_fn::BaseFunction;
 use crate::builtins::builtin_of;
 use crate::int_tools::bytes_index;
+use crate::int_var::IntVar;
 use crate::operator::Operator;
 use crate::std_type::Type;
 use crate::std_variable::StdVarMethod;
@@ -37,7 +38,7 @@ pub fn load_builtin(data: &Vec<u8>, index: &mut usize) -> Variable {
 
 pub fn load_int(data: &Vec<u8>, index: &mut usize) -> Variable {
     let value = bytes_index::<u32>(data, index);
-    Variable::Bigint(BigInt::from_u32(value).unwrap())
+    Variable::Bigint(IntVar::from_u32(value).unwrap())
 }
 
 pub fn load_bigint(data: &Vec<u8>, index: &mut usize) -> Variable {
@@ -46,7 +47,7 @@ pub fn load_bigint(data: &Vec<u8>, index: &mut usize) -> Variable {
     for _ in 0..count {
         values.push(bytes_index::<u32>(data, index));
     }
-    Variable::Bigint(BigInt::new(Sign::Plus, values))
+    Variable::Bigint(BigInt::new(Sign::Plus, values).into())
 }
 
 pub fn load_decimal(data: &Vec<u8>, index: &mut usize) -> Variable {

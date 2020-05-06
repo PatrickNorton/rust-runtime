@@ -66,7 +66,7 @@ fn floor_div(this: &BigRational, args: Vec<Variable>, runtime: &mut Runtime) -> 
     for arg in args {
         ratio /= BigRational::from(arg).to_integer()
     }
-    runtime.push(Variable::Bigint(ratio));
+    runtime.push(Variable::Bigint(ratio.into()));
     FnResult::Ok(())
 }
 
@@ -142,6 +142,6 @@ fn to_str(this: &BigRational, args: Vec<Variable>, runtime: &mut Runtime) -> FnR
 
 fn to_int(this: &BigRational, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.push(Variable::Bigint(this.to_integer()));
+    runtime.push(Variable::Bigint(this.to_integer().into()));
     FnResult::Ok(())
 }

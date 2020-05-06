@@ -1,15 +1,15 @@
 use crate::custom_types::exceptions::arithmetic_error;
+use crate::int_var::IntVar;
 use crate::method::{InnerMethod, NativeMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::variable::{FnResult, Variable};
-use num::bigint::{BigInt, BigUint};
 use num::traits::Pow;
-use num::{BigRational, Signed, ToPrimitive, Zero};
+use num::{BigRational, Signed, ToPrimitive};
 use std::boxed::Box;
 use std::vec::Vec;
 
-pub fn op_fn(o: Operator) -> NativeMethod<BigInt> {
+pub fn op_fn(o: Operator) -> NativeMethod<IntVar> {
     match o {
         Operator::Add => add,
         Operator::Subtract => sub,
@@ -37,80 +37,80 @@ pub fn op_fn(o: Operator) -> NativeMethod<BigInt> {
     }
 }
 
-pub fn get_operator(this: BigInt, o: Operator) -> Variable {
+pub fn get_operator(this: IntVar, o: Operator) -> Variable {
     let func = op_fn(o);
     Variable::Method(Box::new(StdMethod::new(this, InnerMethod::Native(func))))
 }
 
-fn add(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn add(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let mut sum = this.clone();
     for arg in args {
-        sum += BigInt::from(arg)
+        sum += IntVar::from(arg)
     }
     runtime.push(Variable::Bigint(sum));
     FnResult::Ok(())
 }
 
-fn sub(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn sub(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let mut diff = this.clone();
     for arg in args {
-        diff -= BigInt::from(arg)
+        diff -= IntVar::from(arg)
     }
     runtime.push(Variable::Bigint(diff));
     FnResult::Ok(())
 }
 
-fn u_minus(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn u_minus(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     runtime.push(Variable::Bigint(-this.clone()));
     FnResult::Ok(())
 }
 
-fn mul(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn mul(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let mut prod = this.clone();
     for arg in args {
-        prod *= BigInt::from(arg)
+        prod *= IntVar::from(arg)
     }
     runtime.push(Variable::Bigint(prod));
     FnResult::Ok(())
 }
 
-fn floor_div(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn floor_div(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let mut ratio = this.clone();
     for arg in args {
-        ratio /= BigInt::from(arg)
+        ratio /= IntVar::from(arg)
     }
     runtime.push(Variable::Bigint(ratio));
     FnResult::Ok(())
 }
 
-fn div(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    let mut ratio = BigRational::from_integer(this.clone());
+fn div(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    let mut ratio = BigRational::from_integer(this.clone().into());
     for arg in args {
-        ratio /= BigRational::from_integer(BigInt::from(arg))
+        ratio /= BigRational::from_integer(IntVar::from(arg).into())
     }
     runtime.push(Variable::Decimal(ratio));
     FnResult::Ok(())
 }
 
-fn pow(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn pow(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.len() == 1);
-    let arg_int = BigInt::from(args[0].clone());
-    let result = this.pow(arg_int.to_biguint().unwrap_or_else(BigUint::zero));
+    let arg_int = IntVar::from(args[0].clone());
+    let result = this.clone().pow(arg_int);
     runtime.push(Variable::Bigint(result));
     FnResult::Ok(())
 }
 
-fn modulo(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn modulo(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.len() == 1);
-    let arg_int = BigInt::from(args[0].clone());
-    runtime.push(Variable::Bigint(this.clone() % &arg_int));
+    let arg_int = IntVar::from(args[0].clone());
+    runtime.push(Variable::Bigint(this.clone() % arg_int));
     FnResult::Ok(())
 }
 
-fn eq(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn eq(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
-        if BigInt::from(arg) != *this {
+        if IntVar::from(arg) != *this {
             runtime.push(Variable::Bool(false));
             return FnResult::Ok(());
         }
@@ -119,9 +119,9 @@ fn eq(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     FnResult::Ok(())
 }
 
-fn less_than(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn less_than(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
-        if *this >= BigInt::from(arg) {
+        if *this >= IntVar::from(arg) {
             runtime.push(Variable::Bool(false));
             return FnResult::Ok(());
         }
@@ -130,9 +130,9 @@ fn less_than(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnRes
     FnResult::Ok(())
 }
 
-fn greater_than(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn greater_than(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
-        if *this <= BigInt::from(arg) {
+        if *this <= IntVar::from(arg) {
             runtime.push(Variable::Bool(false));
             return FnResult::Ok(());
         }
@@ -141,9 +141,9 @@ fn greater_than(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> Fn
     FnResult::Ok(())
 }
 
-fn less_equal(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn less_equal(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
-        if *this > BigInt::from(arg) {
+        if *this > IntVar::from(arg) {
             runtime.push(Variable::Bool(false));
             return FnResult::Ok(());
         }
@@ -152,9 +152,9 @@ fn less_equal(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnRe
     FnResult::Ok(())
 }
 
-fn greater_equal(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn greater_equal(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
-        if *this < BigInt::from(arg) {
+        if *this < IntVar::from(arg) {
             runtime.push(Variable::Bool(false));
             return FnResult::Ok(());
         }
@@ -163,9 +163,9 @@ fn greater_equal(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> F
     FnResult::Ok(())
 }
 
-fn left_bs(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn left_bs(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.len() == 1);
-    let big_value = BigInt::from(args[0].clone());
+    let big_value = IntVar::from(args[0].clone());
     let result = match big_value.to_usize() {
         Option::None => {
             let msg = if big_value.is_negative() {
@@ -179,15 +179,15 @@ fn left_bs(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResul
             };
             return runtime.throw_quick(arithmetic_error(), msg.into());
         }
-        Option::Some(b) => this << b,
+        Option::Some(b) => this.clone() << b,
     };
     runtime.push(Variable::Bigint(result));
     FnResult::Ok(())
 }
 
-fn right_bs(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn right_bs(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.len() == 1);
-    let big_value = BigInt::from(args[0].clone());
+    let big_value = IntVar::from(args[0].clone());
     let result = match big_value.to_usize() {
         Option::None => {
             let msg = if big_value.is_negative() {
@@ -201,52 +201,52 @@ fn right_bs(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
             };
             return runtime.throw_quick(arithmetic_error(), msg.into());
         }
-        Option::Some(b) => this >> b,
+        Option::Some(b) => this.clone() >> b,
     };
     runtime.push(Variable::Bigint(result));
     FnResult::Ok(())
 }
 
-fn bitwise_and(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn bitwise_and(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let mut sum = this.clone();
     for arg in args {
-        sum &= &BigInt::from(arg)
+        sum &= IntVar::from(arg)
     }
     runtime.push(Variable::Bigint(sum));
     FnResult::Ok(())
 }
 
-fn bitwise_or(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn bitwise_or(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let mut sum = this.clone();
     for arg in args {
-        sum |= &BigInt::from(arg)
+        sum |= IntVar::from(arg)
     }
     runtime.push(Variable::Bigint(sum));
     FnResult::Ok(())
 }
 
-fn bitwise_not(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn bitwise_not(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     runtime.push(Variable::Bigint(!this.clone()));
     FnResult::Ok(())
 }
 
-fn bitwise_xor(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn bitwise_xor(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let mut sum = this.clone();
     for arg in args {
-        sum ^= &BigInt::from(arg)
+        sum ^= IntVar::from(arg)
     }
     runtime.push(Variable::Bigint(sum));
     FnResult::Ok(())
 }
 
-fn to_str(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn to_str(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.push(Variable::String(this.to_str_radix(10).into()));
+    runtime.push(Variable::String(this.to_string().into()));
     FnResult::Ok(())
 }
 
-fn to_int(this: &BigInt, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn to_int(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     runtime.push(Variable::Bigint(this.clone()));
     FnResult::Ok(())

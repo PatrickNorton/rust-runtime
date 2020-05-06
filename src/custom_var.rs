@@ -1,10 +1,10 @@
+use crate::int_var::IntVar;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Name, Variable};
 use downcast_rs::Downcast;
-use num::BigInt;
 use std::any::Any;
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
@@ -49,7 +49,7 @@ pub trait CustomVar: Debug + Any + Downcast {
         runtime.pop().str(runtime)
     }
 
-    fn int(self: Rc<Self>, runtime: &mut Runtime) -> Result<BigInt, ()> {
+    fn int(self: Rc<Self>, runtime: &mut Runtime) -> Result<IntVar, ()> {
         self.call_op(Operator::Int, vec![], runtime)?;
         runtime.pop().int(runtime)
     }

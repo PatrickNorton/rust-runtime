@@ -2,13 +2,13 @@ use crate::custom_types::exceptions::stop_iteration;
 use crate::custom_types::types::CustomType;
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::function::Function;
+use crate::int_var::IntVar;
 use crate::method::StdMethod;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Name, Variable};
-use num::BigInt;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::mem::replace;
@@ -16,21 +16,21 @@ use std::rc::Rc;
 
 #[derive(Debug)]
 pub struct Range {
-    start: BigInt,
-    stop: BigInt,
-    step: BigInt,
+    start: IntVar,
+    stop: IntVar,
+    step: IntVar,
 }
 
 impl Range {
-    fn new(start: BigInt, stop: BigInt, step: BigInt) -> Range {
+    fn new(start: IntVar, stop: IntVar, step: IntVar) -> Range {
         Range { start, stop, step }
     }
 
-    fn get_stop(&self) -> &BigInt {
+    fn get_stop(&self) -> &IntVar {
         &self.stop
     }
 
-    fn get_step(&self) -> &BigInt {
+    fn get_step(&self) -> &IntVar {
         &self.step
     }
 
@@ -103,7 +103,7 @@ impl CustomVar for Range {
 
 #[derive(Debug)]
 struct RangeIter {
-    current: RefCell<BigInt>,
+    current: RefCell<IntVar>,
     value: Rc<Range>,
 }
 
@@ -134,10 +134,10 @@ impl RangeIter {
         }
     }
 
-    fn next(&self) -> Option<BigInt> {
+    fn next(&self) -> Option<IntVar> {
         if &*self.current.borrow() != self.value.get_stop() {
             let result = self.current.borrow().clone();
-            *self.current.borrow_mut() += self.value.get_step();
+            *self.current.borrow_mut() += self.value.get_step().clone();
             Option::Some(result)
         } else {
             Option::None

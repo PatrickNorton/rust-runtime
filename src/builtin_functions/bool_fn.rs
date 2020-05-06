@@ -1,9 +1,9 @@
 use crate::builtin_functions::int_fn;
+use crate::int_var::IntVar;
 use crate::method::{NativeMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::variable::{FnResult, FromBool, Variable};
-use num::BigInt;
 
 pub fn op_fn(o: Operator) -> Option<NativeMethod<bool>> {
     Option::Some(match o {
@@ -25,7 +25,7 @@ pub fn op_fn(o: Operator) -> Option<NativeMethod<bool>> {
 pub fn get_operator(this: bool, o: Operator) -> Variable {
     match op_fn(o) {
         Option::Some(func) => Variable::Method(StdMethod::new_native(this, func)),
-        Option::None => int_fn::get_operator(BigInt::from_bool(this), o),
+        Option::None => int_fn::get_operator(IntVar::from_bool(this), o),
     }
 }
 

@@ -1,10 +1,11 @@
 use crate::custom_types::exceptions::index_error;
+use crate::int_var::IntVar;
 use crate::method::{InnerMethod, NativeMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
-use num::{BigInt, ToPrimitive};
+use num::ToPrimitive;
 use std::mem::replace;
 use std::str::FromStr;
 
@@ -49,7 +50,7 @@ fn multiply(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnR
     let mut result: String = this.parse().unwrap();
     for arg in args {
         result = result.repeat(
-            BigInt::from(arg)
+            IntVar::from(arg)
                 .to_usize()
                 .expect("Too many string repetitions"),
         );
@@ -66,7 +67,7 @@ fn bool(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResul
 
 fn int(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    match BigInt::from_str(this) {
+    match IntVar::from_str(this) {
         Ok(val) => runtime.push(Variable::Bigint(val)),
         Err(_) => runtime.throw(Variable::String("Error in string conversion".into()))?,
     }
@@ -87,7 +88,7 @@ fn repr(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResul
 
 fn index(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    let index = BigInt::from(replace(&mut args[0], Variable::Null()))
+    let index = IntVar::from(replace(&mut args[0], Variable::Null()))
         .to_usize()
         .unwrap();
     match this.chars().nth(index) {

@@ -2,13 +2,14 @@ use crate::custom_types::exceptions::stop_iteration;
 use crate::custom_types::types::CustomType;
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::function::Function;
+use crate::int_var::IntVar;
 use crate::method::{InnerMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Name, Variable};
-use num::{BigInt, ToPrimitive};
+use num::ToPrimitive;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -72,7 +73,7 @@ impl List {
 
     fn list_index(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
-        let index = BigInt::from(args[0].clone());
+        let index = IntVar::from(args[0].clone());
         if index > self.value.borrow().len().into() {
             runtime.throw(Variable::String("index out of range".into()))
         } else {
@@ -83,7 +84,7 @@ impl List {
 
     fn list_get(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
-        let index = BigInt::from(args[0].clone());
+        let index = IntVar::from(args[0].clone());
         runtime.push(match index.to_usize() {
             Option::None => args[1].clone(),
             Option::Some(i) => match self.value.borrow().get(i) {
