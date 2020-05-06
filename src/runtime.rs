@@ -9,20 +9,19 @@ use crate::string_var::StringVar;
 use crate::variable::{FnResult, Name, Variable};
 use std::cmp::max;
 use std::collections::{HashMap, HashSet, VecDeque};
-use std::rc::Rc;
 use std::vec::Vec;
 
 #[derive(Debug)]
 pub struct Runtime {
     variables: Vec<Variable>,
     frames: Vec<StackFrame>,
-    file_stack: Vec<Rc<FileInfo>>,
+    file_stack: Vec<usize>,
     exception_frames: HashMap<Variable, Vec<(u32, usize)>>,
     exception_stack: Vec<Variable>,
     completed_statics: HashSet<(usize, u16, u32)>,
     static_vars: Vec<Variable>,
 
-    files: Vec<Rc<FileInfo>>,
+    files: Vec<FileInfo>,
 }
 
 #[derive(Debug)]
@@ -32,11 +31,11 @@ enum InnerException {
 }
 
 impl Runtime {
-    pub fn new(files: Vec<Rc<FileInfo>>, starting_no: usize) -> Runtime {
+    pub fn new(files: Vec<FileInfo>, starting_no: usize) -> Runtime {
         Runtime {
             variables: vec![],
             frames: vec![StackFrame::new(0, 0, vec![])],
-            file_stack: vec![files[starting_no].clone()],
+            file_stack: vec![starting_no],
             exception_frames: HashMap::new(),
             exception_stack: vec![],
             completed_statics: HashSet::new(),
@@ -62,7 +61,7 @@ impl Runtime {
     }
 
     pub fn load_const(&self, index: u16) -> &Variable {
-        &self.file_stack.last().unwrap().get_constants()[index as usize]
+        &self.files[*self.file_stack.last().unwrap()].get_constants()[index as usize]
     }
 
     pub fn load_value(&self, index: u16) -> &Variable {
@@ -120,8 +119,7 @@ impl Runtime {
     }
 
     pub fn current_fn(&self) -> &Vec<u8> {
-        self.file_stack.last().unwrap().get_functions()
-            [self.frames.last().unwrap().get_fn_number() as usize]
+        self.current_file().get_functions()[self.frames.last().unwrap().get_fn_number() as usize]
             .get_bytes()
     }
 
@@ -155,14 +153,17 @@ impl Runtime {
         result
     }
 
+    fn current_file(&self) -> &FileInfo {
+        &self.files[*self.file_stack.last().unwrap()]
+    }
+
     pub fn push_stack(&mut self, var_count: u16, fn_no: u16, args: Vec<Variable>, info_no: usize) {
-        let info = self.files[info_no].clone();
-        if Rc::ptr_eq(&info, self.file_stack.last().unwrap()) {
+        if info_no == *self.file_stack.last().unwrap() {
             self.frames.push(StackFrame::new(var_count, fn_no, args));
         } else {
             self.frames
                 .push(StackFrame::new_file(var_count, fn_no, args));
-            self.file_stack.push(info);
+            self.file_stack.push(info_no);
         }
     }
 
@@ -250,7 +251,7 @@ impl Runtime {
             .resize(max(self.static_vars.len(), index + 1), Variable::Null());
         self.static_vars[index] = var;
     }
-    
+
     pub fn load_static(&mut self, index: usize) -> Variable {
         self.static_vars[index].clone()
     }

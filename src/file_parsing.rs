@@ -10,7 +10,6 @@ use crate::variable::Variable;
 use std::collections::HashMap;
 use std::fs::read;
 use std::path::Path;
-use std::rc::Rc;
 
 const FILE_EXTENSION: &str = ".nbyte";
 
@@ -47,10 +46,10 @@ fn load_constant(
     }
 }
 
-pub fn parse_file(name: String, files: &mut Vec<Rc<FileInfo>>) -> usize {
+pub fn parse_file(name: String, files: &mut Vec<FileInfo>) -> usize {
     let data = read(Path::new(&name)).expect(format!("File {} not found", &name).as_ref());
     let file_no = files.len();
-    files.push(Rc::new(FileInfo::temp()));
+    files.push(FileInfo::temp());
     let mut index: usize = 0;
 
     let magic_number = bytes_index::<u32>(&data, &mut index);
@@ -71,7 +70,7 @@ pub fn parse_file(name: String, files: &mut Vec<Rc<FileInfo>>) -> usize {
             .iter()
             .position(|a| a.get_name() == &file_name)
             .unwrap_or_else(|| parse_file(file_name, files));
-        let other_file = files[file_index].clone();
+        let other_file = &files[file_index];
         // TODO: Get nested dots
         imports.push(other_file.get_export(&names[1].to_owned()).clone());
     }
@@ -119,6 +118,6 @@ pub fn parse_file(name: String, files: &mut Vec<Rc<FileInfo>>) -> usize {
         }
     }
 
-    files[file_no] = Rc::new(FileInfo::new(name, constants, functions, exports));
+    files[file_no] = FileInfo::new(name, constants, functions, exports);
     return file_no;
 }

@@ -10,7 +10,6 @@ use crate::executor::execute;
 use crate::file_info::FileInfo;
 use crate::file_parsing::parse_file;
 use crate::runtime::Runtime;
-use std::rc::Rc;
 
 mod base_fn;
 mod builtin_functions;
@@ -39,7 +38,7 @@ mod macros;
 
 fn main() {
     let _args: Vec<String> = std::env::args().collect();
-    let mut files: Vec<Rc<FileInfo>> = vec![];
+    let mut files: Vec<FileInfo> = Vec::new();
     // let index = parse_file(args[1].clone(), &mut files);
     const FILE_NAME: &str =
         "/Users/patricknorton/Projects/Python files/__ncache__/HelloWorld.nbyte";
