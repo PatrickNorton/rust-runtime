@@ -38,12 +38,9 @@ mod variable;
 mod macros;
 
 fn main() {
-    let _args: Vec<String> = std::env::args().collect();
+    let args: Vec<String> = std::env::args().collect();
     let mut files: Vec<FileInfo> = Vec::new();
-    // let index = parse_file(args[1].clone(), &mut files);
-    const FILE_NAME: &str =
-        "/Users/patricknorton/Projects/Python files/__ncache__/HelloWorld.nbyte";
-    let index = parse_file(FILE_NAME.to_string(), &mut files);
+    let index = parse_file(args[1].clone(), &mut files);
     let mut runtime = Runtime::new(files, index);
     let result = execute(&mut runtime);
     if let Result::Err(_) = result {
