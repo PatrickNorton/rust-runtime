@@ -1,5 +1,6 @@
 use crate::bytecode::{bytecode_size, Bytecode};
 use crate::custom_types::dict::Dict;
+use crate::custom_types::exceptions::stop_iteration;
 use crate::custom_types::list::List;
 use crate::custom_types::set::Set;
 use crate::int_tools::bytes_index;
@@ -263,6 +264,18 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
                 return runtime.throw_quick(t, msg_str);
             } else {
                 panic!("ThrowQuick must be called with a type, not {:?}", exc_type);
+            }
+        }
+        Bytecode::ForIter => {
+            let iterated = runtime.pop();
+            let jump_loc = bytes_0;
+            runtime.add_exception_handler(stop_iteration().into(), jump_loc);
+            runtime.call_attr(iterated.clone(), "next".into(), Vec::new())?;
+            if runtime.current_pos() != jump_loc as usize {
+                runtime.pop_handler();
+                let arg = runtime.pop();
+                runtime.push(iterated);
+                runtime.push(arg);
             }
         }
         Bytecode::ListCreate => {

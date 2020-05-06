@@ -256,6 +256,37 @@ impl Runtime {
         self.static_vars[index].clone()
     }
 
+    pub fn add_exception_handler(&mut self, exception_type: Variable, jump_loc: u32) {
+        match self.exception_frames.get_mut(&exception_type) {
+            Option::Some(val) => val.push((jump_loc, self.frames.len())),
+            Option::None => {
+                self.exception_frames
+                    .insert(exception_type.clone(), vec![(jump_loc, self.frames.len())]);
+            }
+        }
+        self.frames
+            .last_mut()
+            .unwrap()
+            .add_exception_handler(exception_type.clone());
+        self.exception_stack.push(exception_type);
+    }
+
+    pub fn remove_exception_handler(&mut self, exception_type: Variable) {
+        self.exception_frames
+            .get_mut(&exception_type)
+            .expect(format!("{:?} not found", exception_type).as_str())
+            .pop();
+        self.frames
+            .last_mut()
+            .unwrap()
+            .remove_exception_handler(exception_type);
+    }
+
+    pub fn pop_handler(&mut self) {
+        self.remove_exception_handler(self.exception_stack.last().unwrap().clone());
+        self.exception_stack.pop();
+    }
+
     fn unwind_to_height(
         &mut self,
         location: u32,

@@ -215,7 +215,7 @@ impl PartialEq for Type {
             (Type::Decimal, Type::Decimal) => true,
             (Type::Char, Type::Char) => true,
             (Type::Type, Type::Type) => true,
-            (Type::Custom(a), Type::Custom(b)) => ptr::eq(a, b),
+            (Type::Custom(a), Type::Custom(b)) => ptr::eq(*a, *b),
             _ => false,
         }
     }
@@ -235,7 +235,7 @@ impl Hash for Type {
             Type::Char => 5.hash(state),
             Type::Type => 6.hash(state),
             Type::Object => 7.hash(state),
-            Type::Custom(b) => ptr::hash(b, state),
+            Type::Custom(b) => ptr::hash(*b, state),
         }
     }
 }
