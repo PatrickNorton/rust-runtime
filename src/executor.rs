@@ -266,6 +266,25 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
                 panic!("ThrowQuick must be called with a type, not {:?}", exc_type);
             }
         }
+        Bytecode::EnterTry => {
+            let mut exc_pos = bytes_0 as usize;
+            while {
+                let bc: Option<Bytecode> = FromPrimitive::from_u8(runtime.current_fn()[exc_pos]);
+                bc.unwrap()
+            } == Bytecode::ExceptN
+            {
+                exc_pos += 1;
+                let const_index = bytes_index::<u32>(runtime.current_fn(), &mut exc_pos);
+                let exc_type = runtime.load_const(const_index as u16).clone();
+                runtime.add_exception_handler(exc_type, exc_pos as u32);
+            }
+        }
+        Bytecode::EndTry => {
+            let count = bytes_0 as u16;
+            for _ in 0..count {
+                runtime.pop_handler();
+            }
+        }
         Bytecode::ForIter => {
             let iterated = runtime.pop();
             let jump_loc = bytes_0;

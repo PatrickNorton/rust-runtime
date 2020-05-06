@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, Copy, FromPrimitive)]
+#[derive(Debug, Clone, Copy, FromPrimitive, Ord, PartialOrd, Eq, PartialEq)]
 pub enum Bytecode {
     Nop = 0x0,
     LoadNull = 0x1,
@@ -159,8 +159,7 @@ pub fn bytecode_size(b: Bytecode) -> (usize, usize) {
         Bytecode::ListAdd | Bytecode::SetAdd | Bytecode::DictAdd => (0, 0),
         Bytecode::Dotimes => (4, 0),
         Bytecode::DoStatic => (4, 0),
-        Bytecode::StoreStatic
-        | Bytecode::LoadStatic => (2, 0),
+        Bytecode::StoreStatic | Bytecode::LoadStatic => (2, 0),
         Bytecode::LoadFunction => (2, 0),
         Bytecode::GetType => (0, 0),
     }
