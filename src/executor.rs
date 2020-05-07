@@ -279,11 +279,22 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
                 runtime.add_exception_handler(exc_type, exc_pos as u32);
             }
         }
+        Bytecode::ExceptN => panic!("Bytecode::ExceptN should never be called"),
+        Bytecode::Finally => panic!("Bytecode::Finally should never be called"),
         Bytecode::EndTry => {
             let count = bytes_0 as u16;
             for _ in 0..count {
                 runtime.pop_handler();
             }
+        }
+        Bytecode::FuncDef => {
+            unimplemented!("Bytecode::FuncDef is a marker bytecode and should not appear in code")
+        }
+        Bytecode::ClassDef => {
+            unimplemented!("Bytecode::ClassDef is a marker bytecode and should not appear in code")
+        }
+        Bytecode::EndClass => {
+            unimplemented!("Bytecode::EndClass is a marker bytecode and should not appear in code")
         }
         Bytecode::ForIter => {
             let iterated = runtime.pop();
@@ -361,11 +372,11 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let var = runtime.load_static(bytes_0 as usize);
             runtime.push(var);
         }
+        Bytecode::LoadFunction => todo!(),
         Bytecode::GetType => {
             let value = runtime.pop();
             runtime.push(value.get_type().into());
         }
-        _ => unimplemented!(),
     }
     FnResult::Ok(())
 }
