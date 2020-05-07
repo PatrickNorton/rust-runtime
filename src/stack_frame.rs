@@ -54,6 +54,40 @@ impl StackFrame {
         }
     }
 
+    pub fn from_old(
+        _var_count: u16,
+        fn_no: u16,
+        args: Vec<Variable>,
+        parent: Rc<RefCell<StackFrame>>,
+    ) -> StackFrame {
+        StackFrame {
+            exception_handlers: HashSet::new(),
+            variables: args,
+            function_number: fn_no,
+            location: 0,
+            native: false,
+            new_file: false,
+            parent: Option::Some(parent),
+        }
+    }
+
+    pub fn from_old_new_file(
+        _var_count: u16,
+        fn_no: u16,
+        args: Vec<Variable>,
+        parent: Rc<RefCell<StackFrame>>,
+    ) -> StackFrame {
+        StackFrame {
+            exception_handlers: HashSet::new(),
+            variables: args,
+            function_number: fn_no,
+            location: 0,
+            native: false,
+            new_file: true,
+            parent: Option::Some(parent),
+        }
+    }
+
     fn size(&self) -> usize {
         self.variables.len()
             + if self.parent.is_some() {

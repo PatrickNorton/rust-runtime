@@ -1,12 +1,13 @@
 macro_rules! custom_class {
     ($type_value:ident, $create_fn:ident, $str_name:tt) => {{
         lazy_static! {
-            static ref TYPE: CustomType<$type_value> = CustomType::new(
-                $str_name.into(),
-                Vec::new(),
-                Function::Native($type_value::$create_fn),
-                HashMap::new()
-            );
+            static ref TYPE: $crate::custom_types::types::CustomType<$type_value> =
+                $crate::custom_types::types::CustomType::new(
+                    $str_name.into(),
+                    ::std::vec::Vec::new(),
+                    $crate::function::Function::Native($type_value::$create_fn),
+                    ::std::collections::HashMap::new()
+                );
         }
         Type::Custom(&*TYPE)
     }};
@@ -14,6 +15,7 @@ macro_rules! custom_class {
 
 pub mod dict;
 pub mod exceptions;
+pub mod lambda;
 pub mod list;
 pub mod range;
 pub mod set;

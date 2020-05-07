@@ -372,7 +372,10 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let var = runtime.load_static(bytes_0 as usize);
             runtime.push(var);
         }
-        Bytecode::LoadFunction => todo!(),
+        Bytecode::LoadFunction => {
+            let fn_index = bytes_0 as u16;
+            runtime.push(runtime.load_fn(fn_index));
+        }
         Bytecode::GetType => {
             let value = runtime.pop();
             runtime.push(value.get_type().into());

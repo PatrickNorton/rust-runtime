@@ -1,3 +1,4 @@
+use crate::custom_types::lambda::Lambda;
 use crate::executor;
 use crate::file_info::FileInfo;
 use crate::function::NativeFunction;
@@ -7,8 +8,10 @@ use crate::stack_frame::StackFrame;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Name, Variable};
+use std::cell::RefCell;
 use std::cmp::max;
 use std::collections::{HashMap, HashSet, VecDeque};
+use std::rc::Rc;
 use std::vec::Vec;
 
 #[derive(Debug)]
@@ -153,6 +156,21 @@ impl Runtime {
         result
     }
 
+    pub fn call_now_with_frame(
+        &mut self,
+        var_count: u16,
+        fn_no: u16,
+        args: Vec<Variable>,
+        info_no: usize,
+        frame: Rc<RefCell<StackFrame>>,
+    ) -> FnResult {
+        self.push_native();
+        self.push_stack_with_frame(var_count, fn_no, args, info_no, frame);
+        let result = executor::execute(self);
+        self.pop_native();
+        result
+    }
+
     fn current_file(&self) -> &FileInfo {
         &self.files[*self.file_stack.last().unwrap()]
     }
@@ -163,6 +181,24 @@ impl Runtime {
         } else {
             self.frames
                 .push(StackFrame::new_file(var_count, fn_no, args));
+            self.file_stack.push(info_no);
+        }
+    }
+
+    pub fn push_stack_with_frame(
+        &mut self,
+        var_count: u16,
+        fn_no: u16,
+        args: Vec<Variable>,
+        info_no: usize,
+        frame: Rc<RefCell<StackFrame>>,
+    ) {
+        if info_no == *self.file_stack.last().unwrap() {
+            self.frames
+                .push(StackFrame::from_old(var_count, fn_no, args, frame));
+        } else {
+            self.frames
+                .push(StackFrame::from_old_new_file(var_count, fn_no, args, frame));
             self.file_stack.push(info_no);
         }
     }
@@ -285,6 +321,15 @@ impl Runtime {
     pub fn pop_handler(&mut self) {
         self.remove_exception_handler(self.exception_stack.last().unwrap().clone());
         self.exception_stack.pop();
+    }
+
+    pub fn load_fn(&self, fn_no: u16) -> Variable {
+        Rc::new(Lambda::new(
+            *self.file_stack.last().unwrap(),
+            fn_no as u32,
+            Rc::new(RefCell::new(self.frames.last().unwrap().clone())),
+        ))
+        .into()
     }
 
     fn unwind_to_height(
