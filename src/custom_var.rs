@@ -9,6 +9,7 @@ use std::any::Any;
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 use std::ops::Deref;
+use std::ptr;
 use std::rc::Rc;
 
 pub trait CustomVar: Debug + Any + Downcast {
@@ -83,7 +84,7 @@ impl Deref for CustomVarWrapper {
 
 impl Hash for CustomVarWrapper {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        (Rc::into_raw(self.value.clone()) as *const () as usize).hash(state)
+        ptr::hash(Rc::as_ref(&self.value), state)
     }
 }
 
