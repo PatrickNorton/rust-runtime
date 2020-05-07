@@ -207,7 +207,7 @@ impl StdType {
 impl PartialEq for Type {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Type::Standard(a), Type::Standard(b)) => ptr::eq(a, b),
+            (Type::Standard(a), Type::Standard(b)) => ptr::eq(*a, *b),
             (Type::Null, Type::Null) => true,
             (Type::Bool, Type::Bool) => true,
             (Type::Bigint, Type::Bigint) => true,
@@ -226,7 +226,7 @@ impl Eq for Type {}
 impl Hash for Type {
     fn hash<H: Hasher>(&self, state: &mut H) {
         match self {
-            Type::Standard(a) => a.hash(state),
+            Type::Standard(a) => ptr::hash(*a, state),
             Type::Null => 0.hash(state),
             Type::Bool => 1.hash(state),
             Type::Bigint => 2.hash(state),
