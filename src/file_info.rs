@@ -51,8 +51,4 @@ impl FileInfo {
     pub fn get_export(&self, name: &String) -> &Variable {
         &self.constants[self.exports[name] as usize]
     }
-
-    pub fn execute() {
-        unimplemented!();
-    }
 }
