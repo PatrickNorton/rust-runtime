@@ -1,7 +1,5 @@
 use crate::custom_types::exceptions::stop_iteration;
-use crate::custom_types::types::CustomType;
 use crate::custom_var::{downcast_var, CustomVar};
-use crate::function::Function;
 use crate::int_var::IntVar;
 use crate::method::StdMethod;
 use crate::operator::Operator;
@@ -10,7 +8,6 @@ use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Name, Variable};
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::mem::replace;
 use std::rc::Rc;
 
