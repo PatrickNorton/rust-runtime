@@ -277,8 +277,12 @@ impl Runtime {
     }
 
     pub fn do_static(&mut self) -> bool {
-        let last_frame = self.frames.last().unwrap(); // FIXME: File number
-        let triplet = (0, last_frame.get_fn_number(), last_frame.current_pos());
+        let last_frame = self.frames.last().unwrap();
+        let triplet = (
+            *self.file_stack.last().unwrap(),
+            last_frame.get_fn_number(),
+            last_frame.current_pos(),
+        );
         self.completed_statics.insert(triplet)
     }
 
