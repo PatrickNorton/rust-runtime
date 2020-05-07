@@ -88,15 +88,6 @@ impl StackFrame {
         }
     }
 
-    fn size(&self) -> usize {
-        self.variables.len()
-            + if self.parent.is_some() {
-                (*self.parent.as_ref().unwrap()).borrow().size()
-            } else {
-                0
-            }
-    }
-
     pub fn current_pos(&self) -> u32 {
         self.location // Ignore "cannot move" error here and other similar places
     }
