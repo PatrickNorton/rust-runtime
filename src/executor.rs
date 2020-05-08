@@ -96,14 +96,17 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         }
         Bytecode::LoadDot => {
             let dot_val = runtime.load_const(bytes_0 as u16).clone();
-            let index = runtime.pop().index(Name::Attribute(dot_val.str(runtime)?));
+            let index = runtime
+                .pop()
+                .index(Name::Attribute(dot_val.str(runtime)?), runtime);
             runtime.push(index)
         }
         Bytecode::LoadSubscript => call_operator(Operator::GetAttr, bytes_0 as u16, runtime)?,
         Bytecode::LoadOp => {
             let top = runtime.pop();
             let index: Operator = FromPrimitive::from_u16(bytes_0 as u16).unwrap();
-            runtime.push(top.index(Name::Operator(index)))
+            let val = top.index(Name::Operator(index), runtime);
+            runtime.push(val);
         }
         Bytecode::PopTop => {
             runtime.pop();
@@ -240,7 +243,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let argc = bytes_1 as u16;
             let args = runtime.load_args(argc);
             let var = runtime.pop();
-            var.index(Name::Attribute(fn_name))
+            var.index(Name::Attribute(fn_name), runtime)
                 .call_or_goto((args, runtime))?;
         }
         Bytecode::CallTos => {

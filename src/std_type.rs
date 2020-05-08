@@ -96,14 +96,16 @@ impl Type {
         FnResult::Ok(())
     }
 
-    pub fn index(&self, index: Name) -> Variable {
+    pub fn index(&self, index: Name, runtime: &mut Runtime) -> Variable {
         match self {
-            Type::Standard(std_t) => {
-                let index_pair = std_t.index(&index);
-                let inner_m = InnerMethod::Standard(index_pair.0, index_pair.1);
-                let n = StdMethod::new(self.clone(), inner_m);
-                Variable::Method(Box::new(n))
-            }
+            Type::Standard(std_t) => match std_t.index_method(&index) {
+                Option::Some(index_pair) => {
+                    let inner_m = InnerMethod::Standard(index_pair.0, index_pair.1);
+                    let n = StdMethod::new(self.clone(), inner_m);
+                    Variable::Method(Box::new(n))
+                }
+                Option::None => runtime.static_attr(self, index),
+            },
             _ => unimplemented!(),
         }
     }
@@ -181,9 +183,9 @@ impl StdType {
         &self.name
     }
 
-    fn index(&self, name: &Name) -> (usize, u32) {
-        if let StdVarMethod::Standard(f, a) = self.static_methods[name] {
-            (f, a)
+    fn index_method(&self, name: &Name) -> Option<(usize, u32)> {
+        if let StdVarMethod::Standard(f, a) = self.static_methods.get(name)? {
+            Some((*f, *a))
         } else {
             panic!();
         }

@@ -23,6 +23,7 @@ pub struct Runtime {
     exception_stack: Vec<Variable>,
     completed_statics: HashSet<(usize, u16, u32)>,
     static_vars: Vec<Variable>,
+    type_vars: HashMap<Type, HashMap<Name, Variable>>,
 
     files: Vec<FileInfo>,
 }
@@ -43,6 +44,7 @@ impl Runtime {
             exception_stack: vec![],
             completed_statics: HashSet::new(),
             static_vars: Vec::new(),
+            type_vars: HashMap::new(),
             files,
         }
     }
@@ -90,7 +92,7 @@ impl Runtime {
     }
 
     pub fn call_attr(&mut self, var: Variable, s: StringVar, args: Vec<Variable>) -> FnResult {
-        var.index(Name::Attribute(s)).call((args, self))
+        var.index(Name::Attribute(s), self).call((args, self))
     }
 
     pub fn call_native_method<T>(
@@ -335,6 +337,14 @@ impl Runtime {
             Rc::new(RefCell::new(self.frames.last().unwrap().clone())),
         ))
         .into()
+    }
+
+    pub fn static_attr(&self, cls: &Type, name: Name) -> Variable {
+        self.type_vars[cls][&name].clone()
+    }
+
+    pub fn set_static_attr(&mut self, cls: &Type, name: Name, var: Variable) {
+        self.type_vars.get_mut(cls).unwrap().insert(name, var);
     }
 
     fn unwind_to_height(

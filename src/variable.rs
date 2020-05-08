@@ -115,7 +115,7 @@ impl Variable {
         }
     }
 
-    pub fn index(self, index: Name) -> Variable {
+    pub fn index(self, index: Name, runtime: &mut Runtime) -> Variable {
         match self {
             Variable::Null() => {
                 if let Name::Operator(o) = index {
@@ -157,7 +157,7 @@ impl Variable {
                     unimplemented!()
                 }
             }
-            Variable::Type(t) => t.index(index),
+            Variable::Type(t) => t.index(index, runtime),
             Variable::Custom(val) => (*val).clone().get_attr(index),
             _ => unimplemented!(),
         }
@@ -270,10 +270,16 @@ impl Variable {
             Variable::String(s) => runtime.call_native_method(string_fn::op_fn(name), &s, args),
             Variable::Decimal(d) => runtime.call_native_method(dec_fn::op_fn(name), &d, args),
             Variable::Char(c) => runtime.call_native_method(char_fn::op_fn(name), &c, args),
-            Variable::Type(_) => self.index(Name::Operator(name)).call((args, runtime)),
+            Variable::Type(_) => self
+                .index(Name::Operator(name), runtime)
+                .call((args, runtime)),
             Variable::Standard(s) => s.call_operator(name, args, runtime),
-            Variable::Method(_) => self.index(Name::Operator(name)).call((args, runtime)),
-            Variable::Function(_) => self.index(Name::Operator(name)).call((args, runtime)),
+            Variable::Method(_) => self
+                .index(Name::Operator(name), runtime)
+                .call((args, runtime)),
+            Variable::Function(_) => self
+                .index(Name::Operator(name), runtime)
+                .call((args, runtime)),
             Variable::Custom(c) => (*c).clone().call_op(name, args, runtime),
         }
     }
@@ -287,10 +293,10 @@ impl Variable {
         match self {
             Variable::Standard(s) => s.call_op_or_goto(name, args, runtime),
             Variable::Method(_) => self
-                .index(Name::Operator(name))
+                .index(Name::Operator(name), runtime)
                 .call_or_goto((args, runtime)),
             Variable::Function(_) => self
-                .index(Name::Operator(name))
+                .index(Name::Operator(name), runtime)
                 .call_or_goto((args, runtime)),
             Variable::Custom(c) => (*c).clone().call_op_or_goto(name, args, runtime),
             _ => self.call_op(name, args, runtime),
