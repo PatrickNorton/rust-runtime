@@ -92,7 +92,7 @@ impl Runtime {
     }
 
     pub fn call_attr(&mut self, var: Variable, s: StringVar, args: Vec<Variable>) -> FnResult {
-        var.index(Name::Attribute(s), self).call((args, self))
+        var.index(Name::Attribute(s), self)?.call((args, self))
     }
 
     pub fn call_native_method<T>(

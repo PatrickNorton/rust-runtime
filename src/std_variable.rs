@@ -94,14 +94,27 @@ impl StdVariable {
         self.call_op_or_goto(Operator::Call, args.0, args.1)
     }
 
-    pub fn index(&self, index: Name) -> Variable {
+    pub fn index(&self, index: Name, runtime: &mut Runtime) -> Result<Variable, ()> {
         let self_value = self.value.borrow();
         let val = self_value.values.get(&index);
         match val {
-            Option::Some(true_val) => true_val.clone(),
+            Option::Some(true_val) => Result::Ok(true_val.clone()),
+            Option::None => self.index_harder(index, runtime),
+        }
+    }
+
+    fn index_harder(&self, index: Name, runtime: &mut Runtime) -> Result<Variable, ()> {
+        match self.value.borrow().cls.get_property(&index) {
+            Option::Some(val) => {
+                runtime.call_now(0, val.0 as u16, Vec::new(), 0)?;
+                Result::Ok(runtime.pop())
+            }
             Option::None => {
                 let inner_method = self.value.borrow().cls.get_method(index);
-                Variable::Method(Box::new(StdMethod::new(self.clone(), inner_method)))
+                Result::Ok(Variable::Method(Box::new(StdMethod::new(
+                    self.clone(),
+                    inner_method,
+                ))))
             }
         }
     }

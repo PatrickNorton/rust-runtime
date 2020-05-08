@@ -165,6 +165,13 @@ impl StdType {
         }
     }
 
+    pub fn get_property(&self, name: &Name) -> Option<&(u32, u32)> {
+        match name {
+            Name::Attribute(str) => self.properties.get(str),
+            Name::Operator(_) => Option::None,
+        }
+    }
+
     fn is_subclass(&self, other: &Type) -> bool {
         if let Type::Standard(o) = other {
             if self == *o {
