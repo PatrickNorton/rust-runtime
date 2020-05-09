@@ -116,30 +116,13 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             runtime.push(top)
         }
         Bytecode::Swap2 => {
-            let old_top = runtime.pop();
-            let new_top = runtime.pop();
-            runtime.push(old_top);
-            runtime.push(new_top);
+            runtime.swap_2();
         }
         Bytecode::Swap3 => {
-            let old_top = runtime.pop();
-            let middle = runtime.pop();
-            let new_top = runtime.pop();
-            runtime.push(middle);
-            runtime.push(old_top);
-            runtime.push(new_top);
+            runtime.swap_n(3);
         }
         Bytecode::SwapN => {
-            let swapped = bytes_0 as u16;
-            let mut popped: Vec<Variable> = Vec::with_capacity(swapped as usize);
-            for i in 0..swapped {
-                popped[i as usize] = runtime.pop();
-            }
-            let last = popped.pop().unwrap();
-            for _ in 0..swapped - 1 {
-                runtime.push(popped.pop().unwrap());
-            }
-            runtime.push(last);
+            runtime.swap_n(bytes_0 as usize);
         }
         Bytecode::Store => {
             let stored = runtime.pop();
