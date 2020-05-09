@@ -11,6 +11,9 @@ use crate::file_info::FileInfo;
 use crate::file_parsing::parse_file;
 use crate::runtime::Runtime;
 
+#[macro_use]
+mod macros;
+
 mod base_fn;
 mod builtin_functions;
 mod builtins;
@@ -34,9 +37,6 @@ mod std_type;
 mod std_variable;
 mod string_var;
 mod variable;
-
-#[macro_use]
-mod macros;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();

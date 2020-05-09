@@ -416,7 +416,7 @@ impl Shr<usize> for IntVar {
 }
 
 macro_rules! impl_bit {
-    ($trait_name:ident, $fn_name:ident) => {
+    ($trait_name:ty, $fn_name:ident) => {
         impl $trait_name for IntVar {
             type Output = Self;
 
