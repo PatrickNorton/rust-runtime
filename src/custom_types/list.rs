@@ -30,6 +30,7 @@ impl List {
             Operator::GetAttr => List::list_index,
             Operator::Equals => List::eq,
             Operator::Iter => List::iter,
+            Operator::In => List::contains,
             _ => unimplemented!(),
         };
         Variable::Method(Box::new(StdMethod::new(
@@ -42,6 +43,9 @@ impl List {
         let value = match name.as_str() {
             "length" => return Variable::Bigint(self.value.borrow().len().into()),
             "get" => Self::list_get,
+            "reverse" => Self::reverse,
+            "count" => Self::count,
+            "clear" => Self::clear,
             _ => unimplemented!(),
         };
         Variable::Method(StdMethod::new_native(self.clone(), value))
@@ -89,6 +93,35 @@ impl List {
                 Option::Some(val) => val.clone(),
             },
         });
+        FnResult::Ok(())
+    }
+
+    fn contains(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        runtime.push(self.value.borrow().contains(&args[0]).into());
+        FnResult::Ok(())
+    }
+
+    fn reverse(self: &Rc<Self>, args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        self.value.borrow_mut().reverse();
+        FnResult::Ok(())
+    }
+
+    fn count(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.len() == 1);
+        let mut count: usize = 0;
+        for x in &*self.value.borrow() {
+            if x.equals(self.clone().into(), runtime)? {
+                count += 1;
+            }
+        }
+        runtime.push(IntVar::from(count).into());
+        FnResult::Ok(())
+    }
+
+    fn clear(self: &Rc<Self>, args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        self.value.borrow_mut().clear();
         FnResult::Ok(())
     }
 
