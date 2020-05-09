@@ -124,6 +124,15 @@ impl Type {
             Type::Custom(t) => t.get_name().clone(),
         }
     }
+
+    pub fn set(&self, index: StringVar, value: Variable, runtime: &mut Runtime) {
+        match self {
+            Type::Standard(_) | Type::Custom(_) => {
+                runtime.set_static_attr(self, Name::Attribute(index), value)
+            }
+            _ => unimplemented!(),
+        }
+    }
 }
 
 impl ToString for Type {
