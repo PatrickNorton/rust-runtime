@@ -1,5 +1,27 @@
-use num::traits::{FromPrimitive, PrimInt};
+use std::convert::TryInto;
 use std::mem::size_of;
+
+pub trait FromBytes {
+    fn from_be(bytes: &[u8]) -> Self;
+}
+
+macro_rules! impl_from_bytes {
+    ($type: ty) => {
+        impl FromBytes for $type {
+            #[inline]
+            fn from_be(bytes: &[u8]) -> Self {
+                <$type>::from_be_bytes(bytes.try_into().unwrap())
+            }
+        }
+    };
+}
+
+impl_from_bytes!(u8);
+impl_from_bytes!(u16);
+impl_from_bytes!(u32);
+impl_from_bytes!(u64);
+impl_from_bytes!(u128);
+impl_from_bytes!(usize);
 
 /// Convert a [`Vec`](std::vec::Vec)`<u8>` to a primitive int, in big-endian
 /// format.
@@ -11,16 +33,11 @@ use std::mem::size_of;
 #[inline]
 pub fn bytes_to<T>(bytes: &Vec<u8>) -> T
 where
-    T: PrimInt + FromPrimitive,
+    T: FromBytes,
 {
     let byte_size = size_of::<T>();
     assert_eq!(bytes.len(), byte_size);
-    let mut result: T = T::zero();
-    for i in 0..byte_size {
-        let bytes_i: T = FromPrimitive::from_u8(bytes[i]).unwrap();
-        result = result | bytes_i << (byte_size - 1 - i) * 8
-    }
-    result
+    FromBytes::from_be(bytes.as_slice())
 }
 
 /// Convert a `Vec<u8>` to a primitive int, beginning at the index specified.
@@ -29,14 +46,10 @@ where
 /// parse the entire Vec.
 pub fn bytes_index<T>(bytes: &Vec<u8>, index: &mut usize) -> T
 where
-    T: PrimInt + FromPrimitive,
+    T: FromBytes,
 {
     let byte_size = size_of::<T>();
-    let mut result: T = T::zero();
-    for i in 0..byte_size {
-        let bytes_i: T = FromPrimitive::from_u8(bytes[i + *index]).unwrap();
-        result = result | bytes_i << (byte_size - 1 - i) * 8
-    }
+    let result = T::from_be(&bytes[*index..*index + byte_size]);
     *index += byte_size;
     result
 }
