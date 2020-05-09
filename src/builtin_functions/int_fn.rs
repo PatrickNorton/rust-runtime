@@ -2,10 +2,11 @@ use crate::custom_types::exceptions::arithmetic_error;
 use crate::int_var::IntVar;
 use crate::method::{InnerMethod, NativeMethod, StdMethod};
 use crate::operator::Operator;
+use crate::rational_var::RationalVar;
 use crate::runtime::Runtime;
 use crate::variable::{FnResult, Variable};
 use num::traits::Pow;
-use num::{BigRational, Signed, ToPrimitive};
+use num::{Signed, ToPrimitive};
 use std::boxed::Box;
 use std::vec::Vec;
 
@@ -85,9 +86,9 @@ fn floor_div(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnRes
 }
 
 fn div(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    let mut ratio = BigRational::from_integer(this.clone().into());
+    let mut ratio = RationalVar::from_integer(this.clone().into());
     for arg in args {
-        ratio /= BigRational::from_integer(IntVar::from(arg).into())
+        ratio /= RationalVar::from_integer(IntVar::from(arg).into())
     }
     runtime.push(Variable::Decimal(ratio));
     FnResult::Ok(())

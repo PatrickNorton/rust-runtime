@@ -123,14 +123,12 @@ pub fn quick_mul(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
 pub fn quick_div(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
     match this {
         Variable::Null() => unimplemented!(),
-        Variable::Bool(b) => Result::Ok(Variable::Decimal(BigRational::new(
-            if b { 1 } else { 0 }.into(),
-            IntVar::from(other).into(),
-        ))),
-        Variable::Bigint(i) => Result::Ok(Variable::Decimal(BigRational::new(
-            i.into(),
-            IntVar::from(other).into(),
-        ))),
+        Variable::Bool(b) => Result::Ok(Variable::Decimal(
+            BigRational::new(if b { 1 } else { 0 }.into(), IntVar::from(other).into()).into(),
+        )),
+        Variable::Bigint(i) => Result::Ok(Variable::Decimal(
+            BigRational::new(i.into(), IntVar::from(other).into()).into(),
+        )),
         Variable::String(_) => unimplemented!(),
         Variable::Decimal(d1) => {
             if let Variable::Decimal(d2) = other {

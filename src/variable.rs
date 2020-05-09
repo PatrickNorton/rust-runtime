@@ -6,13 +6,14 @@ use crate::int_var::IntVar;
 use crate::method::Method;
 use crate::operator::Operator;
 use crate::quick_functions::quick_equals;
+use crate::rational_var::RationalVar;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::std_variable::StdVariable;
 use crate::string_var::StringVar;
 use num::bigint::BigInt;
 use num::traits::Zero;
-use num::{BigRational, ToPrimitive};
+use num::ToPrimitive;
 use std::boxed::Box;
 use std::clone::Clone;
 use std::cmp::PartialEq;
@@ -38,7 +39,7 @@ pub enum Variable {
     Bool(bool),
     Bigint(IntVar),
     String(StringVar),
-    Decimal(BigRational),
+    Decimal(RationalVar),
     Char(char),
     Type(Type),
     Standard(StdVariable),
@@ -83,7 +84,7 @@ impl Variable {
             Variable::Bool(val) => Result::Ok(*val),
             Variable::String(val) => Result::Ok(!val.is_empty()),
             Variable::Bigint(val) => Result::Ok(!val.is_zero()),
-            Variable::Decimal(val) => Result::Ok(val != &BigRational::zero()),
+            Variable::Decimal(val) => Result::Ok(val != &RationalVar::zero()),
             Variable::Char(val) => Result::Ok(val != &'\0'),
             Variable::Type(_) => Result::Ok(true),
             Variable::Standard(val) => val.bool(runtime),
@@ -324,8 +325,8 @@ impl From<IntVar> for Variable {
     }
 }
 
-impl From<BigRational> for Variable {
-    fn from(x: BigRational) -> Self {
+impl From<RationalVar> for Variable {
+    fn from(x: RationalVar) -> Self {
         Variable::Decimal(x)
     }
 }
@@ -382,7 +383,7 @@ impl From<Variable> for IntVar {
     }
 }
 
-impl From<Variable> for BigRational {
+impl From<Variable> for RationalVar {
     fn from(var: Variable) -> Self {
         if let Variable::Decimal(d) = var {
             d

@@ -3,6 +3,7 @@ use crate::builtins::builtin_of;
 use crate::int_tools::bytes_index;
 use crate::int_var::IntVar;
 use crate::operator::Operator;
+use crate::rational_var::RationalVar;
 use crate::std_type::Type;
 use crate::std_variable::StdVarMethod;
 use crate::string_var::StringVar;
@@ -57,10 +58,10 @@ pub fn load_decimal(data: &Vec<u8>, index: &mut usize) -> Variable {
     for _ in 0..count {
         values.push(bytes_index::<u32>(data, index));
     }
-    Variable::Decimal(BigRational::new(
+    Variable::Decimal(RationalVar::new(BigRational::new(
         BigInt::new(Sign::Plus, values),
         pow(BigInt::from_u64(10).unwrap(), scale as usize),
-    ))
+    )))
 }
 
 pub fn function_index(data: &Vec<u8>, index: &mut usize) -> u32 {

@@ -27,6 +27,7 @@ mod int_var;
 mod method;
 mod operator;
 mod quick_functions;
+mod rational_var;
 mod runtime;
 mod stack_frame;
 mod std_type;
