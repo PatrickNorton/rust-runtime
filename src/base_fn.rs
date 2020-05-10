@@ -19,7 +19,7 @@ impl BaseFunction {
         }
     }
 
-    pub fn parse(data: &Vec<u8>, index: &mut usize) -> BaseFunction {
+    pub fn parse(data: &[u8], index: &mut usize) -> BaseFunction {
         let name = load_std_str(data, index);
         let var_count = bytes_index::<u16>(data, index);
         let fn_size = bytes_index::<u32>(data, index) as usize;
@@ -36,7 +36,7 @@ impl BaseFunction {
         self.local_count
     }
 
-    pub fn get_bytes(&self) -> &Vec<u8> {
+    pub fn get_bytes(&self) -> &[u8] {
         &self.bytes
     }
 }

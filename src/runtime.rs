@@ -123,7 +123,7 @@ impl Runtime {
         self.frames.last_mut().unwrap().jump(pos)
     }
 
-    pub fn current_fn(&self) -> &Vec<u8> {
+    pub fn current_fn(&self) -> &[u8] {
         self.current_file().get_functions()[self.frames.last().unwrap().get_fn_number() as usize]
             .get_bytes()
     }
@@ -346,12 +346,12 @@ impl Runtime {
     pub fn set_static_attr(&mut self, cls: &Type, name: Name, var: Variable) {
         self.type_vars.get_mut(cls).unwrap().insert(name, var);
     }
-    
+
     pub fn swap_2(&mut self) {
         let len = self.variables.len();
         self.variables.swap(len - 1, len - 2);
     }
-    
+
     pub fn swap_n(&mut self, index: usize) {
         let value = self.variables.remove(self.variables.len() - 1 - index);
         self.variables.push(value);

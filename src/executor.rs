@@ -34,7 +34,7 @@ pub fn execute(runtime: &mut Runtime) -> FnResult {
     Result::Ok(())
 }
 
-fn get_bytes(bytes: &Vec<u8>, mut start: usize, byte_count: usize) -> u32 {
+fn get_bytes(bytes: &[u8], mut start: usize, byte_count: usize) -> u32 {
     match byte_count {
         0 => 0,
         2 => bytes_index::<u16>(bytes, &mut start) as u32,

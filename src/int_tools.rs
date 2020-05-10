@@ -31,20 +31,20 @@ impl_from_bytes!(usize);
 /// int. It also will use the whole Vec instead of starting at an index.
 ///
 #[inline]
-pub fn bytes_to<T>(bytes: &Vec<u8>) -> T
+pub fn bytes_to<T>(bytes: &[u8]) -> T
 where
     T: FromBytes,
 {
     let byte_size = size_of::<T>();
     assert_eq!(bytes.len(), byte_size);
-    FromBytes::from_be(bytes.as_slice())
+    FromBytes::from_be(bytes)
 }
 
 /// Convert a `Vec<u8>` to a primitive int, beginning at the index specified.
 ///
 /// Unlike [`bytes_to`], this will not check the length and will not attempt to
 /// parse the entire Vec.
-pub fn bytes_index<T>(bytes: &Vec<u8>, index: &mut usize) -> T
+pub fn bytes_index<T>(bytes: &[u8], index: &mut usize) -> T
 where
     T: FromBytes,
 {

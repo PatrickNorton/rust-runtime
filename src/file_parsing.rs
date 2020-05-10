@@ -20,7 +20,7 @@ enum LoadType {
 }
 
 fn load_constant(
-    data: &Vec<u8>,
+    data: &[u8],
     index: &mut usize,
     load_later: &mut Vec<LoadType>,
     imports: &Vec<Variable>,

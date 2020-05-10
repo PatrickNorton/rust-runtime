@@ -13,7 +13,7 @@ use num::traits::pow::pow;
 use num::{BigInt, BigRational, FromPrimitive};
 use std::collections::{HashMap, HashSet};
 
-pub fn load_std_str(data: &Vec<u8>, index: &mut usize) -> String {
+pub fn load_std_str(data: &[u8], index: &mut usize) -> String {
     let size = bytes_index::<u32>(data, index);
     let mut value: Vec<u8> = Vec::with_capacity(size as usize);
     for _ in 0..size {
@@ -29,20 +29,20 @@ pub fn load_std_str(data: &Vec<u8>, index: &mut usize) -> String {
     String::from_utf8(value).expect("UTF-8 error")
 }
 
-pub fn load_str(data: &Vec<u8>, index: &mut usize) -> Variable {
+pub fn load_str(data: &[u8], index: &mut usize) -> Variable {
     Variable::String(StringVar::from_leak(load_std_str(data, index)))
 }
 
-pub fn load_builtin(data: &Vec<u8>, index: &mut usize) -> Variable {
+pub fn load_builtin(data: &[u8], index: &mut usize) -> Variable {
     builtin_of(bytes_index::<u32>(data, index) as usize)
 }
 
-pub fn load_int(data: &Vec<u8>, index: &mut usize) -> Variable {
+pub fn load_int(data: &[u8], index: &mut usize) -> Variable {
     let value = bytes_index::<u32>(data, index);
     Variable::Bigint(IntVar::from_u32(value).unwrap())
 }
 
-pub fn load_bigint(data: &Vec<u8>, index: &mut usize) -> Variable {
+pub fn load_bigint(data: &[u8], index: &mut usize) -> Variable {
     let count = bytes_index::<u32>(data, index);
     let mut values: Vec<u32> = Vec::with_capacity(count as usize);
     for _ in 0..count {
@@ -51,7 +51,7 @@ pub fn load_bigint(data: &Vec<u8>, index: &mut usize) -> Variable {
     Variable::Bigint(BigInt::new(Sign::Plus, values).into())
 }
 
-pub fn load_decimal(data: &Vec<u8>, index: &mut usize) -> Variable {
+pub fn load_decimal(data: &[u8], index: &mut usize) -> Variable {
     let count = bytes_index::<u32>(data, index);
     let scale = bytes_index::<u32>(data, index);
     let mut values: Vec<u32> = Vec::with_capacity(count as usize);
@@ -64,21 +64,21 @@ pub fn load_decimal(data: &Vec<u8>, index: &mut usize) -> Variable {
     )))
 }
 
-pub fn function_index(data: &Vec<u8>, index: &mut usize) -> u32 {
+pub fn function_index(data: &[u8], index: &mut usize) -> u32 {
     bytes_index::<u32>(data, index)
 }
 
-pub fn class_index(data: &Vec<u8>, index: &mut usize) -> u32 {
+pub fn class_index(data: &[u8], index: &mut usize) -> u32 {
     bytes_index::<u32>(data, index)
 }
 
-pub fn load_bool(data: &Vec<u8>, index: &mut usize) -> Variable {
+pub fn load_bool(data: &[u8], index: &mut usize) -> Variable {
     let value = data[*index];
     *index += 1;
     Variable::Bool(value != 0)
 }
 
-fn get_variables(data: &Vec<u8>, index: &mut usize) -> HashSet<String> {
+fn get_variables(data: &[u8], index: &mut usize) -> HashSet<String> {
     let mut variables: HashSet<String> = HashSet::new();
     let byte_size = bytes_index::<u32>(data, index);
     for _ in 0..byte_size {
@@ -90,7 +90,7 @@ fn get_variables(data: &Vec<u8>, index: &mut usize) -> HashSet<String> {
 }
 
 fn get_operators(
-    data: &Vec<u8>,
+    data: &[u8],
     file_no: usize,
     index: &mut usize,
     functions: &mut Vec<BaseFunction>,
@@ -110,7 +110,7 @@ fn get_operators(
 }
 
 fn get_methods(
-    data: &Vec<u8>,
+    data: &[u8],
     file_no: usize,
     index: &mut usize,
     functions: &mut Vec<BaseFunction>,
@@ -132,7 +132,7 @@ fn get_methods(
 }
 
 fn get_properties(
-    data: &Vec<u8>,
+    data: &[u8],
     index: &mut usize,
     functions: &mut Vec<BaseFunction>,
 ) -> HashMap<StringVar, (u32, u32)> {
@@ -177,7 +177,7 @@ fn merge_maps(
 
 pub fn load_class(
     file_no: usize,
-    data: &Vec<u8>,
+    data: &[u8],
     index: &mut usize,
     functions: &mut Vec<BaseFunction>,
 ) -> Variable {
