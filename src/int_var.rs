@@ -244,9 +244,29 @@ impl Add for IntVar {
     }
 }
 
+impl Add for &IntVar {
+    type Output = IntVar;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        match self {
+            IntVar::Small(s1) => match rhs {
+                IntVar::Small(s2) => match s1.checked_add(*s2) {
+                    Option::Some(val) => IntVar::Small(val),
+                    Option::None => (BigInt::from(*s1) + *s2).into(),
+                },
+                IntVar::Big(b2) => (&**b2 + *s1).into(),
+            },
+            IntVar::Big(b1) => match rhs {
+                IntVar::Small(s2) => (&**b1 + *s2).into(),
+                IntVar::Big(b2) => (&**b1 + &**b2).into(),
+            },
+        }
+    }
+}
+
 impl AddAssign for IntVar {
     fn add_assign(&mut self, rhs: Self) {
-        *self = self.clone() + rhs;
+        *self = (self as &Self) + &rhs;
     }
 }
 
@@ -270,9 +290,29 @@ impl Sub for IntVar {
     }
 }
 
+impl Sub for &IntVar {
+    type Output = IntVar;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        match self {
+            IntVar::Small(s1) => match rhs {
+                IntVar::Small(s2) => match s1.checked_sub(*s2) {
+                    Option::Some(val) => IntVar::Small(val),
+                    Option::None => (BigInt::from(*s1) - s2).into(),
+                },
+                IntVar::Big(b2) => (&**b2 - *s1).into(),
+            },
+            IntVar::Big(b1) => match rhs {
+                IntVar::Small(s2) => (&**b1 - *s2).into(),
+                IntVar::Big(b2) => (&**b1 - &**b2).into(),
+            },
+        }
+    }
+}
+
 impl SubAssign for IntVar {
     fn sub_assign(&mut self, rhs: Self) {
-        *self = self.clone() - rhs;
+        *self = (self as &Self) - &rhs;
     }
 }
 
