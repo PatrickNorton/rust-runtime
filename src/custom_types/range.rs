@@ -1,4 +1,4 @@
-use crate::custom_types::exceptions::stop_iteration;
+use crate::custom_types::exceptions::{index_error, stop_iteration};
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_var::IntVar;
 use crate::method::StdMethod;
@@ -7,6 +7,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Name, Variable};
+use num::{BigInt, Signed};
 use std::cell::RefCell;
 use std::mem::replace;
 use std::rc::Rc;
@@ -37,6 +38,7 @@ impl Range {
             Operator::Repr => Self::str,
             Operator::Equals => Self::eq,
             Operator::Iter => Self::iter,
+            Operator::GetAttr => Self::index,
             _ => unimplemented!(),
         };
         Variable::Method(StdMethod::new_native(self.clone(), func))
@@ -44,7 +46,7 @@ impl Range {
 
     fn str(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        runtime.push(format!("[{}:{}:{}]", self.start, self.stop, self.step).into());
+        runtime.push(self.to_str().into());
         FnResult::Ok(())
     }
 
@@ -64,6 +66,26 @@ impl Range {
         debug_assert!(args.is_empty());
         runtime.push(Rc::new(RangeIter::new(self.clone())).into());
         FnResult::Ok(())
+    }
+
+    fn index(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.len() == 1);
+        let index = IntVar::from(replace(&mut args[0], Variable::Null()));
+        let result = self.start.clone() + index * self.step.clone();
+        let error = result == self.stop || (self.step.is_negative() ^ (&result > &self.stop));
+        if error {
+            runtime.throw_quick(
+                index_error(),
+                format!("Index {} out of bounds for {}", result, self.to_str()).into(),
+            )
+        } else {
+            runtime.push(result.into());
+            FnResult::Ok(())
+        }
+    }
+
+    fn to_str(&self) -> StringVar {
+        format!("[{}:{}:{}]", self.start, self.stop, self.step).into()
     }
 
     fn create(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
