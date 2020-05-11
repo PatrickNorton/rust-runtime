@@ -1,6 +1,7 @@
 use crate::custom_types::exceptions::stop_iteration;
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_var::IntVar;
+use crate::looping::for_next;
 use crate::method::{InnerMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
@@ -9,6 +10,7 @@ use crate::string_var::StringVar;
 use crate::variable::{FnResult, Name, Variable};
 use num::ToPrimitive;
 use std::cell::RefCell;
+use std::mem::replace;
 use std::rc::Rc;
 
 #[derive(Debug)]
@@ -42,6 +44,7 @@ impl List {
     fn get_attribute(self: Rc<Self>, name: StringVar) -> Variable {
         let value = match name.as_str() {
             "length" => return Variable::Bigint(self.value.borrow().len().into()),
+            "contains_all" => Self::contains_all,
             "get" => Self::list_get,
             "reverse" => Self::reverse,
             "count" => Self::count,
@@ -96,6 +99,18 @@ impl List {
 
     fn contains(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         runtime.return_1(self.value.borrow().contains(&args[0]).into())
+    }
+
+    fn contains_all(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        let checked_var = replace(&mut args[0], Variable::Null());
+        runtime.call_op(checked_var.into(), Operator::Iter, Vec::new())?;
+        let this_iter = runtime.pop_return();
+        while let Option::Some(val) = for_next(this_iter.clone(), runtime)? {
+            if !self.value.borrow().contains(&val) {
+                return runtime.return_1(false.into());
+            }
+        }
+        runtime.return_1(true.into())
     }
 
     fn reverse(self: &Rc<Self>, args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
