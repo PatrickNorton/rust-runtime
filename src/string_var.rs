@@ -1,8 +1,9 @@
 use std::fmt::{Debug, Formatter};
+use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 use std::sync::Arc;
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone)]
 pub enum StringVar {
     Literal(&'static str),
     Other(Arc<str>),
@@ -41,6 +42,20 @@ impl Deref for StringVar {
             StringVar::Literal(s) => *s,
             StringVar::Other(s) => &s.as_ref(),
         }
+    }
+}
+
+impl PartialEq for StringVar {
+    fn eq(&self, other: &Self) -> bool {
+        **self == **other
+    }
+}
+
+impl Eq for StringVar {}
+
+impl Hash for StringVar {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        (**self).hash(state)
     }
 }
 
