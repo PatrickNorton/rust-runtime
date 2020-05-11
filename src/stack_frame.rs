@@ -18,7 +18,10 @@ pub struct StackFrame {
 }
 
 impl StackFrame {
-    pub fn new(_var_count: u16, fn_no: u16, args: Vec<Variable>) -> StackFrame {
+    pub fn new(var_count: u16, fn_no: u16, mut args: Vec<Variable>) -> StackFrame {
+        if let Option::Some(val) = var_count.checked_sub(args.len() as u16) {
+            args.reserve(val as usize);
+        }
         StackFrame {
             exception_handlers: HashSet::new(),
             variables: args,
@@ -30,7 +33,10 @@ impl StackFrame {
         }
     }
 
-    pub fn new_file(_var_count: u16, fn_no: u16, args: Vec<Variable>) -> StackFrame {
+    pub fn new_file(var_count: u16, fn_no: u16, mut args: Vec<Variable>) -> StackFrame {
+        if let Option::Some(val) = var_count.checked_sub(args.len() as u16) {
+            args.reserve(val as usize);
+        }
         StackFrame {
             exception_handlers: HashSet::new(),
             variables: args,
@@ -55,11 +61,14 @@ impl StackFrame {
     }
 
     pub fn from_old(
-        _var_count: u16,
+        var_count: u16,
         fn_no: u16,
-        args: Vec<Variable>,
+        mut args: Vec<Variable>,
         parent: Rc<RefCell<StackFrame>>,
     ) -> StackFrame {
+        if let Option::Some(val) = var_count.checked_sub(args.len() as u16) {
+            args.reserve(val as usize);
+        }
         StackFrame {
             exception_handlers: HashSet::new(),
             variables: args,
@@ -72,11 +81,14 @@ impl StackFrame {
     }
 
     pub fn from_old_new_file(
-        _var_count: u16,
+        var_count: u16,
         fn_no: u16,
-        args: Vec<Variable>,
+        mut args: Vec<Variable>,
         parent: Rc<RefCell<StackFrame>>,
     ) -> StackFrame {
+        if let Option::Some(val) = var_count.checked_sub(args.len() as u16) {
+            args.reserve(val as usize);
+        }
         StackFrame {
             exception_handlers: HashSet::new(),
             variables: args,
