@@ -1,6 +1,7 @@
 use crate::custom_types::exceptions::{index_error, stop_iteration};
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_var::IntVar;
+use crate::looping::{IterResult, NativeIterator};
 use crate::method::StdMethod;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
@@ -151,13 +152,13 @@ impl RangeIter {
 
     fn next_fn(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        match self.next() {
+        match self.true_next() {
             Option::Some(value) => runtime.return_1(value.into()),
             Option::None => runtime.throw_quick(stop_iteration(), "".into()),
         }
     }
 
-    fn next(&self) -> Option<IntVar> {
+    fn true_next(&self) -> Option<IntVar> {
         if &*self.current.borrow() != self.value.get_stop() {
             let result = self.current.borrow().clone();
             *self.current.borrow_mut() += self.value.get_step().clone();
@@ -190,5 +191,11 @@ impl CustomVar for RangeIter {
 
     fn get_type(self: Rc<Self>) -> Type {
         Self::range_iter_type()
+    }
+}
+
+impl NativeIterator for RangeIter {
+    fn next(self: Rc<Self>, _runtime: &mut Runtime) -> IterResult {
+        IterResult::Ok(self.true_next().map(Variable::from))
     }
 }
