@@ -8,6 +8,7 @@ pub fn op_fn(o: Operator) -> NativeMethod<()> {
         Operator::Equals => eq,
         Operator::Str => str,
         Operator::Repr => str,
+        Operator::Bool => bool,
         _ => unimplemented!(),
     }
 }
@@ -29,4 +30,9 @@ fn eq(_this: &(), args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
 fn str(_this: &(), args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     runtime.return_1(Variable::String("null".into()))
+}
+
+fn bool(_this: &(), args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert!(args.is_empty());
+    runtime.return_1(false.into())
 }
