@@ -1,12 +1,17 @@
 use crate::custom_types::exceptions::index_error;
+use crate::custom_var::CustomVar;
 use crate::int_var::IntVar;
+use crate::looping::{IterResult, NativeIterator};
 use crate::method::{InnerMethod, NativeMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
+use crate::std_type::Type;
 use crate::string_var::StringVar;
-use crate::variable::{FnResult, Variable};
+use crate::variable::{FnResult, Name, Variable};
 use num::ToPrimitive;
+use std::cell::Cell;
 use std::mem::replace;
+use std::rc::Rc;
 use std::str::FromStr;
 
 pub fn op_fn(o: Operator) -> NativeMethod<StringVar> {
@@ -100,4 +105,43 @@ fn upper(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
 fn lower(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     runtime.return_1(this.to_lowercase().into())
+}
+
+#[derive(Debug)]
+pub struct StringIter {
+    index: Cell<usize>,
+    val: StringVar,
+}
+
+impl StringIter {
+    fn next_fn(&self) -> Option<Variable> {
+        if self.index.get() != self.val.len() {
+            self.val.chars().into_iter();
+            let result = self.val.chars().nth(self.index.get()).unwrap();
+            self.index.set(self.index.get() + 1);
+            Option::Some(result.into())
+        } else {
+            Option::None
+        }
+    }
+}
+
+impl CustomVar for StringIter {
+    fn get_attr(self: Rc<Self>, _name: Name) -> Variable {
+        unimplemented!()
+    }
+
+    fn set(self: Rc<Self>, _name: Name, _object: Variable) {
+        unimplemented!()
+    }
+
+    fn get_type(self: Rc<Self>) -> Type {
+        unimplemented!()
+    }
+}
+
+impl NativeIterator for StringIter {
+    fn next(self: Rc<Self>, _runtime: &mut Runtime) -> IterResult {
+        IterResult::Ok(self.next_fn())
+    }
 }
