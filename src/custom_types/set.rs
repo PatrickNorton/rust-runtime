@@ -1,12 +1,14 @@
+use crate::custom_types::exceptions::stop_iteration;
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_tools::next_power_2;
+use crate::looping::{IterResult, NativeIterator};
 use crate::method::StdMethod;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Name, Variable};
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::mem::replace;
 use std::rc::Rc;
 
@@ -40,6 +42,7 @@ impl Set {
             Operator::Bool => Self::bool,
             Operator::Str => Self::repr,
             Operator::Repr => Self::repr,
+            Operator::Iter => Self::iter,
             Operator::In => Self::contains,
             Operator::Equals => Self::eq,
             _ => unimplemented!(),
@@ -96,6 +99,11 @@ impl Set {
         runtime.return_1(true.into())
     }
 
+    fn iter(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        runtime.return_1(Rc::new(SetIter::new(self.clone())).into())
+    }
+
     fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty()); // TODO: Set of a value
         let set = Set::new(vec![], runtime)?;
@@ -108,6 +116,10 @@ impl Set {
 
     pub fn is_empty(&self) -> bool {
         self.value.borrow().is_empty()
+    }
+
+    pub fn len(&self) -> usize {
+        self.value.borrow().size
     }
 }
 
@@ -287,6 +299,14 @@ impl Entry {
             }
         }
     }
+
+    fn get_entry(&self, key: Variable, runtime: &mut Runtime) -> Result<&Entry, ()> {
+        if self.val.equals(key.clone(), runtime)? {
+            Result::Ok(self)
+        } else {
+            self.next.as_ref().unwrap().get_entry(key, runtime)
+        }
+    }
 }
 
 impl CustomVar for Set {
@@ -303,5 +323,80 @@ impl CustomVar for Set {
 
     fn get_type(self: Rc<Self>) -> Type {
         Set::set_type()
+    }
+}
+
+#[derive(Debug)]
+struct SetIter {
+    parent: Rc<Set>,
+    bucket_no: Cell<usize>,
+    index: RefCell<Variable>,
+}
+
+impl SetIter {
+    fn new(parent: Rc<Set>) -> SetIter {
+        let val = SetIter {
+            parent,
+            bucket_no: Cell::new(0),
+            index: RefCell::new(Variable::Null()),
+        };
+        val.point_to_next();
+        val
+    }
+
+    fn point_to_next(&self) {
+        let parent = self.parent.value.borrow();
+        while self.bucket_no.get() < parent.size {
+            if let Option::Some(val) = parent.values[self.bucket_no.get()].as_ref() {
+                self.index.replace(val.get_val().clone());
+                return;
+            }
+            self.bucket_no.set(self.bucket_no.get() + 1);
+        }
+    }
+
+    fn next_fn(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        match self.clone().next(runtime)? {
+            Option::None => runtime.throw_quick(stop_iteration(), "".into()),
+            Option::Some(val) => runtime.return_1(val),
+        }
+    }
+}
+
+impl CustomVar for SetIter {
+    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
+        let func = match name {
+            Name::Operator(_) => unimplemented!(),
+            Name::Attribute(val) => match val.as_str() {
+                "next" => Self::next_fn,
+                _ => unimplemented!(),
+            },
+        };
+        Variable::Method(StdMethod::new_native(self, func))
+    }
+
+    fn set(self: Rc<Self>, _name: Name, _object: Variable) {
+        unimplemented!()
+    }
+
+    fn get_type(self: Rc<Self>) -> Type {
+        unimplemented!()
+    }
+}
+
+impl NativeIterator for SetIter {
+    fn next(self: Rc<Self>, runtime: &mut Runtime) -> IterResult {
+        let len = self.parent.len();
+        let bucket = self.bucket_no.get();
+        if bucket >= len {
+            return Result::Ok(Option::None);
+        }
+        let parent = self.parent.value.borrow();
+        let parent_node = parent.values[bucket].as_ref().unwrap();
+        let node = parent_node.get_entry(self.index.borrow().clone(), runtime)?;
+        let val = node.get_val().clone();
+        self.point_to_next();
+        Result::Ok(Option::Some(val))
     }
 }

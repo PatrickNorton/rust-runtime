@@ -1,13 +1,14 @@
-use crate::custom_types::exceptions::key_error;
+use crate::custom_types::exceptions::{key_error, stop_iteration};
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_tools::next_power_2;
+use crate::looping::{IterResult, NativeIterator};
 use crate::method::StdMethod;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Name, Variable};
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::iter::Iterator;
 use std::mem::replace;
 use std::rc::Rc;
@@ -51,6 +52,7 @@ impl Dict {
             Operator::SetAttr => Dict::set,
             Operator::In => Dict::contains,
             Operator::Equals => Dict::eq,
+            Operator::Iter => Dict::iter,
             _ => unimplemented!(),
         };
         Variable::Method(StdMethod::new_native(self.clone(), func))
@@ -127,6 +129,11 @@ impl Dict {
             };
         }
         runtime.return_1(true.into())
+    }
+
+    fn iter(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        runtime.return_1(Rc::new(DictIter::new(self.clone())).into())
     }
 
     fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -336,6 +343,14 @@ impl Entry {
     pub fn get_next(&self) -> &Option<Box<Entry>> {
         &self.next
     }
+
+    fn get_entry(&self, key: Variable, runtime: &mut Runtime) -> Result<&Entry, ()> {
+        if self.value.equals(key.clone(), runtime)? {
+            Result::Ok(self)
+        } else {
+            self.next.as_ref().unwrap().get_entry(key, runtime)
+        }
+    }
 }
 
 impl CustomVar for Dict {
@@ -352,5 +367,88 @@ impl CustomVar for Dict {
 
     fn get_type(self: Rc<Self>) -> Type {
         Dict::dict_type()
+    }
+}
+
+#[derive(Debug)]
+struct DictIter {
+    parent: Rc<Dict>,
+    bucket_no: Cell<usize>,
+    index: RefCell<Variable>,
+}
+
+impl DictIter {
+    fn new(parent: Rc<Dict>) -> DictIter {
+        let val = DictIter {
+            parent,
+            bucket_no: Cell::new(0),
+            index: RefCell::new(Variable::Null()),
+        };
+        val.point_to_next();
+        val
+    }
+
+    fn point_to_next(&self) {
+        let parent = self.parent.value.borrow();
+        while self.bucket_no.get() < parent.size {
+            if let Option::Some(val) = parent.entries[self.bucket_no.get()].as_ref() {
+                self.index.replace(val.get_key().clone());
+                return;
+            }
+            self.bucket_no.set(self.bucket_no.get() + 1);
+        }
+    }
+
+    fn next_fn(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        match self.clone().true_next(runtime)? {
+            Option::None => runtime.throw_quick(stop_iteration(), "".into()),
+            Option::Some(val) => runtime.return_n(vec![val.0, val.1]),
+        }
+    }
+
+    fn true_next(
+        self: Rc<Self>,
+        runtime: &mut Runtime,
+    ) -> Result<Option<(Variable, Variable)>, ()> {
+        let len = self.parent.len();
+        let bucket = self.bucket_no.get();
+        if bucket >= len {
+            return Result::Ok(Option::None);
+        }
+        let parent = self.parent.value.borrow();
+        let parent_node = parent.entries[bucket].as_ref().unwrap();
+        let node = parent_node.get_entry(self.index.borrow().clone(), runtime)?;
+        let key = node.get_key().clone();
+        let val = node.get_value().clone();
+        self.point_to_next();
+        Result::Ok(Option::Some((key, val)))
+    }
+}
+
+impl CustomVar for DictIter {
+    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
+        let func = match name {
+            Name::Operator(_) => unimplemented!(),
+            Name::Attribute(val) => match val.as_str() {
+                "next" => Self::next_fn,
+                _ => unimplemented!(),
+            },
+        };
+        Variable::Method(StdMethod::new_native(self, func))
+    }
+
+    fn set(self: Rc<Self>, _name: Name, _object: Variable) {
+        unimplemented!()
+    }
+
+    fn get_type(self: Rc<Self>) -> Type {
+        unimplemented!()
+    }
+}
+
+impl NativeIterator for DictIter {
+    fn next(self: Rc<Self>, runtime: &mut Runtime) -> IterResult {
+        IterResult::Ok(self.true_next(runtime)?.map(|f| f.0))
     }
 }
