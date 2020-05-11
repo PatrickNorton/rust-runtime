@@ -1,4 +1,5 @@
 use crate::int_var::IntVar;
+use crate::looping;
 use crate::method::{InnerMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
@@ -45,6 +46,11 @@ impl StdVariable {
     pub fn int(&self, runtime: &mut Runtime) -> Result<IntVar, ()> {
         self.call_operator(Operator::Bool, vec![], runtime)?;
         runtime.pop_return().int(runtime)
+    }
+
+    pub fn iter(&self, runtime: &mut Runtime) -> Result<looping::Iterator, ()> {
+        self.call_operator(Operator::Bool, vec![], runtime)?;
+        Result::Ok(runtime.pop_return().into())
     }
 
     pub fn call_operator(

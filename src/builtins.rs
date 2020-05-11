@@ -2,7 +2,6 @@ use crate::custom_types::list::List;
 use crate::custom_types::range::Range;
 use crate::custom_types::set::Set;
 use crate::function::Function;
-use crate::looping::for_next;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
@@ -120,9 +119,8 @@ fn default_eq(this: &StdVariable, args: Vec<Variable>, runtime: &mut Runtime) ->
 
 fn default_in(this: &StdVariable, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let checked_var = replace(&mut args[0], Variable::Null());
-    runtime.call_op(this.clone().into(), Operator::Iter, Vec::new())?;
-    let this_iter = runtime.pop_return();
-    while let Option::Some(val) = for_next(this_iter.clone(), runtime)? {
+    let this_iter = this.iter(runtime)?;
+    while let Option::Some(val) = this_iter.clone().next(runtime)? {
         if checked_var.equals(val, runtime)? {
             return runtime.return_1(true.into());
         }

@@ -1,7 +1,8 @@
 use crate::custom_types::exceptions::stop_iteration;
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_var::IntVar;
-use crate::looping::for_next;
+use crate::looping;
+use crate::looping::{IterResult, NativeIterator};
 use crate::method::{InnerMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
@@ -103,9 +104,8 @@ impl List {
 
     fn contains_all(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         let checked_var = replace(&mut args[0], Variable::Null());
-        runtime.call_op(checked_var.into(), Operator::Iter, Vec::new())?;
-        let this_iter = runtime.pop_return();
-        while let Option::Some(val) = for_next(this_iter.clone(), runtime)? {
+        let this_iter = checked_var.iter(runtime)?;
+        while let Option::Some(val) = this_iter.clone().next(runtime)? {
             if !self.value.borrow().contains(&val) {
                 return runtime.return_1(false.into());
             }
@@ -224,13 +224,13 @@ impl ListIter {
 
     fn next_fn(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        match self.next() {
+        match self.inner_next() {
             Option::Some(value) => runtime.return_1(value.into()),
             Option::None => runtime.throw_quick(stop_iteration(), "".into()),
         }
     }
 
-    fn next(&self) -> Option<Variable> {
+    fn inner_next(&self) -> Option<Variable> {
         if *self.current.borrow() != self.value.value.borrow().len() {
             let result = self.value.value.borrow()[*self.current.borrow()].clone();
             *self.current.borrow_mut() += 1;
@@ -263,5 +263,15 @@ impl CustomVar for ListIter {
 
     fn get_type(self: Rc<Self>) -> Type {
         Self::range_iter_type()
+    }
+
+    fn into_iter(self: Rc<Self>) -> looping::Iterator {
+        looping::Iterator::Native(self)
+    }
+}
+
+impl NativeIterator for ListIter {
+    fn next(self: Rc<Self>, _runtime: &mut Runtime) -> IterResult {
+        IterResult::Ok(self.inner_next())
     }
 }

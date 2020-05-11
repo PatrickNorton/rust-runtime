@@ -1,4 +1,5 @@
 use crate::int_var::IntVar;
+use crate::looping;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
@@ -58,6 +59,15 @@ pub trait CustomVar: Debug + Any + Downcast {
     fn bool(self: Rc<Self>, runtime: &mut Runtime) -> Result<bool, ()> {
         self.call_op(Operator::Bool, vec![], runtime)?;
         runtime.pop_return().to_bool(runtime)
+    }
+
+    fn iter(self: Rc<Self>, runtime: &mut Runtime) -> Result<looping::Iterator, ()> {
+        self.call_op(Operator::Iter, vec![], runtime)?;
+        Result::Ok(runtime.pop_return().into())
+    }
+
+    fn into_iter(self: Rc<Self>) -> looping::Iterator {
+        panic!("Cannot into_iter a non-iterable")
     }
 }
 

@@ -3,6 +3,7 @@ use crate::custom_var::CustomVarWrapper;
 use crate::file_info::FileInfo;
 use crate::function::Function;
 use crate::int_var::IntVar;
+use crate::looping;
 use crate::method::Method;
 use crate::operator::Operator;
 use crate::quick_functions::quick_equals;
@@ -112,6 +113,16 @@ impl Variable {
             Variable::Function(func) => func.call_or_goto(args),
             Variable::Type(t) => t.push_create(args),
             Variable::Custom(val) => (**val).clone().call_or_goto(args.0, args.1),
+            _ => unimplemented!(),
+        }
+    }
+
+    pub fn iter(&self, runtime: &mut Runtime) -> Result<looping::Iterator, ()> {
+        match self {
+            Variable::String(_) => todo!(),
+            Variable::Type(_) => unimplemented!("Enum type iteration not completed yet"),
+            Variable::Standard(val) => val.iter(runtime),
+            Variable::Custom(val) => (**val).clone().iter(runtime),
             _ => unimplemented!(),
         }
     }
@@ -420,6 +431,16 @@ impl From<Variable> for char {
             b
         } else {
             panic!("Attempted to turn a variable not a superclass of char into a char")
+        }
+    }
+}
+
+impl From<Variable> for looping::Iterator {
+    fn from(var: Variable) -> Self {
+        match var {
+            Variable::Custom(var) => (*var).clone().into_iter(),
+            Variable::Standard(var) => looping::Iterator::NonNative(var),
+            _ => unimplemented!(),
         }
     }
 }
