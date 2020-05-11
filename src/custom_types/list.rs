@@ -10,7 +10,7 @@ use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Name, Variable};
 use num::ToPrimitive;
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::mem::replace;
 use std::rc::Rc;
 
@@ -202,14 +202,14 @@ impl CustomVar for List {
 
 #[derive(Debug)]
 struct ListIter {
-    current: RefCell<usize>,
+    current: Cell<usize>,
     value: Rc<List>,
 }
 
 impl ListIter {
     pub fn new(value: Rc<List>) -> ListIter {
         ListIter {
-            current: RefCell::new(0),
+            current: Cell::new(0),
             value,
         }
     }
@@ -231,9 +231,9 @@ impl ListIter {
     }
 
     fn inner_next(&self) -> Option<Variable> {
-        if *self.current.borrow() != self.value.value.borrow().len() {
-            let result = self.value.value.borrow()[*self.current.borrow()].clone();
-            *self.current.borrow_mut() += 1;
+        if self.current.get() != self.value.value.borrow().len() {
+            let result = self.value.value.borrow()[self.current.get()].clone();
+            self.current.set(self.current.get() + 1);
             Option::Some(result)
         } else {
             Option::None
