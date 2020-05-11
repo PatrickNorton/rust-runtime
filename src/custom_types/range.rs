@@ -7,7 +7,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Name, Variable};
-use num::{BigInt, Signed};
+use num::{Signed, Zero};
 use std::cell::RefCell;
 use std::mem::replace;
 use std::rc::Rc;
@@ -39,6 +39,7 @@ impl Range {
             Operator::Equals => Self::eq,
             Operator::Iter => Self::iter,
             Operator::GetAttr => Self::index,
+            Operator::In => Self::contains,
             _ => unimplemented!(),
         };
         Variable::Method(StdMethod::new_native(self.clone(), func))
@@ -78,6 +79,17 @@ impl Range {
         } else {
             runtime.return_1(result.into())
         }
+    }
+
+    fn contains(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.len() == 1);
+        let value = IntVar::from(replace(&mut args[0], Variable::Null()));
+        let result = if self.step.is_positive() {
+            value >= self.start && value < self.stop
+        } else {
+            value <= self.start && value > self.stop
+        } && ((&value - &self.start) % self.step.clone()).is_zero();
+        runtime.return_1(result.into())
     }
 
     fn to_str(&self) -> StringVar {
