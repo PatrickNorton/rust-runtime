@@ -27,6 +27,7 @@ mod file_parsing;
 mod function;
 mod int_tools;
 mod int_var;
+mod looping;
 mod method;
 mod operator;
 mod quick_functions;

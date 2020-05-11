@@ -2,11 +2,13 @@ use crate::custom_types::list::List;
 use crate::custom_types::range::Range;
 use crate::custom_types::set::Set;
 use crate::function::Function;
+use crate::looping::for_next;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::std_variable::{StdVarMethod, StdVariable};
 use crate::variable::{FnResult, Name, Variable};
+use std::mem::replace;
 
 fn print() -> Variable {
     Variable::Function(Function::Native(print_impl))
@@ -81,6 +83,7 @@ pub fn default_methods(name: Name) -> StdVarMethod {
             Operator::Str => default_str,
             Operator::Equals => default_eq,
             Operator::Bool => default_bool,
+            Operator::In => default_in,
             _ => unimplemented!("name {:?} not found", name),
         };
         StdVarMethod::Native(result)
@@ -113,4 +116,16 @@ fn default_eq(this: &StdVariable, args: Vec<Variable>, runtime: &mut Runtime) ->
         }
     }
     runtime.return_1(Variable::Bool(true))
+}
+
+fn default_in(this: &StdVariable, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    let checked_var = replace(&mut args[0], Variable::Null());
+    runtime.call_op(this.clone().into(), Operator::Iter, Vec::new())?;
+    let this_iter = runtime.pop_return();
+    while let Option::Some(val) = for_next(this_iter.clone(), runtime)? {
+        if checked_var.equals(val, runtime)? {
+            return runtime.return_1(true.into());
+        }
+    }
+    runtime.return_1(false.into())
 }
