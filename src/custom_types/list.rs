@@ -53,8 +53,7 @@ impl List {
 
     fn list_bool(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        runtime.push(Variable::Bool(!self.value.borrow().is_empty()));
-        FnResult::Ok(())
+        runtime.return_1(Variable::Bool(!self.value.borrow().is_empty()))
     }
 
     fn list_str(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -68,8 +67,7 @@ impl List {
             }
         }
         value += "]";
-        runtime.push(value.into());
-        FnResult::Ok(())
+        runtime.return_1(value.into())
     }
 
     fn list_index(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -97,8 +95,7 @@ impl List {
     }
 
     fn contains(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        runtime.push(self.value.borrow().contains(&args[0]).into());
-        FnResult::Ok(())
+        runtime.return_1(self.value.borrow().contains(&args[0]).into())
     }
 
     fn reverse(self: &Rc<Self>, args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
@@ -115,8 +112,7 @@ impl List {
                 count += 1;
             }
         }
-        runtime.push(IntVar::from(count).into());
-        FnResult::Ok(())
+        runtime.return_1(IntVar::from(count).into())
     }
 
     fn clear(self: &Rc<Self>, args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
@@ -136,12 +132,10 @@ impl List {
                         && Self::vec_eq(&*self_val, &*other_val, runtime)?
                 }
             } {
-                runtime.push(false.into());
-                return FnResult::Ok(());
+                return runtime.return_1(false.into());
             }
         }
-        runtime.push(true.into());
-        FnResult::Ok(())
+        runtime.return_1(true.into())
     }
 
     fn vec_eq(
@@ -161,14 +155,12 @@ impl List {
 
     fn iter(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        runtime.push(Rc::new(ListIter::new(self.clone())).into());
-        FnResult::Ok(())
+        runtime.return_1(Rc::new(ListIter::new(self.clone())).into())
     }
 
     pub fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty()); // TODO: List of a value
-        runtime.push(List::from_values(vec![]).into());
-        FnResult::Ok(())
+        runtime.return_1(List::from_values(vec![]).into())
     }
 
     pub fn list_type() -> Type {
@@ -218,10 +210,7 @@ impl ListIter {
     fn next_fn(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         match self.next() {
-            Option::Some(value) => {
-                runtime.push(value.into());
-                FnResult::Ok(())
-            }
+            Option::Some(value) => runtime.return_1(value.into()),
             Option::None => runtime.throw_quick(stop_iteration(), "".into()),
         }
     }

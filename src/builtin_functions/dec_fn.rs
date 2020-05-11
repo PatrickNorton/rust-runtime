@@ -33,8 +33,7 @@ fn add(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
     for arg in args {
         sum += RationalVar::from(arg)
     }
-    runtime.push(Variable::Decimal(sum));
-    FnResult::Ok(())
+    runtime.return_1(Variable::Decimal(sum))
 }
 
 fn sub(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -42,14 +41,12 @@ fn sub(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
     for arg in args {
         diff -= RationalVar::from(arg)
     }
-    runtime.push(Variable::Decimal(diff));
-    FnResult::Ok(())
+    runtime.return_1(Variable::Decimal(diff))
 }
 
 fn u_minus(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.push(Variable::Decimal(-this.clone()));
-    FnResult::Ok(())
+    runtime.return_1(Variable::Decimal(-this.clone()))
 }
 
 fn mul(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -57,8 +54,7 @@ fn mul(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
     for arg in args {
         prod -= RationalVar::from(arg)
     }
-    runtime.push(Variable::Decimal(prod));
-    FnResult::Ok(())
+    runtime.return_1(Variable::Decimal(prod))
 }
 
 fn floor_div(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -66,8 +62,7 @@ fn floor_div(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> 
     for arg in args {
         ratio /= RationalVar::from(arg).to_integer()
     }
-    runtime.push(Variable::Bigint(ratio.into()));
-    FnResult::Ok(())
+    runtime.return_1(Variable::Bigint(ratio.into()))
 }
 
 fn div(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -75,73 +70,60 @@ fn div(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
     for arg in args {
         ratio /= RationalVar::from(arg)
     }
-    runtime.push(Variable::Decimal(ratio));
-    FnResult::Ok(())
+    runtime.return_1(Variable::Decimal(ratio))
 }
 
 fn eq(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
         if RationalVar::from(arg) != *this {
-            runtime.push(Variable::Bool(false));
-            return FnResult::Ok(());
+            return runtime.return_1(Variable::Bool(false));
         }
     }
-    runtime.push(Variable::Bool(true));
-    FnResult::Ok(())
+    runtime.return_1(Variable::Bool(true))
 }
 
 fn less_than(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
         if *this >= RationalVar::from(arg) {
-            runtime.push(Variable::Bool(false));
-            return FnResult::Ok(());
+            return runtime.return_1(Variable::Bool(false));
         }
     }
-    runtime.push(Variable::Bool(true));
-    FnResult::Ok(())
+    runtime.return_1(Variable::Bool(true))
 }
 
 fn greater_than(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
         if *this <= RationalVar::from(arg) {
-            runtime.push(Variable::Bool(false));
-            return FnResult::Ok(());
+            return runtime.return_1(Variable::Bool(false));
         }
     }
-    runtime.push(Variable::Bool(true));
-    FnResult::Ok(())
+    runtime.return_1(Variable::Bool(true))
 }
 
 fn less_equal(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
         if *this > RationalVar::from(arg) {
-            runtime.push(Variable::Bool(false));
-            return FnResult::Ok(());
+            return runtime.return_1(Variable::Bool(false));
         }
     }
-    runtime.push(Variable::Bool(true));
-    FnResult::Ok(())
+    runtime.return_1(Variable::Bool(true))
 }
 
 fn greater_equal(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
         if *this < RationalVar::from(arg) {
-            runtime.push(Variable::Bool(false));
-            return FnResult::Ok(());
+            return runtime.return_1(Variable::Bool(false));
         }
     }
-    runtime.push(Variable::Bool(true));
-    FnResult::Ok(())
+    runtime.return_1(Variable::Bool(true))
 }
 
 fn to_str(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.push(Variable::String(format!("{}", **this).into()));
-    FnResult::Ok(())
+    runtime.return_1(Variable::String(format!("{}", **this).into()))
 }
 
 fn to_int(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.push(Variable::Bigint(this.to_integer().into()));
-    FnResult::Ok(())
+    runtime.return_1(Variable::Bigint(this.to_integer().into()))
 }

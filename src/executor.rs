@@ -64,8 +64,7 @@ fn bool_op(b: Bytecode, runtime: &mut Runtime) -> Result<bool, ()> {
 fn quick_op_1(runtime: &mut Runtime, func: fn(Variable, &mut Runtime) -> QuickResult) -> FnResult {
     let x = runtime.pop();
     let result = func(x, runtime)?;
-    runtime.push(result);
-    FnResult::Ok(())
+    runtime.return_1(result)
 }
 
 #[inline]
@@ -76,8 +75,7 @@ fn quick_op_2(
     let y = runtime.pop();
     let x = runtime.pop();
     let result = func(x, y, runtime)?;
-    runtime.push(result);
-    FnResult::Ok(())
+    runtime.return_1(result)
 }
 
 fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnResult {
@@ -237,7 +235,11 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         Bytecode::TailMethod => unimplemented!(),
         Bytecode::TailTos => unimplemented!(),
         Bytecode::TailFunction => unimplemented!(),
-        Bytecode::Return => runtime.pop_stack(),
+        Bytecode::Return => {
+            let ret_count = bytes_0 as usize;
+            runtime.set_ret(ret_count);
+            runtime.pop_stack()
+        }
         Bytecode::Throw => {
             let result = runtime.pop();
             return runtime.throw(result);

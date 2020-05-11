@@ -38,8 +38,7 @@ impl StdException {
 
     fn str(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        runtime.push(self.msg.clone().into());
-        FnResult::Ok(())
+        runtime.return_1(self.msg.clone().into())
     }
 }
 
@@ -66,8 +65,7 @@ macro_rules! create_exc {
             fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
                 debug_assert!(args.len() == 1);
                 let msg = StringVar::from(args[0].clone());
-                runtime.push(Rc::new(StdException::new(msg, $fn_name())).into());
-                FnResult::Ok(())
+                runtime.return_1(Rc::new(StdException::new(msg, $fn_name())).into())
             }
             lazy_static! {
                 static ref TYPE: CustomType<StdException> = CustomType::new(

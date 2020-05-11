@@ -20,16 +20,13 @@ pub fn get_operator(this: char, o: Operator) -> Variable {
 fn eq(this: &char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
         if char::from(arg) != *this {
-            runtime.push(Variable::Bool(false));
-            return FnResult::Ok(());
+            return runtime.return_1(Variable::Bool(false));
         }
     }
-    runtime.push(Variable::Bool(true));
-    FnResult::Ok(())
+    runtime.return_1(Variable::Bool(true))
 }
 
 fn str(this: &char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.push(Variable::String(this.to_string().into()));
-    FnResult::Ok(())
+    runtime.return_1(Variable::String(this.to_string().into()))
 }

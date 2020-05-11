@@ -47,17 +47,17 @@ pub trait CustomVar: Debug + Any + Downcast {
 
     fn str(self: Rc<Self>, runtime: &mut Runtime) -> Result<StringVar, ()> {
         self.call_op(Operator::Str, vec![], runtime)?;
-        runtime.pop().str(runtime)
+        runtime.pop_return().str(runtime)
     }
 
     fn int(self: Rc<Self>, runtime: &mut Runtime) -> Result<IntVar, ()> {
         self.call_op(Operator::Int, vec![], runtime)?;
-        runtime.pop().int(runtime)
+        runtime.pop_return().int(runtime)
     }
 
     fn bool(self: Rc<Self>, runtime: &mut Runtime) -> Result<bool, ()> {
         self.call_op(Operator::Bool, vec![], runtime)?;
-        runtime.pop().to_bool(runtime)
+        runtime.pop_return().to_bool(runtime)
     }
 }
 

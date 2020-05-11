@@ -42,8 +42,7 @@ fn add(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult
     for arg in args {
         result += StringVar::from(arg).as_ref();
     }
-    runtime.push(Variable::String(result.into()));
-    FnResult::Ok(())
+    runtime.return_1(Variable::String(result.into()))
 }
 
 fn multiply(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -55,14 +54,12 @@ fn multiply(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnR
                 .expect("Too many string repetitions"),
         );
     }
-    runtime.push(Variable::String(result.into()));
-    FnResult::Ok(())
+    runtime.return_1(Variable::String(result.into()))
 }
 
 fn bool(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.push(Variable::Bool(this.is_empty()));
-    FnResult::Ok(())
+    runtime.return_1(Variable::Bool(this.is_empty()))
 }
 
 fn int(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -76,14 +73,12 @@ fn int(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult
 
 fn str(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.push(Variable::String(this.clone()));
-    FnResult::Ok(())
+    runtime.return_1(Variable::String(this.clone()))
 }
 
 fn repr(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.push(Variable::String(format!("{:?}", this.as_str()).into()));
-    FnResult::Ok(())
+    runtime.return_1(Variable::String(format!("{:?}", this.as_str()).into()))
 }
 
 fn index(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -93,21 +88,16 @@ fn index(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> Fn
         .unwrap();
     match this.chars().nth(index) {
         Option::None => runtime.throw_quick(index_error(), "Index out of bounds".into()),
-        Option::Some(value) => {
-            runtime.push(value.into());
-            FnResult::Ok(())
-        }
+        Option::Some(value) => runtime.return_1(value.into()),
     }
 }
 
 fn upper(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.push(this.to_uppercase().into());
-    FnResult::Ok(())
+    runtime.return_1(this.to_uppercase().into())
 }
 
 fn lower(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.push(this.to_lowercase().into());
-    FnResult::Ok(())
+    runtime.return_1(this.to_lowercase().into())
 }

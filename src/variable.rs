@@ -244,7 +244,7 @@ impl Variable {
                 runtime.push_native();
                 v.call_operator(Operator::Hash, Vec::new(), runtime)?;
                 runtime.pop_native();
-                Result::Ok(IntVar::from(runtime.pop()).to_usize().unwrap())
+                Result::Ok(IntVar::from(runtime.pop_return()).to_usize().unwrap())
             }
             Variable::Method(_) => unimplemented!(),
             Variable::Function(_) => unimplemented!(),
@@ -254,7 +254,7 @@ impl Variable {
                     .clone()
                     .call_op(Operator::Hash, Vec::new(), runtime)?;
                 runtime.pop_native();
-                Result::Ok(IntVar::from(runtime.pop()).to_usize().unwrap())
+                Result::Ok(IntVar::from(runtime.pop_return()).to_usize().unwrap())
             }
         }
     }

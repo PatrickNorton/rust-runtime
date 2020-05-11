@@ -69,10 +69,7 @@ impl Dict {
     fn index(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         match self.value.borrow().get(args.remove(0), runtime)? {
-            Option::Some(result) => {
-                runtime.push(result);
-                FnResult::Ok(())
-            }
+            Option::Some(result) => runtime.return_1(result),
             Option::None => runtime.throw_quick(key_error(), "Value not found".into()),
         }
     }
@@ -80,14 +77,12 @@ impl Dict {
     fn repr(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         let repr = self.value.borrow().true_repr(runtime)?;
-        runtime.push(repr.into());
-        FnResult::Ok(())
+        runtime.return_1(repr.into())
     }
 
     fn bool(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        runtime.push((!self.is_empty()).into());
-        FnResult::Ok(())
+        runtime.return_1((!self.is_empty()).into())
     }
 
     fn set(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -101,8 +96,7 @@ impl Dict {
         debug_assert_eq!(args.len(), 1);
         let val = args.remove(0);
         let is_in = self.value.borrow().get(val, runtime)?.is_some();
-        runtime.push(is_in.into());
-        FnResult::Ok(())
+        runtime.return_1(is_in.into())
     }
 
     fn clear(self: &Rc<Self>, args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
@@ -117,35 +111,28 @@ impl Dict {
             Option::Some(value) => value,
             Option::None => args[1].clone(),
         };
-        runtime.push(val);
-        FnResult::Ok(())
+        runtime.return_1(val)
     }
 
     fn eq(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         for arg in args {
             match downcast_var::<Dict>(arg) {
-                Option::None => {
-                    runtime.push(false.into());
-                    return FnResult::Ok(());
-                }
+                Option::None => return runtime.return_1(false.into()),
                 Option::Some(other) => {
                     let self_val = self.value.borrow();
                     if !self_val.equals(&*other.value.borrow(), runtime)? {
-                        runtime.push(false.into());
-                        return FnResult::Ok(());
+                        return runtime.return_1(false.into());
                     }
                 }
             };
         }
-        runtime.push(true.into());
-        FnResult::Ok(())
+        runtime.return_1(true.into())
     }
 
     fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty()); // TODO: List of a value
         let dict = Dict::from_args(Vec::new(), Vec::new(), runtime)?;
-        runtime.push(dict.into());
-        FnResult::Ok(())
+        runtime.return_1(dict.into())
     }
 
     pub fn dict_type() -> Type {

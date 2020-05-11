@@ -92,8 +92,7 @@ impl Type {
     pub fn push_create(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
         let runtime = args.1;
         let new = self.create_inst(args.0, runtime)?;
-        runtime.push(new);
-        FnResult::Ok(())
+        runtime.return_1(new)
     }
 
     pub fn index(&self, index: Name, runtime: &mut Runtime) -> Variable {

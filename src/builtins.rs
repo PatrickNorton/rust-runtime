@@ -16,7 +16,7 @@ fn print_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
         println!("{}", arg.str(runtime)?);
     }
-    FnResult::Ok(())
+    runtime.return_0()
 }
 
 fn input() -> Variable {
@@ -33,7 +33,7 @@ fn input_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         }
         Err(_) => panic!("Could not read from stdin"),
     }
-    FnResult::Ok(())
+    runtime.return_0()
 }
 
 fn repr() -> Variable {
@@ -92,30 +92,25 @@ pub fn default_methods(name: Name) -> StdVarMethod {
 fn default_repr(this: &StdVariable, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     let result = format!("<{}: {}>", this.get_type().to_string(), this.var_ptr());
-    runtime.push(Variable::String(result.into()));
-    FnResult::Ok(())
+    runtime.return_1(Variable::String(result.into()))
 }
 
 fn default_str(this: &StdVariable, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.call_op(Variable::Standard(this.clone()), Operator::Repr, args)?;
-    FnResult::Ok(())
+    runtime.call_op(Variable::Standard(this.clone()), Operator::Repr, args)
 }
 
 fn default_bool(_this: &StdVariable, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.push(Variable::Bool(true));
-    FnResult::Ok(())
+    runtime.return_1(Variable::Bool(true))
 }
 
 fn default_eq(this: &StdVariable, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let this_var = Variable::Standard(this.clone());
     for arg in args {
         if this_var != arg {
-            runtime.push(Variable::Bool(false));
-            return FnResult::Ok(());
+            return runtime.return_1(Variable::Bool(false));
         }
     }
-    runtime.push(Variable::Bool(true));
-    return FnResult::Ok(());
+    runtime.return_1(Variable::Bool(true))
 }

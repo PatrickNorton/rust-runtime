@@ -34,17 +34,17 @@ impl StdVariable {
 
     pub fn str(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
         self.call_operator(Operator::Str, vec![], runtime)?;
-        runtime.pop().str(runtime)
+        runtime.pop_return().str(runtime)
     }
 
     pub fn bool(&self, runtime: &mut Runtime) -> Result<bool, ()> {
         self.call_operator(Operator::Bool, vec![], runtime)?;
-        runtime.pop().to_bool(runtime)
+        runtime.pop_return().to_bool(runtime)
     }
 
     pub fn int(&self, runtime: &mut Runtime) -> Result<IntVar, ()> {
         self.call_operator(Operator::Bool, vec![], runtime)?;
-        runtime.pop().int(runtime)
+        runtime.pop_return().int(runtime)
     }
 
     pub fn call_operator(
@@ -107,7 +107,7 @@ impl StdVariable {
         match self.value.borrow().cls.get_property(&index) {
             Option::Some(val) => {
                 runtime.call_now(0, val.0 as u16, Vec::new(), 0)?;
-                Result::Ok(runtime.pop())
+                Result::Ok(runtime.pop_return())
             }
             Option::None => {
                 let inner_method = self.value.borrow().cls.get_method(index);

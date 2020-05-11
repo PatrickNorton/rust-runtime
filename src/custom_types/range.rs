@@ -46,8 +46,7 @@ impl Range {
 
     fn str(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        runtime.push(self.to_str().into());
-        FnResult::Ok(())
+        runtime.return_1(self.to_str().into())
     }
 
     fn eq(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -58,14 +57,12 @@ impl Range {
                 self.start == other.start && self.stop == other.stop && self.step == other.step
             }
         };
-        runtime.push(is_eq.into());
-        FnResult::Ok(())
+        runtime.return_1(is_eq.into())
     }
 
     fn iter(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        runtime.push(Rc::new(RangeIter::new(self.clone())).into());
-        FnResult::Ok(())
+        runtime.return_1(Rc::new(RangeIter::new(self.clone())).into())
     }
 
     fn index(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -79,8 +76,7 @@ impl Range {
                 format!("Index {} out of bounds for {}", result, self.to_str()).into(),
             )
         } else {
-            runtime.push(result.into());
-            FnResult::Ok(())
+            runtime.return_1(result.into())
         }
     }
 
@@ -94,8 +90,7 @@ impl Range {
         let stop = args.remove(1);
         let start = args.remove(0);
         let range = Range::new(start.into(), stop.into(), step.into());
-        runtime.push(Rc::new(range).into());
-        FnResult::Ok(())
+        runtime.return_1(Rc::new(range).into())
     }
 
     pub fn range_type() -> Type {
@@ -145,10 +140,7 @@ impl RangeIter {
     fn next_fn(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         match self.next() {
-            Option::Some(value) => {
-                runtime.push(value.into());
-                FnResult::Ok(())
-            }
+            Option::Some(value) => runtime.return_1(value.into()),
             Option::None => runtime.throw_quick(stop_iteration(), "".into()),
         }
     }

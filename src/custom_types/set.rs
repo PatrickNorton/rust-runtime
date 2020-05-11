@@ -58,23 +58,20 @@ impl Set {
 
     fn bool(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        runtime.push(self.is_empty().into());
-        FnResult::Ok(())
+        runtime.return_1(self.is_empty().into())
     }
 
     fn repr(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         let repr = self.value.borrow().repr(runtime)?;
-        runtime.push(repr.into());
-        FnResult::Ok(())
+        runtime.return_1(repr.into())
     }
 
     fn contains(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         let val = args.remove(0);
         let is_contained = self.value.borrow().contains(val, runtime)?;
-        runtime.push(is_contained.into());
-        FnResult::Ok(())
+        runtime.return_1(is_contained.into())
     }
 
     fn add(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -93,19 +90,16 @@ impl Set {
                     self_val.equals(&*other.value.borrow(), runtime)?
                 }
             } {
-                runtime.push(false.into());
-                return FnResult::Ok(());
+                return runtime.return_1(false.into());
             }
         }
-        runtime.push(true.into());
-        FnResult::Ok(())
+        runtime.return_1(true.into())
     }
 
     fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty()); // TODO: Set of a value
         let set = Set::new(vec![], runtime)?;
-        runtime.push(set.into());
-        FnResult::Ok(())
+        runtime.return_1(set.into())
     }
 
     pub fn set_type() -> Type {

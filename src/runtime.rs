@@ -24,6 +24,7 @@ pub struct Runtime {
     completed_statics: HashSet<(usize, u16, u32)>,
     static_vars: Vec<Variable>,
     type_vars: HashMap<Type, HashMap<Name, Variable>>,
+    ret_count: usize,
 
     files: Vec<FileInfo>,
 }
@@ -45,6 +46,7 @@ impl Runtime {
             completed_statics: HashSet::new(),
             static_vars: Vec::new(),
             type_vars: HashMap::new(),
+            ret_count: 0,
             files,
         }
     }
@@ -337,6 +339,40 @@ impl Runtime {
             Rc::new(RefCell::new(self.frames.last().unwrap().clone())),
         ))
         .into()
+    }
+
+    pub(crate) fn set_ret(&mut self, ret_count: usize) {
+        self.ret_count = ret_count;
+    }
+
+    pub fn return_0(&mut self) -> FnResult {
+        self.ret_count = 0;
+        FnResult::Ok(())
+    }
+
+    pub fn return_1(&mut self, var: Variable) -> FnResult {
+        self.ret_count = 1;
+        self.push(var);
+        FnResult::Ok(())
+    }
+
+    pub fn return_n(&mut self, var: Vec<Variable>) -> FnResult {
+        self.ret_count = var.len();
+        self.variables.extend(var);
+        FnResult::Ok(())
+    }
+
+    pub fn pop_return(&mut self) -> Variable {
+        match self.ret_count {
+            0 => panic!("Attempted to call pop_return where no values were returned"),
+            1 => self.pop(),
+            _ => {
+                let new_len = self.variables.len() - self.ret_count + 1;
+                self.ret_count = 0;
+                self.variables.truncate(new_len);
+                self.pop()
+            }
+        }
     }
 
     pub fn static_attr(&self, cls: &Type, name: Name) -> Variable {

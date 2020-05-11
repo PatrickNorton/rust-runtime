@@ -32,56 +32,46 @@ pub fn get_operator(this: bool, o: Operator) -> Variable {
 fn eq(this: &bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
         if bool::from(arg) != *this {
-            runtime.push(Variable::Bool(false));
-            return FnResult::Ok(());
+            return runtime.return_1(Variable::Bool(false));
         }
     }
-    runtime.push(Variable::Bool(true));
-    FnResult::Ok(())
+    runtime.return_1(Variable::Bool(true))
 }
 
 fn less_than(this: &bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
         if *this >= bool::from(arg) {
-            runtime.push(Variable::Bool(false));
-            return FnResult::Ok(());
+            return runtime.return_1(Variable::Bool(false));
         }
     }
-    runtime.push(Variable::Bool(true));
-    FnResult::Ok(())
+    runtime.return_1(Variable::Bool(true))
 }
 
 fn greater_than(this: &bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
         if *this <= bool::from(arg) {
-            runtime.push(Variable::Bool(false));
-            return FnResult::Ok(());
+            return runtime.return_1(Variable::Bool(false));
         }
     }
-    runtime.push(Variable::Bool(true));
-    FnResult::Ok(())
+    runtime.return_1(Variable::Bool(true))
 }
 
 fn less_equal(this: &bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
         if *this > bool::from(arg) {
-            runtime.push(Variable::Bool(false));
-            return FnResult::Ok(());
+            return runtime.return_1(Variable::Bool(false));
         }
     }
-    runtime.push(Variable::Bool(true));
-    FnResult::Ok(())
+    runtime.return_1(Variable::Bool(true))
 }
 
 fn greater_equal(this: &bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
         if *this < bool::from(arg) {
-            runtime.push(Variable::Bool(false));
-            return FnResult::Ok(());
+            return runtime.return_1(Variable::Bool(false));
         }
     }
-    runtime.push(Variable::Bool(true));
-    FnResult::Ok(())
+    runtime.return_1(Variable::Bool(true))
 }
 
 fn bitwise_and(this: &bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -89,8 +79,7 @@ fn bitwise_and(this: &bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnRes
     for arg in args {
         sum &= &bool::from(arg)
     }
-    runtime.push(Variable::Bool(sum));
-    FnResult::Ok(())
+    runtime.return_1(Variable::Bool(sum))
 }
 
 fn bitwise_or(this: &bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -98,14 +87,12 @@ fn bitwise_or(this: &bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
     for arg in args {
         sum |= &bool::from(arg)
     }
-    runtime.push(Variable::Bool(sum));
-    FnResult::Ok(())
+    runtime.return_1(Variable::Bool(sum))
 }
 
 fn bitwise_not(this: &bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.push(Variable::Bool(!*this));
-    FnResult::Ok(())
+    runtime.return_1(Variable::Bool(!*this))
 }
 
 fn bitwise_xor(this: &bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -113,8 +100,7 @@ fn bitwise_xor(this: &bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnRes
     for arg in args {
         sum ^= &bool::from(arg)
     }
-    runtime.push(Variable::Bool(sum));
-    FnResult::Ok(())
+    runtime.return_1(Variable::Bool(sum))
 }
 
 fn str(this: &bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

@@ -49,7 +49,7 @@ where
 
     fn create(&self, args: Vec<Variable>, runtime: &mut Runtime) -> Result<Variable, ()> {
         self.constructor.call((args, runtime))?;
-        Result::Ok(runtime.pop())
+        Result::Ok(runtime.pop_return())
     }
 
     fn is_subclass(&self, other: &Type) -> bool {
