@@ -340,12 +340,23 @@ impl SetIter {
             bucket_no: Cell::new(0),
             index: RefCell::new(Variable::Null()),
         };
-        val.point_to_next();
+        if let Option::None = val.parent.value.borrow().values[0].as_ref() {
+            val.point_to_next();
+        } else {
+            val.index.replace(
+                val.parent.value.borrow().values[0]
+                    .as_ref()
+                    .unwrap()
+                    .get_val()
+                    .clone(),
+            );
+        }
         val
     }
 
     fn point_to_next(&self) {
         let parent = self.parent.value.borrow();
+        self.bucket_no.set(self.bucket_no.get() + 1);
         while self.bucket_no.get() < parent.size {
             if let Option::Some(val) = parent.values[self.bucket_no.get()].as_ref() {
                 self.index.replace(val.get_val().clone());
@@ -395,8 +406,13 @@ impl NativeIterator for SetIter {
         let parent = self.parent.value.borrow();
         let parent_node = parent.values[bucket].as_ref().unwrap();
         let node = parent_node.get_entry(self.index.borrow().clone(), runtime)?;
-        let val = node.get_val().clone();
-        self.point_to_next();
+        let val = self.index.replace(Variable::Null());
+        debug_assert!(node.get_val().equals(val.clone(), runtime)?);
+        if let Option::Some(next) = node.get_next() {
+            self.index.replace(next.get_val().clone());
+        } else {
+            self.point_to_next();
+        }
         Result::Ok(Option::Some(val))
     }
 }

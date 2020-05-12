@@ -419,9 +419,14 @@ impl DictIter {
         let parent = self.parent.value.borrow();
         let parent_node = parent.entries[bucket].as_ref().unwrap();
         let node = parent_node.get_entry(self.index.borrow().clone(), runtime)?;
-        let key = node.get_key().clone();
+        let key = self.index.replace(Variable::Null());
         let val = node.get_value().clone();
-        self.point_to_next();
+        debug_assert!(node.get_key().equals(key.clone(), runtime)?);
+        if let Option::Some(next) = node.get_next() {
+            self.index.replace(next.get_value().clone());
+        } else {
+            self.point_to_next();
+        }
         Result::Ok(Option::Some((key, val)))
     }
 }
