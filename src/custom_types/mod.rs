@@ -17,6 +17,7 @@ pub mod dict;
 pub mod exceptions;
 pub mod lambda;
 pub mod list;
+pub mod open;
 pub mod range;
 pub mod set;
 pub mod types;

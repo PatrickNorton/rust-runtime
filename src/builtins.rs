@@ -1,4 +1,5 @@
 use crate::custom_types::list::List;
+use crate::custom_types::open::Open;
 use crate::custom_types::range::Range;
 use crate::custom_types::set::Set;
 use crate::function::Function;
@@ -70,7 +71,7 @@ pub fn builtin_of(index: usize) -> Variable {
         10 => List::list_type().into(),
         11 => Set::set_type().into(),
         12 => Type::Char.into(),
-        13 => todo!("open"),
+        13 => Open::open_type().into(),
         _ => unimplemented!(),
     }
 }

@@ -82,5 +82,7 @@ macro_rules! create_exc {
 
 create_exc!(arithmetic_error, "ArithmeticError");
 create_exc!(index_error, "IndexError");
+create_exc!(invalid_state, "InvalidState");
+create_exc!(io_error, "IOError");
 create_exc!(key_error, "KeyError");
 create_exc!(stop_iteration, "StopIteration");
