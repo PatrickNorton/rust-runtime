@@ -18,14 +18,14 @@ pub trait NativeIterator: CustomVar {
 }
 
 impl Iterator {
-    pub fn next(self, runtime: &mut Runtime) -> IterResult {
+    pub fn next(&self, runtime: &mut Runtime) -> IterResult {
         match self {
-            Iterator::Native(val) => val.next(runtime),
+            Iterator::Native(val) => val.clone().next(runtime),
             Iterator::NonNative(val) => Self::next_non_native(val, runtime),
         }
     }
 
-    fn next_non_native(val: StdVariable, runtime: &mut Runtime) -> IterResult {
+    fn next_non_native(val: &StdVariable, runtime: &mut Runtime) -> IterResult {
         let result = val
             .index(Name::Attribute("next".into()), runtime)?
             .call((Vec::new(), runtime));

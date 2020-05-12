@@ -37,6 +37,8 @@ pub fn get_attr(this: StringVar, s: StringVar) -> Variable {
         "length" => return Variable::Bigint(this.len().into()),
         "upper" => upper,
         "lower" => lower,
+        "join" => join,
+        "joinAll" => join_all,
         _ => unimplemented!(),
     };
     Variable::Method(StdMethod::new_native(this, func))
@@ -105,6 +107,33 @@ fn upper(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
 fn lower(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     runtime.return_1(this.to_lowercase().into())
+}
+
+fn join(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert!(args.len() == 1);
+    let mut is_first = true;
+    let mut result = String::new();
+    let iter = replace(&mut args[0], Variable::Null()).iter(runtime)?;
+    while let Option::Some(val) = iter.next(runtime)? {
+        if !is_first {
+            result += this;
+        }
+        is_first = false;
+        result += val.str(runtime)?.as_str();
+    }
+    runtime.return_1(result.into())
+}
+
+fn join_all(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    let mut result = String::with_capacity(this.len() * args.len());
+    let len = args.len();
+    for (i, val) in args.into_iter().enumerate() {
+        result += val.str(runtime)?.as_str();
+        if i + 1 < len {
+            result += this;
+        }
+    }
+    runtime.return_1(result.into())
 }
 
 #[derive(Debug)]
