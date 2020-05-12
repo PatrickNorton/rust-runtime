@@ -2,6 +2,7 @@ use crate::builtins::default_methods;
 use crate::custom_types::types::CustomTypeImpl;
 use crate::method::{InnerMethod, Method, StdMethod};
 use crate::operator::Operator;
+use crate::property::Property;
 use crate::runtime::Runtime;
 use crate::std_variable::{StdVarMethod, StdVariable};
 use crate::string_var::StringVar;
@@ -32,7 +33,7 @@ pub struct StdType {
     supers: Vec<Type>,
     methods: HashMap<Name, StdVarMethod>,
     static_methods: HashMap<Name, StdVarMethod>,
-    properties: HashMap<StringVar, (u32, u32)>,
+    properties: HashMap<StringVar, Property>,
 }
 
 impl Type {
@@ -41,7 +42,7 @@ impl Type {
         file_no: usize,
         methods: HashMap<Name, StdVarMethod>,
         static_methods: HashMap<Name, StdVarMethod>,
-        properties: HashMap<StringVar, (u32, u32)>,
+        properties: HashMap<StringVar, Property>,
     ) -> Type {
         let t = Box::new(StdType::new(
             name,
@@ -161,7 +162,7 @@ impl StdType {
         file_no: usize,
         methods: HashMap<Name, StdVarMethod>,
         static_methods: HashMap<Name, StdVarMethod>,
-        properties: HashMap<StringVar, (u32, u32)>,
+        properties: HashMap<StringVar, Property>,
     ) -> StdType {
         StdType {
             name,
@@ -173,7 +174,7 @@ impl StdType {
         }
     }
 
-    pub fn get_property(&self, name: &Name) -> Option<&(u32, u32)> {
+    pub fn get_property(&self, name: &Name) -> Option<&Property> {
         match name {
             Name::Attribute(str) => self.properties.get(str),
             Name::Operator(_) => Option::None,

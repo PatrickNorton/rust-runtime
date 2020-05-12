@@ -3,6 +3,7 @@ use crate::builtins::builtin_of;
 use crate::int_tools::bytes_index;
 use crate::int_var::IntVar;
 use crate::operator::Operator;
+use crate::property::Property;
 use crate::rational_var::RationalVar;
 use crate::std_type::Type;
 use crate::std_variable::StdVarMethod;
@@ -133,10 +134,11 @@ fn get_methods(
 
 fn get_properties(
     data: &[u8],
+    file_no: usize,
     index: &mut usize,
     functions: &mut Vec<BaseFunction>,
-) -> HashMap<StringVar, (u32, u32)> {
-    let mut properties: HashMap<StringVar, (u32, u32)> = HashMap::new();
+) -> HashMap<StringVar, Property> {
+    let mut properties: HashMap<StringVar, Property> = HashMap::new();
     let byte_size = bytes_index::<u32>(data, index);
     for _ in 0..byte_size {
         let name = load_std_str(data, index);
@@ -155,7 +157,7 @@ fn get_properties(
 
         properties.insert(
             StringVar::from_leak(name),
-            (getter_index as u32, setter_index as u32),
+            Property::new(file_no, getter_index as u32, setter_index as u32),
         );
     }
     properties
@@ -192,7 +194,7 @@ pub fn load_class(
     let static_operators = get_operators(data, file_no, index, functions);
     let methods = get_methods(data, file_no, index, functions);
     let static_methods = get_methods(data, file_no, index, functions);
-    let properties = get_properties(data, index, functions);
+    let properties = get_properties(data, file_no, index, functions);
 
     Variable::Type(Type::new_std(
         StringVar::from_leak(name),

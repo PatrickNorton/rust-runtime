@@ -30,6 +30,7 @@ mod int_var;
 mod looping;
 mod method;
 mod operator;
+mod property;
 mod quick_functions;
 mod rational_var;
 mod runtime;
