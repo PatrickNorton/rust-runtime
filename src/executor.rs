@@ -137,7 +137,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let value = runtime.pop();
             let attr_name = runtime.load_const(bytes_0 as u16).clone();
             let str_name = attr_name.str(runtime)?;
-            value.set(str_name.into(), stored, runtime);
+            value.set(str_name.into(), stored, runtime)?;
         }
         Bytecode::Plus => quick_op_2(runtime, quick_add)?,
         Bytecode::Minus => quick_op_2(runtime, quick_sub)?,

@@ -125,11 +125,18 @@ impl StdVariable {
         }
     }
 
-    pub fn set(&self, index: StringVar, value: Variable) {
-        self.value
-            .borrow_mut()
-            .values
-            .insert(Name::Attribute(index), value);
+    pub fn set(&self, index: StringVar, value: Variable, runtime: &mut Runtime) -> FnResult {
+        let name = Name::Attribute(index);
+        match self.value.borrow_mut().values.get_mut(&name) {
+            Option::Some(val) => *val = value,
+            Option::None => match self.value.borrow().cls.get_property(&name) {
+                Option::Some(val) => {
+                    runtime.call_now(0, val.get_setter() as u16, vec![value], val.get_file_no())?
+                }
+                Option::None => unimplemented!(),
+            },
+        }
+        runtime.return_0()
     }
 
     pub fn identical(&self, other: &Self) -> bool {

@@ -175,13 +175,14 @@ impl Variable {
         })
     }
 
-    pub fn set(&self, index: StringVar, value: Variable, runtime: &mut Runtime) {
+    pub fn set(&self, index: StringVar, value: Variable, runtime: &mut Runtime) -> FnResult {
         match self {
-            Variable::Standard(val) => val.set(index, value),
+            Variable::Standard(val) => val.set(index, value, runtime)?,
             Variable::Custom(val) => (**val).clone().set(Name::Attribute(index), value),
             Variable::Type(val) => val.set(index, value, runtime),
             _ => unimplemented!(),
         }
+        FnResult::Ok(())
     }
 
     pub fn get_type(&self) -> Type {
