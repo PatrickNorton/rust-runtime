@@ -112,7 +112,7 @@ impl StdVariable {
     fn index_harder(&self, index: Name, runtime: &mut Runtime) -> Result<Variable, ()> {
         match self.value.borrow().cls.get_property(&index) {
             Option::Some(val) => {
-                runtime.call_now(0, val.get_getter() as u16, Vec::new(), val.get_file_no())?;
+                val.call_getter(runtime)?;
                 Result::Ok(runtime.pop_return())
             }
             Option::None => {
@@ -130,9 +130,7 @@ impl StdVariable {
         match self.value.borrow_mut().values.get_mut(&name) {
             Option::Some(val) => *val = value,
             Option::None => match self.value.borrow().cls.get_property(&name) {
-                Option::Some(val) => {
-                    runtime.call_now(0, val.get_setter() as u16, vec![value], val.get_file_no())?
-                }
+                Option::Some(val) => val.call_setter(runtime, value)?,
                 Option::None => unimplemented!(),
             },
         }

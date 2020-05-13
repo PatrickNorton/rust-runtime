@@ -3,7 +3,7 @@ use crate::builtins::builtin_of;
 use crate::int_tools::bytes_index;
 use crate::int_var::IntVar;
 use crate::operator::Operator;
-use crate::property::Property;
+use crate::property::{Property, StdProperty};
 use crate::rational_var::RationalVar;
 use crate::std_type::Type;
 use crate::std_variable::StdVarMethod;
@@ -157,7 +157,11 @@ fn get_properties(
 
         properties.insert(
             StringVar::from_leak(name),
-            Property::new(file_no, getter_index as u32, setter_index as u32),
+            Property::Standard(StdProperty::new(
+                file_no,
+                getter_index as u32,
+                setter_index as u32,
+            )),
         );
     }
     properties
