@@ -13,22 +13,22 @@ pub enum Function {
 }
 
 impl Function {
-    pub fn call(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
+    pub fn call(&self, (args, runtime): (Vec<Variable>, &mut Runtime)) -> FnResult {
         match self {
             Function::Standard(file_no, fn_no) => {
-                args.1.call_now(0, *fn_no as u16, args.0, *file_no)
+                runtime.call_now(0, *fn_no as u16, args, *file_no)
             }
-            Function::Native(func) => args.1.call_native(*func, args.0),
+            Function::Native(func) => runtime.call_native(*func, args),
         }
     }
 
-    pub fn call_or_goto(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
+    pub fn call_or_goto(&self, (args, runtime): (Vec<Variable>, &mut Runtime)) -> FnResult {
         match self {
             Function::Standard(file_no, fn_no) => {
-                args.1.push_stack(0, *fn_no as u16, args.0, *file_no);
+                runtime.push_stack(0, *fn_no as u16, args, *file_no);
                 FnResult::Ok(())
             }
-            Function::Native(func) => args.1.call_native(*func, args.0),
+            Function::Native(func) => runtime.call_native(*func, args),
         }
     }
 
