@@ -225,7 +225,7 @@ impl InnerDict {
                 if val {
                     self.size += 1;
                 }
-                Result::Ok(())
+                runtime.return_0()
             }
         }
     }
