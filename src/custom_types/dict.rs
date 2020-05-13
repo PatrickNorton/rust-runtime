@@ -62,6 +62,8 @@ impl Dict {
         let func = match s.as_str() {
             "clear" => Dict::clear,
             "get" => Dict::get,
+            "replace" => Dict::replace,
+            "pop" => Dict::pop,
             "length" => return Variable::Bigint(self.len().into()),
             _ => unimplemented!(),
         };
@@ -114,6 +116,31 @@ impl Dict {
             Option::None => args[1].clone(),
         };
         runtime.return_1(val)
+    }
+
+    fn replace(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 2);
+        let key = replace(&mut args[0], Variable::Null());
+        let val = replace(&mut args[1], Variable::Null());
+        match self.value.borrow_mut().get_mut_entry(key, runtime)? {
+            Option::Some(entry) => {
+                let old = replace(&mut entry.value, val);
+                runtime.return_1(old)
+            }
+            Option::None => {
+                runtime.throw_quick(key_error(), format!("Value not contained in dict").into())
+            }
+        }
+    }
+
+    fn pop(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        let returned = self
+            .value
+            .borrow_mut()
+            .del(&args[0], runtime)?
+            .unwrap_or_else(Default::default);
+        runtime.return_1(returned)
     }
 
     fn eq(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -273,6 +300,22 @@ impl InnerDict {
         Result::Ok(true)
     }
 
+    pub fn del(&mut self, value: &Variable, runtime: &mut Runtime) -> Result<Option<Variable>, ()> {
+        let hash = value.hash(runtime)?;
+        let index = hash % self.entries.len();
+        match &mut self.entries[index] {
+            Option::Some(val) => match val.del(value, runtime)? {
+                Option::Some(result) => {
+                    let boxed_entry = replace(&mut val.next, Option::None);
+                    self.entries[index] = boxed_entry.map(|x| *x);
+                    Result::Ok(Option::Some(result))
+                }
+                Option::None => Result::Ok(Option::None),
+            },
+            Option::None => Result::Ok(Option::None),
+        }
+    }
+
     fn contains_and_eq(
         entry: &Entry,
         other: &InnerDict,
@@ -287,6 +330,19 @@ impl InnerDict {
     fn split_entries(mut e: Entry) -> (Entry, Option<Box<Entry>>) {
         let next = replace(&mut e.next, Option::None);
         (e, next)
+    }
+
+    pub fn get_mut_entry(
+        &mut self,
+        key: Variable,
+        runtime: &mut Runtime,
+    ) -> Result<Option<&mut Entry>, ()> {
+        let hash = key.hash(runtime)?;
+        let bucket = hash % self.entries.len();
+        match &mut self.entries[bucket] {
+            Option::Some(val) => val.get_mut_entry(key, runtime),
+            Option::None => Result::Ok(Option::None),
+        }
     }
 
     pub fn clear(&mut self) {
@@ -332,6 +388,23 @@ impl Entry {
         }
     }
 
+    pub fn del(&mut self, key: &Variable, runtime: &mut Runtime) -> Result<Option<Variable>, ()> {
+        if key.equals(self.value.clone(), runtime)? {
+            Result::Ok(Option::Some(replace(&mut self.value, Variable::Null())))
+        } else {
+            match &mut self.next {
+                Option::None => Result::Ok(Option::None),
+                Option::Some(e) => match e.del(key, runtime)? {
+                    Option::Some(val) => {
+                        self.next = replace(&mut e.next, Option::None);
+                        Result::Ok(Option::Some(val))
+                    }
+                    Option::None => Result::Ok(Option::None),
+                },
+            }
+        }
+    }
+
     pub fn get_key(&self) -> &Variable {
         &self.key
     }
@@ -349,6 +422,21 @@ impl Entry {
             Result::Ok(self)
         } else {
             self.next.as_ref().unwrap().get_entry(key, runtime)
+        }
+    }
+
+    fn get_mut_entry(
+        &mut self,
+        key: Variable,
+        runtime: &mut Runtime,
+    ) -> Result<Option<&mut Entry>, ()> {
+        if self.value.equals(key.clone(), runtime)? {
+            Result::Ok(Option::Some(self))
+        } else {
+            match self.next.as_mut() {
+                Option::Some(val) => val.get_mut_entry(key, runtime),
+                Option::None => Result::Ok(Option::None),
+            }
         }
     }
 }
