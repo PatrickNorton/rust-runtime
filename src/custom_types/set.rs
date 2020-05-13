@@ -53,6 +53,7 @@ impl Set {
     fn get_attribute(self: &Rc<Self>, s: StringVar) -> Variable {
         let func = match s.as_str() {
             "add" => Self::add,
+            "addAll" => Self::add_all,
             "length" => return Variable::Bigint(self.value.borrow().size().into()),
             _ => unimplemented!(),
         };
@@ -81,7 +82,17 @@ impl Set {
         debug_assert_eq!(args.len(), 1);
         let val = args.remove(0);
         self.value.borrow_mut().add(val, runtime)?;
-        FnResult::Ok(())
+        runtime.return_0()
+    }
+
+    fn add_all(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        let val = replace(&mut args[0], Variable::Null());
+        let val_iter = val.iter(runtime)?;
+        while let Option::Some(arg) = val_iter.next(runtime)? {
+            self.value.borrow_mut().add(arg, runtime)?;
+        }
+        runtime.return_0()
     }
 
     fn eq(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
