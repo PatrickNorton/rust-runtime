@@ -1,4 +1,4 @@
-use crate::custom_types::exceptions::index_error;
+use crate::custom_types::exceptions::{index_error, stop_iteration};
 use crate::custom_var::CustomVar;
 use crate::int_var::IntVar;
 use crate::looping::{IterResult, NativeIterator};
@@ -12,7 +12,7 @@ use num::ToPrimitive;
 use std::cell::Cell;
 use std::mem::replace;
 use std::rc::Rc;
-use std::str::FromStr;
+use std::str::{from_utf8_unchecked, FromStr};
 
 pub fn op_fn(o: Operator) -> NativeMethod<StringVar> {
     match o {
@@ -23,6 +23,7 @@ pub fn op_fn(o: Operator) -> NativeMethod<StringVar> {
         Operator::Str => str,
         Operator::Repr => repr,
         Operator::GetAttr => index,
+        Operator::Iter => iter,
         _ => unimplemented!("Operator::{:?} unimplemented", o),
     }
 }
@@ -99,6 +100,11 @@ fn index(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> Fn
     }
 }
 
+fn iter(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert!(args.is_empty());
+    runtime.return_1(Rc::new(StringIter::new(this.clone())).into())
+}
+
 fn upper(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     runtime.return_1(this.to_uppercase().into())
@@ -143,6 +149,21 @@ pub struct StringIter {
 }
 
 impl StringIter {
+    fn new(val: StringVar) -> StringIter {
+        StringIter {
+            val,
+            index: Cell::new(0),
+        }
+    }
+
+    fn next_func(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        match self.next_fn() {
+            Option::Some(ret) => runtime.return_1(ret),
+            Option::None => runtime.throw_quick(stop_iteration(), "".into()),
+        }
+    }
+
     fn next_fn(&self) -> Option<Variable> {
         if self.index.get() != self.val.len() {
             self.val.chars().into_iter();
@@ -156,8 +177,16 @@ impl StringIter {
 }
 
 impl CustomVar for StringIter {
-    fn get_attr(self: Rc<Self>, _name: Name) -> Variable {
-        unimplemented!()
+    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
+        if let Name::Attribute(n) = name {
+            if &*n == "next" {
+                Variable::Method(StdMethod::new_native(self, Self::next_func))
+            } else {
+                unimplemented!()
+            }
+        } else {
+            unimplemented!()
+        }
     }
 
     fn set(self: Rc<Self>, _name: Name, _object: Variable) {
