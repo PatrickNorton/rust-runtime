@@ -38,6 +38,7 @@ impl Open {
     fn get_attribute(self: Rc<Self>, attr: StringVar) -> Variable {
         let func = match attr.as_str() {
             "readLines" => Self::read_lines,
+            "read" => Self::read,
             _ => unimplemented!(),
         };
         Variable::Method(StdMethod::new_native(self, func))
@@ -77,6 +78,16 @@ impl Open {
                 .map(|a| StringVar::from(a.to_owned()).into())
                 .collect();
             runtime.return_1(List::from_values(list).into())
+        }
+    }
+
+    fn read(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        let mut result = String::new();
+        if let Result::Err(_) = self.file_do(|f| f.read_to_string(&mut result)) {
+            runtime.throw_quick(io_error(), format!("Could not read from file").into())
+        } else {
+            runtime.return_1(result.into())
         }
     }
 
