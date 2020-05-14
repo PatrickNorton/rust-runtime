@@ -166,10 +166,25 @@ impl StringIter {
 
     fn next_fn(&self) -> Option<Variable> {
         if self.index.get() != self.val.len() {
-            self.val.chars().into_iter();
-            let result = self.val.chars().nth(self.index.get()).unwrap();
-            self.index.set(self.index.get() + 1);
-            Option::Some(result.into())
+            let test = unsafe {
+                // We know this is safe b/c:
+                // * The slice comes from a valid str, therefore, no invalid UTF-8 can be entered
+                // * self.index is always on a valid char boundary, as received by char_indices
+                from_utf8_unchecked(&self.val.as_bytes()[self.index.get()..])
+            };
+            let mut indices = test.char_indices();
+            match indices.next() {
+                Option::Some((_, c)) => {
+                    self.index.set(
+                        indices
+                            .next()
+                            .map(|a| self.index.get() + a.0)
+                            .unwrap_or_else(|| self.val.len()),
+                    );
+                    Option::Some(c.into())
+                }
+                Option::None => Option::None,
+            }
         } else {
             Option::None
         }
