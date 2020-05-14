@@ -83,10 +83,20 @@ impl Runtime {
         self.frames.push(StackFrame::new(0, fn_no, Vec::new()));
     }
 
+    pub fn tail_quick(&mut self, fn_no: u16) {
+        let frame = self.frames.last_mut().unwrap();
+        *frame = StackFrame::new(0, fn_no, Vec::new());
+    }
+
     pub fn call_tos_or_goto(&mut self, argc: u16) -> FnResult {
         let args = self.load_args(argc);
         let callee = self.pop();
         callee.call_or_goto((args, self))
+    }
+
+    pub fn tail_tos_or_goto(&mut self, argc: u16) -> FnResult {
+        self.frames.pop();
+        self.call_tos_or_goto(argc)
     }
 
     pub fn call_op(&mut self, var: Variable, o: Operator, args: Vec<Variable>) -> FnResult {
