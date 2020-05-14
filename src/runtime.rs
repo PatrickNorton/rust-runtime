@@ -317,10 +317,10 @@ impl Runtime {
     }
 
     pub fn remove_exception_handler(&mut self, exception_type: Variable) {
-        self.exception_frames
-            .get_mut(&exception_type)
-            .expect(format!("{:?} not found", exception_type).as_str())
-            .pop();
+        match self.exception_frames.get_mut(&exception_type) {
+            Option::Some(fr) => fr.pop(),
+            Option::None => panic!("{:?} not found", exception_type),
+        };
         self.frames
             .last_mut()
             .unwrap()
