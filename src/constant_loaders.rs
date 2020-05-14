@@ -49,6 +49,7 @@ pub fn load_bigint(data: &[u8], index: &mut usize) -> Variable {
     for _ in 0..count {
         values.push(bytes_index::<u32>(data, index));
     }
+    values.reverse(); // Comes in big-endian, little-endian needed
     Variable::Bigint(BigInt::new(Sign::Plus, values).into())
 }
 
