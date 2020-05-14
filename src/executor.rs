@@ -340,7 +340,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         Bytecode::Dotimes => {
             let mut value = runtime.pop().int(runtime)?;
             let jump = bytes_0;
-            if !value.is_zero() {
+            if value.is_zero() {
                 runtime.goto(jump);
             } else {
                 value.sub_assign(1.into());
