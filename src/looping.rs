@@ -1,8 +1,9 @@
 use crate::custom_types::exceptions::stop_iteration;
 use crate::custom_var::CustomVar;
+use crate::name::Name;
 use crate::runtime::Runtime;
 use crate::std_variable::StdVariable;
-use crate::variable::{FnResult, Name, Variable};
+use crate::variable::{FnResult, Variable};
 use std::rc::Rc;
 
 pub type IterResult = Result<Option<Variable>, ()>;

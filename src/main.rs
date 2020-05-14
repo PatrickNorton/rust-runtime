@@ -29,6 +29,7 @@ mod int_tools;
 mod int_var;
 mod looping;
 mod method;
+mod name;
 mod operator;
 mod property;
 mod quick_functions;

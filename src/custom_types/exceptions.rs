@@ -2,11 +2,12 @@ use crate::custom_types::types::CustomType;
 use crate::custom_var::CustomVar;
 use crate::function::Function;
 use crate::method::StdMethod;
+use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
-use crate::variable::{FnResult, Name, Variable};
+use crate::variable::{FnResult, Variable};
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -44,10 +45,7 @@ impl StdException {
 
 impl CustomVar for StdException {
     fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        match name {
-            Name::Operator(o) => self.get_op(o),
-            Name::Attribute(s) => self.get_attribute(s),
-        }
+        name.do_each(|o| self.get_op(o), |s| self.get_attribute(s))
     }
 
     fn set(self: Rc<Self>, _name: Name, _object: Variable) {

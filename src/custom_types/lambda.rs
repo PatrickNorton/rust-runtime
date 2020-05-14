@@ -1,10 +1,11 @@
 use crate::custom_var::CustomVar;
 use crate::method::StdMethod;
+use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::stack_frame::StackFrame;
 use crate::std_type::Type;
-use crate::variable::{FnResult, Name, Variable};
+use crate::variable::{FnResult, Variable};
 use std::cell::RefCell;
 use std::rc::Rc;
 

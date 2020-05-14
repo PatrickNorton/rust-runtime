@@ -4,6 +4,7 @@ use crate::custom_types::exceptions::stop_iteration;
 use crate::custom_types::list::List;
 use crate::custom_types::set::Set;
 use crate::int_tools::bytes_index;
+use crate::name::Name;
 use crate::operator::Operator;
 use crate::quick_functions::{
     quick_add, quick_bitwise_and, quick_bitwise_not, quick_bitwise_or, quick_bitwise_xor,
@@ -12,7 +13,7 @@ use crate::quick_functions::{
     quick_right_bitshift, quick_sub, quick_subscript, quick_u_minus, QuickResult,
 };
 use crate::runtime::Runtime;
-use crate::variable::{FnResult, Name, Variable};
+use crate::variable::{FnResult, Variable};
 use num::traits::FromPrimitive;
 use num::Zero;
 use std::ops::SubAssign;

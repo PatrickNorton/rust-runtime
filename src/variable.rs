@@ -25,14 +25,9 @@ use std::rc::Rc;
 use std::str::FromStr;
 use std::string::String;
 use std::vec::Vec;
+use crate::name::Name;
 
 pub type FnResult = Result<(), ()>;
-
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub enum Name {
-    Attribute(StringVar),
-    Operator(Operator),
-}
 
 #[derive(Debug, Clone, Hash)]
 pub enum Variable {

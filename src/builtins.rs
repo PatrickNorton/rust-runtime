@@ -3,11 +3,12 @@ use crate::custom_types::open::Open;
 use crate::custom_types::range::Range;
 use crate::custom_types::set::Set;
 use crate::function::Function;
+use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::std_variable::{StdVarMethod, StdVariable};
-use crate::variable::{FnResult, Name, Variable};
+use crate::variable::{FnResult, Variable};
 use std::mem::replace;
 
 fn print() -> Variable {

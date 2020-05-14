@@ -1,12 +1,13 @@
 use crate::builtins::default_methods;
 use crate::custom_types::types::CustomTypeImpl;
 use crate::method::{InnerMethod, Method, StdMethod};
+use crate::name::Name;
 use crate::operator::Operator;
 use crate::property::Property;
 use crate::runtime::Runtime;
 use crate::std_variable::{StdVarMethod, StdVariable};
 use crate::string_var::StringVar;
-use crate::variable::{FnResult, Name, Variable};
+use crate::variable::{FnResult, Variable};
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::ptr;
@@ -175,10 +176,7 @@ impl StdType {
     }
 
     pub fn get_property(&self, name: &Name) -> Option<&Property> {
-        match name {
-            Name::Attribute(str) => self.properties.get(str),
-            Name::Operator(_) => Option::None,
-        }
+        name.do_each_ref(|_| Option::None, |str| self.properties.get(&str))
     }
 
     fn is_subclass(&self, other: &Type) -> bool {

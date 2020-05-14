@@ -1,11 +1,12 @@
 use crate::int_var::IntVar;
 use crate::looping;
 use crate::method::{InnerMethod, StdMethod};
+use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::{StdType, Type};
 use crate::string_var::StringVar;
-use crate::variable::{FnResult, Name, Variable};
+use crate::variable::{FnResult, Variable};
 use std::cell::RefCell;
 use std::cmp::{Eq, PartialEq};
 use std::collections::HashMap;
