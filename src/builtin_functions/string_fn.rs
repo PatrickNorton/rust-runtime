@@ -178,8 +178,7 @@ impl StringIter {
                     self.index.set(
                         indices
                             .next()
-                            .map(|a| self.index.get() + a.0)
-                            .unwrap_or_else(|| self.val.len()),
+                            .map_or_else(|| self.val.len(), |a| self.index.get() + a.0),
                     );
                     Option::Some(c.into())
                 }
