@@ -184,7 +184,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         }
         Bytecode::CallOp => {
             let op: Operator = FromPrimitive::from_u32(bytes_0)
-                .expect(format!("operator {} not found", bytes_0).as_ref());
+                .unwrap_or_else(|| panic!("operator {} not found", bytes_0));
             call_operator(op, bytes_1 as u16, runtime)?
         }
         Bytecode::PackTuple => unimplemented!(),

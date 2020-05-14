@@ -47,7 +47,7 @@ fn load_constant(
 }
 
 pub fn parse_file(name: String, files: &mut Vec<FileInfo>) -> usize {
-    let data = read(Path::new(&name)).expect(format!("File {} not found", &name).as_ref());
+    let data = read(Path::new(&name)).unwrap_or_else(|_| panic!("File {} not found", &name));
     let file_no = files.len();
     files.push(FileInfo::temp());
     let mut index: usize = 0;
