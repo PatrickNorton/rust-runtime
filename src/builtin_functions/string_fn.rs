@@ -1,4 +1,4 @@
-use crate::custom_types::exceptions::{arithmetic_error, index_error, stop_iteration};
+use crate::custom_types::exceptions::{arithmetic_error, index_error, stop_iteration, value_error};
 use crate::custom_var::CustomVar;
 use crate::int_var::IntVar;
 use crate::looping::{IterResult, NativeIterator};
@@ -88,7 +88,7 @@ fn int(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult
     debug_assert!(args.is_empty());
     match IntVar::from_str(this) {
         Ok(val) => runtime.push(Variable::Bigint(val)),
-        Err(_) => runtime.throw(Variable::String("Error in string conversion".into()))?,
+        Err(_) => runtime.throw_quick(value_error(), "Error in string conversion".into())?,
     }
     FnResult::Ok(())
 }

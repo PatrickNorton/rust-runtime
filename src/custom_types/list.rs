@@ -1,4 +1,4 @@
-use crate::custom_types::exceptions::stop_iteration;
+use crate::custom_types::exceptions::{index_error, stop_iteration};
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_var::IntVar;
 use crate::looping;
@@ -78,8 +78,16 @@ impl List {
     fn list_index(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
         let index = IntVar::from(args[0].clone());
-        if index > self.value.borrow().len().into() {
-            runtime.throw(Variable::String("index out of range".into()))
+        if index >= self.value.borrow().len().into() {
+            runtime.throw_quick(
+                index_error(),
+                format!(
+                    "index {} out of range for list of length {}",
+                    index,
+                    self.value.borrow().len()
+                )
+                .into(),
+            )
         } else {
             runtime.push(self.value.borrow()[index.to_usize().unwrap()].clone());
             Result::Ok(())
