@@ -177,7 +177,7 @@ impl Runtime {
         fn_no: u16,
         args: Vec<Variable>,
         info_no: usize,
-        frame: Rc<RefCell<StackFrame>>,
+        frame: StackFrame,
     ) -> FnResult {
         self.push_native();
         self.push_stack_with_frame(var_count, fn_no, args, info_no, frame);
@@ -206,7 +206,7 @@ impl Runtime {
         fn_no: u16,
         args: Vec<Variable>,
         info_no: usize,
-        frame: Rc<RefCell<StackFrame>>,
+        frame: StackFrame,
     ) {
         if info_no == *self.file_stack.last().unwrap() {
             self.frames

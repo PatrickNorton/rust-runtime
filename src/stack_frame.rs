@@ -1,9 +1,7 @@
 use crate::variable::Variable;
-use std::cell::RefCell;
 use std::collections::HashSet;
 use std::ops::{Index, IndexMut};
 use std::option::Option;
-use std::rc::Rc;
 use std::vec::Vec;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -14,7 +12,6 @@ pub struct StackFrame {
     location: u32,
     native: bool,
     new_file: bool,
-    parent: Option<Rc<RefCell<StackFrame>>>,
 }
 
 impl StackFrame {
@@ -29,7 +26,6 @@ impl StackFrame {
             location: 0,
             native: false,
             new_file: false,
-            parent: Option::None,
         }
     }
 
@@ -44,7 +40,6 @@ impl StackFrame {
             location: 0,
             native: false,
             new_file: true,
-            parent: Option::None,
         }
     }
 
@@ -56,47 +51,46 @@ impl StackFrame {
             location: 0,
             native: true,
             new_file: false,
-            parent: Option::None,
         }
     }
 
     pub fn from_old(
         var_count: u16,
         fn_no: u16,
-        mut args: Vec<Variable>,
-        parent: Rc<RefCell<StackFrame>>,
+        args: Vec<Variable>,
+        mut parent: StackFrame,
     ) -> StackFrame {
-        if let Option::Some(val) = var_count.checked_sub(args.len() as u16) {
-            args.reserve(val as usize);
+        parent.variables.extend(args);
+        if let Option::Some(val) = var_count.checked_sub(parent.variables.len() as u16) {
+            parent.variables.reserve(val as usize);
         }
         StackFrame {
-            exception_handlers: HashSet::new(),
-            variables: args,
+            exception_handlers: parent.exception_handlers,
+            variables: parent.variables,
             function_number: fn_no,
             location: 0,
             native: false,
             new_file: false,
-            parent: Option::Some(parent),
         }
     }
 
     pub fn from_old_new_file(
         var_count: u16,
         fn_no: u16,
-        mut args: Vec<Variable>,
-        parent: Rc<RefCell<StackFrame>>,
+        args: Vec<Variable>,
+        mut parent: StackFrame,
     ) -> StackFrame {
-        if let Option::Some(val) = var_count.checked_sub(args.len() as u16) {
-            args.reserve(val as usize);
+        parent.variables.extend(args);
+        if let Option::Some(val) = var_count.checked_sub(parent.variables.len() as u16) {
+            parent.variables.reserve(val as usize);
         }
         StackFrame {
-            exception_handlers: HashSet::new(),
-            variables: args,
+            exception_handlers: parent.exception_handlers,
+            variables: parent.variables,
             function_number: fn_no,
             location: 0,
             native: false,
             new_file: true,
-            parent: Option::Some(parent),
         }
     }
 

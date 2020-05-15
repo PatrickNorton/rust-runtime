@@ -34,7 +34,13 @@ impl Lambda {
     }
 
     fn call_now(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        runtime.call_now_with_frame(0, self.fn_no as u16, args, self.file_no, self.frame.clone())
+        runtime.call_now_with_frame(
+            0,
+            self.fn_no as u16,
+            args,
+            self.file_no,
+            self.frame.borrow().clone(),
+        )
     }
 
     fn create(_args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
@@ -67,7 +73,13 @@ impl CustomVar for Lambda {
     }
 
     fn call_or_goto(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        runtime.push_stack_with_frame(0, self.fn_no as u16, args, self.file_no, self.frame.clone());
+        runtime.push_stack_with_frame(
+            0,
+            self.fn_no as u16,
+            args,
+            self.file_no,
+            self.frame.borrow().clone(),
+        );
         FnResult::Ok(())
     }
 }
