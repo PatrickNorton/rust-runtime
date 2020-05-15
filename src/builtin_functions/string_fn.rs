@@ -1,4 +1,4 @@
-use crate::custom_types::exceptions::{index_error, stop_iteration};
+use crate::custom_types::exceptions::{arithmetic_error, index_error, stop_iteration};
 use crate::custom_var::CustomVar;
 use crate::int_var::IntVar;
 use crate::looping::{IterResult, NativeIterator};
@@ -55,15 +55,28 @@ fn add(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult
 }
 
 fn multiply(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    if this.is_empty() {
+        return runtime.return_1(this.clone().into());
+    }
     let mut result: String = this.parse().unwrap();
     for arg in args {
-        result = result.repeat(
-            IntVar::from(arg)
-                .to_usize()
-                .expect("Too many string repetitions"),
-        );
+        let big_val = IntVar::from(arg);
+        match big_val.to_usize() {
+            Option::Some(val) => result = result.repeat(val),
+            Option::None => return runtime.throw_quick(arithmetic_error(), mul_exc(big_val)),
+        }
     }
     runtime.return_1(Variable::String(result.into()))
+}
+
+fn mul_exc(big_val: IntVar) -> StringVar {
+    format!(
+        "Too many string repetitions: max number of shifts \
+            for a non-empty string is {}, attempted to shift by {}",
+        usize::MAX,
+        big_val,
+    )
+    .into()
 }
 
 fn bool(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
