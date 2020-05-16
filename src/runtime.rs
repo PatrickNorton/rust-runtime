@@ -5,7 +5,7 @@ use crate::function::NativeFunction;
 use crate::method::NativeMethod;
 use crate::name::Name;
 use crate::operator::Operator;
-use crate::stack_frame::StackFrame;
+use crate::stack_frame::{SFInfo, StackFrame};
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
@@ -19,7 +19,6 @@ use std::vec::Vec;
 pub struct Runtime {
     variables: Vec<Variable>,
     frames: Vec<StackFrame>,
-    file_stack: Vec<usize>,
     exception_frames: HashMap<Variable, Vec<(u32, usize)>>,
     exception_stack: Vec<Variable>,
     completed_statics: HashSet<(usize, u16, u32)>,
@@ -33,15 +32,14 @@ pub struct Runtime {
 #[derive(Debug)]
 enum InnerException {
     Std(Variable),
-    UnConstructed(Type, StringVar),
+    UnConstructed(Type, StringVar, Vec<SFInfo>),
 }
 
 impl Runtime {
     pub fn new(files: Vec<FileInfo>, starting_no: usize) -> Runtime {
         Runtime {
             variables: vec![],
-            frames: vec![StackFrame::new(0, 0, vec![])],
-            file_stack: vec![starting_no],
+            frames: vec![StackFrame::new(0, 0, starting_no, vec![])],
             exception_frames: HashMap::new(),
             exception_stack: vec![],
             completed_statics: HashSet::new(),
@@ -69,10 +67,7 @@ impl Runtime {
     }
 
     pub fn load_const(&self, index: u16) -> &Variable {
-        let file_no = *self
-            .file_stack
-            .last()
-            .expect("File stack should never be empty");
+        let file_no = self.current_file_no();
         &self.files[file_no].get_constants()[index as usize]
     }
 
@@ -97,12 +92,15 @@ impl Runtime {
     }
 
     pub fn call_quick(&mut self, fn_no: u16) {
-        self.frames.push(StackFrame::new(0, fn_no, Vec::new()));
+        let file_no = self.current_file_no();
+        self.frames
+            .push(StackFrame::new(0, fn_no, file_no, Vec::new()));
     }
 
     pub fn tail_quick(&mut self, fn_no: u16) {
+        let file_no = self.current_file_no();
         let frame = self.last_mut_frame();
-        *frame = StackFrame::new(0, fn_no, Vec::new());
+        *frame = StackFrame::new(0, fn_no, file_no, Vec::new());
     }
 
     pub fn call_tos_or_goto(&mut self, argc: u16) -> FnResult {
@@ -202,10 +200,7 @@ impl Runtime {
     }
 
     fn current_file_no(&self) -> usize {
-        *self
-            .file_stack
-            .last()
-            .expect("Attempted execution with no files in file stack")
+        self.last_frame().file_no()
     }
 
     fn current_file(&self) -> &FileInfo {
@@ -213,13 +208,8 @@ impl Runtime {
     }
 
     pub fn push_stack(&mut self, var_count: u16, fn_no: u16, args: Vec<Variable>, info_no: usize) {
-        if info_no == self.current_file_no() {
-            self.frames.push(StackFrame::new(var_count, fn_no, args));
-        } else {
-            self.frames
-                .push(StackFrame::new_file(var_count, fn_no, args));
-            self.file_stack.push(info_no);
-        }
+        self.frames
+            .push(StackFrame::new(var_count, fn_no, info_no, args));
     }
 
     pub fn push_stack_with_frame(
@@ -230,14 +220,7 @@ impl Runtime {
         info_no: usize,
         frame: StackFrame,
     ) {
-        if info_no == self.current_file_no() {
-            self.frames
-                .push(StackFrame::from_old(var_count, fn_no, args, frame));
-        } else {
-            self.frames
-                .push(StackFrame::from_old_new_file(var_count, fn_no, args, frame));
-            self.file_stack.push(info_no);
-        }
+        StackFrame::from_old(var_count, fn_no, info_no, args, frame);
     }
 
     pub fn push_native(&mut self) {
@@ -263,9 +246,6 @@ impl Runtime {
             assert_eq!(last_frame.last().unwrap().1, self.frames.len() - 1);
             last_frame.pop();
             self.exception_stack.pop();
-        }
-        if self.last_frame().is_new_file() {
-            self.file_stack.pop();
         }
         self.frames.pop();
     }
@@ -305,6 +285,7 @@ impl Runtime {
 
     pub fn throw_quick(&mut self, exc_type: Type, message: StringVar) -> FnResult {
         let frame = self.exception_frames.get(&Variable::Type(exc_type.clone()));
+        let frames = self.collect_stack_frames();
         match frame {
             Option::Some(vec) => match vec.last() {
                 Option::Some(pair) => {
@@ -312,12 +293,12 @@ impl Runtime {
                     self.unwind_to_height(
                         pair2.0,
                         pair2.1,
-                        InnerException::UnConstructed(exc_type, message),
+                        InnerException::UnConstructed(exc_type, message, frames),
                     )
                 }
-                Option::None => panic!("{}", message),
+                Option::None => panic!("{}\n{}", message, self.frame_strings(&*frames)),
             },
-            Option::None => panic!("{}", message),
+            Option::None => panic!("{}\n{}", message, self.frame_strings(&*frames)),
         }
     }
 
@@ -443,6 +424,29 @@ impl Runtime {
         self.variables.push(value);
     }
 
+    pub fn collect_stack_frames(&self) -> Vec<SFInfo> {
+        self.frames.iter().map(StackFrame::exc_info).collect()
+    }
+
+    fn frame_strings(&self, frames: &[SFInfo]) -> String {
+        frames
+            .iter()
+            .enumerate()
+            .map(|f| self.frame_str(f.0, f.1))
+            .collect()
+    }
+
+    fn frame_str(&self, no: usize, frame: &SFInfo) -> String {
+        if frame.is_native() {
+            format!("{}: [unknown native function]\n", no)
+        } else {
+            let file = &self.files[frame.file_no()];
+            let file_name = file.get_name();
+            let fn_name = file.get_functions()[frame.fn_no() as usize].get_name();
+            format!("{}: {} {}\n", no, file_name, fn_name)
+        }
+    }
+
     fn unwind_to_height(
         &mut self,
         location: u32,
@@ -454,9 +458,9 @@ impl Runtime {
             if last_frame.is_native() {
                 let true_exc = match exception {
                     InnerException::Std(e) => e,
-                    InnerException::UnConstructed(t, s) => {
+                    InnerException::UnConstructed(t, s, _) => {
                         t.create_inst(vec![Variable::String(s)], self)?
-                    }
+                    } // FIXME: Won't collect stack frames properly
                 };
                 self.push(true_exc);
                 return FnResult::Err(());

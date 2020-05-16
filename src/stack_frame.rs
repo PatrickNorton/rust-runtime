@@ -9,13 +9,20 @@ pub struct StackFrame {
     exception_handlers: HashSet<Variable>,
     variables: Vec<Variable>,
     function_number: u16,
+    file_number: usize,
     location: u32,
     native: bool,
-    new_file: bool,
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub struct SFInfo {
+    function_number: u16,
+    file_number: usize,
+    native: bool,
 }
 
 impl StackFrame {
-    pub fn new(var_count: u16, fn_no: u16, mut args: Vec<Variable>) -> StackFrame {
+    pub fn new(var_count: u16, fn_no: u16, file_no: usize, mut args: Vec<Variable>) -> StackFrame {
         if let Option::Some(val) = var_count.checked_sub(args.len() as u16) {
             args.reserve(val as usize);
         }
@@ -23,23 +30,9 @@ impl StackFrame {
             exception_handlers: HashSet::new(),
             variables: args,
             function_number: fn_no,
+            file_number: file_no,
             location: 0,
             native: false,
-            new_file: false,
-        }
-    }
-
-    pub fn new_file(var_count: u16, fn_no: u16, mut args: Vec<Variable>) -> StackFrame {
-        if let Option::Some(val) = var_count.checked_sub(args.len() as u16) {
-            args.reserve(val as usize);
-        }
-        StackFrame {
-            exception_handlers: HashSet::new(),
-            variables: args,
-            function_number: fn_no,
-            location: 0,
-            native: false,
-            new_file: true,
         }
     }
 
@@ -48,15 +41,16 @@ impl StackFrame {
             exception_handlers: HashSet::new(),
             variables: vec![],
             function_number: 0,
+            file_number: 0,
             location: 0,
             native: true,
-            new_file: false,
         }
     }
 
     pub fn from_old(
         var_count: u16,
         fn_no: u16,
+        file_no: usize,
         args: Vec<Variable>,
         mut parent: StackFrame,
     ) -> StackFrame {
@@ -68,29 +62,9 @@ impl StackFrame {
             exception_handlers: parent.exception_handlers,
             variables: parent.variables,
             function_number: fn_no,
+            file_number: file_no,
             location: 0,
             native: false,
-            new_file: false,
-        }
-    }
-
-    pub fn from_old_new_file(
-        var_count: u16,
-        fn_no: u16,
-        args: Vec<Variable>,
-        mut parent: StackFrame,
-    ) -> StackFrame {
-        parent.variables.extend(args);
-        if let Option::Some(val) = var_count.checked_sub(parent.variables.len() as u16) {
-            parent.variables.reserve(val as usize);
-        }
-        StackFrame {
-            exception_handlers: parent.exception_handlers,
-            variables: parent.variables,
-            function_number: fn_no,
-            location: 0,
-            native: false,
-            new_file: true,
         }
     }
 
@@ -130,8 +104,12 @@ impl StackFrame {
         self.native
     }
 
-    pub fn is_new_file(&self) -> bool {
-        self.new_file
+    pub fn file_no(&self) -> usize {
+        self.file_number
+    }
+
+    pub fn exc_info(&self) -> SFInfo {
+        SFInfo::new(self.function_number, self.file_number, self.native)
     }
 }
 
@@ -149,5 +127,27 @@ impl IndexMut<usize> for StackFrame {
             self.variables.push(Variable::Null())
         }
         &mut self.variables[index]
+    }
+}
+
+impl SFInfo {
+    pub fn new(function_number: u16, file_number: usize, native: bool) -> SFInfo {
+        SFInfo {
+            function_number,
+            file_number,
+            native,
+        }
+    }
+
+    pub fn fn_no(&self) -> u16 {
+        self.function_number
+    }
+
+    pub fn file_no(&self) -> usize {
+        self.file_number
+    }
+
+    pub fn is_native(&self) -> bool {
+        self.native
     }
 }
