@@ -256,11 +256,12 @@ impl Runtime {
             .expect("Frame stack should never be empty")
             .get_exceptions()
         {
-            assert_eq!(
-                self.exception_frames[v].last().unwrap().1,
-                self.frames.len() - 1
+            let last_frame = self.exception_frames.get_mut(v).expect(
+                "In pop_stack(): popped frame has exception \
+                    not covered in runtime's exception frames",
             );
-            self.exception_frames.get_mut(v).unwrap().pop();
+            assert_eq!(last_frame.last().unwrap().1, self.frames.len() - 1);
+            last_frame.pop();
             self.exception_stack.pop();
         }
         if self.last_frame().is_new_file() {
