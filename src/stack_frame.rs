@@ -118,8 +118,8 @@ impl StackFrame {
         self.exception_handlers.insert(var);
     }
 
-    pub fn remove_exception_handler(&mut self, var: Variable) {
-        self.exception_handlers.remove(&var);
+    pub fn remove_exception_handler(&mut self, var: &Variable) {
+        self.exception_handlers.remove(var);
     }
 
     pub fn get_exceptions(&self) -> &HashSet<Variable> {

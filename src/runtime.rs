@@ -57,27 +57,43 @@ impl Runtime {
     }
 
     pub fn pop(&mut self) -> Variable {
-        self.variables.pop().unwrap()
+        self.variables.pop().expect("pop() called on empty stack")
     }
 
     pub fn pop_bool(&mut self) -> Result<bool, ()> {
-        self.variables.pop().unwrap().to_bool(self)
+        self.pop().to_bool(self)
     }
 
     pub fn top(&mut self) -> &Variable {
-        self.variables.last().unwrap()
+        self.variables.last().expect("top() called on empty stack")
     }
 
     pub fn load_const(&self, index: u16) -> &Variable {
-        &self.files[*self.file_stack.last().unwrap()].get_constants()[index as usize]
+        let file_no = *self
+            .file_stack
+            .last()
+            .expect("File stack should never be empty");
+        &self.files[file_no].get_constants()[index as usize]
+    }
+
+    fn last_frame(&self) -> &StackFrame {
+        self.frames
+            .last()
+            .expect("Frame stack should never be empty")
+    }
+
+    fn last_mut_frame(&mut self) -> &mut StackFrame {
+        self.frames
+            .last_mut()
+            .expect("Frame stack should never be empty")
     }
 
     pub fn load_value(&self, index: u16) -> &Variable {
-        &self.frames.last().unwrap()[index as usize]
+        &self.last_frame()[index as usize]
     }
 
     pub fn store_variable(&mut self, index: u16, value: Variable) {
-        self.frames.last_mut().unwrap()[index as usize] = value;
+        self.last_mut_frame()[index as usize] = value;
     }
 
     pub fn call_quick(&mut self, fn_no: u16) {
@@ -85,7 +101,7 @@ impl Runtime {
     }
 
     pub fn tail_quick(&mut self, fn_no: u16) {
-        let frame = self.frames.last_mut().unwrap();
+        let frame = self.last_mut_frame();
         *frame = StackFrame::new(0, fn_no, Vec::new());
     }
 
@@ -133,20 +149,19 @@ impl Runtime {
     }
 
     pub fn goto(&mut self, pos: u32) {
-        self.frames.last_mut().unwrap().jump(pos)
+        self.last_mut_frame().jump(pos)
     }
 
     pub fn current_fn(&self) -> &[u8] {
-        self.current_file().get_functions()[self.frames.last().unwrap().get_fn_number() as usize]
-            .get_bytes()
+        self.current_file().get_functions()[self.last_frame().get_fn_number() as usize].get_bytes()
     }
 
     pub fn current_pos(&self) -> usize {
-        self.frames.last().unwrap().current_pos() as usize
+        self.last_frame().current_pos() as usize
     }
 
     pub fn advance(&mut self, pos: u32) {
-        self.frames.last_mut().unwrap().advance(pos);
+        self.last_mut_frame().advance(pos);
     }
 
     pub fn load_args(&mut self, argc: u16) -> Vec<Variable> {
@@ -186,12 +201,19 @@ impl Runtime {
         result
     }
 
+    fn current_file_no(&self) -> usize {
+        *self
+            .file_stack
+            .last()
+            .expect("Attempted execution with no files in file stack")
+    }
+
     fn current_file(&self) -> &FileInfo {
-        &self.files[*self.file_stack.last().unwrap()]
+        &self.files[self.current_file_no()]
     }
 
     pub fn push_stack(&mut self, var_count: u16, fn_no: u16, args: Vec<Variable>, info_no: usize) {
-        if info_no == *self.file_stack.last().unwrap() {
+        if info_no == self.current_file_no() {
             self.frames.push(StackFrame::new(var_count, fn_no, args));
         } else {
             self.frames
@@ -208,7 +230,7 @@ impl Runtime {
         info_no: usize,
         frame: StackFrame,
     ) {
-        if info_no == *self.file_stack.last().unwrap() {
+        if info_no == self.current_file_no() {
             self.frames
                 .push(StackFrame::from_old(var_count, fn_no, args, frame));
         } else {
@@ -228,7 +250,12 @@ impl Runtime {
     }
 
     pub fn pop_stack(&mut self) {
-        for v in self.frames.last().unwrap().get_exceptions() {
+        for v in self // Can't use last_frame() b/c of the borrow checker
+            .frames
+            .last()
+            .expect("Frame stack should never be empty")
+            .get_exceptions()
+        {
             assert_eq!(
                 self.exception_frames[v].last().unwrap().1,
                 self.frames.len() - 1
@@ -236,14 +263,14 @@ impl Runtime {
             self.exception_frames.get_mut(v).unwrap().pop();
             self.exception_stack.pop();
         }
-        if self.frames.last().unwrap().is_new_file() {
+        if self.last_frame().is_new_file() {
             self.file_stack.pop();
         }
         self.frames.pop();
     }
 
     pub fn is_native(&self) -> bool {
-        self.frames.last().unwrap().is_native()
+        self.last_frame().is_native()
     }
 
     pub fn is_bottom_stack(&self) -> bool {
@@ -267,9 +294,11 @@ impl Runtime {
                     let pair2 = pair.clone();
                     self.unwind_to_height(pair2.0, pair2.1, InnerException::Std(exception))
                 }
-                Option::None => panic!("{}", exception.str(self).unwrap()),
+                // Propagate errors thrown during construction
+                Option::None => exception.str(self).map(|x| panic!("{}", x)),
             },
-            Option::None => panic!("{}", exception.str(self).unwrap()),
+            // Propagate errors thrown during construction
+            Option::None => exception.str(self).map(|x| panic!("{}", x)),
         }
     }
 
@@ -292,10 +321,10 @@ impl Runtime {
     }
 
     pub fn do_static(&mut self) -> bool {
-        let last_frame = self.frames.last().unwrap();
+        let last_frame = self.last_frame();
         assert!(!last_frame.is_native());
         let triplet = (
-            *self.file_stack.last().unwrap(),
+            self.current_file_no(),
             last_frame.get_fn_number(),
             last_frame.current_pos(),
         );
@@ -320,34 +349,36 @@ impl Runtime {
                     .insert(exception_type.clone(), vec![(jump_loc, self.frames.len())]);
             }
         }
-        self.frames
-            .last_mut()
-            .unwrap()
+        self.last_mut_frame()
             .add_exception_handler(exception_type.clone());
         self.exception_stack.push(exception_type);
     }
 
-    pub fn remove_exception_handler(&mut self, exception_type: Variable) {
-        match self.exception_frames.get_mut(&exception_type) {
+    pub fn remove_exception_handler(&mut self, exception_type: &Variable) {
+        match self.exception_frames.get_mut(exception_type) {
             Option::Some(fr) => fr.pop(),
-            Option::None => panic!("{:?} not found", exception_type),
+            Option::None => panic!(
+                "Attempted to remove exception handler for {:?}: not found",
+                exception_type
+            ),
         };
-        self.frames
-            .last_mut()
-            .unwrap()
+        self.last_mut_frame()
             .remove_exception_handler(exception_type);
     }
 
     pub fn pop_handler(&mut self) {
-        self.remove_exception_handler(self.exception_stack.last().unwrap().clone());
-        self.exception_stack.pop();
+        let val = self
+            .exception_stack
+            .pop()
+            .expect("Called pop_handler with empty exception stack");
+        self.remove_exception_handler(&val);
     }
 
     pub fn load_fn(&self, fn_no: u16) -> Variable {
         Rc::new(Lambda::new(
-            *self.file_stack.last().unwrap(),
+            self.current_file_no(),
             fn_no as u32,
-            Rc::new(RefCell::new(self.frames.last().unwrap().clone())),
+            Rc::new(RefCell::new(self.last_frame().clone())),
         ))
         .into()
     }
@@ -391,7 +422,14 @@ impl Runtime {
     }
 
     pub fn set_static_attr(&mut self, cls: &Type, name: Name, var: Variable) {
-        self.type_vars.get_mut(cls).unwrap().insert(name, var);
+        match self.type_vars.get_mut(cls) {
+            Option::Some(val) => {
+                val.insert(name, var);
+            }
+            Option::None => {
+                self.type_vars.insert(*cls, hash_map!(name => var));
+            }
+        };
     }
 
     pub fn swap_2(&mut self) {
@@ -411,12 +449,12 @@ impl Runtime {
         exception: InnerException,
     ) -> FnResult {
         while self.frames.len() > frame_height {
-            let last_frame = self.frames.last().unwrap();
+            let last_frame = self.last_frame();
             if last_frame.is_native() {
                 let true_exc = match exception {
                     InnerException::Std(e) => e,
                     InnerException::UnConstructed(t, s) => {
-                        t.create_inst(vec![Variable::String(s)], self).unwrap()
+                        t.create_inst(vec![Variable::String(s)], self)?
                     }
                 };
                 self.push(true_exc);
