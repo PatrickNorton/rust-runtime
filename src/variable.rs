@@ -268,9 +268,9 @@ impl Variable {
 
     pub fn call_op(self, name: Operator, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         match self {
-            Variable::Null() => runtime.call_native_method(null_fn::op_fn(name), &(), args),
+            Variable::Null() => runtime.call_copy_method(null_fn::op_fn(name), (), args),
             Variable::Bool(b) => match bool_fn::op_fn(name) {
-                Option::Some(val) => runtime.call_native_method(val, &b, args),
+                Option::Some(val) => runtime.call_copy_method(val, b, args),
                 Option::None => {
                     runtime.call_native_method(int_fn::op_fn(name), &IntVar::from_bool(b), args)
                 }
@@ -278,7 +278,7 @@ impl Variable {
             Variable::Bigint(b) => runtime.call_native_method(int_fn::op_fn(name), &b, args),
             Variable::String(s) => runtime.call_native_method(string_fn::op_fn(name), &s, args),
             Variable::Decimal(d) => runtime.call_native_method(dec_fn::op_fn(name), &d, args),
-            Variable::Char(c) => runtime.call_native_method(char_fn::op_fn(name), &c, args),
+            Variable::Char(c) => runtime.call_copy_method(char_fn::op_fn(name), c, args),
             Variable::Type(_) => self
                 .index(Name::Operator(name), runtime)?
                 .call((args, runtime)),

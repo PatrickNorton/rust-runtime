@@ -7,11 +7,57 @@ use std::hash::{Hash, Hasher};
 use std::vec::Vec;
 
 pub type NativeMethod<T> = fn(&T, Vec<Variable>, &mut Runtime) -> FnResult;
+pub type NativeCopyMethod<T> = fn(T, Vec<Variable>, &mut Runtime) -> FnResult;
 
-#[derive(Copy, Clone)]
 pub enum InnerMethod<T> {
     Standard(usize, u32),
     Native(NativeMethod<T>),
+    Move(NativeCopyMethod<T>),
+}
+
+impl<T> Clone for InnerMethod<T> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<T> Copy for InnerMethod<T> {}
+
+impl<T> InnerMethod<T>
+where
+    T: Clone + Into<Variable>,
+{
+    pub fn call(self, callee: &T, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        match self {
+            InnerMethod::Standard(file, index) => {
+                let var: Variable = (*callee).clone().into();
+                args.insert(0, Variable::Type(var.get_type()));
+                args.insert(0, var);
+                runtime.call_now(0, index as u16, args, file)
+            }
+            InnerMethod::Native(func) => runtime.call_native_method(func, callee, args),
+            InnerMethod::Move(func) => runtime.call_copy_method(func, callee.clone(), args),
+        }
+    }
+
+    pub fn call_or_goto(
+        self,
+        callee: &T,
+        mut args: Vec<Variable>,
+        runtime: &mut Runtime,
+    ) -> FnResult {
+        match self {
+            InnerMethod::Standard(file, index) => {
+                let var: Variable = (*callee).clone().into();
+                args.insert(0, Variable::Type(var.get_type()));
+                args.insert(0, var);
+                runtime.push_stack(0, index as u16, args, file);
+                FnResult::Ok(())
+            }
+            InnerMethod::Native(func) => runtime.call_native_method(func, callee, args),
+            InnerMethod::Move(func) => runtime.call_copy_method(func, callee.clone(), args),
+        }
+    }
 }
 
 pub trait MethodClone {
@@ -80,37 +126,28 @@ where
             method: InnerMethod::Native(method),
         })
     }
+
+    pub fn new_move(
+        value: T,
+        method: fn(T, Vec<Variable>, &mut Runtime) -> FnResult,
+    ) -> Box<StdMethod<T>> {
+        Box::new(StdMethod {
+            value,
+            method: InnerMethod::Move(method),
+        })
+    }
 }
 
 impl<T: 'static + Debug> Method for StdMethod<T>
 where
     T: Clone + Into<Variable>,
 {
-    fn call(&self, mut args: (Vec<Variable>, &mut Runtime)) -> FnResult {
-        match &self.method {
-            InnerMethod::Standard(file, index) => {
-                let runtime = args.1;
-                let var: Variable = self.value.clone().into();
-                args.0.insert(0, Variable::Type(var.get_type()));
-                args.0.insert(0, var);
-                runtime.push_stack(0, *index as u16, args.0, *file);
-                FnResult::Ok(())
-            }
-            InnerMethod::Native(func) => args.1.call_native_method(*func, &self.value, args.0),
-        }
+    fn call(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
+        self.method.call(&self.value, args.0, args.1)
     }
 
-    fn call_or_goto(&self, mut args: (Vec<Variable>, &mut Runtime)) -> FnResult {
-        match &self.method {
-            InnerMethod::Standard(file, index) => {
-                let runtime = args.1;
-                let var: Variable = self.value.clone().into();
-                args.0.insert(0, Variable::Type(var.get_type()));
-                args.0.insert(0, var);
-                runtime.call_now(0, *index as u16, args.0, *file)
-            }
-            InnerMethod::Native(func) => args.1.call_native_method(*func, &self.value, args.0),
-        }
+    fn call_or_goto(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
+        self.method.call_or_goto(&self.value, args.0, args.1)
     }
 }
 
@@ -120,6 +157,10 @@ impl<T> Debug for InnerMethod<T> {
             InnerMethod::Standard(i, j) => f.debug_tuple("Standard").field(i).field(j).finish(),
             InnerMethod::Native(fn_) => f
                 .debug_tuple("Native")
+                .field(&format!("fn@{}", *fn_ as usize))
+                .finish(),
+            InnerMethod::Move(fn_) => f
+                .debug_tuple("Move")
                 .field(&format!("fn@{}", *fn_ as usize))
                 .finish(),
         }

@@ -1,4 +1,3 @@
-use crate::variable::Variable;
 use num::{BigInt, BigRational, Zero};
 use std::iter::{Product, Sum};
 use std::ops::{

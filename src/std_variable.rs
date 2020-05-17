@@ -57,20 +57,11 @@ impl StdVariable {
     pub fn call_operator(
         &self,
         op: Operator,
-        mut args: Vec<Variable>,
+        args: Vec<Variable>,
         runtime: &mut Runtime,
     ) -> FnResult {
         let inner_method = self.value.borrow().cls.get_method(Name::Operator(op));
-        match inner_method {
-            StdVarMethod::Standard(file_no, fn_no) => {
-                let var: Variable = Variable::Standard(self.clone());
-                args.reserve(2);
-                args.insert(0, Variable::Type(var.get_type()));
-                args.insert(0, var);
-                runtime.call_now(0, fn_no as u16, args, file_no)
-            }
-            StdVarMethod::Native(func) => runtime.call_native_method(func, self, args),
-        }
+        inner_method.call(self, args, runtime)
     }
 
     pub fn call(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
@@ -80,21 +71,11 @@ impl StdVariable {
     pub fn call_op_or_goto(
         &self,
         op: Operator,
-        mut args: Vec<Variable>,
+        args: Vec<Variable>,
         runtime: &mut Runtime,
     ) -> FnResult {
         let inner_method = self.value.borrow().cls.get_method(Name::Operator(op));
-        match inner_method {
-            StdVarMethod::Standard(file_no, fn_no) => {
-                let var: Variable = Variable::Standard(self.clone());
-                args.reserve(2);
-                args.insert(0, Variable::Type(var.get_type()));
-                args.insert(0, var);
-                runtime.push_stack(0, fn_no as u16, args, file_no);
-                FnResult::Ok(())
-            }
-            StdVarMethod::Native(func) => runtime.call_native_method(func, self, args),
-        }
+        inner_method.call_or_goto(self, args, runtime)
     }
 
     pub fn call_or_goto(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
