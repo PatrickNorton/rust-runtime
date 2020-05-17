@@ -9,7 +9,6 @@ use crate::stack_frame::{SFInfo, StackFrame};
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
-use std::cell::RefCell;
 use std::cmp::max;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::rc::Rc;
@@ -377,7 +376,7 @@ impl Runtime {
         Rc::new(Lambda::new(
             self.current_file_no(),
             fn_no as u32,
-            Rc::new(RefCell::new(self.last_frame().clone())),
+            self.last_frame().clone(),
         ))
         .into()
     }

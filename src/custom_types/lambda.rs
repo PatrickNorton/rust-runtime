@@ -6,18 +6,17 @@ use crate::runtime::Runtime;
 use crate::stack_frame::StackFrame;
 use crate::std_type::Type;
 use crate::variable::{FnResult, Variable};
-use std::cell::RefCell;
 use std::rc::Rc;
 
 #[derive(Debug)]
 pub struct Lambda {
     file_no: usize,
     fn_no: u32,
-    frame: Rc<RefCell<StackFrame>>,
+    frame: StackFrame,
 }
 
 impl Lambda {
-    pub fn new(file_no: usize, fn_no: u32, frame: Rc<RefCell<StackFrame>>) -> Lambda {
+    pub fn new(file_no: usize, fn_no: u32, frame: StackFrame) -> Lambda {
         Lambda {
             file_no,
             fn_no,
@@ -34,13 +33,7 @@ impl Lambda {
     }
 
     fn call_now(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        runtime.call_now_with_frame(
-            0,
-            self.fn_no as u16,
-            args,
-            self.file_no,
-            self.frame.borrow().clone(),
-        )
+        runtime.call_now_with_frame(0, self.fn_no as u16, args, self.file_no, self.frame.clone())
     }
 
     fn create(_args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
@@ -73,13 +66,7 @@ impl CustomVar for Lambda {
     }
 
     fn call_or_goto(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        runtime.push_stack_with_frame(
-            0,
-            self.fn_no as u16,
-            args,
-            self.file_no,
-            self.frame.borrow().clone(),
-        );
+        runtime.push_stack_with_frame(0, self.fn_no as u16, args, self.file_no, self.frame.clone());
         FnResult::Ok(())
     }
 }
