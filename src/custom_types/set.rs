@@ -352,16 +352,11 @@ impl SetIter {
             bucket_no: Cell::new(0),
             index: RefCell::new(Variable::Null()),
         };
-        if let Option::None = val.parent.value.borrow().values[0].as_ref() {
-            val.point_to_next();
-        } else {
-            val.index.replace(
-                val.parent.value.borrow().values[0]
-                    .as_ref()
-                    .unwrap()
-                    .get_val()
-                    .clone(),
-            );
+        match val.parent.value.borrow().values[0].as_ref() {
+            Option::Some(entry) => {
+                val.index.replace(entry.get_val().clone());
+            }
+            Option::None => val.point_to_next(),
         }
         val
     }

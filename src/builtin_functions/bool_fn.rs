@@ -58,7 +58,7 @@ fn greater_than(this: bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnRes
 
 fn less_equal(this: bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
-        if this > bool::from(arg) {
+        if this & !bool::from(arg) {
             return runtime.return_1(Variable::Bool(false));
         }
     }
@@ -67,7 +67,7 @@ fn less_equal(this: bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResul
 
 fn greater_equal(this: bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
-        if this < bool::from(arg) {
+        if !this & bool::from(arg) {
             return runtime.return_1(Variable::Bool(false));
         }
     }
@@ -75,7 +75,7 @@ fn greater_equal(this: bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnRe
 }
 
 fn bitwise_and(this: bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    let mut sum = this.clone();
+    let mut sum = this;
     for arg in args {
         sum &= bool::from(arg)
     }
@@ -83,7 +83,7 @@ fn bitwise_and(this: bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
 }
 
 fn bitwise_or(this: bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    let mut sum = this.clone();
+    let mut sum = this;
     for arg in args {
         sum |= bool::from(arg)
     }
@@ -96,7 +96,7 @@ fn bitwise_not(this: bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
 }
 
 fn bitwise_xor(this: bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    let mut sum = this.clone();
+    let mut sum = this;
     for arg in args {
         sum ^= bool::from(arg)
     }

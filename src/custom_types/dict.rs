@@ -128,9 +128,7 @@ impl Dict {
                 let old = replace(&mut entry.value, val);
                 runtime.return_1(old)
             }
-            Option::None => {
-                runtime.throw_quick(key_error(), format!("Value not contained in dict").into())
-            }
+            Option::None => runtime.throw_quick(key_error(), "Value not contained in dict".into()),
         }
     }
 

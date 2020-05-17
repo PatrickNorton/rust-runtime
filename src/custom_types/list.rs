@@ -37,10 +37,7 @@ impl List {
             Operator::In => List::contains,
             _ => unimplemented!(),
         };
-        Variable::Method(Box::new(StdMethod::new(
-            self.clone(),
-            InnerMethod::Native(value),
-        )))
+        Variable::Method(Box::new(StdMethod::new(self, InnerMethod::Native(value))))
     }
 
     fn get_attribute(self: Rc<Self>, name: StringVar) -> Variable {
@@ -53,7 +50,7 @@ impl List {
             "clear" => Self::clear,
             _ => unimplemented!(),
         };
-        Variable::Method(StdMethod::new_native(self.clone(), value))
+        Variable::Method(StdMethod::new_native(self, value))
     }
 
     fn list_bool(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -162,11 +159,7 @@ impl List {
         runtime.return_1(true.into())
     }
 
-    fn vec_eq(
-        first: &Vec<Variable>,
-        second: &Vec<Variable>,
-        runtime: &mut Runtime,
-    ) -> Result<bool, ()> {
+    fn vec_eq(first: &[Variable], second: &[Variable], runtime: &mut Runtime) -> Result<bool, ()> {
         let mut is_eq = true;
         for (a, b) in first.iter().zip(second.iter()) {
             if !a.equals(b.clone(), runtime)? {
@@ -234,7 +227,7 @@ impl ListIter {
     fn next_fn(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         match self.inner_next() {
-            Option::Some(value) => runtime.return_1(value.into()),
+            Option::Some(value) => runtime.return_1(value),
             Option::None => runtime.throw_quick(stop_iteration(), "".into()),
         }
     }

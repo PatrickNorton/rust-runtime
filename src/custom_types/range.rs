@@ -72,7 +72,7 @@ impl Range {
         debug_assert!(args.len() == 1);
         let index = IntVar::from(replace(&mut args[0], Variable::Null()));
         let result = self.start.clone() + index * self.step.clone();
-        let error = result == self.stop || (self.step.is_negative() ^ (&result > &self.stop));
+        let error = result == self.stop || (self.step.is_negative() ^ (result > self.stop));
         if error {
             runtime.throw_quick(
                 index_error(),
