@@ -22,7 +22,7 @@ pub fn load_std_str(data: &[u8], index: &mut usize) -> String {
         let mut char = data[*index];
         *index += 1;
         value.push(char);
-        while char >= 0b11000000 {
+        while char >= 0b1100_0000 {
             char = data[*index];
             *index += 1;
             value.push(char);

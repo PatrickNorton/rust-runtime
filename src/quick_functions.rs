@@ -298,9 +298,8 @@ pub fn quick_left_bitshift(this: Variable, other: Variable, runtime: &mut Runtim
 }
 
 fn q_lshift(this: IntVar, other: IntVar, runtime: &mut Runtime) -> QuickResult {
-    let big_var = IntVar::from(other);
-    let other_usize = shift_to_usize(big_var, runtime)?;
-    Result::Ok(Variable::Bigint((this << other_usize).into()))
+    let other_usize = shift_to_usize(other, runtime)?;
+    Result::Ok(Variable::Bigint(this << other_usize))
 }
 
 pub fn quick_right_bitshift(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
@@ -323,9 +322,8 @@ pub fn quick_right_bitshift(this: Variable, other: Variable, runtime: &mut Runti
 }
 
 fn q_rshift(this: IntVar, other: IntVar, runtime: &mut Runtime) -> QuickResult {
-    let big_var = IntVar::from(other);
-    let other_usize = shift_to_usize(big_var, runtime)?;
-    Result::Ok(Variable::Bigint((this >> other_usize).into()))
+    let other_usize = shift_to_usize(other, runtime)?;
+    Result::Ok(Variable::Bigint(this >> other_usize))
 }
 
 fn shift_to_usize(big_var: IntVar, runtime: &mut Runtime) -> Result<usize, ()> {

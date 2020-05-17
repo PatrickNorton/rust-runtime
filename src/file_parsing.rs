@@ -23,7 +23,7 @@ fn load_constant(
     data: &[u8],
     index: &mut usize,
     load_later: &mut Vec<LoadType>,
-    imports: &Vec<Variable>,
+    imports: &[Variable],
 ) -> Variable {
     *index += 1;
     match data[*index - 1] {
@@ -53,7 +53,7 @@ pub fn parse_file(name: String, files: &mut Vec<FileInfo>) -> usize {
     let mut index: usize = 0;
 
     let magic_number = bytes_index::<u32>(&data, &mut index);
-    if magic_number != 0x0ABADE66 {
+    if magic_number != 0x0A_BAD_E66 {
         panic!("File does not start with the magic number")
     }
 
@@ -62,8 +62,8 @@ pub fn parse_file(name: String, files: &mut Vec<FileInfo>) -> usize {
     for _ in 0..import_count {
         let _used_name = load_std_str(&data, &mut index);
         let full_name = load_std_str(&data, &mut index);
-        let names: Vec<&str> = full_name.split(".").collect();
-        let folder_split: Vec<&str> = name.rsplitn(2, "/").collect();
+        let names: Vec<&str> = full_name.split('.').collect();
+        let folder_split: Vec<&str> = name.rsplitn(2, '/').collect();
         let parent_folder = folder_split[1];
         let file_name = parent_folder.to_owned() + "/" + names[0] + FILE_EXTENSION;
         let file_index = files
@@ -72,7 +72,7 @@ pub fn parse_file(name: String, files: &mut Vec<FileInfo>) -> usize {
             .unwrap_or_else(|| parse_file(file_name, files));
         let other_file = &files[file_index];
         // TODO: Get nested dots
-        imports.push(other_file.get_export(&names[1].to_owned()).clone());
+        imports.push(other_file.get_export(&names[1]).clone());
     }
 
     let export_count = bytes_index::<u32>(&data, &mut index);
@@ -119,5 +119,5 @@ pub fn parse_file(name: String, files: &mut Vec<FileInfo>) -> usize {
     }
 
     files[file_no] = FileInfo::new(name, constants, functions, exports);
-    return file_no;
+    file_no
 }

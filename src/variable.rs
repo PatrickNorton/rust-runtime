@@ -5,6 +5,7 @@ use crate::function::Function;
 use crate::int_var::IntVar;
 use crate::looping;
 use crate::method::Method;
+use crate::name::Name;
 use crate::operator::Operator;
 use crate::quick_functions::quick_equals;
 use crate::rational_var::RationalVar;
@@ -25,11 +26,10 @@ use std::rc::Rc;
 use std::str::FromStr;
 use std::string::String;
 use std::vec::Vec;
-use crate::name::Name;
 
 pub type FnResult = Result<(), ()>;
 
-#[derive(Debug, Clone, Hash)]
+#[derive(Debug, Clone)]
 pub enum Variable {
     Null(),
     Bool(bool),
@@ -68,7 +68,7 @@ impl Variable {
             Variable::Decimal(val) => Result::Ok(val.to_integer().into()),
             Variable::Char(val) => Result::Ok((*val as u32).into()),
             Variable::Standard(val) => val.int(runtime),
-            Variable::String(val) => Result::Ok(IntVar::from_str(val)?.into()),
+            Variable::String(val) => Result::Ok(IntVar::from_str(val)?),
             Variable::Custom(val) => (**val).clone().int(runtime),
             _ => unimplemented!(),
         }
@@ -213,7 +213,7 @@ impl Variable {
     }
 
     pub fn equals(&self, other: Variable, runtime: &mut Runtime) -> Result<bool, ()> {
-        return quick_equals(self.clone(), other, runtime)?.to_bool(runtime);
+        quick_equals(self.clone(), other, runtime)?.to_bool(runtime)
     }
 
     pub fn is_type_of(&self, other: &Variable) -> bool {
@@ -320,6 +320,24 @@ impl PartialEq for Variable {
 }
 
 impl Eq for Variable {}
+
+impl Hash for Variable {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            Variable::Null() => 0.hash(state),
+            Variable::Bool(b) => b.hash(state),
+            Variable::Bigint(i) => i.hash(state),
+            Variable::String(s) => s.hash(state),
+            Variable::Decimal(d) => d.hash(state),
+            Variable::Char(c) => c.hash(state),
+            Variable::Type(t) => t.hash(state),
+            Variable::Standard(s) => s.hash(state),
+            Variable::Method(m) => m.hash(state),
+            Variable::Function(f) => f.hash(state),
+            Variable::Custom(c) => c.hash(state),
+        }
+    }
+}
 
 impl Hash for &'static FileInfo {
     fn hash<H: Hasher>(&self, state: &mut H) {

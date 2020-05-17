@@ -1,3 +1,4 @@
+use crate::custom_types::exceptions::io_error;
 use crate::custom_types::file::FileObj;
 use crate::custom_types::list::List;
 use crate::custom_types::range::Range;
@@ -34,7 +35,7 @@ fn input_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         Ok(_) => {
             runtime.push(Variable::String(input.into()));
         }
-        Err(_) => panic!("Could not read from stdin"),
+        Err(_) => runtime.throw_quick(io_error(), "Could not read from stdin".into())?,
     }
     runtime.return_0()
 }

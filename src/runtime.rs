@@ -167,7 +167,7 @@ impl Runtime {
         for _ in 0..argc {
             args.push_front(self.pop());
         }
-        return args.into();
+        args.into()
     }
 
     pub fn call_now(
@@ -259,10 +259,10 @@ impl Runtime {
     }
 
     pub fn get_fn_name(&self, file_no: usize, fn_no: u32) -> StringVar {
-        return self.files[file_no].get_functions()[fn_no as usize]
+        self.files[file_no].get_functions()[fn_no as usize]
             .get_name()
             .clone()
-            .into();
+            .into()
     }
 
     pub fn throw(&mut self, exception: Variable) -> FnResult {
@@ -272,7 +272,7 @@ impl Runtime {
         match frame {
             Option::Some(vec) => match vec.last() {
                 Option::Some(pair) => {
-                    let pair2 = pair.clone();
+                    let pair2 = *pair;
                     self.unwind_to_height(pair2.0, pair2.1, InnerException::Std(exception))
                 }
                 // Propagate errors thrown during construction
@@ -284,12 +284,12 @@ impl Runtime {
     }
 
     pub fn throw_quick(&mut self, exc_type: Type, message: StringVar) -> FnResult {
-        let frame = self.exception_frames.get(&Variable::Type(exc_type.clone()));
+        let frame = self.exception_frames.get(&Variable::Type(exc_type));
         let frames = self.collect_stack_frames();
         match frame {
             Option::Some(vec) => match vec.last() {
                 Option::Some(pair) => {
-                    let pair2 = pair.clone();
+                    let pair2 = *pair;
                     self.unwind_to_height(
                         pair2.0,
                         pair2.1,

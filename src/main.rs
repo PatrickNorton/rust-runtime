@@ -47,7 +47,7 @@ fn main() {
     let index = parse_file(args[1].clone(), &mut files);
     let mut runtime = Runtime::new(files, index);
     let result = execute(&mut runtime);
-    if let Result::Err(_) = result {
+    if result.is_err() {
         panic!("Too many errors!")
     }
 }

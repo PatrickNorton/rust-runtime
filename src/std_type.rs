@@ -102,7 +102,7 @@ impl Type {
             Type::Standard(std_t) => match std_t.index_method(&index) {
                 Option::Some(index_pair) => {
                     let inner_m = InnerMethod::Standard(index_pair.0, index_pair.1);
-                    let n = StdMethod::new(self.clone(), inner_m);
+                    let n = StdMethod::new(*self, inner_m);
                     Variable::Method(Box::new(n))
                 }
                 Option::None => runtime.static_attr(self, index),
@@ -209,7 +209,7 @@ impl StdType {
         let instance = StdVariable::new(self, HashMap::new());
         let method = self.methods.get(&Name::Operator(Operator::New)).unwrap();
         StdMethod::new(instance.clone(), method.clone()).call((args, runtime))?;
-        return Result::Ok(Variable::Standard(instance));
+        Result::Ok(Variable::Standard(instance))
     }
 
     pub(crate) fn get_method(&self, name: Name) -> StdVarMethod {
