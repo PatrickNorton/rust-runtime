@@ -16,17 +16,12 @@ use std::path::PathBuf;
 use std::rc::Rc;
 
 #[derive(Debug)]
-enum FileOption {
-    Open(Option<File>),
-    Closed(PathBuf),
+pub struct FileObj {
+    path: PathBuf,
+    file: RefCell<Option<File>>,
 }
 
-#[derive(Debug)]
-pub struct Open {
-    file: RefCell<FileOption>,
-}
-
-impl Open {
+impl FileObj {
     fn get_operator(self: Rc<Self>, op: Operator) -> Variable {
         let func = match op {
             Operator::Enter => Self::open,
@@ -47,35 +42,36 @@ impl Open {
 
     fn open(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        match &*self.file.borrow() {
-            FileOption::Open(_) => runtime.throw_quick(
-                invalid_state(),
-                "File cannot be opened more than once".into(),
-            )?,
-            FileOption::Closed(val) => match File::open(val) {
+        if self.file.borrow().is_none() {
+            match File::open(&self.path) {
                 Result::Ok(file) => {
-                    self.file.replace(FileOption::Open(Option::Some(file)));
+                    self.file.replace(Option::Some(file));
                 }
                 Result::Err(err) => runtime.throw_quick(io_error(), format!("{}", err).into())?,
-            },
+            }
+        } else {
+            runtime.throw_quick(
+                invalid_state(),
+                "File cannot be opened more than once".into(),
+            )?
         }
         runtime.return_1(self.clone().into())
     }
 
     fn close(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        self.file.replace(FileOption::Open(Option::None));
+        self.file.replace(Option::None);
         runtime.return_0()
     }
 
     fn read_lines(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         let mut result = String::new();
-        if let Result::Err(_) = self.file_do(|f| f.read_to_string(&mut result)) {
-            runtime.throw_quick(io_error(), format!("Could not read from file").into())
+        if self.file_do(|f| f.read_to_string(&mut result)).is_err() {
+            runtime.throw_quick(io_error(), "Could not read from file".into())
         } else {
             let list: Vec<Variable> = result
-                .split("\n")
+                .lines()
                 .map(|a| StringVar::from(a.to_owned()).into())
                 .collect();
             runtime.return_1(List::from_values(list).into())
@@ -85,8 +81,8 @@ impl Open {
     fn read(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         let mut result = String::new();
-        if let Result::Err(_) = self.file_do(|f| f.read_to_string(&mut result)) {
-            runtime.throw_quick(io_error(), format!("Could not read from file").into())
+        if self.file_do(|f| f.read_to_string(&mut result)).is_err() {
+            runtime.throw_quick(io_error(), "Could not read from file".into())
         } else {
             runtime.return_1(result.into())
         }
@@ -96,8 +92,9 @@ impl Open {
         debug_assert!(args.len() == 1);
         let path = StringVar::from(replace(&mut args[0], Variable::Null()));
         runtime.return_1(
-            Rc::new(Open {
-                file: RefCell::new(FileOption::Closed(PathBuf::from(path.as_str()))),
+            Rc::new(FileObj {
+                path: (*path).into(),
+                file: RefCell::new(Option::None),
             })
             .into(),
         )
@@ -105,17 +102,17 @@ impl Open {
 
     fn file_do<T>(&self, func: impl FnOnce(&mut File) -> T) -> T {
         match &mut *self.file.borrow_mut() {
-            FileOption::Open(f) => func(f.as_mut().unwrap()),
-            FileOption::Closed(_) => panic!(),
+            Option::Some(f) => func(f),
+            Option::None => panic!("File is not open"),
         }
     }
 
     pub fn open_type() -> Type {
-        custom_class!(Open, create, "open")
+        custom_class!(FileObj, create, "File")
     }
 }
 
-impl CustomVar for Open {
+impl CustomVar for FileObj {
     fn get_attr(self: Rc<Self>, name: Name) -> Variable {
         match name {
             Name::Attribute(a) => self.get_attribute(a),

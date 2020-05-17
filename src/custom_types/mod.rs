@@ -15,9 +15,9 @@ macro_rules! custom_class {
 
 pub mod dict;
 pub mod exceptions;
+pub mod file;
 pub mod lambda;
 pub mod list;
-pub mod open;
 pub mod range;
 pub mod set;
 pub mod types;
