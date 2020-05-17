@@ -203,6 +203,8 @@ impl StringIter {
                 // We know this is safe b/c:
                 // * The slice comes from a valid str, therefore, no invalid UTF-8 can be entered
                 // * self.index is always on a valid char boundary, as received by char_indices
+                // Why use unchecked: We know it is safe (see above), and using the checked fn
+                // turns this from O(1) to O(n), which is bad in a loop (which this will be)
                 from_utf8_unchecked(&self.val.as_bytes()[self.index.get()..])
             }
             .char_indices();
