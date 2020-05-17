@@ -21,7 +21,8 @@ use std::ops::SubAssign;
 pub fn execute(runtime: &mut Runtime) -> FnResult {
     while !runtime.is_native() && runtime.current_pos() as usize != runtime.current_fn().len() {
         let bytes = runtime.current_fn();
-        let b: Bytecode = FromPrimitive::from_u8(bytes[runtime.current_pos()]).unwrap();
+        let b: Bytecode = FromPrimitive::from_u8(bytes[runtime.current_pos()])
+            .expect("Attempted to parse invalid bytecode");
         let byte_size = bytecode_size(b);
         let byte_start: usize = runtime.current_pos() + 1;
         let byte_0 = get_bytes(bytes, byte_start, byte_size.0);
@@ -262,7 +263,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let msg = runtime.pop();
             let exc_type = runtime.pop();
             if let Variable::Type(t) = exc_type {
-                let msg_str = msg.str(runtime).unwrap();
+                let msg_str = msg.str(runtime)?;
                 return runtime.throw_quick(t, msg_str);
             } else {
                 panic!("ThrowQuick must be called with a type, not {:?}", exc_type);
@@ -272,7 +273,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let mut exc_pos = bytes_0 as usize;
             while {
                 let bc: Option<Bytecode> = FromPrimitive::from_u8(runtime.current_fn()[exc_pos]);
-                bc.unwrap()
+                bc.expect("Invalid bytecode encountered")
             } == Bytecode::ExceptN
             {
                 exc_pos += 1;

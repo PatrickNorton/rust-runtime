@@ -47,10 +47,9 @@ pub fn get_attr(this: StringVar, s: StringVar) -> Variable {
 }
 
 fn add(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    let mut result: String = this.parse().unwrap();
-    for arg in args {
-        result += StringVar::from(arg).as_ref();
-    }
+    let result = args.into_iter().fold(this.to_string(), |acc, arg| {
+        acc + StringVar::from(arg).as_ref()
+    });
     runtime.return_1(Variable::String(result.into()))
 }
 
@@ -58,7 +57,7 @@ fn multiply(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnR
     if this.is_empty() {
         return runtime.return_1(this.clone().into());
     }
-    let mut result: String = this.parse().unwrap();
+    let mut result: String = this.to_string();
     for arg in args {
         let big_val = IntVar::from(arg);
         match big_val.to_usize() {
@@ -105,11 +104,31 @@ fn repr(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResul
 
 fn index(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    let index = IntVar::from(replace(&mut args[0], Variable::Null()))
-        .to_usize()
-        .unwrap();
+    let big_index = IntVar::from(replace(&mut args[0], Variable::Null()));
+    let index = match big_index.to_usize() {
+        Option::Some(val) => val,
+        Option::None => {
+            return runtime.throw_quick(
+                index_error(),
+                format!(
+                    "Index {} out of bounds for str of length {}",
+                    big_index,
+                    this.len()
+                )
+                .into(),
+            )
+        }
+    };
     match this.chars().nth(index) {
-        Option::None => runtime.throw_quick(index_error(), "Index out of bounds".into()),
+        Option::None => runtime.throw_quick(
+            index_error(),
+            format!(
+                "Index {} out of bounds for str of length {}",
+                index,
+                this.len()
+            )
+            .into(),
+        ),
         Option::Some(value) => runtime.return_1(value.into()),
     }
 }

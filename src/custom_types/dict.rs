@@ -422,7 +422,10 @@ impl Entry {
         if self.value.equals(key.clone(), runtime)? {
             Result::Ok(self)
         } else {
-            self.next.as_ref().unwrap().get_entry(key, runtime)
+            self.next
+                .as_ref()
+                .expect("Called get_entry() with no reasonable entry")
+                .get_entry(key, runtime)
         }
     }
 
@@ -503,7 +506,9 @@ impl DictIter {
             return Result::Ok(Option::None);
         }
         let parent = self.parent.value.borrow();
-        let parent_node = parent.entries[bucket].as_ref().unwrap();
+        let parent_node = parent.entries[bucket]
+            .as_ref()
+            .expect("Dict iterator expects self.bucket_no to always point at a non-None value");
         let node = parent_node.get_entry(self.index.borrow().clone(), runtime)?;
         let key = self.index.replace(Variable::Null());
         let val = node.get_value().clone();
