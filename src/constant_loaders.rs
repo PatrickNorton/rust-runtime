@@ -81,11 +81,11 @@ pub fn load_bool(data: &[u8], index: &mut usize) -> Variable {
     Variable::Bool(value != 0)
 }
 
-fn get_variables(data: &[u8], index: &mut usize) -> HashSet<String> {
-    let mut variables: HashSet<String> = HashSet::new();
+fn get_variables(data: &[u8], index: &mut usize) -> HashSet<StringVar> {
+    let mut variables: HashSet<StringVar> = HashSet::new();
     let byte_size = bytes_index::<u32>(data, index);
     for _ in 0..byte_size {
-        let name = load_std_str(data, index);
+        let name = StringVar::from_leak(load_std_str(data, index));
         bytes_index::<u16>(data, index); // TODO: Get classes properly
         variables.insert(name);
     }
@@ -194,7 +194,7 @@ pub fn load_class(
         panic!("Supers not allowed yet")
     }
     let _generic_size = bytes_index::<u16>(data, index);
-    get_variables(data, index);
+    let variables = get_variables(data, index);
     get_variables(data, index);
     let operators = get_operators(data, file_no, index, functions);
     let static_operators = get_operators(data, file_no, index, functions);
@@ -205,6 +205,7 @@ pub fn load_class(
     Variable::Type(Type::new_std(
         StringVar::from_leak(name),
         file_no,
+        variables,
         merge_maps(operators, methods),
         merge_maps(static_operators, static_methods),
         properties,

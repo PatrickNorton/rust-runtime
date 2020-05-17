@@ -8,7 +8,7 @@ use crate::runtime::Runtime;
 use crate::std_variable::{StdVarMethod, StdVariable};
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
 use std::ptr;
 use std::string::{String, ToString};
@@ -32,6 +32,7 @@ pub struct StdType {
     name: StringVar,
     file_no: usize,
     supers: Vec<Type>,
+    variables: HashSet<StringVar>,
     methods: HashMap<Name, StdVarMethod>,
     static_methods: HashMap<Name, StdVarMethod>,
     properties: HashMap<StringVar, Property>,
@@ -41,6 +42,7 @@ impl Type {
     pub fn new_std(
         name: StringVar,
         file_no: usize,
+        variables: HashSet<StringVar>,
         methods: HashMap<Name, StdVarMethod>,
         static_methods: HashMap<Name, StdVarMethod>,
         properties: HashMap<StringVar, Property>,
@@ -48,6 +50,7 @@ impl Type {
         let t = Box::new(StdType::new(
             name,
             file_no,
+            variables,
             methods,
             static_methods,
             properties,
@@ -161,6 +164,7 @@ impl StdType {
     pub const fn new(
         name: StringVar,
         file_no: usize,
+        variables: HashSet<StringVar>,
         methods: HashMap<Name, StdVarMethod>,
         static_methods: HashMap<Name, StdVarMethod>,
         properties: HashMap<StringVar, Property>,
@@ -168,6 +172,7 @@ impl StdType {
         StdType {
             name,
             file_no,
+            variables,
             supers: Vec::new(),
             methods,
             static_methods,
@@ -205,16 +210,23 @@ impl StdType {
         }
     }
 
+    fn convert_variables(&self) -> HashMap<Name, Variable> {
+        self.variables
+            .iter()
+            .map(|x| (Name::Attribute(x.clone()), Variable::Null()))
+            .collect()
+    }
+
     fn create(&'static self, args: Vec<Variable>, runtime: &mut Runtime) -> Result<Variable, ()> {
-        let instance = StdVariable::new(self, HashMap::new());
+        let instance = StdVariable::new(self, self.convert_variables());
         let method = self.methods.get(&Name::Operator(Operator::New)).unwrap();
-        StdMethod::new(instance.clone(), method.clone()).call((args, runtime))?;
+        StdMethod::new(instance.clone(), *method).call((args, runtime))?;
         Result::Ok(Variable::Standard(instance))
     }
 
     pub(crate) fn get_method(&self, name: Name) -> StdVarMethod {
         match self.methods.get(&name) {
-            Option::Some(t) => t.clone(),
+            Option::Some(t) => *t,
             Option::None => default_methods(name),
         }
     }
