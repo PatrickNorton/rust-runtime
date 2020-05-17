@@ -29,18 +29,16 @@ pub fn get_operator(this: RationalVar, o: Operator) -> Variable {
 }
 
 fn add(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    let mut sum = this.clone();
-    for arg in args {
-        sum += RationalVar::from(arg)
-    }
-    runtime.return_1(Variable::Decimal(sum))
+    let mut sum: RationalVar = args.into_iter().map(RationalVar::from).sum();
+    sum += this.clone();
+    runtime.return_1(sum.into())
 }
 
 fn sub(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    let mut diff = this.clone();
-    for arg in args {
-        diff -= RationalVar::from(arg)
-    }
+    let diff = args
+        .into_iter()
+        .map(RationalVar::from)
+        .fold(this.clone(), |x, y| x - y);
     runtime.return_1(Variable::Decimal(diff))
 }
 
@@ -50,10 +48,8 @@ fn u_minus(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> Fn
 }
 
 fn mul(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    let mut prod = this.clone();
-    for arg in args {
-        prod -= RationalVar::from(arg)
-    }
+    let mut prod: RationalVar = args.into_iter().map(RationalVar::from).product();
+    prod += this.clone();
     runtime.return_1(Variable::Decimal(prod))
 }
 
@@ -74,48 +70,28 @@ fn div(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
 }
 
 fn eq(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    for arg in args {
-        if RationalVar::from(arg) != *this {
-            return runtime.return_1(Variable::Bool(false));
-        }
-    }
-    runtime.return_1(Variable::Bool(true))
+    let eq = args.into_iter().all(|x| *this == RationalVar::from(x));
+    runtime.return_1(Variable::Bool(eq))
 }
 
 fn less_than(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    for arg in args {
-        if *this >= RationalVar::from(arg) {
-            return runtime.return_1(Variable::Bool(false));
-        }
-    }
-    runtime.return_1(Variable::Bool(true))
+    let lt = args.into_iter().all(|x| *this < RationalVar::from(x));
+    runtime.return_1(Variable::Bool(lt))
 }
 
 fn greater_than(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    for arg in args {
-        if *this <= RationalVar::from(arg) {
-            return runtime.return_1(Variable::Bool(false));
-        }
-    }
-    runtime.return_1(Variable::Bool(true))
+    let gt = args.into_iter().all(|x| *this > RationalVar::from(x));
+    runtime.return_1(Variable::Bool(gt))
 }
 
 fn less_equal(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    for arg in args {
-        if *this > RationalVar::from(arg) {
-            return runtime.return_1(Variable::Bool(false));
-        }
-    }
-    runtime.return_1(Variable::Bool(true))
+    let le = args.into_iter().all(|x| *this <= RationalVar::from(x));
+    runtime.return_1(Variable::Bool(le))
 }
 
 fn greater_equal(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    for arg in args {
-        if *this < RationalVar::from(arg) {
-            return runtime.return_1(Variable::Bool(false));
-        }
-    }
-    runtime.return_1(Variable::Bool(true))
+    let ge = args.into_iter().all(|x| *this >= RationalVar::from(x));
+    runtime.return_1(Variable::Bool(ge))
 }
 
 fn to_str(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

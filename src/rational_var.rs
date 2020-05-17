@@ -1,4 +1,6 @@
+use crate::variable::Variable;
 use num::{BigInt, BigRational, Zero};
+use std::iter::{Product, Sum};
 use std::ops::{
     Add, AddAssign, Deref, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign,
 };
@@ -84,5 +86,19 @@ impl Zero for RationalVar {
 impl From<BigRational> for RationalVar {
     fn from(x: BigRational) -> Self {
         Self::new(x)
+    }
+}
+
+impl Sum for RationalVar {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(BigRational::zero(), |sum, num| sum + &*num)
+            .into()
+    }
+}
+
+impl Product for RationalVar {
+    fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(BigRational::zero(), |sum, num| sum * &*num)
+            .into()
     }
 }

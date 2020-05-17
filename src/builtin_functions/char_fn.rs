@@ -18,12 +18,7 @@ pub fn get_operator(this: char, o: Operator) -> Variable {
 }
 
 fn eq(this: &char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    for arg in args {
-        if char::from(arg) != *this {
-            return runtime.return_1(Variable::Bool(false));
-        }
-    }
-    runtime.return_1(Variable::Bool(true))
+    runtime.return_1(args.into_iter().any(|arg| char::from(arg) != *this).into())
 }
 
 fn str(this: &char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
