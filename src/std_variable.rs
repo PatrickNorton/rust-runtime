@@ -128,9 +128,10 @@ impl StdVariable {
 
     pub fn set(&self, index: StringVar, value: Variable, runtime: &mut Runtime) -> FnResult {
         let name = Name::Attribute(index);
-        match self.value.borrow_mut().values.get_mut(&name) {
+        let mut self_val = self.value.borrow_mut();
+        match self_val.values.get_mut(&name) {
             Option::Some(val) => *val = value,
-            Option::None => match self.value.borrow().cls.get_property(&name) {
+            Option::None => match self_val.cls.get_property(&name) {
                 Option::Some(val) => val.call_setter(runtime, value)?,
                 Option::None => unimplemented!(),
             },
