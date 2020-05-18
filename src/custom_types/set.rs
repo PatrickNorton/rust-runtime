@@ -38,6 +38,12 @@ impl Set {
         }))
     }
 
+    fn from_inner(value: InnerSet) -> Rc<Set> {
+        Rc::new(Set {
+            value: RefCell::new(value),
+        })
+    }
+
     fn get_operator(self: &Rc<Self>, o: Operator) -> Variable {
         let func = match o {
             Operator::Bool => Self::bool,
@@ -46,6 +52,10 @@ impl Set {
             Operator::Iter => Self::iter,
             Operator::In => Self::contains,
             Operator::Equals => Self::eq,
+            Operator::BitwiseAnd => Self::intersection,
+            Operator::BitwiseOr => Self::union,
+            Operator::BitwiseXor => Self::xor,
+            Operator::DelAttr => Self::del_attr,
             _ => unimplemented!(),
         };
         Variable::Method(StdMethod::new_native(self.clone(), func))
@@ -55,10 +65,61 @@ impl Set {
         let func = match s.as_str() {
             "add" => Self::add,
             "addAll" => Self::add_all,
+            "remove" => Self::del_attr,
             "length" => return Variable::Bigint(self.value.borrow().size().into()),
             _ => unimplemented!(),
         };
         Variable::Method(StdMethod::new_native(self.clone(), func))
+    }
+
+    fn intersection(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        let other = replace(&mut args[0], Variable::Null());
+        let other_iter = other.iter(runtime)?;
+        let mut result_vec = Vec::new();
+        while let Option::Some(val) = other_iter.next(runtime)? {
+            if self.value.borrow().contains(val.clone(), runtime)? {
+                result_vec.push(val);
+            }
+        }
+        let ret = Self::new(result_vec, runtime)?;
+        runtime.return_1(ret.into())
+    }
+
+    fn union(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        let self_val = self.value.borrow();
+        let result_vec = self_val.values.clone();
+        let result_size = self_val.size;
+        let mut result = InnerSet {
+            values: result_vec,
+            size: result_size,
+        };
+        let other = replace(&mut args[0], Variable::Null());
+        let other_iter = other.iter(runtime)?;
+        while let Option::Some(val) = other_iter.next(runtime)? {
+            result.add(val, runtime)?;
+        }
+        runtime.return_1(Set::from_inner(result).into())
+    }
+
+    fn xor(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        let self_val = self.value.borrow();
+        let result_vec = self_val.values.clone();
+        let result_size = self_val.size;
+        let mut result = InnerSet {
+            values: result_vec,
+            size: result_size,
+        };
+        let other = replace(&mut args[0], Variable::Null());
+        let other_iter = other.iter(runtime)?;
+        while let Option::Some(val) = other_iter.next(runtime)? {
+            if result.contains(val.clone(), runtime)? {
+                result.remove(val, runtime)?;
+            } else {
+                result.add(val, runtime)?;
+            }
+        }
+        runtime.return_1(Set::from_inner(result).into())
     }
 
     fn bool(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -94,6 +155,19 @@ impl Set {
             self.value.borrow_mut().add(arg, runtime)?;
         }
         runtime.return_0()
+    }
+
+    fn del_attr(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        self.remove(args, runtime)?;
+        runtime.pop_return();
+        runtime.return_0()
+    }
+
+    fn remove(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        let val = replace(&mut args[0], Variable::Null());
+        let was_removed = self.value.borrow_mut().remove(val, runtime)?;
+        runtime.return_1(was_removed.into())
     }
 
     fn eq(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -165,6 +239,23 @@ impl InnerSet {
                 }
                 FnResult::Ok(())
             }
+        }
+    }
+
+    pub fn remove(&mut self, arg: Variable, runtime: &mut Runtime) -> Result<bool, ()> {
+        let hash = arg.hash(runtime)?;
+        let index = hash % self.values.len();
+        match &mut self.values[index] {
+            Option::Some(val) => {
+                if val.del(&arg, runtime)? {
+                    let boxed_entry = replace(&mut val.next, Option::None);
+                    self.values[index] = boxed_entry.map(|x| *x);
+                    Result::Ok(true)
+                } else {
+                    Result::Ok(false)
+                }
+            }
+            Option::None => Result::Ok(false),
         }
     }
 
@@ -289,6 +380,24 @@ impl Entry {
                     Result::Ok(true)
                 }
                 Option::Some(v) => v.add(val, runtime),
+            }
+        }
+    }
+
+    pub fn del(&mut self, key: &Variable, runtime: &mut Runtime) -> Result<bool, ()> {
+        if key.equals(self.val.clone(), runtime)? {
+            Result::Ok(true)
+        } else {
+            match &mut self.next {
+                Option::None => Result::Ok(false),
+                Option::Some(e) => {
+                    if e.del(key, runtime)? {
+                        self.next = replace(&mut e.next, Option::None);
+                        Result::Ok(true)
+                    } else {
+                        Result::Ok(false)
+                    }
+                }
             }
         }
     }
