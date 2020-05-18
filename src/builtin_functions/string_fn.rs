@@ -208,17 +208,14 @@ impl StringIter {
                 from_utf8_unchecked(&self.val.as_bytes()[self.index.get()..])
             }
             .char_indices();
-            match indices.next() {
-                Option::Some((_, c)) => {
-                    self.index.set(
-                        indices
-                            .next()
-                            .map_or_else(|| self.val.len(), |a| self.index.get() + a.0),
-                    );
-                    Option::Some(c.into())
-                }
-                Option::None => Option::None,
-            }
+            indices.next().map(|(_, c)| {
+                self.index.set(
+                    indices
+                        .next()
+                        .map_or_else(|| self.val.len(), |a| self.index.get() + a.0),
+                );
+                c.into()
+            })
         } else {
             Option::None
         }

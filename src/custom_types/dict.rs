@@ -112,10 +112,11 @@ impl Dict {
 
     fn get(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
-        let val = match self.value.borrow().get(args[0].clone(), runtime)? {
-            Option::Some(value) => value,
-            Option::None => args[1].clone(),
-        };
+        let val = self
+            .value
+            .borrow()
+            .get(args[0].clone(), runtime)?
+            .unwrap_or_else(|| args[1].clone());
         runtime.return_1(val)
     }
 
