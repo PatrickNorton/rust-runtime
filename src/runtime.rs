@@ -445,6 +445,11 @@ impl Runtime {
         self.variables.push(value);
     }
 
+    pub fn swap_stack(&mut self, index_1: usize, index_2: usize) {
+        let len = self.variables.len();
+        self.variables.swap(len - index_1, len - index_2);
+    }
+
     pub fn collect_stack_frames(&self) -> Vec<SFInfo> {
         self.frames.iter().map(StackFrame::exc_info).collect()
     }

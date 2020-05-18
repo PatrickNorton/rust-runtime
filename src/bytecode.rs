@@ -15,6 +15,7 @@ pub enum Bytecode {
     Store = 0xC,
     StoreSubscript = 0xD,
     StoreAttr = 0xE,
+    SwapStack = 0xF,
     // Binary operators
     Plus = 0x10,
     Minus = 0x11,
@@ -101,6 +102,7 @@ pub fn bytecode_size(b: Bytecode) -> (usize, usize) {
         Bytecode::PopTop | Bytecode::DupTop | Bytecode::Swap2 | Bytecode::Swap3 => (0, 0),
         Bytecode::SwapN => (4, 0),
         Bytecode::Store | Bytecode::StoreSubscript | Bytecode::StoreAttr => (2, 0),
+        Bytecode::SwapStack => (2, 2),
         Bytecode::Plus
         | Bytecode::Minus
         | Bytecode::Times

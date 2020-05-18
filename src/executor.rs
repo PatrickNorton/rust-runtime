@@ -141,6 +141,9 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let str_name = attr_name.str(runtime)?;
             value.set(str_name, stored, runtime)?;
         }
+        Bytecode::SwapStack => {
+            runtime.swap_stack(bytes_0 as usize, bytes_1 as usize);
+        }
         Bytecode::Plus => quick_op_2(runtime, quick_add)?,
         Bytecode::Minus => quick_op_2(runtime, quick_sub)?,
         Bytecode::Times => quick_op_2(runtime, quick_mul)?,
