@@ -90,10 +90,15 @@ impl Runtime {
         self.last_mut_frame()[index as usize] = value;
     }
 
-    pub fn call_quick(&mut self, fn_no: u16) {
+    pub fn call_quick(&mut self, fn_no: u16, argc: u16) {
         let file_no = self.current_file_no();
-        self.frames
-            .push(StackFrame::new(0, fn_no, file_no, Vec::new()));
+        let start = self.variables.len() - argc as usize;
+        self.frames.push(StackFrame::new(
+            0,
+            fn_no,
+            file_no,
+            self.variables.drain(start..).collect(),
+        ));
     }
 
     pub fn tail_quick(&mut self, fn_no: u16) {

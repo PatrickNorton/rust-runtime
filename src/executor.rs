@@ -233,7 +233,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let argc = bytes_0 as u16;
             runtime.call_tos_or_goto(argc)?;
         }
-        Bytecode::CallFunction => runtime.call_quick(bytes_0 as u16),
+        Bytecode::CallFunction => runtime.call_quick(bytes_0 as u16, bytes_1 as u16),
         Bytecode::TailMethod => {
             let fn_index = bytes_0 as u16;
             let fn_var = runtime.load_const(fn_index).clone();
