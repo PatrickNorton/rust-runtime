@@ -1,4 +1,5 @@
 use crate::custom_types::exceptions::{arithmetic_error, index_error, stop_iteration, value_error};
+use crate::custom_types::list::List;
 use crate::custom_var::CustomVar;
 use crate::int_var::IntVar;
 use crate::looping::{IterResult, NativeIterator};
@@ -41,6 +42,9 @@ pub fn get_attr(this: StringVar, s: StringVar) -> Variable {
         "lower" => lower,
         "join" => join,
         "joinAll" => join_all,
+        "startsWith" => starts_with,
+        "split" => split,
+        "splitlines" => split_lines,
         _ => unimplemented!(),
     };
     Variable::Method(StdMethod::new_native(this, func))
@@ -172,6 +176,63 @@ fn join_all(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnR
             result += this;
         }
     }
+    runtime.return_1(result.into())
+}
+
+fn starts_with(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert_eq!(args.len(), 2);
+    let val = StringVar::from(replace(&mut args[0], Variable::Null()));
+    let index = IntVar::from(replace(&mut args[1], Variable::Null()));
+    if index < this.len().into() {
+        let usize_index = index
+            .to_usize()
+            .expect("String index believed to be less than a usize, but to_usize failed");
+        if usize_index == 0 {
+            runtime.return_1(this.starts_with(val.as_str()).into())
+        } else {
+            let mut chars = this.chars();
+            chars.nth(usize_index - 1);
+            runtime.return_1(chars.as_str().starts_with(val.as_str()).into())
+        }
+    } else {
+        runtime.throw_quick(index_error(), "".into())
+    }
+}
+
+fn split(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert_eq!(args.len(), 2);
+    let pat = StringVar::from(replace(&mut args[0], Variable::Null()));
+    let opt_count = replace(&mut args[1], Variable::Null());
+    if opt_count.is_null() {
+        let result = List::from_values(
+            this.split(&*pat)
+                .map(|a| StringVar::from(a.to_owned()))
+                .map(Variable::from)
+                .collect(),
+        );
+        runtime.return_1(result.into())
+    } else {
+        let val = IntVar::from(opt_count);
+        let iterator = this
+            .split(&*pat)
+            .map(|a| StringVar::from(a.to_owned()))
+            .map(Variable::from);
+        let result = List::from_values(match val.to_usize() {
+            Option::Some(count) => iterator.take(count).collect(),
+            Option::None => iterator.collect(),
+        });
+        runtime.return_1(result.into())
+    }
+}
+
+fn split_lines(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert!(args.is_empty());
+    let result = List::from_values(
+        this.lines()
+            .map(|a| StringVar::from(a.to_owned()))
+            .map(Variable::from)
+            .collect(),
+    );
     runtime.return_1(result.into())
 }
 

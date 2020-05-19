@@ -311,6 +311,13 @@ impl Variable {
             _ => self.call_op(name, args, runtime),
         }
     }
+    
+    pub fn is_null(&self) -> bool {
+        match self {
+            Variable::Null() => true,
+            _ => false,
+        }
+    }
 }
 
 impl PartialEq for Variable {
