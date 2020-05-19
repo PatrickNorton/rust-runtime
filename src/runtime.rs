@@ -256,7 +256,7 @@ impl Runtime {
     pub fn pop_stack(&mut self) {
         for v in self // Can't use last_frame() b/c of the borrow checker
             .frames
-            .last()
+            .pop()
             .expect("Frame stack should never be empty")
             .get_exceptions()
         {
@@ -268,7 +268,6 @@ impl Runtime {
             last_frame.pop();
             self.exception_stack.pop();
         }
-        self.frames.pop();
     }
 
     pub fn is_native(&self) -> bool {
