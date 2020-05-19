@@ -48,7 +48,8 @@ impl List {
             "reverse" => Self::reverse,
             "count" => Self::count,
             "clear" => Self::clear,
-            _ => unimplemented!(),
+            "add" => Self::add,
+            _ => unimplemented!("List::{}", name),
         };
         Variable::Method(StdMethod::new_native(self, value))
     }
@@ -140,6 +141,14 @@ impl List {
         debug_assert!(args.is_empty());
         self.value.borrow_mut().clear();
         FnResult::Ok(())
+    }
+
+    fn add(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        self.value
+            .borrow_mut()
+            .push(replace(&mut args[0], Variable::Null()));
+        runtime.return_0()
     }
 
     fn eq(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
