@@ -13,6 +13,7 @@ macro_rules! custom_class {
     }};
 }
 
+pub mod coroutine;
 pub mod dict;
 pub mod exceptions;
 pub mod file;

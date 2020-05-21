@@ -62,6 +62,7 @@ pub enum Bytecode {
     TailTos = 0x39,
     TailFunction = 0x3A,
     Return = 0x3B,
+    Yield = 0x3C,
     // Exception stuff
     Throw = 0x40,
     ThrowQuick = 0x41,
@@ -146,7 +147,7 @@ pub fn bytecode_size(b: Bytecode) -> (usize, usize) {
         Bytecode::TailMethod => (4, 0),
         Bytecode::TailTos => (2, 0),
         Bytecode::TailFunction => (2, 2),
-        Bytecode::Return => (2, 0),
+        Bytecode::Return | Bytecode::Yield => (2, 0),
         Bytecode::Throw => (0, 0),
         Bytecode::ThrowQuick => (2, 0),
         Bytecode::EnterTry => (4, 0),

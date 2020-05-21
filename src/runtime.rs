@@ -1,3 +1,5 @@
+use crate::custom_types::coroutine::Generator;
+use crate::custom_types::exceptions::invalid_state;
 use crate::custom_types::lambda::Lambda;
 use crate::executor;
 use crate::file_info::FileInfo;
@@ -24,6 +26,7 @@ pub struct Runtime {
     static_vars: Vec<Variable>,
     type_vars: HashMap<Type, HashMap<Name, Variable>>,
     ret_count: usize,
+    borrowed_iterators: Vec<Rc<Generator>>,
 
     files: Vec<FileInfo>,
 }
@@ -45,6 +48,7 @@ impl Runtime {
             static_vars: Vec::new(),
             type_vars: HashMap::new(),
             ret_count: 0,
+            borrowed_iterators: Vec::new(),
             files,
         }
     }
@@ -93,12 +97,8 @@ impl Runtime {
     pub fn call_quick(&mut self, fn_no: u16, argc: u16) {
         let file_no = self.current_file_no();
         let start = self.variables.len() - argc as usize;
-        self.frames.push(StackFrame::new(
-            0,
-            fn_no,
-            file_no,
-            self.variables.drain(start..).collect(),
-        ));
+        let vars = self.variables.drain(start..).collect();
+        self.push_stack(0, fn_no, vars, file_no);
     }
 
     pub fn tail_quick(&mut self, fn_no: u16) {
@@ -229,8 +229,12 @@ impl Runtime {
     }
 
     pub fn push_stack(&mut self, var_count: u16, fn_no: u16, args: Vec<Variable>, info_no: usize) {
-        self.frames
-            .push(StackFrame::new(var_count, fn_no, info_no, args));
+        if self.current_file().get_functions()[fn_no as usize].is_generator() {
+            self.create_coroutine(fn_no, args);
+        } else {
+            self.frames
+                .push(StackFrame::new(var_count, fn_no, info_no, args));
+        }
     }
 
     pub fn push_stack_with_frame(
@@ -254,6 +258,9 @@ impl Runtime {
     }
 
     pub fn pop_stack(&mut self) {
+        if self.is_generator() {
+            self.borrowed_iterators.pop();
+        }
         for v in self // Can't use last_frame() b/c of the borrow checker
             .frames
             .pop()
@@ -451,6 +458,41 @@ impl Runtime {
 
     pub fn collect_stack_frames(&self) -> Vec<SFInfo> {
         self.frames.iter().map(StackFrame::exc_info).collect()
+    }
+
+    pub fn add_generator(&mut self, gen: Rc<Generator>) -> FnResult {
+        match gen.take_frame() {
+            Option::Some(val) => self.frames.push(val),
+            Option::None => {
+                return self.throw_quick(invalid_state(), "Generator already executing".into())
+            }
+        }
+        self.variables.append(&mut gen.take_stack());
+        self.borrowed_iterators.push(gen);
+        FnResult::Ok(())
+    }
+
+    pub fn generator_yield(&mut self, ret_count: usize) {
+        debug_assert!(self.is_generator());
+        self.set_ret(ret_count);
+        let frame = self.frames.pop().unwrap();
+        let vec = Vec::new(); // FIXME: Clear stack
+        let gen = self
+            .borrowed_iterators
+            .pop()
+            .expect("Yield called with no generator");
+        gen.replace_vars(frame, vec);
+    }
+
+    pub fn is_generator(&self) -> bool {
+        self.current_file().get_functions()[self.last_frame().get_fn_number() as usize]
+            .is_generator()
+    }
+
+    fn create_coroutine(&mut self, fn_no: u16, args: Vec<Variable>) {
+        let frame = StackFrame::new(0, fn_no, self.current_file_no(), args);
+        let stack = Vec::new();
+        self.push(Rc::new(Generator::new(frame, stack)).into())
     }
 
     fn frame_strings(&self, frames: &[SFInfo]) -> String {

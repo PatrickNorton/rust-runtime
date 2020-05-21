@@ -254,9 +254,17 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         }
         Bytecode::TailFunction => runtime.tail_quick(bytes_0 as u16),
         Bytecode::Return => {
-            let ret_count = bytes_0 as usize;
-            runtime.set_ret(ret_count);
-            runtime.pop_stack()
+            if runtime.is_generator() {
+                runtime.throw_quick(stop_iteration(), "".into())?
+            } else {
+                let ret_count = bytes_0 as usize;
+                runtime.set_ret(ret_count);
+                runtime.pop_stack()
+            }
+        }
+        Bytecode::Yield => {
+            let yield_count = bytes_0 as usize;
+            runtime.generator_yield(yield_count);
         }
         Bytecode::Throw => {
             let result = runtime.pop();
@@ -306,12 +314,24 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let iterated = runtime.pop();
             let jump_loc = bytes_0;
             runtime.add_exception_handler(stop_iteration().into(), jump_loc);
-            runtime.call_attr(iterated.clone(), "next".into(), Vec::new())?;
-            if runtime.current_pos() != jump_loc as usize {
-                runtime.pop_handler();
-                let arg = runtime.pop();
-                runtime.push(iterated);
-                runtime.push(arg);
+            let result = runtime.call_attr(iterated.clone(), "next".into(), Vec::new());
+            if result.is_ok() {
+                if runtime.current_pos() != jump_loc as usize {
+                    runtime.pop_handler();
+                    let arg = runtime.pop();
+                    runtime.push(iterated);
+                    runtime.push(arg);
+                }
+            } else {
+                let err = runtime.pop();
+                if err.get_type() == stop_iteration() {
+                    runtime.goto(jump_loc);
+                } else {
+                    runtime.pop_handler();
+                    let arg = runtime.pop();
+                    runtime.push(iterated);
+                    runtime.push(arg);
+                }
             }
         }
         Bytecode::ListCreate => {
