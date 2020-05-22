@@ -4,6 +4,8 @@ use crate::custom_types::exceptions::stop_iteration;
 use crate::custom_types::list::List;
 use crate::custom_types::set::Set;
 use crate::int_tools::bytes_index;
+use crate::int_var::IntVar;
+use crate::jump_table::JumpTable;
 use crate::name::Name;
 use crate::operator::Operator;
 use crate::quick_functions::{
@@ -13,6 +15,7 @@ use crate::quick_functions::{
     quick_right_bitshift, quick_sub, quick_subscript, quick_u_minus, QuickResult,
 };
 use crate::runtime::Runtime;
+use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use num::traits::FromPrimitive;
 use num::Zero;
@@ -265,6 +268,17 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         Bytecode::Yield => {
             let yield_count = bytes_0 as usize;
             runtime.generator_yield(yield_count);
+        }
+        Bytecode::SwitchTable => {
+            let table_no = bytes_0 as usize;
+            let var = runtime.pop();
+            let tbl = runtime.jump_table(table_no);
+            let jump = match tbl {
+                JumpTable::Compact(val) => val[IntVar::from(var)],
+                JumpTable::Big(val) => val[IntVar::from(var)],
+                JumpTable::String(val) => val[StringVar::from(var)],
+            };
+            runtime.goto(jump as u32)
         }
         Bytecode::Throw => {
             let result = runtime.pop();

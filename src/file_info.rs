@@ -3,6 +3,7 @@ use crate::variable::Variable;
 use std::collections::HashMap;
 use std::string::String;
 use std::vec::Vec;
+use crate::jump_table::JumpTable;
 
 #[derive(Debug)]
 pub struct FileInfo {
@@ -10,6 +11,7 @@ pub struct FileInfo {
     constants: Vec<Variable>,
     functions: Vec<BaseFunction>,
     exports: HashMap<String, u32>,
+    jump_tables: Vec<JumpTable>,
 }
 
 impl FileInfo {
@@ -18,12 +20,14 @@ impl FileInfo {
         constants: Vec<Variable>,
         functions: Vec<BaseFunction>,
         exports: HashMap<String, u32>,
+        jump_tables: Vec<JumpTable>,
     ) -> FileInfo {
         FileInfo {
             name,
             constants,
             functions,
             exports,
+            jump_tables,
         }
     }
 
@@ -33,6 +37,7 @@ impl FileInfo {
             constants: vec![],
             functions: vec![],
             exports: HashMap::new(),
+            jump_tables: Vec::new(),
         }
     }
 
@@ -50,5 +55,9 @@ impl FileInfo {
 
     pub fn get_export(&self, name: &str) -> &Variable {
         &self.constants[self.exports[name] as usize]
+    }
+    
+    pub fn jump_table(&self, val: usize) -> &JumpTable {
+        &self.jump_tables[val]
     }
 }

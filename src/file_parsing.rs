@@ -6,6 +6,7 @@ use crate::constant_loaders::{
 use crate::file_info::FileInfo;
 use crate::function::Function;
 use crate::int_tools::bytes_index;
+use crate::jump_table::JumpTable;
 use crate::variable::Variable;
 use std::collections::HashMap;
 use std::fs::read;
@@ -107,6 +108,14 @@ pub fn parse_file(name: String, files: &mut Vec<FileInfo>) -> usize {
         classes.push(load_class(file_no, &data, &mut index, &mut functions));
     }
 
+    let table_count = bytes_index::<u32>(&data, &mut index);
+    let mut jump_tables: Vec<JumpTable> = Vec::with_capacity(table_count as usize);
+    for _ in 0..table_count {
+        jump_tables.push(JumpTable::parse(&data, &mut index));
+    }
+
+    debug_assert_eq!(data.len(), index);
+
     let mut load_count: usize = 0;
     for c in &mut constants {
         if let Variable::Null() = c {
@@ -118,6 +127,6 @@ pub fn parse_file(name: String, files: &mut Vec<FileInfo>) -> usize {
         }
     }
 
-    files[file_no] = FileInfo::new(name, constants, functions, exports);
+    files[file_no] = FileInfo::new(name, constants, functions, exports, jump_tables);
     file_no
 }

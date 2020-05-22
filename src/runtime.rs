@@ -4,6 +4,7 @@ use crate::custom_types::lambda::Lambda;
 use crate::executor;
 use crate::file_info::FileInfo;
 use crate::function::NativeFunction;
+use crate::jump_table::JumpTable;
 use crate::method::{NativeCopyMethod, NativeMethod};
 use crate::name::Name;
 use crate::operator::Operator;
@@ -487,6 +488,10 @@ impl Runtime {
     pub fn is_generator(&self) -> bool {
         self.current_file().get_functions()[self.last_frame().get_fn_number() as usize]
             .is_generator()
+    }
+
+    pub fn jump_table(&self, num: usize) -> &JumpTable {
+        self.current_file().jump_table(num)
     }
 
     fn create_coroutine(&mut self, fn_no: u16, args: Vec<Variable>) {
