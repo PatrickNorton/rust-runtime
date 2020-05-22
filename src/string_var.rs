@@ -64,3 +64,9 @@ impl std::fmt::Display for StringVar {
         std::fmt::Display::fmt(&**self, f)
     }
 }
+
+impl Default for StringVar {
+    fn default() -> Self {
+        "".into()
+    }
+}
