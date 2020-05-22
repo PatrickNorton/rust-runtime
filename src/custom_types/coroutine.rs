@@ -93,11 +93,9 @@ impl NativeIterator for Generator {
         match executor::execute(runtime) {
             FnResult::Ok(_) => IterResult::Ok(Option::Some(runtime.pop_return())),
             FnResult::Err(_) => {
-                let exc = runtime.pop();
-                if exc.get_type() == stop_iteration() {
+                if runtime.pop_err_if(stop_iteration())?.is_some() {
                     IterResult::Ok(Option::None)
                 } else {
-                    runtime.push(exc);
                     IterResult::Err(())
                 }
             }

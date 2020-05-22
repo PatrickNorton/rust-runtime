@@ -33,12 +33,10 @@ impl Iterator {
         match result {
             FnResult::Ok(_) => Result::Ok(Option::Some(runtime.pop_return())),
             FnResult::Err(_) => {
-                let error = runtime.pop();
-                if error.get_type() == stop_iteration() {
-                    Result::Ok(Option::None)
+                if runtime.pop_err_if(stop_iteration())?.is_some() {
+                    IterResult::Ok(Option::None)
                 } else {
-                    runtime.push(error);
-                    Result::Err(())
+                    IterResult::Err(())
                 }
             }
         }

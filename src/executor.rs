@@ -327,25 +327,14 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         Bytecode::ForIter => {
             let iterated = runtime.pop();
             let jump_loc = bytes_0;
+            let next_pos = runtime.current_pos();
             runtime.add_exception_handler(stop_iteration().into(), jump_loc);
-            let result = runtime.call_attr(iterated.clone(), "next".into(), Vec::new());
-            if result.is_ok() {
-                if runtime.current_pos() != jump_loc as usize {
-                    runtime.pop_handler();
-                    let arg = runtime.pop();
-                    runtime.push(iterated);
-                    runtime.push(arg);
-                }
-            } else {
-                let err = runtime.pop();
-                if err.get_type() == stop_iteration() {
-                    runtime.goto(jump_loc);
-                } else {
-                    runtime.pop_handler();
-                    let arg = runtime.pop();
-                    runtime.push(iterated);
-                    runtime.push(arg);
-                }
+            runtime.call_attr(iterated.clone(), "next".into(), Vec::new())?;
+            if runtime.current_pos() == next_pos {
+                runtime.pop_handler();
+                let arg = runtime.pop();
+                runtime.push(iterated);
+                runtime.push(arg);
             }
         }
         Bytecode::ListCreate => {

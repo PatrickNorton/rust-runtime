@@ -14,6 +14,7 @@ use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use std::cmp::max;
 use std::collections::{HashMap, HashSet, VecDeque};
+use std::mem::take;
 use std::rc::Rc;
 use std::vec::Vec;
 
@@ -28,6 +29,7 @@ pub struct Runtime {
     type_vars: HashMap<Type, HashMap<Name, Variable>>,
     ret_count: usize,
     borrowed_iterators: Vec<Rc<Generator>>,
+    thrown_exception: Option<InnerException>,
 
     files: Vec<FileInfo>,
 }
@@ -50,6 +52,7 @@ impl Runtime {
             type_vars: HashMap::new(),
             ret_count: 0,
             borrowed_iterators: Vec::new(),
+            thrown_exception: Option::None,
             files,
         }
     }
@@ -138,7 +141,11 @@ impl Runtime {
             self.push_native();
             let result = func(this, args, self);
             self.pop_native();
-            result
+            if result.is_err() && !self.is_native() {
+                self.resume_throw()
+            } else {
+                result
+            }
         } else {
             func(this, args, self)
         }
@@ -494,6 +501,48 @@ impl Runtime {
         self.current_file().jump_table(num)
     }
 
+    pub fn pop_err(&mut self) -> Result<Variable, ()> {
+        match self
+            .thrown_exception
+            .take()
+            .expect("pop_err called with no thrown exception")
+        {
+            InnerException::Std(v) => Result::Ok(v),
+            InnerException::UnConstructed(t, s, _) => {
+                t.create_inst(vec![Variable::String(s)], self)
+            }
+        }
+    }
+
+    pub fn pop_err_if(&mut self, t: Type) -> Result<Option<Variable>, ()> {
+        match self
+            .thrown_exception
+            .as_mut()
+            .expect("pop_err called with no thrown exception")
+        {
+            InnerException::Std(val) => {
+                if val.get_type() == t {
+                    let result = Result::Ok(Option::Some(take(val)));
+                    self.thrown_exception = Option::None;
+                    result
+                } else {
+                    Result::Ok(Option::None)
+                }
+            }
+            InnerException::UnConstructed(ty, s, _) => {
+                if *ty == t {
+                    let result = Result::Ok(Option::Some(
+                        t.create_inst(vec![Variable::String(take(s))], self)?,
+                    ));
+                    self.thrown_exception = Option::None;
+                    result
+                } else {
+                    Result::Ok(Option::None)
+                }
+            }
+        }
+    }
+
     fn create_coroutine(&mut self, fn_no: u16, args: Vec<Variable>) {
         let frame = StackFrame::new(0, fn_no, self.current_file_no(), args);
         let stack = Vec::new();
@@ -519,6 +568,21 @@ impl Runtime {
         }
     }
 
+    fn resume_throw(&mut self) -> FnResult {
+        let exception = self
+            .thrown_exception
+            .take()
+            .expect("resume_throw() called with no thrown exception");
+        let frame = self
+            .exception_frames
+            .get(&Variable::Type(exception.get_type()))
+            .expect("resume_throw called with no valid exception frame")
+            .last()
+            .expect("resume_throw called with no valid exception frame");
+        let (location, frame_height) = *frame;
+        self.unwind_to_height(location, frame_height, exception)
+    }
+
     fn unwind_to_height(
         &mut self,
         location: u32,
@@ -540,7 +604,21 @@ impl Runtime {
                 self.pop_stack();
             }
         }
+        self.exception_frames
+            .get_mut(&exception.get_type().into())
+            .unwrap()
+            .pop();
+        self.remove_exception_handler(&exception.get_type().into());
         self.goto(location);
         FnResult::Ok(())
+    }
+}
+
+impl InnerException {
+    fn get_type(&self) -> Type {
+        match self {
+            InnerException::Std(v) => v.get_type(),
+            InnerException::UnConstructed(t, ..) => *t,
+        }
     }
 }
