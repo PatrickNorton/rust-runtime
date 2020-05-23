@@ -10,7 +10,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
-use num::ToPrimitive;
+use num::{Signed, ToPrimitive};
 use std::cell::{Cell, RefCell};
 use std::mem::replace;
 use std::rc::Rc;
@@ -75,8 +75,13 @@ impl List {
 
     fn list_index(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
-        let index = IntVar::from(args[0].clone());
-        if index >= self.value.borrow().len().into() {
+        let signed_index = IntVar::from(args[0].clone());
+        let index = if signed_index.is_negative() {
+            signed_index + self.value.borrow().len().into()
+        } else {
+            signed_index
+        };
+        if index >= self.value.borrow().len().into() || index.is_negative() {
             runtime.throw_quick(
                 index_error(),
                 format!(
