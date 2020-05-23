@@ -10,9 +10,9 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
-use num::ToPrimitive;
+use num::{Signed, ToPrimitive};
 use std::cell::Cell;
-use std::mem::replace;
+use std::mem::{replace, take};
 use std::rc::Rc;
 use std::str::{from_utf8_unchecked, FromStr};
 
@@ -108,8 +108,13 @@ fn repr(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResul
 
 fn index(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    let big_index = IntVar::from(replace(&mut args[0], Variable::Null()));
-    let index = match big_index.to_usize() {
+    let big_index = IntVar::from(take(&mut args[0]));
+    let proper_index = if big_index.is_negative() {
+        &big_index + &this.len().into()
+    } else {
+        big_index.clone()
+    };
+    let index = match proper_index.to_usize() {
         Option::Some(val) => val,
         Option::None => {
             return runtime.throw_quick(
@@ -128,7 +133,7 @@ fn index(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> Fn
             index_error(),
             format!(
                 "Index {} out of bounds for str of length {}",
-                index,
+                big_index,
                 this.len()
             )
             .into(),
