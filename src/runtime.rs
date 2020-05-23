@@ -13,7 +13,7 @@ use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use std::cmp::max;
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, HashSet};
 use std::mem::take;
 use std::rc::Rc;
 use std::vec::Vec;
@@ -192,11 +192,9 @@ impl Runtime {
     }
 
     pub fn load_args(&mut self, argc: u16) -> Vec<Variable> {
-        let mut args: VecDeque<Variable> = VecDeque::with_capacity(argc as usize);
-        for _ in 0..argc {
-            args.push_front(self.pop());
-        }
-        args.into()
+        self.variables
+            .drain(self.variables.len() - argc as usize..)
+            .collect()
     }
 
     pub fn call_now(
