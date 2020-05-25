@@ -61,6 +61,22 @@ impl Variable {
         }
     }
 
+    pub fn repr(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
+        match self {
+            Variable::Null() => Result::Ok("null".into()),
+            Variable::Bool(val) => Result::Ok((if *val { "true" } else { "false" }).into()),
+            Variable::String(val) => Result::Ok(format!("{:?}", val.as_str()).into()),
+            Variable::Bigint(val) => Result::Ok(val.to_string().into()),
+            Variable::Decimal(val) => Result::Ok(val.to_string().into()),
+            Variable::Char(val) => Result::Ok(val.to_string().into()),
+            Variable::Type(val) => Result::Ok(val.str()),
+            Variable::Standard(val) => val.repr(runtime),
+            Variable::Function(val) => Result::Ok(val.to_str(runtime)),
+            Variable::Custom(val) => (**val).clone().repr(runtime),
+            _ => unimplemented!(),
+        }
+    }
+
     pub fn int(&self, runtime: &mut Runtime) -> Result<IntVar, ()> {
         match self {
             Variable::Bool(val) => Result::Ok(if *val { 1 } else { 0 }.into()),
@@ -311,7 +327,7 @@ impl Variable {
             _ => self.call_op(name, args, runtime),
         }
     }
-    
+
     pub fn is_null(&self) -> bool {
         match self {
             Variable::Null() => true,

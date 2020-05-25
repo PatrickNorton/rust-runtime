@@ -39,6 +39,11 @@ impl StdVariable {
         runtime.pop_return().str(runtime)
     }
 
+    pub fn repr(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
+        self.call_operator(Operator::Repr, Vec::new(), runtime)?;
+        Result::Ok(runtime.pop_return().into())
+    }
+
     pub fn bool(&self, runtime: &mut Runtime) -> Result<bool, ()> {
         self.call_operator(Operator::Bool, vec![], runtime)?;
         runtime.pop_return().to_bool(runtime)

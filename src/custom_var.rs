@@ -52,6 +52,11 @@ pub trait CustomVar: Debug + Any + Downcast {
         runtime.pop_return().str(runtime)
     }
 
+    fn repr(self: Rc<Self>, runtime: &mut Runtime) -> Result<StringVar, ()> {
+        self.call_op(Operator::Repr, Vec::new(), runtime)?;
+        Result::Ok(runtime.pop_return().into())
+    }
+
     fn int(self: Rc<Self>, runtime: &mut Runtime) -> Result<IntVar, ()> {
         self.call_op(Operator::Int, vec![], runtime)?;
         runtime.pop_return().int(runtime)
