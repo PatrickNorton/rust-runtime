@@ -10,7 +10,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::std_variable::{StdVarMethod, StdVariable};
 use crate::variable::{FnResult, Variable};
-use std::mem::replace;
+use std::mem::{replace, take};
 
 fn print() -> Variable {
     Variable::Function(Function::Native(print_impl))
@@ -56,6 +56,15 @@ fn iter_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     runtime.call_op(args[0].clone(), Operator::Iter, Vec::new())
 }
 
+fn reversed() -> Variable {
+    Variable::Function(Function::Native(reversed_impl))
+}
+
+fn reversed_impl(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert_eq!(args.len(), 1);
+    runtime.call_op(take(&mut args[0]), Operator::Reversed, Vec::new())
+}
+
 pub fn builtin_of(index: usize) -> Variable {
     match index {
         0 => print(),
@@ -72,6 +81,7 @@ pub fn builtin_of(index: usize) -> Variable {
         11 => Set::set_type().into(),
         12 => Type::Char.into(),
         13 => FileObj::open_type().into(),
+        14 => reversed(),
         _ => unimplemented!(),
     }
 }

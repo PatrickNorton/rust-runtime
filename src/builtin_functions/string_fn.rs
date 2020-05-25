@@ -26,6 +26,7 @@ pub fn op_fn(o: Operator) -> NativeMethod<StringVar> {
         Operator::Repr => repr,
         Operator::GetAttr => index,
         Operator::Iter => iter,
+        Operator::Reversed => reversed,
         _ => unimplemented!("Operator::{:?} unimplemented", o),
     }
 }
@@ -145,6 +146,11 @@ fn index(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> Fn
 fn iter(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     runtime.return_1(Rc::new(StringIter::new(this.clone())).into())
+}
+
+fn reversed(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert!(args.is_empty());
+    runtime.return_1(this.chars().rev().collect::<String>().into())
 }
 
 fn upper(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

@@ -42,6 +42,7 @@ impl Range {
             Operator::Iter => Self::iter,
             Operator::GetAttr => Self::index,
             Operator::In => Self::contains,
+            Operator::Reversed => Self::reversed,
             _ => unimplemented!(),
         };
         Variable::Method(StdMethod::new_native(self.clone(), func))
@@ -92,6 +93,14 @@ impl Range {
             value <= self.start && value > self.stop
         } && ((&value - &self.start) % self.step.clone()).is_zero();
         runtime.return_1(result.into())
+    }
+
+    fn reversed(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        let new_stop = &self.start - &self.step;
+        let new_start = &self.stop - &self.step;
+        let new_step = -self.step.clone();
+        runtime.return_1(Rc::new(Self::new(new_start, new_stop, new_step)).into())
     }
 
     fn to_str(&self) -> StringVar {

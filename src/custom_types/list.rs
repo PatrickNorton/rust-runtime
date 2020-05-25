@@ -35,6 +35,7 @@ impl List {
             Operator::Equals => List::eq,
             Operator::Iter => List::iter,
             Operator::In => List::contains,
+            Operator::Reversed => List::reverse,
             _ => unimplemented!(),
         };
         Variable::Method(Box::new(StdMethod::new(self, InnerMethod::Native(value))))
