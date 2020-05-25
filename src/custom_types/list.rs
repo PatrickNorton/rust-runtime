@@ -152,10 +152,10 @@ impl List {
         runtime.return_1(true.into())
     }
 
-    fn reverse(self: &Rc<Self>, args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
+    fn reverse(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         self.value.borrow_mut().reverse();
-        FnResult::Ok(())
+        runtime.return_0()
     }
 
     fn count(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -169,10 +169,10 @@ impl List {
         runtime.return_1(IntVar::from(count).into())
     }
 
-    fn clear(self: &Rc<Self>, args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
+    fn clear(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         self.value.borrow_mut().clear();
-        FnResult::Ok(())
+        runtime.return_0()
     }
 
     fn add(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
