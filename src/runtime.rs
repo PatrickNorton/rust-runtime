@@ -44,7 +44,7 @@ impl Runtime {
     pub fn new(files: Vec<FileInfo>, starting_no: usize) -> Runtime {
         Runtime {
             variables: vec![],
-            frames: vec![StackFrame::new(0, 0, starting_no, vec![])],
+            frames: vec![StackFrame::new(0, 0, starting_no, vec![], 0)],
             exception_frames: HashMap::new(),
             exception_stack: vec![],
             completed_statics: HashSet::new(),
@@ -106,9 +106,10 @@ impl Runtime {
     }
 
     pub fn tail_quick(&mut self, fn_no: u16) {
+        let stack_height = self.variables.len();
         let file_no = self.current_file_no();
         let frame = self.last_mut_frame();
-        *frame = StackFrame::new(0, fn_no, file_no, Vec::new());
+        *frame = StackFrame::new(0, fn_no, file_no, Vec::new(), stack_height);
     }
 
     pub fn call_tos_or_goto(&mut self, argc: u16) -> FnResult {
@@ -238,8 +239,14 @@ impl Runtime {
         if self.current_file().get_functions()[fn_no as usize].is_generator() {
             self.create_coroutine(fn_no, args);
         } else {
-            self.frames
-                .push(StackFrame::new(var_count, fn_no, info_no, args));
+            let stack_height = self.variables.len();
+            self.frames.push(StackFrame::new(
+                var_count,
+                fn_no,
+                info_no,
+                args,
+                stack_height,
+            ));
         }
     }
 
@@ -251,7 +258,15 @@ impl Runtime {
         info_no: usize,
         frame: StackFrame,
     ) {
-        StackFrame::from_old(var_count, fn_no, info_no, args, frame);
+        let stack_height = self.variables.len();
+        self.frames.push(StackFrame::from_old(
+            var_count,
+            fn_no,
+            info_no,
+            args,
+            frame,
+            stack_height,
+        ));
     }
 
     pub fn push_native(&mut self) {
@@ -267,19 +282,23 @@ impl Runtime {
         if self.is_generator() {
             self.borrowed_iterators.pop();
         }
-        for v in self // Can't use last_frame() b/c of the borrow checker
+        let last_stack_frame = self
             .frames
             .pop()
-            .expect("Frame stack should never be empty")
-            .get_exceptions()
-        {
-            let last_frame = self.exception_frames.get_mut(v).expect(
+            .expect("Frame stack should never be empty");
+        for v in last_stack_frame.get_exceptions() {
+            let last_frames = self.exception_frames.get_mut(v).expect(
                 "In pop_stack(): popped frame has exception \
                     not covered in runtime's exception frames",
             );
-            assert_eq!(last_frame.last().unwrap().1, self.frames.len() - 1);
-            last_frame.pop();
+            assert_eq!(last_frames.last().unwrap().1, self.frames.len() - 1);
+            last_frames.pop();
             self.exception_stack.pop();
+        }
+        let stack_h = last_stack_frame.original_stack_height();
+        if stack_h != 0 {
+            let drain_end = self.variables.len() - self.ret_count;
+            self.variables.drain(stack_h..drain_end);
         }
     }
 
@@ -542,7 +561,8 @@ impl Runtime {
     }
 
     fn create_coroutine(&mut self, fn_no: u16, args: Vec<Variable>) {
-        let frame = StackFrame::new(0, fn_no, self.current_file_no(), args);
+        let stack_height = self.variables.len();
+        let frame = StackFrame::new(0, fn_no, self.current_file_no(), args, stack_height);
         let stack = Vec::new();
         self.push(Rc::new(Generator::new(frame, stack)).into())
     }

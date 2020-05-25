@@ -12,6 +12,7 @@ pub struct StackFrame {
     file_number: usize,
     location: u32,
     native: bool,
+    stack_height: usize,
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -22,7 +23,13 @@ pub struct SFInfo {
 }
 
 impl StackFrame {
-    pub fn new(var_count: u16, fn_no: u16, file_no: usize, mut args: Vec<Variable>) -> StackFrame {
+    pub fn new(
+        var_count: u16,
+        fn_no: u16,
+        file_no: usize,
+        mut args: Vec<Variable>,
+        stack_height: usize,
+    ) -> StackFrame {
         if let Option::Some(val) = var_count.checked_sub(args.len() as u16) {
             args.reserve(val as usize);
         }
@@ -33,6 +40,7 @@ impl StackFrame {
             file_number: file_no,
             location: 0,
             native: false,
+            stack_height,
         }
     }
 
@@ -44,6 +52,7 @@ impl StackFrame {
             file_number: 0,
             location: 0,
             native: true,
+            stack_height: 0,
         }
     }
 
@@ -53,6 +62,7 @@ impl StackFrame {
         file_no: usize,
         args: Vec<Variable>,
         mut parent: StackFrame,
+        stack_height: usize,
     ) -> StackFrame {
         parent.variables.extend(args);
         if let Option::Some(val) = var_count.checked_sub(parent.variables.len() as u16) {
@@ -65,6 +75,7 @@ impl StackFrame {
             file_number: file_no,
             location: 0,
             native: false,
+            stack_height,
         }
     }
 
@@ -106,6 +117,10 @@ impl StackFrame {
 
     pub fn file_no(&self) -> usize {
         self.file_number
+    }
+
+    pub fn original_stack_height(&self) -> usize {
+        self.stack_height
     }
 
     pub fn exc_info(&self) -> SFInfo {
