@@ -12,7 +12,7 @@ use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use num::{Signed, ToPrimitive};
 use std::cell::{Cell, RefCell};
-use std::mem::replace;
+use std::mem::{replace, take};
 use std::rc::Rc;
 
 #[derive(Debug)]
@@ -32,6 +32,7 @@ impl List {
             Operator::Bool => List::list_bool,
             Operator::Str => List::list_str,
             Operator::GetAttr => List::list_index,
+            Operator::SetAttr => List::set_index,
             Operator::Equals => List::eq,
             Operator::Iter => List::iter,
             Operator::In => List::contains,
@@ -74,16 +75,11 @@ impl List {
         runtime.return_1(value.into())
     }
 
-    fn list_index(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn list_index(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
-        let signed_index = IntVar::from(args[0].clone());
-        let index = if signed_index.is_negative() {
-            signed_index + self.value.borrow().len().into()
-        } else {
-            signed_index
-        };
-        if index >= self.value.borrow().len().into() || index.is_negative() {
-            runtime.throw_quick(
+        match self.normalise_index(take(&mut args[0]).into()) {
+            Result::Ok(index) => runtime.return_1(self.value.borrow()[index].clone()),
+            Result::Err(index) => runtime.throw_quick(
                 index_error(),
                 format!(
                     "index {} out of range for list of length {}",
@@ -91,24 +87,54 @@ impl List {
                     self.value.borrow().len()
                 )
                 .into(),
-            )
-        } else {
-            runtime.push(self.value.borrow()[index.to_usize().unwrap()].clone());
-            Result::Ok(())
+            ),
         }
     }
 
-    fn list_get(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn set_index(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
-        let index = IntVar::from(args[0].clone());
-        runtime.push(match index.to_usize() {
-            Option::None => args[1].clone(),
-            Option::Some(i) => match self.value.borrow().get(i) {
-                Option::None => args[1].clone(),
-                Option::Some(val) => val.clone(),
-            },
-        });
-        FnResult::Ok(())
+        match self.normalise_index(take(&mut args[0]).into()) {
+            Result::Ok(index) => {
+                self.value.borrow_mut()[index] = take(&mut args[1]);
+                runtime.return_0()
+            }
+            Result::Err(index) => runtime.throw_quick(
+                index_error(),
+                format!(
+                    "Index {} out of bounds for list of length {}",
+                    index,
+                    self.value.borrow().len()
+                )
+                .into(),
+            ),
+        }
+    }
+
+    fn list_get(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 2);
+        runtime.return_1(match self.normalise_index(take(&mut args[0]).into()) {
+            Result::Ok(index) => self.value.borrow()[index].clone(),
+            Result::Err(_) => take(&mut args[1]),
+        })
+    }
+
+    fn normalise_index(&self, signed_index: IntVar) -> Result<usize, IntVar> {
+        let len = self.value.borrow().len();
+        let index = if signed_index.is_negative() {
+            &signed_index + &len.into()
+        } else {
+            signed_index.clone()
+        };
+        index
+            .to_usize()
+            .and_then(|a| {
+                if a < len {
+                    Option::Some(a)
+                } else {
+                    Option::None
+                }
+            })
+            .ok_or(signed_index)
     }
 
     fn contains(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
