@@ -106,5 +106,5 @@ fn bitwise_xor(this: bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
 fn str(this: bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     runtime.push(Variable::String(if this { "true" } else { "false" }.into()));
-    FnResult::Ok(())
+    runtime.return_0()
 }

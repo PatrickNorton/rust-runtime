@@ -104,10 +104,10 @@ impl Dict {
         runtime.return_1(is_in.into())
     }
 
-    fn clear(self: &Rc<Self>, args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
+    fn clear(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         self.value.borrow_mut().clear();
-        FnResult::Ok(())
+        runtime.return_0()
     }
 
     fn get(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

@@ -94,7 +94,7 @@ fn int(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult
         Ok(val) => runtime.push(Variable::Bigint(val)),
         Err(_) => runtime.throw_quick(value_error(), "Error in string conversion".into())?,
     }
-    FnResult::Ok(())
+    runtime.return_0()
 }
 
 fn str(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

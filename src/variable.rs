@@ -193,7 +193,7 @@ impl Variable {
             Variable::Type(val) => val.set(index, value, runtime),
             _ => unimplemented!(),
         }
-        FnResult::Ok(())
+        runtime.return_0()
     }
 
     pub fn get_type(&self) -> Type {
