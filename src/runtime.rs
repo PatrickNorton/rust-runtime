@@ -318,39 +318,25 @@ impl Runtime {
     }
 
     pub fn throw(&mut self, exception: Variable) -> FnResult {
-        let frame = self
-            .exception_frames
-            .get(&Variable::Type(exception.get_type()));
-        match frame {
-            Option::Some(vec) => match vec.last() {
-                Option::Some(pair) => {
-                    let pair2 = *pair;
-                    self.unwind_to_height(pair2.0, pair2.1, InnerException::Std(exception))
-                }
-                // Propagate errors thrown during construction
-                Option::None => exception.str(self).map(|x| panic!("{}", x)),
-            },
-            // Propagate errors thrown during construction
-            Option::None => exception.str(self).map(|x| panic!("{}", x)),
-        }
+        let exc_type = exception.get_type();
+        let exc = InnerException::Std(exception);
+        self.unwind(exc_type, exc)
     }
 
     pub fn throw_quick(&mut self, exc_type: Type, message: StringVar) -> FnResult {
-        let frame = self.exception_frames.get(&Variable::Type(exc_type));
         let frames = self.collect_stack_frames();
-        match frame {
-            Option::Some(vec) => match vec.last() {
-                Option::Some(pair) => {
-                    let pair2 = *pair;
-                    self.unwind_to_height(
-                        pair2.0,
-                        pair2.1,
-                        InnerException::UnConstructed(exc_type, message, frames),
-                    )
-                }
-                Option::None => panic!("{}\n{}", message, self.frame_strings(&*frames)),
-            },
-            Option::None => panic!("{}\n{}", message, self.frame_strings(&*frames)),
+        let exc = InnerException::UnConstructed(exc_type, message, frames);
+        self.unwind(exc_type, exc)
+    }
+
+    fn unwind(&mut self, exc_type: Type, exc: InnerException) -> FnResult {
+        let frame = self.exception_frames.get(&Variable::Type(exc_type));
+        match frame.and_then(|vec| vec.last()) {
+            Option::Some(pair) => {
+                let pair2 = *pair;
+                self.unwind_to_height(pair2.0, pair2.1, exc)
+            }
+            Option::None => self.unwind_to_empty(exc),
         }
     }
 
@@ -608,19 +594,12 @@ impl Runtime {
         exception: InnerException,
     ) -> FnResult {
         while self.frames.len() > frame_height {
-            let last_frame = self.last_frame();
-            if last_frame.is_native() {
-                let true_exc = match exception {
-                    InnerException::Std(e) => e,
-                    InnerException::UnConstructed(t, s, _) => {
-                        t.create_inst(vec![Variable::String(s)], self)?
-                    } // FIXME: Won't collect stack frames properly
-                };
+            if self.is_native() {
+                let true_exc = exception.create(self)?;
                 self.push(true_exc);
                 return FnResult::Err(());
-            } else {
-                self.pop_stack();
             }
+            self.pop_stack();
         }
         self.exception_frames
             .get_mut(&exception.get_type().into())
@@ -630,6 +609,18 @@ impl Runtime {
         self.goto(location);
         FnResult::Ok(())
     }
+
+    fn unwind_to_empty(&mut self, exception: InnerException) -> FnResult {
+        while !self.frames.is_empty() {
+            if self.is_native() {
+                let true_exc = exception.create(self)?;
+                self.push(true_exc);
+                return FnResult::Err(());
+            }
+            self.pop_stack();
+        }
+        exception.str(self).map(|x| panic!("{}", x))
+    }
 }
 
 impl InnerException {
@@ -638,5 +629,23 @@ impl InnerException {
             InnerException::Std(v) => v.get_type(),
             InnerException::UnConstructed(t, ..) => *t,
         }
+    }
+
+    fn str(self, runtime: &mut Runtime) -> Result<StringVar, ()> {
+        match self {
+            InnerException::Std(var) => var.str(runtime),
+            InnerException::UnConstructed(_, msg, frames) => {
+                Result::Ok(format!("{}\n{}", msg, runtime.frame_strings(&*frames)).into())
+            }
+        }
+    }
+
+    fn create(self, runtime: &mut Runtime) -> Result<Variable, ()> {
+        Result::Ok(match self {
+            InnerException::Std(e) => e,
+            InnerException::UnConstructed(t, s, _) => {
+                t.create_inst(vec![Variable::String(s)], runtime)?
+            } // FIXME: Won't collect stack frames properly
+        })
     }
 }
