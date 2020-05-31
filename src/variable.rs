@@ -3,6 +3,7 @@ use crate::custom_var::CustomVarWrapper;
 use crate::file_info::FileInfo;
 use crate::function::Function;
 use crate::int_var::IntVar;
+use crate::lang_union::LangUnion;
 use crate::looping;
 use crate::method::Method;
 use crate::name::Name;
@@ -42,6 +43,7 @@ pub enum Variable {
     Method(Box<dyn Method>),
     Function(Function),
     Custom(CustomVarWrapper),
+    Union(LangUnion),
 }
 
 impl Variable {
@@ -57,6 +59,7 @@ impl Variable {
             Variable::Standard(val) => val.str(runtime),
             Variable::Function(val) => Result::Ok(val.to_str(runtime)),
             Variable::Custom(val) => (**val).clone().str(runtime),
+            Variable::Union(val) => val.str(runtime),
             _ => unimplemented!(),
         }
     }
@@ -73,6 +76,7 @@ impl Variable {
             Variable::Standard(val) => val.repr(runtime),
             Variable::Function(val) => Result::Ok(val.to_str(runtime)),
             Variable::Custom(val) => (**val).clone().repr(runtime),
+            Variable::Union(val) => val.repr(runtime),
             _ => unimplemented!(),
         }
     }
@@ -86,6 +90,7 @@ impl Variable {
             Variable::Standard(val) => val.int(runtime),
             Variable::String(val) => Result::Ok(IntVar::from_str(val)?),
             Variable::Custom(val) => (**val).clone().int(runtime),
+            Variable::Union(val) => val.int(runtime),
             _ => unimplemented!(),
         }
     }
@@ -103,6 +108,7 @@ impl Variable {
             Variable::Method(_) => Result::Ok(true),
             Variable::Function(_) => Result::Ok(true),
             Variable::Custom(val) => (**val).clone().bool(runtime),
+            Variable::Union(val) => val.bool(runtime),
         }
     }
 
@@ -113,6 +119,7 @@ impl Variable {
             Variable::Function(func) => func.call(args),
             Variable::Type(t) => t.push_create(args),
             Variable::Custom(val) => (**val).clone().call(args.0, args.1),
+            Variable::Union(val) => val.call(args),
             _ => unimplemented!(),
         }
     }
@@ -124,6 +131,7 @@ impl Variable {
             Variable::Function(func) => func.call_or_goto(args),
             Variable::Type(t) => t.push_create(args),
             Variable::Custom(val) => (**val).clone().call_or_goto(args.0, args.1),
+            Variable::Union(val) => val.call_or_goto(args),
             _ => unimplemented!(),
         }
     }
@@ -134,6 +142,7 @@ impl Variable {
             Variable::Type(_) => unimplemented!("Enum type iteration not completed yet"),
             Variable::Standard(val) => val.iter(runtime),
             Variable::Custom(val) => (**val).clone().iter(runtime),
+            Variable::Union(val) => val.iter(runtime),
             _ => unimplemented!(),
         }
     }
@@ -182,6 +191,7 @@ impl Variable {
             }
             Variable::Type(t) => t.index(index, runtime),
             Variable::Custom(val) => (*val).clone().get_attr(index),
+            Variable::Union(val) => val.index(index, runtime)?,
             _ => unimplemented!(),
         })
     }
@@ -209,6 +219,7 @@ impl Variable {
             Variable::Standard(a) => a.get_type(),
             Variable::Function(_) => unimplemented!(),
             Variable::Custom(a) => (**a).clone().get_type(),
+            Variable::Union(val) => val.get_type(),
         }
     }
 
@@ -224,6 +235,7 @@ impl Variable {
             (Variable::Standard(a), Variable::Standard(b)) => a.identical(b),
             (Variable::Method(a), Variable::Method(b)) => a == b,
             (Variable::Custom(a), Variable::Custom(b)) => a == b,
+            (Variable::Union(a), Variable::Union(b)) => a == b,
             _ => false,
         }
     }
@@ -279,6 +291,10 @@ impl Variable {
                 runtime.pop_native();
                 Result::Ok(IntVar::from(runtime.pop_return()).to_usize().unwrap())
             }
+            Variable::Union(val) => {
+                val.call_operator(Operator::Hash, Vec::new(), runtime)?;
+                Result::Ok(IntVar::from(runtime.pop_return()).to_usize().unwrap())
+            }
         }
     }
 
@@ -306,6 +322,7 @@ impl Variable {
                 .index(Name::Operator(name), runtime)?
                 .call((args, runtime)),
             Variable::Custom(c) => (*c).clone().call_op(name, args, runtime),
+            Variable::Union(u) => u.call_operator(name, args, runtime),
         }
     }
 
@@ -358,6 +375,7 @@ impl Hash for Variable {
             Variable::Method(m) => m.hash(state),
             Variable::Function(f) => f.hash(state),
             Variable::Custom(c) => c.hash(state),
+            Variable::Union(u) => u.hash(state),
         }
     }
 }
@@ -383,6 +401,12 @@ impl From<RationalVar> for Variable {
 impl From<StdVariable> for Variable {
     fn from(x: StdVariable) -> Self {
         Variable::Standard(x)
+    }
+}
+
+impl From<LangUnion> for Variable {
+    fn from(x: LangUnion) -> Self {
+        Variable::Union(x)
     }
 }
 

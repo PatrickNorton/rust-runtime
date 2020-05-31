@@ -1,5 +1,6 @@
 use crate::builtins::default_methods;
 use crate::custom_types::types::CustomTypeImpl;
+use crate::lang_union::UnionType;
 use crate::method::{InnerMethod, Method, StdMethod};
 use crate::name::Name;
 use crate::operator::Operator;
@@ -25,6 +26,7 @@ pub enum Type {
     Type,
     Object,
     Custom(&'static dyn CustomTypeImpl),
+    Union(&'static UnionType),
 }
 
 #[derive(Debug)]
@@ -71,6 +73,7 @@ impl Type {
             (Type::Type, Type::Type) => true,
             (Type::Object, _) => true,
             (Type::Custom(t), _) => t.is_subclass(other),
+            (Type::Union(t), Type::Union(u)) => ptr::eq(*t, *u),
             _ => false,
         }
     }
@@ -91,6 +94,7 @@ impl Type {
             Type::Type => Variable::Type(args[0].get_type()),
             Type::Object => unimplemented!(),
             Type::Custom(t) => t.create(args, runtime)?,
+            Type::Union(_) => unimplemented!(),
         })
     }
 
@@ -126,6 +130,7 @@ impl Type {
             Type::Type => "type".into(),
             Type::Object => "object".into(),
             Type::Custom(t) => t.get_name().clone(),
+            Type::Union(u) => u.name().clone(),
         }
     }
 
@@ -244,6 +249,7 @@ impl PartialEq for Type {
             (Type::Char, Type::Char) => true,
             (Type::Type, Type::Type) => true,
             (Type::Custom(a), Type::Custom(b)) => ptr::eq(*a, *b),
+            (Type::Union(t), Type::Union(u)) => ptr::eq(*t, *u),
             _ => false,
         }
     }
@@ -264,6 +270,7 @@ impl Hash for Type {
             Type::Type => 6.hash(state),
             Type::Object => 7.hash(state),
             Type::Custom(b) => ptr::hash(*b, state),
+            Type::Union(c) => ptr::hash(*c, state),
         }
     }
 }
