@@ -8,6 +8,7 @@ use crate::looping;
 use crate::method::Method;
 use crate::name::Name;
 use crate::operator::Operator;
+use crate::option::LangOption;
 use crate::quick_functions::quick_equals;
 use crate::rational_var::RationalVar;
 use crate::runtime::Runtime;
@@ -44,6 +45,7 @@ pub enum Variable {
     Function(Function),
     Custom(CustomVarWrapper),
     Union(LangUnion),
+    Option(LangOption),
 }
 
 impl Variable {
@@ -60,6 +62,7 @@ impl Variable {
             Variable::Function(val) => Result::Ok(val.to_str(runtime)),
             Variable::Custom(val) => (**val).clone().str(runtime),
             Variable::Union(val) => val.str(runtime),
+            Variable::Option(val) => val.str(runtime),
             _ => unimplemented!(),
         }
     }
@@ -77,6 +80,7 @@ impl Variable {
             Variable::Function(val) => Result::Ok(val.to_str(runtime)),
             Variable::Custom(val) => (**val).clone().repr(runtime),
             Variable::Union(val) => val.repr(runtime),
+            Variable::Option(val) => val.repr(runtime),
             _ => unimplemented!(),
         }
     }
@@ -109,6 +113,7 @@ impl Variable {
             Variable::Function(_) => Result::Ok(true),
             Variable::Custom(val) => (**val).clone().bool(runtime),
             Variable::Union(val) => val.bool(runtime),
+            Variable::Option(val) => Result::Ok(val.is_some()),
         }
     }
 
@@ -220,6 +225,7 @@ impl Variable {
             Variable::Function(_) => unimplemented!(),
             Variable::Custom(a) => (**a).clone().get_type(),
             Variable::Union(val) => val.get_type(),
+            Variable::Option(_) => unimplemented!(),
         }
     }
 
@@ -236,6 +242,7 @@ impl Variable {
             (Variable::Method(a), Variable::Method(b)) => a == b,
             (Variable::Custom(a), Variable::Custom(b)) => a == b,
             (Variable::Union(a), Variable::Union(b)) => a == b,
+            (Variable::Option(a), Variable::Option(b)) => a == b,
             _ => false,
         }
     }
@@ -295,6 +302,9 @@ impl Variable {
                 val.call_operator(Operator::Hash, Vec::new(), runtime)?;
                 Result::Ok(IntVar::from(runtime.pop_return()).to_usize().unwrap())
             }
+            Variable::Option(val) => val
+                .as_ref()
+                .map_or_else(|| Result::Ok(0), |x| (**x).hash(runtime)),
         }
     }
 
@@ -323,6 +333,7 @@ impl Variable {
                 .call((args, runtime)),
             Variable::Custom(c) => (*c).clone().call_op(name, args, runtime),
             Variable::Union(u) => u.call_operator(name, args, runtime),
+            Variable::Option(o) => o.call_op(name, args, runtime),
         }
     }
 
@@ -376,6 +387,7 @@ impl Hash for Variable {
             Variable::Function(f) => f.hash(state),
             Variable::Custom(c) => c.hash(state),
             Variable::Union(u) => u.hash(state),
+            Variable::Option(o) => o.hash(state),
         }
     }
 }
