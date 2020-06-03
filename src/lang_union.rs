@@ -1,3 +1,4 @@
+use crate::custom_var::CustomVar;
 use crate::int_var::IntVar;
 use crate::lang_union::default_functions::default_methods;
 use crate::looping;
@@ -11,7 +12,9 @@ use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
+use std::mem::take;
 use std::ptr;
+use std::rc::Rc;
 
 pub type UnionMethod = InnerMethod<LangUnion>;
 
@@ -32,6 +35,12 @@ pub struct UnionType {
     methods: HashMap<Name, UnionMethod>,
     static_methods: HashMap<Name, UnionMethod>,
     properties: HashMap<StringVar, Property>,
+}
+
+#[derive(Debug, Copy, Clone)]
+struct UnionMaker {
+    variant_no: usize,
+    cls: &'static UnionType,
 }
 
 impl LangUnion {
@@ -129,6 +138,56 @@ impl LangUnion {
 }
 
 impl UnionType {
+    pub const fn new(
+        name: StringVar,
+        file_no: usize,
+        variants: Vec<StringVar>,
+        variables: HashSet<StringVar>,
+        methods: HashMap<Name, UnionMethod>,
+        static_methods: HashMap<Name, UnionMethod>,
+        properties: HashMap<StringVar, Property>,
+    ) -> UnionType {
+        UnionType {
+            name,
+            file_no,
+            variants,
+            variables,
+            supers: Vec::new(),
+            methods,
+            static_methods,
+            properties,
+        }
+    }
+
+    pub fn index(&'static self, name: Name) -> Variable {
+        match name {
+            Name::Operator(_) => unimplemented!(),
+            Name::Attribute(var) => {
+                if self.variants.contains(&var) {
+                    Rc::new(UnionMaker::new(0, self)).into()
+                } else {
+                    self.index_attr(var)
+                }
+            }
+        }
+    }
+
+    fn index_attr(&'static self, attr: StringVar) -> Variable {
+        let var_attr = Name::Attribute(attr);
+        if self.static_methods.contains_key(&var_attr) {
+            match self.static_methods.get(&var_attr).unwrap() {
+                InnerMethod::Standard(a, b) => {
+                    let inner_m = InnerMethod::Standard(*a, *b);
+                    let n = StdMethod::new(Type::Union(self), inner_m);
+                    Variable::Method(Box::new(n))
+                }
+                _ => unimplemented!(),
+            }
+        } else {
+            unimplemented!()
+        }
+    }
+
     fn variant_pos(&self, index: &Name) -> Option<usize> {
         if let Name::Attribute(name) = index {
             self.variants.iter().position(|x| x == name)
@@ -235,5 +294,47 @@ mod default_functions {
             }
         }
         runtime.return_1(false.into())
+    }
+}
+
+impl From<&'static UnionType> for Type {
+    fn from(x: &'static UnionType) -> Self {
+        Type::Union(x)
+    }
+}
+
+impl UnionMaker {
+    fn new(variant_no: usize, cls: &'static UnionType) -> UnionMaker {
+        UnionMaker { variant_no, cls }
+    }
+}
+
+impl CustomVar for UnionMaker {
+    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
+        if name == Name::Operator(Operator::Call) {
+            self.into()
+        } else {
+            unimplemented!()
+        }
+    }
+
+    fn set(self: Rc<Self>, _name: Name, _object: Variable) {
+        unimplemented!()
+    }
+
+    fn get_type(self: Rc<Self>) -> Type {
+        unimplemented!()
+    }
+
+    fn call(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        let value = take(&mut args[0]);
+        runtime.return_1(LangUnion::new(self.variant_no, Box::new(value), self.cls).into())
+    }
+
+    fn call_or_goto(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        let value = take(&mut args[0]);
+        runtime.return_1(LangUnion::new(self.variant_no, Box::new(value), self.cls).into())
     }
 }
