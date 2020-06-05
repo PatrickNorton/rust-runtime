@@ -120,6 +120,18 @@ impl LangUnion {
         &self.cls.variants[self.variant_no]
     }
 
+    pub fn is_variant(&self, variant_no: usize) -> bool {
+        self.variant_no == variant_no
+    }
+
+    pub fn take_value(self) -> Box<Variable> {
+        self.value
+    }
+
+    pub fn variant_no(&self) -> usize {
+        self.variant_no
+    }
+
     fn index_harder(&self, index: Name, runtime: &mut Runtime) -> Result<Variable, ()> {
         match self.cls.get_property(&index) {
             Option::Some(val) => {

@@ -6,8 +6,10 @@ use crate::custom_types::set::Set;
 use crate::int_tools::bytes_index;
 use crate::int_var::IntVar;
 use crate::jump_table::JumpTable;
+use crate::lang_union::LangUnion;
 use crate::name::Name;
 use crate::operator::Operator;
+use crate::option::LangOption;
 use crate::quick_functions::{
     quick_add, quick_bitwise_and, quick_bitwise_not, quick_bitwise_or, quick_bitwise_xor,
     quick_div, quick_equals, quick_floor_div, quick_greater_equal, quick_greater_than,
@@ -15,6 +17,7 @@ use crate::quick_functions::{
     quick_right_bitshift, quick_sub, quick_subscript, quick_u_minus, QuickResult,
 };
 use crate::runtime::Runtime;
+use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use num::traits::FromPrimitive;
@@ -400,6 +403,49 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         Bytecode::LoadStatic => {
             let var = runtime.load_static(bytes_0 as usize);
             runtime.push(var);
+        }
+        Bytecode::GetVariant => {
+            if let Variable::Union(var) = runtime.pop() {
+                let variant_no = bytes_0 as usize;
+                runtime.push(
+                    if var.is_variant(variant_no) {
+                        LangOption::new(Option::Some(*var.take_value()))
+                    } else {
+                        LangOption::new(Option::None)
+                    }
+                    .into(),
+                )
+            } else {
+                panic!("Called Bytecode::GetVariant where TOS not a union")
+            }
+        }
+        Bytecode::MakeVariant => {
+            let variant_no = bytes_0 as usize;
+            let value = runtime.pop();
+            let union_t = runtime.pop();
+            if let Variable::Type(Type::Union(t)) = union_t {
+                runtime.push(LangUnion::new(variant_no, Box::new(value), t).into())
+            } else {
+                panic!("Called Bytecode::MakeVariant where TOS-1 not a union type")
+            }
+        }
+        Bytecode::VariantNo => {
+            if let Variable::Union(value) = runtime.pop() {
+                runtime.push(IntVar::from(value.variant_no()).into())
+            } else {
+                panic!("Called Bytecode::VariantNo where TOS not a union")
+            }
+        }
+        Bytecode::MakeOption => {
+            let value = runtime.pop();
+            runtime.push(
+                if value == Variable::Null() {
+                    LangOption::new(Option::None)
+                } else {
+                    LangOption::new(Option::Some(value))
+                }
+                .into(),
+            )
         }
         Bytecode::LoadFunction => {
             let fn_index = bytes_0 as u16;
