@@ -218,13 +218,12 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             }
         }
         Bytecode::JumpNN => {
-            if let Variable::Null() = runtime.pop() {
-            } else {
+            if !runtime.pop().is_null() {
                 runtime.goto(bytes_0)
             }
         }
         Bytecode::JumpNull => {
-            if let Variable::Null() = runtime.pop() {
+            if runtime.pop().is_null() {
                 runtime.goto(bytes_0)
             }
         }
@@ -446,6 +445,10 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
                 }
                 .into(),
             )
+        }
+        Bytecode::IsSome => {
+            let is_some = !runtime.pop().is_null();
+            runtime.push(is_some.into())
         }
         Bytecode::LoadFunction => {
             let fn_index = bytes_0 as u16;

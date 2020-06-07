@@ -93,6 +93,7 @@ pub enum Bytecode {
     MakeVariant = 0x69,
     VariantNo = 0x6A,
     MakeOption = 0x6B,
+    IsSome = 0x6C,
     // Misc.
     LoadFunction = 0x70,
     GetType = 0x71,
@@ -172,7 +173,7 @@ pub fn bytecode_size(b: Bytecode) -> (usize, usize) {
         | Bytecode::LoadStatic
         | Bytecode::GetVariant
         | Bytecode::MakeVariant => (2, 0),
-        Bytecode::VariantNo | Bytecode::MakeOption => (0, 0),
+        Bytecode::VariantNo | Bytecode::MakeOption | Bytecode::IsSome => (0, 0),
         Bytecode::LoadFunction => (2, 0),
         Bytecode::GetType => (0, 0),
     }

@@ -359,6 +359,7 @@ impl Variable {
     pub fn is_null(&self) -> bool {
         match self {
             Variable::Null() => true,
+            Variable::Option(a) => a.is_none(),
             _ => false,
         }
     }
