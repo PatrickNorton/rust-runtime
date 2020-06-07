@@ -26,6 +26,24 @@ impl IntVar {
     }
 }
 
+pub fn normalize(len: usize, signed_index: IntVar) -> Result<usize, IntVar> {
+    let index = if signed_index.is_negative() {
+        &signed_index + &len.into()
+    } else {
+        signed_index.clone()
+    };
+    index
+        .to_usize()
+        .and_then(|a| {
+            if a < len {
+                Option::Some(a)
+            } else {
+                Option::None
+            }
+        })
+        .ok_or(signed_index)
+}
+
 impl From<BigInt> for IntVar {
     fn from(x: BigInt) -> Self {
         match x.to_isize() {

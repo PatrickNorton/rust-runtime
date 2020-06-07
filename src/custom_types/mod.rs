@@ -14,6 +14,7 @@ macro_rules! custom_class {
 }
 
 pub mod array;
+pub mod bytes;
 pub mod coroutine;
 pub mod dict;
 pub mod exceptions;

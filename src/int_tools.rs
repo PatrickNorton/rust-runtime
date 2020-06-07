@@ -3,6 +3,7 @@ use std::mem::size_of;
 
 pub trait FromBytes {
     fn from_be(bytes: &[u8]) -> Self;
+    fn from_le(bytes: &[u8]) -> Self;
 }
 
 macro_rules! impl_from_bytes {
@@ -11,6 +12,11 @@ macro_rules! impl_from_bytes {
             #[inline]
             fn from_be(bytes: &[u8]) -> Self {
                 <$type>::from_be_bytes(bytes.try_into().unwrap())
+            }
+
+            #[inline]
+            fn from_le(bytes: &[u8]) -> Self {
+                <$type>::from_le_bytes(bytes.try_into().unwrap())
             }
         }
     };
@@ -33,6 +39,20 @@ where
 {
     let byte_size = size_of::<T>();
     let result = T::from_be(&bytes[*index..*index + byte_size]);
+    *index += byte_size;
+    result
+}
+
+/// Convert a `Vec<u8>` to a primitive int, beginning at the index specified.
+///
+/// Unlike [`bytes_to`], this will not check the length and will not attempt to
+/// parse the entire Vec.
+pub fn bytes_index_le<T>(bytes: &[u8], index: &mut usize) -> T
+where
+    T: FromBytes,
+{
+    let byte_size = size_of::<T>();
+    let result = T::from_le(&bytes[*index..*index + byte_size]);
     *index += byte_size;
     result
 }
