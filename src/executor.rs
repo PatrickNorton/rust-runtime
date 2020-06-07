@@ -450,6 +450,14 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let is_some = !runtime.pop().is_null();
             runtime.push(is_some.into())
         }
+        Bytecode::UnwrapOption => {
+            let tos = runtime.pop();
+            if let Variable::Option(o) = tos {
+                runtime.push(*o.take().unwrap_or_else(|| Box::new(Variable::Null())))
+            } else {
+                panic!("Called Bytecode::UnwrapOption where TOS not an option")
+            }
+        }
         Bytecode::LoadFunction => {
             let fn_index = bytes_0 as u16;
             runtime.push(runtime.load_fn(fn_index));
