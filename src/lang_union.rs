@@ -5,6 +5,7 @@ use crate::looping;
 use crate::method::{InnerMethod, StdMethod};
 use crate::name::Name;
 use crate::operator::Operator;
+use crate::option::LangOption;
 use crate::property::Property;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
@@ -107,7 +108,14 @@ impl LangUnion {
 
     pub fn index(&self, index: Name, runtime: &mut Runtime) -> Result<Variable, ()> {
         match self.cls.variant_pos(&index) {
-            Option::Some(_true_val) => todo!("Option"),
+            Option::Some(true_val) => Result::Ok(
+                if self.is_variant(true_val) {
+                    LangOption::new(Option::Some((*self.value).clone()))
+                } else {
+                    LangOption::new(Option::None)
+                }
+                .into(),
+            ),
             Option::None => self.index_harder(index, runtime),
         }
     }
