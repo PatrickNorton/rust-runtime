@@ -82,6 +82,10 @@ pub fn load_bool(data: &[u8], index: &mut usize) -> Variable {
     Variable::Bool(value != 0)
 }
 
+pub fn option_index(data: &[u8], index: &mut usize) -> u16 {
+    bytes_index::<u16>(data, index)
+}
+
 fn get_variables(data: &[u8], index: &mut usize) -> HashSet<StringVar> {
     let mut variables: HashSet<StringVar> = HashSet::new();
     let byte_size = bytes_index::<u32>(data, index);
