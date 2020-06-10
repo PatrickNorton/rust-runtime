@@ -2,6 +2,7 @@ use crate::base_fn::BaseFunction;
 use crate::builtins::builtin_of;
 use crate::int_tools::bytes_index;
 use crate::int_var::IntVar;
+use crate::lang_union::UnionMethod;
 use crate::name::Name;
 use crate::operator::Operator;
 use crate::property::{Property, StdProperty};
@@ -79,6 +80,10 @@ pub fn load_bool(data: &[u8], index: &mut usize) -> Variable {
     let value = data[*index];
     *index += 1;
     Variable::Bool(value != 0)
+}
+
+pub fn option_index(data: &[u8], index: &mut usize) -> u16 {
+    bytes_index::<u16>(data, index)
 }
 
 fn get_variables(data: &[u8], index: &mut usize) -> HashSet<StringVar> {
@@ -183,6 +188,45 @@ fn merge_maps(
     result
 }
 
+fn merge_maps_union(
+    ops: HashMap<Operator, StdVarMethod>,
+    strings: HashMap<String, StdVarMethod>,
+) -> HashMap<Name, UnionMethod> {
+    let mut result: HashMap<Name, UnionMethod> = HashMap::with_capacity(ops.len() + strings.len());
+    for i in ops {
+        result.insert(Name::Operator(i.0), std_to_union(i.1));
+    }
+    for i in strings {
+        result.insert(
+            Name::Attribute(StringVar::from_leak(i.0)),
+            std_to_union(i.1),
+        );
+    }
+    result
+}
+
+fn std_to_union(val: StdVarMethod) -> UnionMethod {
+    match val {
+        StdVarMethod::Standard(a, b) => UnionMethod::Standard(a, b),
+        _ => panic!("Cannot convert method"),
+    }
+}
+
+fn get_names(data: &[u8], index: &mut usize) -> Option<Vec<StringVar>> {
+    let is_union = data[*index] != 0;
+    *index += 1;
+    if is_union {
+        let vec_size = bytes_index::<u32>(data, index);
+        Option::Some(
+            (0..vec_size)
+                .map(|_| StringVar::from_leak(load_std_str(data, index)))
+                .collect(),
+        )
+    } else {
+        Option::None
+    }
+}
+
 pub fn load_class(
     file_no: usize,
     data: &[u8],
@@ -194,6 +238,8 @@ pub fn load_class(
         panic!("Supers not allowed yet")
     }
     let _generic_size = bytes_index::<u16>(data, index);
+    assert_eq!(_generic_size, 0);
+    let names = get_names(data, index);
     let variables = get_variables(data, index);
     get_variables(data, index);
     let operators = get_operators(data, file_no, index, functions);
@@ -202,12 +248,23 @@ pub fn load_class(
     let static_methods = get_methods(data, file_no, index, functions);
     let properties = get_properties(data, file_no, index, functions);
 
-    Variable::Type(Type::new_std(
-        StringVar::from_leak(name),
-        file_no,
-        variables,
-        merge_maps(operators, methods),
-        merge_maps(static_operators, static_methods),
-        properties,
-    ))
+    match names {
+        Option::None => Variable::Type(Type::new_std(
+            StringVar::from_leak(name),
+            file_no,
+            variables,
+            merge_maps(operators, methods),
+            merge_maps(static_operators, static_methods),
+            properties,
+        )),
+        Option::Some(variants) => Variable::Type(Type::new_union(
+            StringVar::from_leak(name),
+            file_no,
+            variants,
+            variables,
+            merge_maps_union(operators, methods),
+            merge_maps_union(static_operators, static_methods),
+            properties,
+        )),
+    }
 }

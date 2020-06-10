@@ -88,6 +88,13 @@ pub enum Bytecode {
     DoStatic = 0x60,
     StoreStatic = 0x61,
     LoadStatic = 0x62,
+    // Union/Option stuff
+    GetVariant = 0x68,
+    MakeVariant = 0x69,
+    VariantNo = 0x6A,
+    MakeOption = 0x6B,
+    IsSome = 0x6C,
+    UnwrapOption = 0x6D,
     // Misc.
     LoadFunction = 0x70,
     GetType = 0x71,
@@ -163,7 +170,13 @@ pub fn bytecode_size(b: Bytecode) -> (usize, usize) {
         Bytecode::ListAdd | Bytecode::SetAdd | Bytecode::DictAdd => (0, 0),
         Bytecode::Dotimes => (4, 0),
         Bytecode::DoStatic => (4, 0),
-        Bytecode::StoreStatic | Bytecode::LoadStatic => (2, 0),
+        Bytecode::StoreStatic
+        | Bytecode::LoadStatic
+        | Bytecode::GetVariant
+        | Bytecode::MakeVariant => (2, 0),
+        Bytecode::VariantNo | Bytecode::MakeOption | Bytecode::IsSome | Bytecode::UnwrapOption => {
+            (0, 0)
+        }
         Bytecode::LoadFunction => (2, 0),
         Bytecode::GetType => (0, 0),
     }

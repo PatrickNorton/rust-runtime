@@ -1,12 +1,13 @@
 use crate::base_fn::BaseFunction;
 use crate::constant_loaders::{
     class_index, function_index, load_bigint, load_bool, load_builtin, load_class, load_decimal,
-    load_int, load_std_str, load_str,
+    load_int, load_std_str, load_str, option_index,
 };
 use crate::file_info::FileInfo;
 use crate::function::Function;
 use crate::int_tools::bytes_index;
 use crate::jump_table::JumpTable;
+use crate::option::LangOption;
 use crate::variable::Variable;
 use std::collections::HashMap;
 use std::fs::read;
@@ -18,13 +19,15 @@ const FILE_EXTENSION: &str = ".nbyte";
 enum LoadType {
     Function(u32),
     Class(u32),
+    Option(u16),
 }
 
 fn load_constant(
     data: &[u8],
     index: &mut usize,
-    load_later: &mut Vec<LoadType>,
+    load_later: &mut Vec<(usize, LoadType)>,
     imports: &[Variable],
+    constant_no: usize,
 ) -> Variable {
     *index += 1;
     match data[*index - 1] {
@@ -35,12 +38,16 @@ fn load_constant(
         4 => imports[bytes_index::<u32>(data, index) as usize].clone(),
         5 => load_builtin(data, index),
         6 => {
-            load_later.push(LoadType::Function(function_index(data, index)));
+            load_later.push((constant_no, LoadType::Function(function_index(data, index))));
             Variable::Null()
         }
         7 => load_bool(data, index),
         8 => {
-            load_later.push(LoadType::Class(class_index(data, index)));
+            load_later.push((constant_no, LoadType::Class(class_index(data, index))));
+            Variable::Null()
+        }
+        9 => {
+            load_later.push((constant_no, LoadType::Option(option_index(data, index))));
             Variable::Null()
         }
         _ => panic!("Invalid value for constant: {}", data[*index - 1]),
@@ -86,13 +93,14 @@ pub fn parse_file(name: String, files: &mut Vec<FileInfo>) -> usize {
 
     let constant_count = bytes_index::<u32>(&data, &mut index);
     let mut constants: Vec<Variable> = Vec::with_capacity(constant_count as usize);
-    let mut loaded_later: Vec<LoadType> = Vec::new();
-    for _ in 0..constant_count {
+    let mut loaded_later: Vec<(usize, LoadType)> = Vec::new();
+    for i in 0..constant_count {
         constants.push(load_constant(
             &data,
             &mut index,
             &mut loaded_later,
             &imports,
+            i as usize,
         ));
     }
 
@@ -116,15 +124,15 @@ pub fn parse_file(name: String, files: &mut Vec<FileInfo>) -> usize {
 
     debug_assert_eq!(data.len(), index);
 
-    let mut load_count: usize = 0;
-    for c in &mut constants {
-        if let Variable::Null() = c {
-            *c = match loaded_later[load_count] {
-                LoadType::Function(d) => Variable::Function(Function::Standard(file_no, d)),
-                LoadType::Class(d) => classes[d as usize].clone(),
-            };
-            load_count += 1;
-        }
+    for (i, load) in loaded_later {
+        let val = match load {
+            LoadType::Function(d) => Variable::Function(Function::Standard(file_no, d)),
+            LoadType::Class(d) => classes[d as usize].clone(),
+            LoadType::Option(d) => {
+                Variable::Option(LangOption::new(Option::Some(constants[d as usize].clone())))
+            }
+        };
+        constants[i] = val;
     }
 
     files[file_no] = FileInfo::new(name, constants, functions, exports, jump_tables);

@@ -1,5 +1,6 @@
 use crate::builtins::default_methods;
 use crate::custom_types::types::CustomTypeImpl;
+use crate::lang_union::{UnionMethod, UnionType};
 use crate::method::{InnerMethod, Method, StdMethod};
 use crate::name::Name;
 use crate::operator::Operator;
@@ -25,6 +26,7 @@ pub enum Type {
     Type,
     Object,
     Custom(&'static dyn CustomTypeImpl),
+    Union(&'static UnionType),
 }
 
 #[derive(Debug)]
@@ -58,6 +60,27 @@ impl Type {
         Type::Standard(Box::leak(t)) // Classes live forever, why worry about cleanup?
     }
 
+    pub fn new_union(
+        name: StringVar,
+        file_no: usize,
+        variants: Vec<StringVar>,
+        variables: HashSet<StringVar>,
+        methods: HashMap<Name, UnionMethod>,
+        static_methods: HashMap<Name, UnionMethod>,
+        properties: HashMap<StringVar, Property>,
+    ) -> Type {
+        let t = Box::new(UnionType::new(
+            name,
+            file_no,
+            variants,
+            variables,
+            methods,
+            static_methods,
+            properties,
+        ));
+        Type::Union(Box::leak(t)) // Classes live forever, why worry about cleanup?
+    }
+
     pub fn is_subclass(&self, other: &Type) -> bool {
         match (self, other) {
             (Type::Standard(t), _) => t.is_subclass(other),
@@ -71,6 +94,7 @@ impl Type {
             (Type::Type, Type::Type) => true,
             (Type::Object, _) => true,
             (Type::Custom(t), _) => t.is_subclass(other),
+            (Type::Union(t), Type::Union(u)) => ptr::eq(*t, *u),
             _ => false,
         }
     }
@@ -91,6 +115,7 @@ impl Type {
             Type::Type => Variable::Type(args[0].get_type()),
             Type::Object => unimplemented!(),
             Type::Custom(t) => t.create(args, runtime)?,
+            Type::Union(_) => unimplemented!(),
         })
     }
 
@@ -100,16 +125,17 @@ impl Type {
         runtime.return_1(new)
     }
 
-    pub fn index(&self, index: Name, runtime: &mut Runtime) -> Variable {
+    pub fn index(self, index: Name, runtime: &mut Runtime) -> Variable {
         match self {
             Type::Standard(std_t) => match std_t.index_method(&index) {
                 Option::Some(index_pair) => {
                     let inner_m = InnerMethod::Standard(index_pair.0, index_pair.1);
-                    let n = StdMethod::new(*self, inner_m);
+                    let n = StdMethod::new(self, inner_m);
                     Variable::Method(Box::new(n))
                 }
-                Option::None => runtime.static_attr(self, index),
+                Option::None => runtime.static_attr(&self, index),
             },
+            Type::Union(union_t) => union_t.index(index),
             _ => unimplemented!(),
         }
     }
@@ -126,6 +152,7 @@ impl Type {
             Type::Type => "type".into(),
             Type::Object => "object".into(),
             Type::Custom(t) => t.get_name().clone(),
+            Type::Union(u) => u.name().clone(),
         }
     }
 
@@ -244,6 +271,7 @@ impl PartialEq for Type {
             (Type::Char, Type::Char) => true,
             (Type::Type, Type::Type) => true,
             (Type::Custom(a), Type::Custom(b)) => ptr::eq(*a, *b),
+            (Type::Union(t), Type::Union(u)) => ptr::eq(*t, *u),
             _ => false,
         }
     }
@@ -264,6 +292,7 @@ impl Hash for Type {
             Type::Type => 6.hash(state),
             Type::Object => 7.hash(state),
             Type::Custom(b) => ptr::hash(*b, state),
+            Type::Union(c) => ptr::hash(*c, state),
         }
     }
 }
