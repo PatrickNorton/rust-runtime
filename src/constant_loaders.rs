@@ -1,5 +1,6 @@
 use crate::base_fn::BaseFunction;
 use crate::builtins::builtin_of;
+use crate::custom_types::bytes::LangBytes;
 use crate::int_tools::bytes_index;
 use crate::int_var::IntVar;
 use crate::lang_union::UnionMethod;
@@ -15,6 +16,7 @@ use num::bigint::Sign;
 use num::traits::pow::pow;
 use num::{BigInt, BigRational, FromPrimitive};
 use std::collections::{HashMap, HashSet};
+use std::rc::Rc;
 
 pub fn load_std_str(data: &[u8], index: &mut usize) -> String {
     let size = bytes_index::<u32>(data, index);
@@ -84,6 +86,12 @@ pub fn load_bool(data: &[u8], index: &mut usize) -> Variable {
 
 pub fn option_index(data: &[u8], index: &mut usize) -> u16 {
     bytes_index::<u16>(data, index)
+}
+
+pub fn load_bytes(data: &[u8], index: &mut usize) -> Variable {
+    let len = bytes_index::<u32>(data, index) as usize;
+    let byte_arr = &data[*index..*index + len];
+    Rc::new(LangBytes::new(byte_arr.to_vec())).into()
 }
 
 fn get_variables(data: &[u8], index: &mut usize) -> HashSet<StringVar> {
