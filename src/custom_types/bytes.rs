@@ -48,7 +48,9 @@ impl LangBytes {
 
     fn get_attribute(self: Rc<Self>, attr: StringVar) -> Variable {
         let func = match attr.as_str() {
+            "length" => return IntVar::from(self.value.borrow().len()).into(),
             "encode" => Self::encode,
+            "join" => Self::join,
             _ => unimplemented!(),
         };
         Variable::Method(StdMethod::new_native(self, func))
@@ -211,6 +213,21 @@ impl LangBytes {
     fn iter(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         runtime.return_1(Rc::new(BytesIter::new(self.clone())).into())
+    }
+
+    fn join(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.len() == 1);
+        let mut is_first = true;
+        let mut result = Vec::new();
+        let iter = take(&mut args[0]).iter(runtime)?;
+        while let Option::Some(val) = iter.next(runtime)? {
+            if !is_first {
+                result.extend_from_slice(&self.value.borrow());
+            }
+            is_first = false;
+            result.extend_from_slice(val.str(runtime)?.as_bytes());
+        }
+        runtime.return_1(Rc::new(LangBytes::new(result)).into())
     }
 
     fn create(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
