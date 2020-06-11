@@ -38,7 +38,7 @@ pub fn get_operator(this: StringVar, o: Operator) -> Variable {
 
 pub fn get_attr(this: StringVar, s: StringVar) -> Variable {
     let func = match s.as_str() {
-        "length" => return Variable::Bigint(this.len().into()),
+        "length" => return Variable::Bigint(this.chars().count().into()),
         "upper" => upper,
         "lower" => lower,
         "join" => join,
