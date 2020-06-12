@@ -106,7 +106,10 @@ impl Hash for CustomVarWrapper {
 
 impl PartialEq for CustomVarWrapper {
     fn eq(&self, other: &Self) -> bool {
-        Rc::ptr_eq(&self.value, &other.value)
+        ptr::eq(
+            self.value.as_ref() as *const dyn CustomVar as *const (),
+            other.value.as_ref() as *const dyn CustomVar as *const (),
+        )
     }
 }
 
