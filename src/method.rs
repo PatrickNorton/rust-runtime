@@ -157,11 +157,11 @@ impl<T> Debug for InnerMethod<T> {
             InnerMethod::Standard(i, j) => f.debug_tuple("Standard").field(i).field(j).finish(),
             InnerMethod::Native(fn_) => f
                 .debug_tuple("Native")
-                .field(&format!("fn@{}", *fn_ as usize))
+                .field(&format!("fn@{:#X}", *fn_ as usize))
                 .finish(),
             InnerMethod::Move(fn_) => f
                 .debug_tuple("Move")
-                .field(&format!("fn@{}", *fn_ as usize))
+                .field(&format!("fn@{:#X}", *fn_ as usize))
                 .finish(),
         }
     }
