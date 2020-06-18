@@ -23,4 +23,5 @@ pub mod lambda;
 pub mod list;
 pub mod range;
 pub mod set;
+pub mod slice;
 pub mod types;

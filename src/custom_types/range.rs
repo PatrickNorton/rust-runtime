@@ -22,7 +22,7 @@ pub struct Range {
 }
 
 impl Range {
-    fn new(start: IntVar, stop: IntVar, step: IntVar) -> Range {
+    pub fn new(start: IntVar, stop: IntVar, step: IntVar) -> Range {
         Range { start, stop, step }
     }
 
