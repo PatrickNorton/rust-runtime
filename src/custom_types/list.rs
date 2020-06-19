@@ -37,6 +37,7 @@ impl List {
             Operator::Iter => List::iter,
             Operator::In => List::contains,
             Operator::Reversed => List::reverse,
+            Operator::GetSlice => List::get_slice,
             _ => unimplemented!(),
         };
         Variable::Method(Box::new(StdMethod::new(self, InnerMethod::Native(value))))
@@ -209,6 +210,22 @@ impl List {
             }
         }
         Result::Ok(is_eq)
+    }
+
+    fn get_slice(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        runtime.call_attr(
+            take(&mut args[0]),
+            "toRange".into(),
+            vec![IntVar::from(self.value.borrow().len()).into()],
+        )?;
+        let val = runtime.pop_return().iter(runtime)?;
+        let mut raw_vec = Vec::new();
+        let self_val = self.value.borrow();
+        while let Option::Some(i) = val.next(runtime)? {
+            raw_vec.push(self_val[IntVar::from(i).to_usize().expect("Conversion error")].clone());
+        }
+        runtime.return_1(List::from_values(raw_vec).into())
     }
 
     fn iter(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
