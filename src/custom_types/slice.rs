@@ -1,3 +1,4 @@
+use crate::custom_types::exceptions::value_error;
 use crate::custom_types::range::Range;
 use crate::custom_var::CustomVar;
 use crate::int_var::IntVar;
@@ -7,7 +8,7 @@ use crate::option::LangOption;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::variable::{FnResult, Variable};
-use num::{One, Zero};
+use num::{One, Signed, Zero};
 use std::mem::take;
 use std::rc::Rc;
 
@@ -25,11 +26,47 @@ impl Slice {
 
     fn make_range(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        let iterable_len = IntVar::from(take(&mut args[0]));
-        let start = self.start.clone().unwrap_or_else(Zero::zero);
-        let stop = self.stop.clone().unwrap_or(iterable_len);
+        /*
+        [::] or [:] -> [0:len:1]
+        [:x:] or [:x] -> [0:x:1]
+        [x::] or [x:] -> [x:len:1]
+        [x:y:] or [x:y] -> [x:y:1]
+        [:-x:] or [:-x] -> [0:len-x:1]
+        [-x::] or [-x:] -> [len-x:len:1]
+        [::-y] -> [len-1:-1:-y]
+        [x::-y] -> [x:-1:-y]
+        [:x:-y] -> [len-1:x:-y]
+        */
+        let len = IntVar::from(take(&mut args[0]));
         let step = self.step.clone().unwrap_or_else(One::one);
-        runtime.return_1(Rc::new(Range::new(start, stop, step)).into())
+        if step.is_zero() {
+            runtime.throw_quick(value_error(), "Step cannot be 0".into())
+        } else if step.is_positive() {
+            let start = self
+                .start
+                .as_ref()
+                .map(|x| if x.is_negative() { &len + x } else { x.clone() })
+                .unwrap_or_else(Zero::zero);
+            let stop = self
+                .stop
+                .as_ref()
+                .map(|x| if x.is_negative() { &len + x } else { x.clone() })
+                .unwrap_or(len);
+            runtime.return_1(Rc::new(Range::new(start, stop, step)).into())
+        } else {
+            // step.is_negative()
+            let start = self
+                .start
+                .as_ref()
+                .map(|x| if x.is_negative() { &len + x } else { x.clone() })
+                .unwrap_or_else(|| &len - &1.into());
+            let stop = self
+                .start
+                .as_ref()
+                .map(|x| if x.is_negative() { &len + x } else { x.clone() })
+                .unwrap_or_else(|| (-1).into());
+            runtime.return_1(Rc::new(Range::new(start, stop, step)).into())
+        }
     }
 
     fn create(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
