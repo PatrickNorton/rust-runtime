@@ -3,6 +3,7 @@ use crate::custom_types::file::FileObj;
 use crate::custom_types::list::List;
 use crate::custom_types::range::Range;
 use crate::custom_types::set::Set;
+use crate::custom_types::slice::Slice;
 use crate::function::Function;
 use crate::name::Name;
 use crate::operator::Operator;
@@ -82,6 +83,7 @@ pub fn builtin_of(index: usize) -> Variable {
         12 => Type::Char.into(),
         13 => FileObj::open_type().into(),
         14 => reversed(),
+        15 => Slice::slice_type().into(),
         _ => unimplemented!(),
     }
 }
