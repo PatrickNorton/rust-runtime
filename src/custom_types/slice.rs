@@ -4,6 +4,7 @@ use crate::custom_var::CustomVar;
 use crate::int_var::IntVar;
 use crate::method::StdMethod;
 use crate::name::Name;
+use crate::operator::Operator;
 use crate::option::LangOption;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
@@ -22,6 +23,17 @@ pub struct Slice {
 impl Slice {
     fn new(start: Option<IntVar>, stop: Option<IntVar>, step: Option<IntVar>) -> Slice {
         Slice { start, stop, step }
+    }
+
+    fn str(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        let str = format!(
+            "slice({}, {}, {})",
+            stringify(&self.start),
+            stringify(&self.stop),
+            stringify(&self.step),
+        );
+        runtime.return_1(str.into())
     }
 
     fn make_range(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -85,16 +97,20 @@ impl Slice {
 
 impl CustomVar for Slice {
     fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        if let Name::Attribute(s) = name {
-            match s.as_str() {
+        match name {
+            Name::Attribute(s) => match s.as_str() {
                 "start" => int_to_var(self.start.clone()),
                 "stop" => int_to_var(self.stop.clone()),
                 "step" => int_to_var(self.step.clone()),
                 "toRange" => Variable::Method(StdMethod::new_native(self, Self::make_range)),
                 _ => unimplemented!(),
-            }
-        } else {
-            unimplemented!()
+            },
+            Name::Operator(o) => match o {
+                Operator::Str | Operator::Repr => {
+                    Variable::Method(StdMethod::new_native(self, Self::str))
+                }
+                _ => unimplemented!(),
+            },
         }
     }
 
@@ -116,5 +132,12 @@ fn var_to_int(value: Variable) -> Option<IntVar> {
         Option::None
     } else {
         Option::Some(value.into())
+    }
+}
+
+fn stringify(val: &Option<IntVar>) -> String {
+    match val {
+        Option::Some(x) => format!("Some({})", x),
+        Option::None => "None".to_string(),
     }
 }
