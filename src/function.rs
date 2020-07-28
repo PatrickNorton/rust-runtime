@@ -38,6 +38,13 @@ impl Function {
             Function::Native(func) => format!("fn@{}", *func as usize).into(),
         }
     }
+
+    pub fn id(&self) -> usize {
+        match self {
+            Function::Standard(_file_no, _fn_no) => todo!("Unique ids for standard functions"),
+            Function::Native(func) => func as *const _ as usize,
+        }
+    }
 }
 
 impl PartialEq for Function {

@@ -17,7 +17,7 @@ use crate::std_variable::StdVariable;
 use crate::string_var::StringVar;
 use num::bigint::BigInt;
 use num::traits::Zero;
-use num::ToPrimitive;
+use num::{BigRational, ToPrimitive};
 use std::boxed::Box;
 use std::clone::Clone;
 use std::cmp::PartialEq;
@@ -361,6 +361,27 @@ impl Variable {
             Variable::Null() => true,
             Variable::Option(a) => a.is_none(),
             _ => false,
+        }
+    }
+
+    pub fn id(&self) -> usize {
+        match self {
+            Variable::Null() => 0,
+            Variable::Bool(_) => todo!("Unique ids for bool"),
+            Variable::Bigint(b) => match b {
+                IntVar::Small(_) => todo!("Unique ids for small int"),
+                IntVar::Big(b) => &**b as *const _ as usize,
+            },
+            Variable::String(s) => s.as_str() as *const str as *const () as usize,
+            Variable::Decimal(d) => &**d as *const BigRational as usize,
+            Variable::Char(_) => todo!("Unique ids for char"),
+            Variable::Type(t) => t.id(),
+            Variable::Standard(s) => s.var_ptr(),
+            Variable::Method(_) => todo!("Unique ids for method"),
+            Variable::Function(f) => f.id(),
+            Variable::Custom(c) => &**c as *const _ as usize,
+            Variable::Union(u) => u.get_value().id(),
+            Variable::Option(o) => o.map_or(0, |x| x.id()),
         }
     }
 }

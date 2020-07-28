@@ -164,6 +164,15 @@ impl Type {
             _ => unimplemented!(),
         }
     }
+
+    pub fn id(&self) -> usize {
+        match self {
+            Type::Standard(t) => *t as *const _ as usize,
+            Type::Custom(t) => *t as *const _ as *const () as usize,
+            Type::Union(u) => *u as *const _ as usize,
+            _ => todo!("Unique ids for special types"),
+        }
+    }
 }
 
 impl ToString for Type {

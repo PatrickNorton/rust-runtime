@@ -140,6 +140,10 @@ impl LangUnion {
         self.variant_no
     }
 
+    pub fn get_value(&self) -> &Variable {
+        &self.value
+    }
+
     fn index_harder(&self, index: Name, runtime: &mut Runtime) -> Result<Variable, ()> {
         match self.cls.get_property(&index) {
             Option::Some(val) => {

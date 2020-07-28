@@ -5,6 +5,7 @@ use crate::custom_types::range::Range;
 use crate::custom_types::set::Set;
 use crate::custom_types::slice::Slice;
 use crate::function::Function;
+use crate::int_var::IntVar;
 use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
@@ -66,6 +67,15 @@ fn reversed_impl(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     runtime.call_op(take(&mut args[0]), Operator::Reversed, Vec::new())
 }
 
+fn id() -> Variable {
+    Variable::Function(Function::Native(id_impl))
+}
+
+fn id_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert_eq!(args.len(), 1);
+    runtime.return_1(IntVar::from(args[0].id()).into())
+}
+
 pub fn builtin_of(index: usize) -> Variable {
     match index {
         0 => print(),
@@ -84,6 +94,7 @@ pub fn builtin_of(index: usize) -> Variable {
         13 => FileObj::open_type().into(),
         14 => reversed(),
         15 => Slice::slice_type().into(),
+        16 => id(),
         _ => unimplemented!(),
     }
 }
