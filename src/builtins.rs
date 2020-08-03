@@ -144,7 +144,7 @@ fn default_eq(this: &StdVariable, args: Vec<Variable>, runtime: &mut Runtime) ->
 fn default_in(this: &StdVariable, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let checked_var = replace(&mut args[0], Variable::Null());
     let this_iter = this.iter(runtime)?;
-    while let Option::Some(val) = this_iter.clone().next(runtime)? {
+    while let Option::Some(val) = this_iter.next(runtime)? {
         if checked_var.equals(val, runtime)? {
             return runtime.return_1(true.into());
         }
