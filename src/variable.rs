@@ -381,7 +381,7 @@ impl Variable {
             Variable::Function(f) => f.id(),
             Variable::Custom(c) => &**c as *const _ as usize,
             Variable::Union(u) => u.get_value().id(),
-            Variable::Option(o) => o.map_or(0, |x| x.id()),
+            Variable::Option(o) => o.as_ref().map_or(0, |x| x.id()),
         }
     }
 }
