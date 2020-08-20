@@ -1,4 +1,5 @@
-use crate::custom_types::exceptions::{index_error, stop_iteration};
+use crate::custom_types::exceptions::{index_error, stop_iteration, value_error};
+use crate::custom_types::range::Range;
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_var::IntVar;
 use crate::looping;
@@ -10,7 +11,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
-use num::{Signed, ToPrimitive};
+use num::{Signed, ToPrimitive, Zero};
 use std::cell::{Cell, RefCell};
 use std::mem::{replace, take};
 use std::rc::Rc;
@@ -38,6 +39,7 @@ impl List {
             Operator::In => List::contains,
             Operator::Reversed => List::reverse,
             Operator::GetSlice => List::get_slice,
+            Operator::SetSlice => List::set_slice,
             _ => unimplemented!(),
         };
         Variable::Method(Box::new(StdMethod::new(self, InnerMethod::Native(value))))
@@ -214,11 +216,7 @@ impl List {
 
     fn get_slice(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        runtime.call_attr(
-            take(&mut args[0]),
-            "toRange".into(),
-            vec![IntVar::from(self.value.borrow().len()).into()],
-        )?;
+        self.slice_to_range(runtime, take(&mut args[0]))?;
         let val = runtime.pop_return().iter(runtime)?;
         let mut raw_vec = Vec::new();
         let self_val = self.value.borrow();
@@ -226,6 +224,71 @@ impl List {
             raw_vec.push(self_val[IntVar::from(i).to_usize().expect("Conversion error")].clone());
         }
         runtime.return_1(List::from_values(raw_vec).into())
+    }
+
+    fn set_slice(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        self.slice_to_range(runtime, take(&mut args[0]))?;
+        let returned = runtime.pop_return();
+        let val = match &returned {
+            Variable::Custom(_) => downcast_var::<Range>(returned).expect("Expected a slice here"),
+            _ => panic!("Expected a slice here"),
+        };
+        if !val.get_step().is_zero() {
+            return runtime.throw_quick(
+                value_error(),
+                format!(
+                    "list.operator [:]= is only valid with a slice step of 0, not {}",
+                    val.get_step()
+                )
+                .into(),
+            );
+        }
+        let range_end = val.get_stop().to_usize().unwrap_or(usize::MAX);
+        let range_iter = val.iter(runtime)?;
+        let value_iter = take(&mut args[1]).iter(runtime)?;
+        let mut array = self.value.borrow_mut();
+        while let Option::Some(next_index) = range_iter.next(runtime)? {
+            let next_index = IntVar::from(next_index);
+            let index = match next_index.to_usize() {
+                Option::None => return Self::size_error(runtime, &next_index),
+                Option::Some(val) => val,
+            };
+            let next_value = match value_iter.next(runtime)? {
+                Option::Some(v) => v,
+                Option::None => {
+                    // If there are extra values left on the range after the iterator has been
+                    // iterated, drain the rest of the array
+                    let end = if range_end > array.len() {
+                        array.len()
+                    } else {
+                        range_end
+                    };
+                    array.drain(index..end);
+                    return runtime.return_0();
+                }
+            };
+            if index >= array.len() {
+                array.push(next_value);
+            } else {
+                array[index] = next_value;
+            }
+        }
+        // If there are values left on the iterable after the range has been iterated, put them in
+        while let Option::Some(val) = value_iter.next(runtime)? {
+            let arr_len = array.len();
+            let end = if range_end > arr_len {
+                arr_len
+            } else {
+                range_end
+            };
+            if end >= arr_len {
+                array.push(val);
+            } else {
+                array.insert(end, val);
+            }
+        }
+        runtime.return_0()
     }
 
     fn iter(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -240,6 +303,26 @@ impl List {
 
     pub fn list_type() -> Type {
         custom_class!(List, create, "list")
+    }
+
+    fn slice_to_range(self: &Rc<Self>, runtime: &mut Runtime, arg: Variable) -> FnResult {
+        runtime.call_attr(
+            arg,
+            "toRange".into(),
+            vec![IntVar::from(self.value.borrow().len()).into()],
+        )
+    }
+
+    fn size_error(runtime: &mut Runtime, size: &IntVar) -> FnResult {
+        runtime.throw_quick(
+            value_error(),
+            format!(
+                "Index {} too large (must be less than {})",
+                size,
+                usize::MAX
+            )
+            .into(),
+        )
     }
 }
 
