@@ -1,4 +1,5 @@
 use crate::custom_types::exceptions::{index_error, stop_iteration, value_error};
+use crate::custom_types::range::Range;
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_var::IntVar;
 use crate::looping;
@@ -12,6 +13,7 @@ use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use num::{Signed, ToPrimitive};
 use std::cell::{Cell, RefCell};
+use std::cmp::min;
 use std::mem::take;
 use std::rc::Rc;
 
@@ -43,6 +45,7 @@ impl Array {
             Operator::In => Self::contains,
             Operator::GetSlice => Self::get_slice,
             Operator::Iter => Self::iter,
+            Operator::IterSlice => Self::iter_slice,
             _ => unimplemented!("Array::operator {:?}", name),
         };
         Variable::Method(StdMethod::new_native(self, func))
@@ -151,6 +154,35 @@ impl Array {
         runtime.return_1(Rc::new(ArrayIter::new(self.clone())).into())
     }
 
+    fn iter_slice(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        runtime.call_attr(
+            take(&mut args[0]),
+            "toRange".into(),
+            vec![IntVar::from(self.vars.borrow().len()).into()],
+        )?;
+        let range = downcast_var::<Range>(runtime.pop_return()).expect("Expected a range");
+        let value = self.vars.borrow();
+        let len = value.len();
+        let start = match range.get_start().to_usize() {
+            Option::Some(v) => v,
+            Option::None => return Self::size_error(runtime, range.get_start()),
+        };
+        let stop = min(range.get_stop().to_usize().unwrap_or(len), len);
+        let step = match range.get_step().to_usize() {
+            Option::Some(v) => v,
+            Option::None => return Self::size_error(runtime, range.get_step()),
+        };
+        let new_vec = Array::new(
+            value[start..stop]
+                .iter()
+                .step_by(step)
+                .map(Clone::clone)
+                .collect(),
+        );
+        runtime.return_1(Rc::new(ArrayIter::new(new_vec)).into())
+    }
+
     fn arr_eq(first: &[Variable], second: &[Variable], runtime: &mut Runtime) -> Result<bool, ()> {
         for (a, b) in first.iter().zip(second.iter()) {
             if !a.equals(b.clone(), runtime)? {
@@ -192,6 +224,18 @@ impl Array {
 
     pub fn array_type() -> Type {
         custom_class!(Array, create, "Array")
+    }
+
+    fn size_error(runtime: &mut Runtime, size: &IntVar) -> FnResult {
+        runtime.throw_quick(
+            value_error(),
+            format!(
+                "Index {} too large (must be less than {})",
+                size,
+                usize::MAX
+            )
+            .into(),
+        )
     }
 }
 

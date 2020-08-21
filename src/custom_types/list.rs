@@ -13,6 +13,7 @@ use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use num::{Signed, ToPrimitive, Zero};
 use std::cell::{Cell, RefCell};
+use std::cmp::min;
 use std::mem::{replace, take};
 use std::rc::Rc;
 
@@ -40,6 +41,7 @@ impl List {
             Operator::Reversed => List::reverse,
             Operator::GetSlice => List::get_slice,
             Operator::SetSlice => List::set_slice,
+            Operator::IterSlice => List::iter_slice,
             _ => unimplemented!(),
         };
         Variable::Method(Box::new(StdMethod::new(self, InnerMethod::Native(value))))
@@ -294,6 +296,31 @@ impl List {
     fn iter(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         runtime.return_1(Rc::new(ListIter::new(self.clone())).into())
+    }
+
+    fn iter_slice(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        self.slice_to_range(runtime, take(&mut args[0]))?;
+        let range = downcast_var::<Range>(runtime.pop_return()).expect("Expected a range");
+        let value = self.value.borrow();
+        let len = value.len();
+        let start = match range.get_start().to_usize() {
+            Option::Some(v) => v,
+            Option::None => return Self::size_error(runtime, range.get_start()),
+        };
+        let stop = min(range.get_stop().to_usize().unwrap_or(len), len);
+        let step = match range.get_step().to_usize() {
+            Option::Some(v) => v,
+            Option::None => return Self::size_error(runtime, range.get_step()),
+        };
+        let new_vec = List::from_values(
+            value[start..stop]
+                .iter()
+                .step_by(step)
+                .map(Clone::clone)
+                .collect(),
+        );
+        runtime.return_1(Rc::new(ListIter::new(new_vec)).into())
     }
 
     pub fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

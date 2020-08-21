@@ -26,6 +26,10 @@ impl Range {
         Range { start, stop, step }
     }
 
+    pub fn get_start(&self) -> &IntVar {
+        &self.start
+    }
+
     pub fn get_stop(&self) -> &IntVar {
         &self.stop
     }
