@@ -18,6 +18,12 @@ pub struct Array {
 }
 
 impl Array {
+    fn new(args: Box<[Variable]>) -> Rc<Array> {
+        Rc::new(Array {
+            vars: RefCell::new(args),
+        })
+    }
+
     fn get_operator(self: Rc<Self>, name: Operator) -> Variable {
         let func = match name {
             Operator::GetAttr => Self::index,
@@ -26,6 +32,7 @@ impl Array {
             Operator::Str => Self::str,
             Operator::Equals => Self::eq,
             Operator::In => Self::contains,
+            Operator::GetSlice => Self::get_slicem
             _ => unimplemented!("Array::operator {:?}", name),
         };
         Variable::Method(StdMethod::new_native(self, func))
@@ -111,6 +118,22 @@ impl Array {
             }
         }
         runtime.return_1(false.into())
+    }
+
+    fn get_slice(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        runtime.call_attr(
+            take(&mut args[0]),
+            "toRange".into(),
+            vec![IntVar::from(self.vars.borrow().len()).into()],
+        )?;
+        let val = runtime.pop_return().iter(runtime)?;
+        let mut raw_vec = Vec::new();
+        let self_val = self.vars.borrow();
+        while let Option::Some(i) = val.next(runtime)? {
+            raw_vec.push(self_val[IntVar::from(i).to_usize().expect("Conversion error")].clone());
+        }
+        runtime.return_1(Self::new(raw_vec.into_boxed_slice()).into())
     }
 
     fn arr_eq(first: &[Variable], second: &[Variable], runtime: &mut Runtime) -> Result<bool, ()> {
