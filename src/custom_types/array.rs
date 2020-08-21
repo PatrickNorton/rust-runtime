@@ -1,20 +1,29 @@
-use crate::custom_types::exceptions::{index_error, value_error};
+use crate::custom_types::exceptions::{index_error, stop_iteration, value_error};
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_var::IntVar;
+use crate::looping;
+use crate::looping::{IterResult, NativeIterator};
 use crate::method::StdMethod;
 use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
+use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use num::{Signed, ToPrimitive};
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::mem::take;
 use std::rc::Rc;
 
 #[derive(Debug)]
 pub struct Array {
     vars: RefCell<Box<[Variable]>>,
+}
+
+#[derive(Debug)]
+struct ArrayIter {
+    current: Cell<usize>,
+    value: Rc<Array>,
 }
 
 impl Array {
@@ -32,7 +41,8 @@ impl Array {
             Operator::Str => Self::str,
             Operator::Equals => Self::eq,
             Operator::In => Self::contains,
-            Operator::GetSlice => Self::get_slicem
+            Operator::GetSlice => Self::get_slice,
+            Operator::Iter => Self::iter,
             _ => unimplemented!("Array::operator {:?}", name),
         };
         Variable::Method(StdMethod::new_native(self, func))
@@ -136,6 +146,11 @@ impl Array {
         runtime.return_1(Self::new(raw_vec.into_boxed_slice()).into())
     }
 
+    fn iter(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        runtime.return_1(Rc::new(ArrayIter::new(self.clone())).into())
+    }
+
     fn arr_eq(first: &[Variable], second: &[Variable], runtime: &mut Runtime) -> Result<bool, ()> {
         for (a, b) in first.iter().zip(second.iter()) {
             if !a.equals(b.clone(), runtime)? {
@@ -194,5 +209,72 @@ impl CustomVar for Array {
 
     fn get_type(self: Rc<Self>) -> Type {
         Self::array_type()
+    }
+}
+
+impl ArrayIter {
+    pub fn new(value: Rc<Array>) -> ArrayIter {
+        ArrayIter {
+            value,
+            current: Cell::new(0),
+        }
+    }
+
+    fn get_attribute(self: &Rc<Self>, val: StringVar) -> Variable {
+        let func = match val.as_str() {
+            "next" => Self::next_fn,
+            _ => unimplemented!(),
+        };
+        Variable::Method(StdMethod::new_native(self.clone(), func))
+    }
+
+    fn next_fn(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        match self.inner_next() {
+            Option::Some(value) => runtime.return_1(value),
+            Option::None => runtime.throw_quick(stop_iteration(), "".into()),
+        }
+    }
+
+    fn inner_next(&self) -> Option<Variable> {
+        if self.current.get() != self.value.vars.borrow().len() {
+            let result = self.value.vars.borrow()[self.current.get()].clone();
+            self.current.set(self.current.get() + 1);
+            Option::Some(result)
+        } else {
+            Option::None
+        }
+    }
+
+    fn create(_args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
+        unimplemented!()
+    }
+
+    fn range_iter_type() -> Type {
+        custom_class!(ArrayIter, create, "ArrayIter")
+    }
+}
+
+impl CustomVar for ArrayIter {
+    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
+        name.do_each(|_| unimplemented!(), |s| self.get_attribute(s))
+    }
+
+    fn set(self: Rc<Self>, _name: Name, _object: Variable) {
+        unimplemented!()
+    }
+
+    fn get_type(self: Rc<Self>) -> Type {
+        Self::range_iter_type()
+    }
+
+    fn into_iter(self: Rc<Self>) -> looping::Iterator {
+        looping::Iterator::Native(self)
+    }
+}
+
+impl NativeIterator for ArrayIter {
+    fn next(self: Rc<Self>, _runtime: &mut Runtime) -> IterResult {
+        IterResult::Ok(self.inner_next())
     }
 }
