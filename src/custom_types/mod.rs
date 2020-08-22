@@ -13,6 +13,39 @@ macro_rules! custom_class {
     }};
 }
 
+macro_rules! iter_internals {
+    () => {
+        fn get_attribute(self: &Rc<Self>, val: StringVar) -> Variable {
+            let func = match val.as_str() {
+                "next" => Self::next_fn,
+                _ => unimplemented!(),
+            };
+            Variable::Method(StdMethod::new_native(self.clone(), func))
+        }
+
+        fn get_op(self: &Rc<Self>, val: Operator) -> Variable {
+            let func = match val {
+                Operator::Iter => Self::ret_self,
+                _ => unimplemented!(),
+            };
+            Variable::Method(StdMethod::new_native(self.clone(), func))
+        }
+
+        fn next_fn(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+            debug_assert!(args.is_empty());
+            match self.inner_next() {
+                Option::Some(value) => runtime.return_1(value),
+                Option::None => runtime.throw_quick(stop_iteration(), "".into()),
+            }
+        }
+
+        fn ret_self(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+            debug_assert!(args.is_empty());
+            runtime.return_1(self.clone().into())
+        }
+    };
+}
+
 pub mod array;
 pub mod bytes;
 pub mod coroutine;

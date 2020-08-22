@@ -264,21 +264,7 @@ impl ArrayIter {
         }
     }
 
-    fn get_attribute(self: &Rc<Self>, val: StringVar) -> Variable {
-        let func = match val.as_str() {
-            "next" => Self::next_fn,
-            _ => unimplemented!(),
-        };
-        Variable::Method(StdMethod::new_native(self.clone(), func))
-    }
-
-    fn next_fn(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        debug_assert!(args.is_empty());
-        match self.inner_next() {
-            Option::Some(value) => runtime.return_1(value),
-            Option::None => runtime.throw_quick(stop_iteration(), "".into()),
-        }
-    }
+    iter_internals!();
 
     fn inner_next(&self) -> Option<Variable> {
         if self.current.get() != self.value.vars.borrow().len() {
@@ -301,7 +287,7 @@ impl ArrayIter {
 
 impl CustomVar for ArrayIter {
     fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        name.do_each(|_| unimplemented!(), |s| self.get_attribute(s))
+        name.do_each(|o| self.get_op(o), |s| self.get_attribute(s))
     }
 
     fn set(self: Rc<Self>, _name: Name, _object: Variable) {
