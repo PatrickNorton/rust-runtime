@@ -42,6 +42,7 @@ mod stack_frame;
 mod std_type;
 mod std_variable;
 mod string_var;
+mod tuple;
 mod variable;
 
 fn main() {

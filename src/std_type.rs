@@ -8,6 +8,7 @@ use crate::property::Property;
 use crate::runtime::Runtime;
 use crate::std_variable::{StdVarMethod, StdVariable};
 use crate::string_var::StringVar;
+use crate::tuple::LangTuple;
 use crate::variable::{FnResult, Variable};
 use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
@@ -23,6 +24,7 @@ pub enum Type {
     String,
     Decimal,
     Char,
+    Tuple,
     Type,
     Object,
     Custom(&'static dyn CustomTypeImpl),
@@ -91,6 +93,7 @@ impl Type {
             (Type::String, Type::String) => true,
             (Type::Char, Type::Char) => true,
             (Type::Decimal, Type::Decimal) => true,
+            (Type::Tuple, Type::Tuple) => true,
             (Type::Type, Type::Type) => true,
             (Type::Object, _) => true,
             (Type::Custom(t), _) => t.is_subclass(other),
@@ -112,6 +115,7 @@ impl Type {
             Type::String => Variable::String(args[0].str(runtime)?),
             Type::Char => unimplemented!(),
             Type::Decimal => unimplemented!(),
+            Type::Tuple => Variable::Tuple(LangTuple::new(args)),
             Type::Type => Variable::Type(args[0].get_type()),
             Type::Object => unimplemented!(),
             Type::Custom(t) => t.create(args, runtime)?,
@@ -149,6 +153,7 @@ impl Type {
             Type::String => "str".into(),
             Type::Decimal => "dec".into(),
             Type::Char => "char".into(),
+            Type::Tuple => "tuple".into(),
             Type::Type => "type".into(),
             Type::Object => "object".into(),
             Type::Custom(t) => t.get_name().clone(),
@@ -278,6 +283,7 @@ impl PartialEq for Type {
             (Type::String, Type::String) => true,
             (Type::Decimal, Type::Decimal) => true,
             (Type::Char, Type::Char) => true,
+            (Type::Tuple, Type::Tuple) => true,
             (Type::Type, Type::Type) => true,
             (Type::Custom(a), Type::Custom(b)) => ptr::eq(*a, *b),
             (Type::Union(t), Type::Union(u)) => ptr::eq(*t, *u),
@@ -298,8 +304,9 @@ impl Hash for Type {
             Type::String => 3.hash(state),
             Type::Decimal => 4.hash(state),
             Type::Char => 5.hash(state),
-            Type::Type => 6.hash(state),
-            Type::Object => 7.hash(state),
+            Type::Tuple => 6.hash(state),
+            Type::Type => 7.hash(state),
+            Type::Object => 8.hash(state),
             Type::Custom(b) => ptr::hash(*b, state),
             Type::Union(c) => ptr::hash(*c, state),
         }

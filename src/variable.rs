@@ -1,4 +1,4 @@
-use crate::builtin_functions::{bool_fn, char_fn, dec_fn, int_fn, null_fn, string_fn};
+use crate::builtin_functions::{bool_fn, char_fn, dec_fn, int_fn, null_fn, string_fn, tuple_fn};
 use crate::custom_var::CustomVarWrapper;
 use crate::file_info::FileInfo;
 use crate::function::Function;
@@ -15,6 +15,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::std_variable::StdVariable;
 use crate::string_var::StringVar;
+use crate::tuple::LangTuple;
 use num::bigint::BigInt;
 use num::traits::Zero;
 use num::{BigRational, ToPrimitive};
@@ -41,6 +42,7 @@ pub enum Variable {
     Char(char),
     Type(Type),
     Standard(StdVariable),
+    Tuple(LangTuple),
     Method(Box<dyn Method>),
     Function(Function),
     Custom(CustomVarWrapper),
@@ -59,11 +61,12 @@ impl Variable {
             Variable::Char(val) => Result::Ok(val.to_string().into()),
             Variable::Type(val) => Result::Ok(val.str()),
             Variable::Standard(val) => val.str(runtime),
+            Variable::Tuple(val) => val.str(runtime),
             Variable::Function(val) => Result::Ok(val.to_str(runtime)),
             Variable::Custom(val) => (**val).clone().str(runtime),
             Variable::Union(val) => val.str(runtime),
             Variable::Option(val) => val.str(runtime),
-            _ => unimplemented!(),
+            Variable::Method(_) => unimplemented!(),
         }
     }
 
@@ -77,11 +80,12 @@ impl Variable {
             Variable::Char(val) => Result::Ok(val.to_string().into()),
             Variable::Type(val) => Result::Ok(val.str()),
             Variable::Standard(val) => val.repr(runtime),
+            Variable::Tuple(val) => val.repr(runtime),
             Variable::Function(val) => Result::Ok(val.to_str(runtime)),
             Variable::Custom(val) => (**val).clone().repr(runtime),
             Variable::Union(val) => val.repr(runtime),
             Variable::Option(val) => val.repr(runtime),
-            _ => unimplemented!(),
+            Variable::Method(_) => unimplemented!(),
         }
     }
 
@@ -109,6 +113,7 @@ impl Variable {
             Variable::Char(val) => Result::Ok(val != &'\0'),
             Variable::Type(_) => Result::Ok(true),
             Variable::Standard(val) => val.bool(runtime),
+            Variable::Tuple(val) => Result::Ok(!val.is_empty()),
             Variable::Method(_) => Result::Ok(true),
             Variable::Function(_) => Result::Ok(true),
             Variable::Custom(val) => (**val).clone().bool(runtime),
@@ -180,6 +185,10 @@ impl Variable {
                 Name::Operator(o) => string_fn::get_operator(val, o),
                 Name::Attribute(s) => string_fn::get_attr(val, s),
             },
+            Variable::Tuple(val) => match index {
+                Name::Operator(o) => tuple_fn::get_operator(val, o),
+                Name::Attribute(s) => tuple_fn::get_attr(val, s),
+            },
             Variable::Decimal(val) => {
                 if let Name::Operator(o) = index {
                     dec_fn::get_operator(val, o)
@@ -222,6 +231,7 @@ impl Variable {
             Variable::Type(_) => Type::Type,
             Variable::Method(_) => unimplemented!(),
             Variable::Standard(a) => a.get_type(),
+            Variable::Tuple(_) => Type::Tuple,
             Variable::Function(_) => unimplemented!(),
             Variable::Custom(a) => (**a).clone().get_type(),
             Variable::Union(val) => val.get_type(),
@@ -239,6 +249,7 @@ impl Variable {
             (Variable::Char(a), Variable::Char(b)) => a == b,
             (Variable::Type(a), Variable::Type(b)) => a == b,
             (Variable::Standard(a), Variable::Standard(b)) => a.identical(b),
+            (Variable::Tuple(a), Variable::Tuple(b)) => a.identical(b),
             (Variable::Method(a), Variable::Method(b)) => a == b,
             (Variable::Custom(a), Variable::Custom(b)) => a == b,
             (Variable::Union(a), Variable::Union(b)) => a == b,
@@ -288,6 +299,7 @@ impl Variable {
                 runtime.pop_native();
                 Result::Ok(IntVar::from(runtime.pop_return()).to_usize().unwrap())
             }
+            Variable::Tuple(t) => t.lang_hash(runtime),
             Variable::Method(_) => unimplemented!(),
             Variable::Function(_) => unimplemented!(),
             Variable::Custom(val) => {
@@ -325,6 +337,7 @@ impl Variable {
                 .index(Name::Operator(name), runtime)?
                 .call((args, runtime)),
             Variable::Standard(s) => s.call_operator(name, args, runtime),
+            Variable::Tuple(t) => runtime.call_native_method(tuple_fn::op_fn(name), &t, args),
             Variable::Method(_) => self
                 .index(Name::Operator(name), runtime)?
                 .call((args, runtime)),
@@ -377,6 +390,7 @@ impl Variable {
             Variable::Char(_) => todo!("Unique ids for char"),
             Variable::Type(t) => t.id(),
             Variable::Standard(s) => s.var_ptr(),
+            Variable::Tuple(t) => t.id(),
             Variable::Method(_) => todo!("Unique ids for method"),
             Variable::Function(f) => f.id(),
             Variable::Custom(c) => &**c as *const _ as usize,
@@ -405,6 +419,7 @@ impl Hash for Variable {
             Variable::Char(c) => c.hash(state),
             Variable::Type(t) => t.hash(state),
             Variable::Standard(s) => s.hash(state),
+            Variable::Tuple(t) => t.hash(state),
             Variable::Method(m) => m.hash(state),
             Variable::Function(f) => f.hash(state),
             Variable::Custom(c) => c.hash(state),
@@ -462,6 +477,12 @@ impl From<Type> for Variable {
     }
 }
 
+impl From<LangTuple> for Variable {
+    fn from(x: LangTuple) -> Self {
+        Variable::Tuple(x)
+    }
+}
+
 impl From<bool> for Variable {
     fn from(x: bool) -> Self {
         Variable::Bool(x)
@@ -506,6 +527,16 @@ impl From<Variable> for StringVar {
             s
         } else {
             panic!("Attempted to turn a variable not a superclass of str into a str")
+        }
+    }
+}
+
+impl From<Variable> for LangTuple {
+    fn from(var: Variable) -> Self {
+        if let Variable::Tuple(t) = var {
+            t
+        } else {
+            panic!("Attempted to turn a variable not a superclass of tuple into a tuple")
         }
     }
 }

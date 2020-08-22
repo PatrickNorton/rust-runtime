@@ -4,3 +4,4 @@ pub mod dec_fn;
 pub mod int_fn;
 pub mod null_fn;
 pub mod string_fn;
+pub mod tuple_fn;
