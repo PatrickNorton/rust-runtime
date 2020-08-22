@@ -199,7 +199,14 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             call_operator(op, bytes_1 as u16, runtime)?
         }
         Bytecode::PackTuple => unimplemented!(),
-        Bytecode::UnpackTuple => unimplemented!(),
+        Bytecode::UnpackTuple => match runtime.pop() {
+            Variable::Tuple(tup) => {
+                for var in tup.get_values() {
+                    runtime.push(var.clone())
+                }
+            }
+            _ => panic!("Called UNPACK_TUPLE when TOS not a tuple"),
+        },
         Bytecode::Equal => quick_op_2(runtime, quick_equals)?,
         Bytecode::LessThan => quick_op_2(runtime, quick_less_than)?,
         Bytecode::GreaterThan => quick_op_2(runtime, quick_greater_than)?,

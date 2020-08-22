@@ -61,6 +61,10 @@ impl LangTuple {
     pub fn id(&self) -> usize {
         Rc::as_ptr(&self.values) as *const () as usize
     }
+
+    pub fn get_values(&self) -> &Vec<Variable> {
+        &*self.values
+    }
 }
 
 impl Index<usize> for LangTuple {
