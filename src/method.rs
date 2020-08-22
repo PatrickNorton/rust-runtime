@@ -15,6 +15,8 @@ pub enum InnerMethod<T> {
     Move(NativeCopyMethod<T>),
 }
 
+// Not derived b/c #[derive] only implements Clone/Copy when T is Clone/Copy, which is not a bound
+// here (function pointers are always Copy)
 impl<T> Clone for InnerMethod<T> {
     fn clone(&self) -> Self {
         *self
