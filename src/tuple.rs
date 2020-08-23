@@ -1,8 +1,8 @@
 use crate::runtime::Runtime;
 use crate::string_var::StringVar;
 use crate::variable::Variable;
-use downcast_rs::__std::ops::Index;
 use std::hash::{Hash, Hasher};
+use std::ops::Index;
 use std::rc::Rc;
 
 #[derive(Debug, Clone)]
