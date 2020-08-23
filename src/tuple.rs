@@ -65,6 +65,10 @@ impl LangTuple {
     pub fn get_values(&self) -> &Vec<Variable> {
         &*self.values
     }
+
+    pub fn len(&self) -> usize {
+        self.values.len()
+    }
 }
 
 impl Index<usize> for LangTuple {

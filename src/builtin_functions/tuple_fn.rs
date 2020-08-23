@@ -20,10 +20,36 @@ pub fn get_operator(this: LangTuple, o: Operator) -> Variable {
 }
 
 pub fn get_attr(this: LangTuple, s: StringVar) -> Variable {
+    if s.as_str() == "length" {
+        return Variable::Bigint(this.len().into());
+    }
     match s.as_str().parse() {
         Result::Ok(x) => this[x].clone(),
         Result::Err(_) => unimplemented!(),
     }
+}
+
+pub fn equals(this: &LangTuple, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    for arg in args {
+        match arg {
+            Variable::Tuple(other) => {
+                if this.len() != other.len() {
+                    return runtime.return_1(false.into());
+                }
+                for (x, y) in this.get_values().iter().zip(other.get_values()) {
+                    if !x.equals(y.clone(), runtime)? {
+                        return runtime.return_1(false.into());
+                    }
+                }
+            }
+            _ => {
+                if !arg.equals(this.clone().into(), runtime)? {
+                    return runtime.return_1(false.into());
+                }
+            }
+        }
+    }
+    runtime.return_1(true.into())
 }
 
 pub fn bool(this: &LangTuple, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
