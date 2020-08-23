@@ -92,7 +92,16 @@ fn int(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult
     debug_assert!(args.is_empty());
     match IntVar::from_str(this) {
         Ok(val) => runtime.push(Variable::Bigint(val)),
-        Err(_) => runtime.throw_quick(value_error(), "Error in string conversion".into())?,
+        Err(_) => {
+            return runtime.throw_quick(
+                value_error(),
+                format!(
+                    "Invalid input for int(str): {:?} is not a valid base-10 integer",
+                    this.as_str()
+                )
+                .into(),
+            )
+        }
     }
     runtime.return_0()
 }
