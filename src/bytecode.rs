@@ -136,8 +136,8 @@ pub fn bytecode_size(b: Bytecode) -> (usize, usize) {
         | Bytecode::Identical
         | Bytecode::Instanceof => (0, 0),
         Bytecode::CallOp => (2, 2),
-        Bytecode::PackTuple
-        | Bytecode::UnpackTuple
+        Bytecode::PackTuple => (2, 0),
+        Bytecode::UnpackTuple
         | Bytecode::Equal
         | Bytecode::LessThan
         | Bytecode::GreaterThan
