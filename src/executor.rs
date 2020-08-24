@@ -201,7 +201,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         Bytecode::PackTuple => unimplemented!(),
         Bytecode::UnpackTuple => match runtime.pop() {
             Variable::Tuple(tup) => {
-                for var in tup.get_values() {
+                for var in &tup {
                     runtime.push(var.clone())
                 }
             }

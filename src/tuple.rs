@@ -4,6 +4,7 @@ use crate::variable::Variable;
 use std::hash::{Hash, Hasher};
 use std::ops::Index;
 use std::rc::Rc;
+use std::slice;
 
 #[derive(Debug, Clone)]
 pub struct LangTuple {
@@ -22,7 +23,7 @@ impl LangTuple {
         for (i, value) in self.values.iter().enumerate() {
             result += value.str(runtime)?.as_str();
             if i < self.values.len() - 1 {
-                result += ", ".into();
+                result += ", ";
             }
         }
         Result::Ok(StringVar::from(result))
@@ -33,7 +34,7 @@ impl LangTuple {
         for (i, value) in self.values.iter().enumerate() {
             result += value.repr(runtime)?.as_str();
             if i < self.values.len() - 1 {
-                result += ", ".into();
+                result += ", ";
             }
         }
         Result::Ok(StringVar::from(result))
@@ -62,12 +63,21 @@ impl LangTuple {
         Rc::as_ptr(&self.values) as *const () as usize
     }
 
-    pub fn get_values(&self) -> &Vec<Variable> {
-        &*self.values
-    }
-
     pub fn len(&self) -> usize {
         self.values.len()
+    }
+
+    pub fn iter(&self) -> slice::Iter<Variable> {
+        self.values.iter()
+    }
+}
+
+impl<'a> IntoIterator for &'a LangTuple {
+    type Item = &'a Variable;
+    type IntoIter = slice::Iter<'a, Variable>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
     }
 }
 

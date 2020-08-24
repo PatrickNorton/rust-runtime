@@ -544,7 +544,7 @@ pub fn quick_equals(this: Variable, other: Variable, runtime: &mut Runtime) -> Q
                 if t.len() != t2.len() {
                     return QuickResult::Ok(false.into());
                 }
-                for (x, y) in t.get_values().iter().zip(t2.get_values()) {
+                for (x, y) in t.iter().zip(&t2) {
                     if !x.equals(y.clone(), runtime)? {
                         return QuickResult::Ok(false.into());
                     }
