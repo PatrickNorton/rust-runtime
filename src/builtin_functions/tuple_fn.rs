@@ -7,6 +7,7 @@ use crate::variable::{FnResult, Variable};
 
 pub fn op_fn(o: Operator) -> NativeMethod<LangTuple> {
     match o {
+        Operator::Equals => equals,
         Operator::Bool => bool,
         Operator::Str => str,
         Operator::Repr => repr,
