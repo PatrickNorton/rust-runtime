@@ -79,6 +79,7 @@ pub fn parse_file(name: String, files: &mut Vec<FileInfo>) -> usize {
             .iter()
             .position(|a| a.get_name() == &file_name)
             .unwrap_or_else(|| parse_file(file_name, files));
+        // FIXME: Recursion fails
         let other_file = &files[file_index];
         // TODO: Get nested dots
         imports.push(other_file.get_export(&names[1]).clone());
