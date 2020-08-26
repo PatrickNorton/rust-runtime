@@ -8,7 +8,6 @@ use crate::jump_table::JumpTable;
 use crate::method::{NativeCopyMethod, NativeMethod};
 use crate::name::Name;
 use crate::operator::Operator;
-use crate::option::LangOption;
 use crate::stack_frame::{SFInfo, StackFrame};
 use crate::std_type::Type;
 use crate::string_var::StringVar;
