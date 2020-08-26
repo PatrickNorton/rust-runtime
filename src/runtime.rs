@@ -258,15 +258,19 @@ impl Runtime {
         info_no: usize,
         frame: StackFrame,
     ) {
-        let stack_height = self.variables.len();
-        self.frames.push(StackFrame::from_old(
-            var_count,
-            fn_no,
-            info_no,
-            args,
-            frame,
-            stack_height,
-        ));
+        if self.current_file().get_functions()[fn_no as usize].is_generator() {
+            self.coroutine_from_frame(fn_no, args, frame);
+        } else {
+            let stack_height = self.variables.len();
+            self.frames.push(StackFrame::from_old(
+                var_count,
+                fn_no,
+                info_no,
+                args,
+                frame,
+                stack_height,
+            ));
+        }
     }
 
     pub fn push_native(&mut self) {
@@ -551,6 +555,14 @@ impl Runtime {
         let frame = StackFrame::new(0, fn_no, self.current_file_no(), args, stack_height);
         let stack = Vec::new();
         self.push(Rc::new(Generator::new(frame, stack)).into())
+    }
+
+    fn coroutine_from_frame(&mut self, fn_no: u16, args: Vec<Variable>, frame: StackFrame) {
+        let stack_height = self.variables.len();
+        let new_frame =
+            StackFrame::from_old(0, fn_no, self.current_file_no(), args, frame, stack_height);
+        let stack = Vec::new();
+        self.push(Rc::new(Generator::new(new_frame, stack)).into())
     }
 
     fn frame_strings(&self, frames: &[SFInfo]) -> String {
