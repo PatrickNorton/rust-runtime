@@ -420,6 +420,37 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
                 runtime.push(value.into());
             }
         }
+        Bytecode::ForParallel => {
+            let iterators = (0..bytes_1)
+                .map(|_| runtime.pop())
+                .rev()
+                .collect::<Vec<_>>();
+            let mut results = Vec::with_capacity(iterators.len());
+            let mut loop_done = false;
+            for iterator in &iterators {
+                runtime.call_attr(iterator.clone(), "next".into(), vec![])?;
+                match runtime.pop_return() {
+                    Variable::Option(o) => match o.take() {
+                        Option::Some(val) => results.push(*val),
+                        Option::None => {
+                            loop_done = true;
+                            results.push(Variable::Null());
+                        }
+                    },
+                    _ => panic!("Iterators should return an option-wrapped value"),
+                }
+            }
+            if loop_done {
+                runtime.goto(bytes_0);
+            } else {
+                for iterator in iterators {
+                    runtime.push(iterator);
+                }
+                for result in results {
+                    runtime.push(result);
+                }
+            }
+        }
         Bytecode::DoStatic => {
             if !runtime.do_static() {
                 runtime.goto(bytes_0);
