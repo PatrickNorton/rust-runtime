@@ -34,7 +34,7 @@ pub fn execute(runtime: &mut Runtime) -> FnResult {
         let byte_0 = get_bytes(bytes, byte_start, byte_size.0);
         let byte_1 = get_bytes(bytes, byte_start + byte_size.0, byte_size.1);
         runtime.advance((byte_size.0 + byte_size.1 + 1) as u32);
-        parse(b, byte_0, byte_1, runtime)?;
+        parse(b, byte_0, byte_1, runtime)?; // FIXME: Exception throwing is broken
         if runtime.current_pos() == runtime.current_fn().len() && !runtime.is_bottom_stack() {
             runtime.pop_stack();
         }
@@ -334,6 +334,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             unimplemented!("Bytecode::EndClass is a marker bytecode and should not appear in code")
         }
         Bytecode::ForIter => {
+            // FIXME: Iterators should return an option-wrapped value
             let iterated = runtime.pop();
             let jump_loc = bytes_0;
             let next_pos = runtime.current_pos();
