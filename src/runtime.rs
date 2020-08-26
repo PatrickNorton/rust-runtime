@@ -61,6 +61,10 @@ impl Runtime {
         self.variables.push(var)
     }
 
+    pub fn extend(&mut self, vars: impl IntoIterator<Item = Variable>) {
+        self.variables.extend(vars)
+    }
+
     pub fn pop(&mut self) -> Variable {
         self.variables.pop().expect("pop() called on empty stack")
     }
@@ -437,6 +441,27 @@ impl Runtime {
                 self.ret_count = 0;
                 self.variables.truncate(new_len);
                 self.pop()
+            }
+        }
+    }
+
+    pub fn pop_returns(&mut self, ret_count: usize) -> Vec<Variable> {
+        match self.ret_count {
+            0 if ret_count == 0 => vec![],
+            0 => panic!("Attempted to call pop_returns where no values were returned"),
+            i if i < ret_count => panic!(
+                "Runtime::pop_returns called with a count of {}, but only {} values were returned",
+                ret_count, i
+            ),
+            i if i == ret_count => self
+                .variables
+                .drain(self.variables.len() - ret_count..)
+                .collect(),
+            i => {
+                let new_len = self.variables.len() - i + ret_count;
+                self.ret_count = 0;
+                self.variables.truncate(new_len);
+                self.variables.drain(new_len - ret_count..).collect()
             }
         }
     }

@@ -336,18 +336,37 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let iterated = runtime.pop();
             let jump_loc = bytes_0;
             runtime.call_attr(iterated.clone(), "next".into(), Vec::new())?;
-            let ret = runtime.pop_return(); // FIXME: Multiple returns in for-loop
-            match ret {
-                Variable::Option(o) => match o.into() {
-                    Option::Some(arg) => {
-                        runtime.push(iterated);
-                        runtime.push(arg);
-                    }
-                    Option::None => {
-                        runtime.goto(jump_loc);
-                    }
-                },
-                _ => panic!("Iterators should return an option-wrapped value"),
+            assert_ne!(bytes_1, 0);
+            if bytes_1 == 1 {
+                match runtime.pop_return() {
+                    Variable::Option(o) => match o.into() {
+                        Option::Some(val) => {
+                            runtime.push(iterated);
+                            runtime.push(val);
+                        }
+                        Option::None => {
+                            runtime.goto(jump_loc);
+                        }
+                    },
+                    _ => panic!("Iterators should return an option-wrapped value"),
+                }
+            } else {
+                let ret = runtime.pop_returns(bytes_1 as usize);
+                match &ret[0] {
+                    Variable::Option(o) => match o.into() {
+                        Option::Some(_) => {
+                            runtime.push(iterated);
+                            runtime.extend(ret.into_iter().map(|x| match x {
+                                Variable::Option(o) => *(o.take().unwrap()),
+                                _ => panic!("Iterators should return an option-wrapped value"),
+                            }));
+                        }
+                        Option::None => {
+                            runtime.goto(jump_loc);
+                        }
+                    },
+                    _ => panic!("Iterators should return an option-wrapped value"),
+                }
             }
         }
         Bytecode::ListCreate => {

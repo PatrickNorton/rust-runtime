@@ -165,7 +165,7 @@ pub fn bytecode_size(b: Bytecode) -> (usize, usize) {
         | Bytecode::FuncDef
         | Bytecode::ClassDef
         | Bytecode::EndClass => (0, 0),
-        Bytecode::ForIter => (4, 0),
+        Bytecode::ForIter => (4, 2),
         Bytecode::ListCreate | Bytecode::SetCreate | Bytecode::DictCreate => (2, 0),
         Bytecode::ListAdd | Bytecode::SetAdd | Bytecode::DictAdd => (0, 0),
         Bytecode::Dotimes => (4, 0),
