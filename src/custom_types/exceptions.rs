@@ -84,5 +84,5 @@ create_exc!(invalid_state, "InvalidState");
 create_exc!(io_error, "IOError");
 create_exc!(key_error, "KeyError");
 create_exc!(null_error, "NullError");
-create_exc!(stop_iteration, "StopIteration");
+// create_exc!(stop_iteration, "StopIteration");
 create_exc!(value_error, "ValueError");

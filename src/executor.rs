@@ -1,6 +1,5 @@
 use crate::bytecode::{bytecode_size, Bytecode};
 use crate::custom_types::dict::Dict;
-use crate::custom_types::exceptions::stop_iteration;
 use crate::custom_types::list::List;
 use crate::custom_types::set::Set;
 use crate::int_tools::bytes_index;
@@ -267,7 +266,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         Bytecode::TailFunction => runtime.tail_quick(bytes_0 as u16),
         Bytecode::Return => {
             if runtime.is_generator() {
-                runtime.throw_quick(stop_iteration(), "".into())?
+                return runtime.return_1(Option::None.into());
             } else {
                 let ret_count = bytes_0 as usize;
                 runtime.set_ret(ret_count);
@@ -334,17 +333,21 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             unimplemented!("Bytecode::EndClass is a marker bytecode and should not appear in code")
         }
         Bytecode::ForIter => {
-            // FIXME: Iterators should return an option-wrapped value
             let iterated = runtime.pop();
             let jump_loc = bytes_0;
-            let next_pos = runtime.current_pos();
-            runtime.add_exception_handler(stop_iteration().into(), jump_loc);
             runtime.call_attr(iterated.clone(), "next".into(), Vec::new())?;
-            if runtime.current_pos() == next_pos {
-                runtime.pop_handler();
-                let arg = runtime.pop();
-                runtime.push(iterated);
-                runtime.push(arg);
+            let ret = runtime.pop_return(); // FIXME: Multiple returns in for-loop
+            match ret {
+                Variable::Option(o) => match o.into() {
+                    Option::Some(arg) => {
+                        runtime.push(iterated);
+                        runtime.push(arg);
+                    }
+                    Option::None => {
+                        runtime.goto(jump_loc);
+                    }
+                },
+                _ => panic!("Iterators should return an option-wrapped value"),
             }
         }
         Bytecode::ListCreate => {

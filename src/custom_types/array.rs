@@ -1,4 +1,4 @@
-use crate::custom_types::exceptions::{index_error, stop_iteration, value_error};
+use crate::custom_types::exceptions::{index_error, value_error};
 use crate::custom_types::range::Range;
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_var::IntVar;

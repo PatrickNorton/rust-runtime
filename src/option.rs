@@ -85,3 +85,9 @@ impl From<LangOption> for Variable {
         Variable::Option(x)
     }
 }
+
+impl From<LangOption> for Option<Variable> {
+    fn from(x: LangOption) -> Self {
+        x.value.map(|a| *a)
+    }
+}

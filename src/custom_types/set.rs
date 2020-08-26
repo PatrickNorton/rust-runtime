@@ -1,4 +1,3 @@
-use crate::custom_types::exceptions::stop_iteration;
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_tools::next_power_2;
 use crate::looping::{IterResult, NativeIterator};
@@ -484,10 +483,8 @@ impl SetIter {
 
     fn next_fn(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        match self.clone().next(runtime)? {
-            Option::None => runtime.throw_quick(stop_iteration(), "".into()),
-            Option::Some(val) => runtime.return_1(val),
-        }
+        let next = self.clone().next(runtime)?;
+        runtime.return_1(next.into())
     }
 }
 

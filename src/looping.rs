@@ -1,4 +1,3 @@
-use crate::custom_types::exceptions::stop_iteration;
 use crate::custom_var::CustomVar;
 use crate::name::Name;
 use crate::runtime::Runtime;
@@ -31,14 +30,11 @@ impl Iterator {
             .index(Name::Attribute("next".into()), runtime)?
             .call((Vec::new(), runtime));
         match result {
-            FnResult::Ok(_) => Result::Ok(Option::Some(runtime.pop_return())),
-            FnResult::Err(_) => {
-                if runtime.pop_err_if(stop_iteration())?.is_some() {
-                    IterResult::Ok(Option::None)
-                } else {
-                    IterResult::Err(())
-                }
-            }
+            FnResult::Ok(_) => match runtime.pop_return() {
+                Variable::Option(o) => IterResult::Ok(o.into()),
+                _ => panic!("Expected iterator to return an option"),
+            },
+            FnResult::Err(_) => IterResult::Err(()),
         }
     }
 }

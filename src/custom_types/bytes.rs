@@ -1,4 +1,4 @@
-use crate::custom_types::exceptions::{index_error, stop_iteration, value_error};
+use crate::custom_types::exceptions::{index_error, value_error};
 use crate::custom_var::CustomVar;
 use crate::int_tools::{bytes_index, bytes_index_le};
 use crate::int_var::{normalize, IntVar};
@@ -279,10 +279,7 @@ impl BytesIter {
 
     fn next_fn(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        match self.inner_next() {
-            Option::Some(value) => runtime.return_1(value),
-            Option::None => runtime.throw_quick(stop_iteration(), "".into()),
-        }
+        runtime.return_1(self.inner_next().into())
     }
 
     fn inner_next(&self) -> Option<Variable> {

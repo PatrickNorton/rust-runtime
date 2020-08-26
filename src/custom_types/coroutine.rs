@@ -1,4 +1,3 @@
-use crate::custom_types::exceptions::stop_iteration;
 use crate::custom_var::CustomVar;
 use crate::executor;
 use crate::looping::{IterResult, NativeIterator};
@@ -91,14 +90,11 @@ impl NativeIterator for Generator {
     fn next(self: Rc<Self>, runtime: &mut Runtime) -> IterResult {
         runtime.add_generator(self)?;
         match executor::execute(runtime) {
-            FnResult::Ok(_) => IterResult::Ok(Option::Some(runtime.pop_return())),
-            FnResult::Err(_) => {
-                if runtime.pop_err_if(stop_iteration())?.is_some() {
-                    IterResult::Ok(Option::None)
-                } else {
-                    IterResult::Err(())
-                }
-            }
+            FnResult::Ok(_) => match runtime.pop_return() {
+                Variable::Option(o) => IterResult::Ok(o.into()),
+                _ => panic!("Expected option to be returned from generator"),
+            },
+            FnResult::Err(_) => IterResult::Err(()),
         }
     }
 }

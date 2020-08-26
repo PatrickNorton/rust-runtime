@@ -483,6 +483,12 @@ impl From<LangTuple> for Variable {
     }
 }
 
+impl From<Option<Variable>> for Variable {
+    fn from(x: Option<Variable>) -> Self {
+        Variable::Option(LangOption::new(x))
+    }
+}
+
 impl From<bool> for Variable {
     fn from(x: bool) -> Self {
         Variable::Bool(x)

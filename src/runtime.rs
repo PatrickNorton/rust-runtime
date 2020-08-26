@@ -8,6 +8,7 @@ use crate::jump_table::JumpTable;
 use crate::method::{NativeCopyMethod, NativeMethod};
 use crate::name::Name;
 use crate::operator::Operator;
+use crate::option::LangOption;
 use crate::stack_frame::{SFInfo, StackFrame};
 use crate::std_type::Type;
 use crate::string_var::StringVar;
@@ -489,6 +490,11 @@ impl Runtime {
 
     pub fn generator_yield(&mut self, ret_count: usize) {
         debug_assert!(self.is_generator());
+        let replace_start = self.variables.len() - ret_count;
+        for x in &mut self.variables[replace_start..] {
+            let old_x = take(x);
+            *x = Option::Some(old_x).into()
+        }
         self.set_ret(ret_count);
         let frame = self.frames.pop().unwrap();
         let vec = Vec::new(); // FIXME: Clear stack

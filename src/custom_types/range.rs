@@ -1,4 +1,4 @@
-use crate::custom_types::exceptions::{index_error, stop_iteration};
+use crate::custom_types::exceptions::index_error;
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_var::IntVar;
 use crate::looping::{IterResult, NativeIterator};
@@ -166,10 +166,7 @@ impl RangeIter {
 
     fn next_fn(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        match self.true_next() {
-            Option::Some(value) => runtime.return_1(value.into()),
-            Option::None => runtime.throw_quick(stop_iteration(), "".into()),
-        }
+        runtime.return_1(self.true_next().map(Variable::from).into())
     }
 
     fn true_next(&self) -> Option<IntVar> {

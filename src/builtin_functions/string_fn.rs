@@ -1,4 +1,4 @@
-use crate::custom_types::exceptions::{arithmetic_error, index_error, stop_iteration, value_error};
+use crate::custom_types::exceptions::{arithmetic_error, index_error, value_error};
 use crate::custom_types::list::List;
 use crate::custom_var::CustomVar;
 use crate::int_var::IntVar;
@@ -273,8 +273,8 @@ impl StringIter {
     fn next_func(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         match self.next_fn() {
-            Option::Some(ret) => runtime.return_1(ret),
-            Option::None => runtime.throw_quick(stop_iteration(), "".into()),
+            Option::Some(ret) => runtime.return_1(Option::Some(ret).into()),
+            Option::None => runtime.return_1(Option::None.into()),
         }
     }
 
