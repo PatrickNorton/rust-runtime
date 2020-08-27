@@ -1,3 +1,4 @@
+use crate::custom_types::array::Array;
 use crate::custom_types::exceptions::io_error;
 use crate::custom_types::file::FileObj;
 use crate::custom_types::list::List;
@@ -95,6 +96,7 @@ pub fn builtin_of(index: usize) -> Variable {
         14 => reversed(),
         15 => Slice::slice_type().into(),
         16 => id(),
+        17 => Array::array_type().into(),
         _ => unimplemented!(),
     }
 }
