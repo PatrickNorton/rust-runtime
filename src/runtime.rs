@@ -487,7 +487,7 @@ impl Runtime {
     }
 
     pub fn swap_n(&mut self, index: usize) {
-        let value = self.variables.remove(self.variables.len() - 1 - index);
+        let value = self.variables.remove(self.variables.len() - index);
         self.variables.push(value);
     }
 
