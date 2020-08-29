@@ -285,7 +285,9 @@ impl PartialEq for Type {
             (Type::Char, Type::Char) => true,
             (Type::Tuple, Type::Tuple) => true,
             (Type::Type, Type::Type) => true,
-            (Type::Custom(a), Type::Custom(b)) => ptr::eq(*a, *b),
+            (Type::Custom(a), Type::Custom(b)) => {
+                ptr::eq(*a as *const _ as *const (), *b as *const _ as *const ())
+            }
             (Type::Union(t), Type::Union(u)) => ptr::eq(*t, *u),
             _ => false,
         }
