@@ -492,7 +492,7 @@ impl Runtime {
     }
 
     pub fn swap_stack(&mut self, index_1: usize, index_2: usize) {
-        let len = self.variables.len();
+        let len = self.variables.len() - 1;
         self.variables.swap(len - index_1, len - index_2);
     }
 
