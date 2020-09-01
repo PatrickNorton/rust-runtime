@@ -40,7 +40,7 @@ impl Deref for StringVar {
     fn deref(&self) -> &Self::Target {
         match self {
             StringVar::Literal(s) => *s,
-            StringVar::Other(s) => &s.as_ref(),
+            StringVar::Other(s) => s.as_ref(),
         }
     }
 }
