@@ -7,7 +7,6 @@ use crate::looping::{IterResult, NativeIterator};
 use crate::method::{InnerMethod, StdMethod};
 use crate::name::Name;
 use crate::operator::Operator;
-use crate::option::LangOption;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
@@ -20,12 +19,14 @@ use std::rc::Rc;
 
 #[derive(Debug)]
 pub struct List {
+    generic: Type,
     value: RefCell<Vec<Variable>>,
 }
 
 impl List {
-    pub fn from_values(values: Vec<Variable>) -> Rc<List> {
+    pub fn from_values(generic: Type, values: Vec<Variable>) -> Rc<List> {
         Rc::new(List {
+            generic,
             value: RefCell::new(values),
         })
     }
@@ -101,7 +102,11 @@ impl List {
         debug_assert_eq!(args.len(), 2);
         match self.normalise_index(take(&mut args[0]).into()) {
             Result::Ok(index) => {
-                self.value.borrow_mut()[index] = take(&mut args[1]);
+                if args[1].get_type().is_subclass(&self.generic) {
+                    self.value.borrow_mut()[index] = take(&mut args[1]);
+                } else {
+                    panic!("Bad type for list.operator []=")
+                }
                 runtime.return_0()
             }
             Result::Err(index) => runtime.throw_quick(
@@ -175,7 +180,7 @@ impl List {
         debug_assert!(args.len() == 1);
         let mut count: usize = 0;
         for x in &*self.value.borrow() {
-            if x.equals(self.clone().into(), runtime)? {
+            if x.equals(args[0].clone(), runtime)? {
                 count += 1;
             }
         }
@@ -190,6 +195,9 @@ impl List {
 
     fn add(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
+        if !args[0].get_type().is_subclass(&self.generic) {
+            panic!("Bad type for list.add")
+        }
         self.value
             .borrow_mut()
             .push(replace(&mut args[0], Variable::Null()));
@@ -233,7 +241,7 @@ impl List {
         while let Option::Some(i) = val.next(runtime)? {
             raw_vec.push(self_val[IntVar::from(i).to_usize().expect("Conversion error")].clone());
         }
-        runtime.return_1(List::from_values(raw_vec).into())
+        runtime.return_1(List::from_values(self.generic, raw_vec).into())
     }
 
     fn set_slice(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -322,6 +330,7 @@ impl List {
             Option::None => return Self::size_error(runtime, range.get_step()),
         };
         let new_vec = List::from_values(
+            self.generic,
             value[start..stop]
                 .iter()
                 .step_by(step)
@@ -333,7 +342,7 @@ impl List {
 
     pub fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty()); // TODO: List of a value
-        runtime.return_1(List::from_values(vec![]).into())
+        runtime.return_1(List::from_values(Type::Object, vec![]).into())
     }
 
     pub fn list_type() -> Type {

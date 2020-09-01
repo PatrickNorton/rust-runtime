@@ -371,13 +371,21 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         }
         Bytecode::ListCreate => {
             let argc = bytes_0 as u16;
-            let value = List::from_values(runtime.load_args(argc));
+            let list_type = match runtime.pop() {
+                Variable::Type(t) => t,
+                _ => panic!("Bytecode::ListCreate should have generic type as first parameter"),
+            };
+            let value = List::from_values(list_type, runtime.load_args(argc));
             runtime.push(value.into())
         }
         Bytecode::SetCreate => {
             let argc = bytes_0 as u16;
+            let set_type = match runtime.pop() {
+                Variable::Type(t) => t,
+                _ => panic!("Bytecode::ListCreate should have generic type as first parameter"),
+            };
             let argv = runtime.load_args(argc);
-            let value = Set::new(argv, runtime)?;
+            let value = Set::new(set_type, argv, runtime)?;
             runtime.push(value.into())
         }
         Bytecode::DictCreate => {

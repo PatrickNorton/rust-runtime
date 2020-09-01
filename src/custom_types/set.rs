@@ -14,6 +14,7 @@ use std::rc::Rc;
 
 #[derive(Debug)]
 pub struct Set {
+    generic: Type,
     value: RefCell<InnerSet>,
 }
 
@@ -31,14 +32,16 @@ struct Entry {
 }
 
 impl Set {
-    pub fn new(args: Vec<Variable>, runtime: &mut Runtime) -> Result<Rc<Set>, ()> {
+    pub fn new(generic: Type, args: Vec<Variable>, runtime: &mut Runtime) -> Result<Rc<Set>, ()> {
         Result::Ok(Rc::new(Set {
+            generic,
             value: RefCell::new(InnerSet::new(args, runtime)?),
         }))
     }
 
-    fn from_inner(value: InnerSet) -> Rc<Set> {
+    fn from_inner(generic: Type, value: InnerSet) -> Rc<Set> {
         Rc::new(Set {
+            generic,
             value: RefCell::new(value),
         })
     }
@@ -81,7 +84,7 @@ impl Set {
                 result_vec.push(val);
             }
         }
-        let ret = Self::new(result_vec, runtime)?;
+        let ret = Self::new(self.generic, result_vec, runtime)?;
         runtime.return_1(ret.into())
     }
 
@@ -98,7 +101,7 @@ impl Set {
         while let Option::Some(val) = other_iter.next(runtime)? {
             result.add(val, runtime)?;
         }
-        runtime.return_1(Set::from_inner(result).into())
+        runtime.return_1(Set::from_inner(self.generic, result).into())
     }
 
     fn xor(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -118,7 +121,7 @@ impl Set {
                 result.add(val, runtime)?;
             }
         }
-        runtime.return_1(Set::from_inner(result).into())
+        runtime.return_1(Set::from_inner(self.generic, result).into())
     }
 
     fn bool(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -142,7 +145,11 @@ impl Set {
     fn add(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         let val = args.remove(0);
-        self.value.borrow_mut().add(val, runtime)?;
+        if val.get_type().is_subclass(&self.generic) {
+            self.value.borrow_mut().add(val, runtime)?;
+        } else {
+            panic!("Bad type for set.add")
+        }
         runtime.return_0()
     }
 
@@ -151,7 +158,11 @@ impl Set {
         let val = replace(&mut args[0], Variable::Null());
         let val_iter = val.iter(runtime)?;
         while let Option::Some(arg) = val_iter.next(runtime)? {
-            self.value.borrow_mut().add(arg, runtime)?;
+            if arg.get_type().is_subclass(&self.generic) {
+                self.value.borrow_mut().add(arg, runtime)?;
+            } else {
+                panic!("Bad type for set.addAll")
+            }
         }
         runtime.return_0()
     }
@@ -191,7 +202,7 @@ impl Set {
 
     fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty()); // TODO: Set of a value
-        let set = Set::new(vec![], runtime)?;
+        let set = Set::new(Type::Object, vec![], runtime)?;
         runtime.return_1(set.into())
     }
 

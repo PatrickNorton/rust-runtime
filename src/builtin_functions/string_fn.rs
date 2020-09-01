@@ -225,6 +225,7 @@ fn split(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> Fn
     let opt_count = replace(&mut args[1], Variable::Null());
     if opt_count.is_null() {
         let result = List::from_values(
+            Type::String,
             this.split(&*pat)
                 .map(|a| StringVar::from(a.to_owned()))
                 .map(Variable::from)
@@ -237,10 +238,13 @@ fn split(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> Fn
             .split(&*pat)
             .map(|a| StringVar::from(a.to_owned()))
             .map(Variable::from);
-        let result = List::from_values(match val.to_usize() {
-            Option::Some(count) => iterator.take(count).collect(),
-            Option::None => iterator.collect(),
-        });
+        let result = List::from_values(
+            Type::String,
+            match val.to_usize() {
+                Option::Some(count) => iterator.take(count).collect(),
+                Option::None => iterator.collect(),
+            },
+        );
         runtime.return_1(result.into())
     }
 }
@@ -248,6 +252,7 @@ fn split(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> Fn
 fn split_lines(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     let result = List::from_values(
+        Type::String,
         this.lines()
             .map(|a| StringVar::from(a.to_owned()))
             .map(Variable::from)

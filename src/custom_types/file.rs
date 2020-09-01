@@ -74,7 +74,7 @@ impl FileObj {
                 .lines()
                 .map(|a| StringVar::from(a.to_owned()).into())
                 .collect();
-            runtime.return_1(List::from_values(list).into())
+            runtime.return_1(List::from_values(Type::String, list).into())
         }
     }
 
