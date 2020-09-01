@@ -7,6 +7,7 @@ use crate::looping::{IterResult, NativeIterator};
 use crate::method::{InnerMethod, StdMethod};
 use crate::name::Name;
 use crate::operator::Operator;
+use crate::option::LangOption;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
@@ -116,11 +117,18 @@ impl List {
     }
 
     fn list_get(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        debug_assert_eq!(args.len(), 2);
-        runtime.return_1(match self.normalise_index(take(&mut args[0]).into()) {
-            Result::Ok(index) => self.value.borrow()[index].clone(),
-            Result::Err(_) => take(&mut args[1]),
-        })
+        if args.len() == 1 {
+            runtime.return_1(match self.normalise_index(take(&mut args[0]).into()) {
+                Result::Ok(index) => Option::Some(self.value.borrow()[index].clone()).into(),
+                Result::Err(_) => Option::None.into(),
+            })
+        } else {
+            debug_assert_eq!(args.len(), 2);
+            runtime.return_1(match self.normalise_index(take(&mut args[0]).into()) {
+                Result::Ok(index) => self.value.borrow()[index].clone(),
+                Result::Err(_) => take(&mut args[1]),
+            })
+        }
     }
 
     fn normalise_index(&self, signed_index: IntVar) -> Result<usize, IntVar> {
