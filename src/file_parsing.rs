@@ -82,7 +82,7 @@ pub fn parse_file(name: String, files: &mut Vec<FileInfo>) -> usize {
         // FIXME: Recursion fails
         let other_file = &files[file_index];
         // TODO: Get nested dots
-        imports.push(other_file.get_export(&names[1]).clone());
+        imports.push(other_file.get_export(names[1]).clone());
     }
 
     let export_count = bytes_index::<u32>(&data, &mut index);
