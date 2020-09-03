@@ -40,7 +40,7 @@ impl List {
             Operator::Equals => List::eq,
             Operator::Iter => List::iter,
             Operator::In => List::contains,
-            Operator::Reversed => List::reverse,
+            Operator::Reversed => List::reversed,
             Operator::GetSlice => List::get_slice,
             Operator::SetSlice => List::set_slice,
             Operator::IterSlice => List::iter_slice,
@@ -168,6 +168,13 @@ impl List {
             }
         }
         runtime.return_1(true.into())
+    }
+
+    fn reversed(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        let mut val = self.value.borrow().clone();
+        val.reverse();
+        runtime.return_1(List::from_values(self.generic, val).into())
     }
 
     fn reverse(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
