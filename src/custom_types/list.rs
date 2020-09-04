@@ -58,6 +58,7 @@ impl List {
             "count" => Self::count,
             "clear" => Self::clear,
             "add" => Self::add,
+            "insert" => Self::insert,
             _ => unimplemented!("List::{}", name),
         };
         Variable::Method(StdMethod::new_native(self, value))
@@ -345,6 +346,32 @@ impl List {
                 .collect(),
         );
         runtime.return_1(Rc::new(ListIter::new(new_vec)).into())
+    }
+
+    pub fn insert(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 2);
+        let index = take(&mut args[0]).int(runtime)?;
+        let mut value = self.value.borrow_mut();
+        if index == value.len().into() {
+            value.push(take(&mut args[1]));
+            runtime.return_0()
+        } else {
+            match self.normalise_index(index) {
+                Result::Ok(i) => {
+                    value.insert(i, take(&mut args[1]));
+                    runtime.return_0()
+                }
+                Result::Err(i) => runtime.throw_quick(
+                    index_error(),
+                    format!(
+                        "Index {} out of bounds for insert on list of length {}",
+                        i,
+                        value.len()
+                    )
+                    .into(),
+                ),
+            }
+        }
     }
 
     pub fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
