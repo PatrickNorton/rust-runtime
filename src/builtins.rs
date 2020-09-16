@@ -1,4 +1,5 @@
 use crate::custom_types::array::Array;
+use crate::custom_types::enumerate::Enumerate;
 use crate::custom_types::exceptions::io_error;
 use crate::custom_types::file::FileObj;
 use crate::custom_types::list::List;
@@ -77,6 +78,16 @@ fn id_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     runtime.return_1(IntVar::from(args[0].id()).into())
 }
 
+fn enumerate() -> Variable {
+    Variable::Function(Function::Native(enumerate_impl))
+}
+
+fn enumerate_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert_eq!(args.len(), 1);
+    let iterable = args[0].iter(runtime)?;
+    runtime.return_1(Enumerate::new(iterable).into())
+}
+
 pub fn builtin_of(index: usize) -> Variable {
     match index {
         0 => print(),
@@ -97,6 +108,7 @@ pub fn builtin_of(index: usize) -> Variable {
         15 => Slice::slice_type().into(),
         16 => id(),
         17 => Array::array_type().into(),
+        18 => enumerate(),
         _ => unimplemented!(),
     }
 }
