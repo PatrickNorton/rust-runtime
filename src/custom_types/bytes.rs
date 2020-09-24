@@ -7,6 +7,7 @@ use crate::looping::{IterResult, NativeIterator};
 use crate::method::StdMethod;
 use crate::name::Name;
 use crate::operator::Operator;
+use crate::option::LangOption;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
@@ -51,6 +52,7 @@ impl LangBytes {
             "length" => return IntVar::from(self.value.borrow().len()).into(),
             "encode" => Self::encode,
             "join" => Self::join,
+            "indexOf" => Self::index_of,
             _ => unimplemented!(),
         };
         Variable::Method(StdMethod::new_native(self, func))
@@ -228,6 +230,24 @@ impl LangBytes {
             result.extend_from_slice(val.str(runtime)?.as_bytes());
         }
         runtime.return_1(Rc::new(LangBytes::new(result)).into())
+    }
+
+    fn index_of(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.len() == 1);
+        let search_int = IntVar::from(take(&mut args[0]));
+        runtime.return_1(Variable::from(match search_int.to_u8() {
+            Option::Some(i) => self
+                .value
+                .borrow()
+                .iter()
+                .enumerate()
+                .find(|x| *x.1 == i)
+                .map(|x| x.0)
+                .map(IntVar::from)
+                .map(Variable::from)
+                .into(),
+            Option::None => LangOption::new(Option::None),
+        }))
     }
 
     fn create(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

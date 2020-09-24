@@ -91,3 +91,9 @@ impl From<LangOption> for Option<Variable> {
         x.value.map(|a| *a)
     }
 }
+
+impl From<Option<Variable>> for LangOption {
+    fn from(x: Option<Variable>) -> Self {
+        Self::new(x)
+    }
+}
