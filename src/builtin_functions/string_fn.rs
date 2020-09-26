@@ -1,6 +1,7 @@
 use crate::custom_types::exceptions::{arithmetic_error, index_error, value_error};
 use crate::custom_types::list::List;
 use crate::custom_var::CustomVar;
+use crate::function::Function;
 use crate::int_var::IntVar;
 use crate::looping::{IterResult, NativeIterator};
 use crate::method::{InnerMethod, NativeMethod, StdMethod};
@@ -46,9 +47,18 @@ pub fn get_attr(this: StringVar, s: StringVar) -> Variable {
         "startsWith" => starts_with,
         "split" => split,
         "splitlines" => split_lines,
+        "chars" => return chars(&this),
         _ => unimplemented!(),
     };
     Variable::Method(StdMethod::new_native(this, func))
+}
+
+pub fn static_attr(s: StringVar) -> Variable {
+    let func = match s.as_str() {
+        "fromChars" => from_chars,
+        _ => unimplemented!(),
+    };
+    Variable::Function(Function::Native(func))
 }
 
 fn add(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -258,6 +268,24 @@ fn split_lines(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> 
             .map(Variable::from)
             .collect(),
     );
+    runtime.return_1(result.into())
+}
+
+fn chars(this: &StringVar) -> Variable {
+    List::from_values(Type::Char, this.chars().map(Variable::Char).collect()).into()
+}
+
+fn from_chars(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert_eq!(args.len(), 1);
+    let mut result = String::new();
+    let chars = take(&mut args[0]).iter(runtime)?;
+    while let Option::Some(val) = chars.next(runtime)? {
+        if let Variable::Char(c) = val {
+            result.push(c);
+        } else {
+            panic!()
+        }
+    }
     runtime.return_1(result.into())
 }
 

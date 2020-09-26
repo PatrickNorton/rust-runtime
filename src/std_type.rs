@@ -1,3 +1,4 @@
+use crate::builtin_functions::string_fn;
 use crate::builtins::default_methods;
 use crate::custom_types::types::CustomTypeImpl;
 use crate::lang_union::{UnionMethod, UnionType};
@@ -140,6 +141,10 @@ impl Type {
                 Option::None => runtime.static_attr(&self, index),
             },
             Type::Union(union_t) => union_t.index(index),
+            Type::String => match index {
+                Name::Attribute(s) => string_fn::static_attr(s),
+                _ => unimplemented!(),
+            },
             _ => unimplemented!(),
         }
     }
