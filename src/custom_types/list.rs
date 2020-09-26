@@ -52,13 +52,14 @@ impl List {
     fn get_attribute(self: Rc<Self>, name: StringVar) -> Variable {
         let value = match name.as_str() {
             "length" => return Variable::Bigint(self.value.borrow().len().into()),
-            "contains_all" => Self::contains_all,
+            "containsAll" => Self::contains_all,
             "get" => Self::list_get,
             "reverse" => Self::reverse,
             "count" => Self::count,
             "clear" => Self::clear,
             "add" => Self::add,
             "insert" => Self::insert,
+            "indexOf" => Self::index_of,
             _ => unimplemented!("List::{}", name),
         };
         Variable::Method(StdMethod::new_native(self, value))
@@ -169,6 +170,17 @@ impl List {
             }
         }
         runtime.return_1(true.into())
+    }
+
+    fn index_of(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.len() == 1);
+        let searcher = take(&mut args[0]);
+        for (i, var) in self.value.borrow().iter().enumerate() {
+            if searcher.equals(var.clone(), runtime)? {
+                return runtime.return_1(Option::Some(IntVar::from(i).into()).into());
+            }
+        }
+        runtime.return_1(Option::None.into())
     }
 
     fn reversed(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
