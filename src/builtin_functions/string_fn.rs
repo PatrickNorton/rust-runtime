@@ -45,8 +45,10 @@ pub fn get_attr(this: StringVar, s: StringVar) -> Variable {
         "join" => join,
         "joinAll" => join_all,
         "startsWith" => starts_with,
+        "endsWith" => ends_with,
         "split" => split,
         "splitlines" => split_lines,
+        "indexOf" => index_of,
         "chars" => return chars(&this),
         _ => unimplemented!(),
     };
@@ -229,6 +231,12 @@ fn starts_with(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime)
     }
 }
 
+fn ends_with(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert_eq!(args.len(), 1);
+    let val = StringVar::from(take(&mut args[0]));
+    runtime.return_1(this.ends_with(&*val).into())
+}
+
 fn split(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 2);
     let pat = StringVar::from(replace(&mut args[0], Variable::Null()));
@@ -287,6 +295,17 @@ fn from_chars(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         }
     }
     runtime.return_1(result.into())
+}
+
+fn index_of(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert_eq!(args.len(), 1);
+    let chr = take(&mut args[0]).into();
+    let index = this
+        .chars()
+        .enumerate()
+        .find(|(_, c)| *c == chr)
+        .map(|(i, _)| i);
+    runtime.return_1(index.map(IntVar::from).map(Variable::from).into())
 }
 
 #[derive(Debug)]
