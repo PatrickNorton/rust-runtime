@@ -1,5 +1,6 @@
 use crate::custom_types::array::Array;
 use crate::custom_types::bytes::LangBytes;
+use crate::custom_types::dict::Dict;
 use crate::custom_types::enumerate::Enumerate;
 use crate::custom_types::exceptions::io_error;
 use crate::custom_types::file::FileObj;
@@ -111,6 +112,8 @@ pub fn builtin_of(index: usize) -> Variable {
         17 => Array::array_type().into(),
         18 => enumerate(),
         19 => LangBytes::bytes_type().into(),
+        20 => Dict::dict_type().into(),
+        21 => Type::Object.into(),
         _ => unimplemented!(),
     }
 }
