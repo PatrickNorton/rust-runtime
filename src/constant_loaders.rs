@@ -1,6 +1,7 @@
 use crate::base_fn::BaseFunction;
 use crate::builtins::builtin_of;
 use crate::custom_types::bytes::LangBytes;
+use crate::custom_types::range::Range;
 use crate::int_tools::bytes_index;
 use crate::int_var::IntVar;
 use crate::lang_union::UnionMethod;
@@ -14,6 +15,7 @@ use crate::string_var::StringVar;
 use crate::variable::Variable;
 use num::bigint::Sign;
 use num::traits::pow::pow;
+use num::traits::{One, Zero};
 use num::{BigInt, BigRational, FromPrimitive};
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
@@ -48,13 +50,17 @@ pub fn load_int(data: &[u8], index: &mut usize) -> Variable {
 }
 
 pub fn load_bigint(data: &[u8], index: &mut usize) -> Variable {
+    Variable::Bigint(inner_bigint(data, index).into())
+}
+
+fn inner_bigint(data: &[u8], index: &mut usize) -> BigInt {
     let count = bytes_index::<u32>(data, index);
     let mut values: Vec<u32> = Vec::with_capacity(count as usize);
     for _ in 0..count {
         values.push(bytes_index::<u32>(data, index));
     }
     values.reverse(); // Comes in big-endian, little-endian needed
-    Variable::Bigint(BigInt::new(Sign::Plus, values).into())
+    BigInt::new(Sign::Plus, values)
 }
 
 pub fn load_decimal(data: &[u8], index: &mut usize) -> Variable {
@@ -92,6 +98,31 @@ pub fn load_bytes(data: &[u8], index: &mut usize) -> Variable {
     let len = bytes_index::<u32>(data, index) as usize;
     let byte_arr = &data[*index..*index + len];
     Rc::new(LangBytes::new(byte_arr.to_vec())).into()
+}
+
+pub fn load_range(data: &[u8], index: &mut usize) -> Variable {
+    let start = get_range_index(data, index);
+    let stop = get_range_index(data, index);
+    let step = get_range_index(data, index);
+    Rc::new(Range::new(
+        start.unwrap_or_else(Zero::zero),
+        stop.unwrap_or_else(Zero::zero),
+        step.unwrap_or_else(One::one),
+    ))
+    .into()
+}
+
+fn get_range_index(data: &[u8], index: &mut usize) -> Option<IntVar> {
+    *index += 1;
+    match data[*index - 1] {
+        0 => Option::None,
+        1 => {
+            let value = bytes_index::<u32>(data, index);
+            Option::Some(IntVar::from(value))
+        }
+        2 => Option::Some(inner_bigint(data, index).into()),
+        _ => panic!(),
+    }
 }
 
 fn get_variables(data: &[u8], index: &mut usize) -> HashSet<StringVar> {

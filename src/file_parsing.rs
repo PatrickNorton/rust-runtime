@@ -1,7 +1,7 @@
 use crate::base_fn::BaseFunction;
 use crate::constant_loaders::{
     class_index, function_index, load_bigint, load_bool, load_builtin, load_bytes, load_class,
-    load_decimal, load_int, load_std_str, load_str, option_index,
+    load_decimal, load_int, load_range, load_std_str, load_str, option_index,
 };
 use crate::file_info::FileInfo;
 use crate::function::Function;
@@ -51,6 +51,7 @@ fn load_constant(
             Variable::Null()
         }
         10 => load_bytes(data, index),
+        11 => load_range(data, index),
         _ => panic!("Invalid value for constant: {}", data[*index - 1]),
     }
 }
