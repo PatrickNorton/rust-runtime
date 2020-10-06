@@ -38,6 +38,12 @@ pub fn execute(runtime: &mut Runtime) -> FnResult {
             runtime.pop_stack();
         }
     }
+    if !runtime.is_native()
+        && runtime.current_pos() == runtime.current_fn().len()
+        && !runtime.is_bottom_stack()
+    {
+        runtime.pop_stack();
+    }
     Result::Ok(())
 }
 
