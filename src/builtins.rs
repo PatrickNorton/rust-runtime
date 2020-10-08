@@ -2,7 +2,7 @@ use crate::custom_types::array::Array;
 use crate::custom_types::bytes::LangBytes;
 use crate::custom_types::dict::Dict;
 use crate::custom_types::enumerate::Enumerate;
-use crate::custom_types::exceptions::io_error;
+use crate::custom_types::exceptions::{io_error, not_implemented};
 use crate::custom_types::file::FileObj;
 use crate::custom_types::list::List;
 use crate::custom_types::range::Range;
@@ -114,6 +114,7 @@ pub fn builtin_of(index: usize) -> Variable {
         19 => LangBytes::bytes_type().into(),
         20 => Dict::dict_type().into(),
         21 => Type::Object.into(),
+        22 => not_implemented().into(),
         _ => unimplemented!(),
     }
 }
