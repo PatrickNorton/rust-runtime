@@ -1,13 +1,14 @@
 use crate::base_fn::BaseFunction;
 use crate::constant_loaders::{
     class_index, function_index, load_bigint, load_bool, load_builtin, load_bytes, load_class,
-    load_decimal, load_int, load_range, load_std_str, load_str, option_index,
+    load_decimal, load_int, load_range, load_std_str, load_str, option_index, tuple_indices,
 };
 use crate::file_info::FileInfo;
 use crate::function::Function;
 use crate::int_tools::bytes_index;
 use crate::jump_table::JumpTable;
 use crate::option::LangOption;
+use crate::tuple::LangTuple;
 use crate::variable::Variable;
 use std::collections::HashMap;
 use std::fs::read;
@@ -15,11 +16,12 @@ use std::path::Path;
 
 const FILE_EXTENSION: &str = ".nbyte";
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 enum LoadType {
     Function(u32),
     Class(u32),
     Option(u16),
+    Tuple(Vec<u16>),
 }
 
 fn load_constant(
@@ -52,6 +54,10 @@ fn load_constant(
         }
         10 => load_bytes(data, index),
         11 => load_range(data, index),
+        12 => {
+            load_later.push((constant_no, LoadType::Tuple(tuple_indices(data, index))));
+            Variable::Null()
+        }
         _ => panic!("Invalid value for constant: {}", data[*index - 1]),
     }
 }
@@ -134,6 +140,11 @@ pub fn parse_file(name: String, files: &mut Vec<FileInfo>) -> usize {
             LoadType::Option(d) => {
                 Variable::Option(LangOption::new(Option::Some(constants[d as usize].clone())))
             }
+            LoadType::Tuple(v) => Variable::Tuple(LangTuple::new(
+                v.into_iter()
+                    .map(|i| constants[i as usize].clone())
+                    .collect(),
+            )),
         };
         constants[i] = val;
     }

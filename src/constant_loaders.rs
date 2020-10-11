@@ -112,6 +112,11 @@ pub fn load_range(data: &[u8], index: &mut usize) -> Variable {
     .into()
 }
 
+pub fn tuple_indices(data: &[u8], index: &mut usize) -> Vec<u16> {
+    let len = bytes_index::<u32>(data, index);
+    (0..len).map(|_| bytes_index(data, index)).collect()
+}
+
 fn get_range_index(data: &[u8], index: &mut usize) -> Option<IntVar> {
     *index += 1;
     match data[*index - 1] {
