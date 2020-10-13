@@ -23,11 +23,17 @@ macro_rules! impl_from_bytes {
 }
 
 impl_from_bytes!(u8);
+impl_from_bytes!(i8);
 impl_from_bytes!(u16);
+impl_from_bytes!(i16);
 impl_from_bytes!(u32);
+impl_from_bytes!(i32);
 impl_from_bytes!(u64);
+impl_from_bytes!(i64);
 impl_from_bytes!(u128);
+impl_from_bytes!(i128);
 impl_from_bytes!(usize);
+impl_from_bytes!(isize);
 
 /// Convert a `Vec<u8>` to a primitive int, beginning at the index specified.
 ///

@@ -45,8 +45,8 @@ pub fn load_builtin(data: &[u8], index: &mut usize) -> Variable {
 }
 
 pub fn load_int(data: &[u8], index: &mut usize) -> Variable {
-    let value = bytes_index::<u32>(data, index);
-    Variable::Bigint(IntVar::from_u32(value).unwrap())
+    let value = bytes_index::<i32>(data, index);
+    Variable::Bigint(IntVar::from_i32(value).unwrap())
 }
 
 pub fn load_bigint(data: &[u8], index: &mut usize) -> Variable {
