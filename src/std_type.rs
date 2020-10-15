@@ -30,6 +30,7 @@ pub enum Type {
     Object,
     Custom(&'static dyn CustomTypeImpl),
     Union(&'static UnionType),
+    Option(&'static Type),
 }
 
 #[derive(Debug)]
@@ -121,6 +122,7 @@ impl Type {
             Type::Object => unimplemented!(),
             Type::Custom(t) => t.create(args, runtime)?,
             Type::Union(_) => unimplemented!(),
+            Type::Option(_) => unimplemented!(),
         })
     }
 
@@ -163,6 +165,7 @@ impl Type {
             Type::Object => "object".into(),
             Type::Custom(t) => t.get_name().clone(),
             Type::Union(u) => u.name().clone(),
+            Type::Option(t) => format!("{}?", t.str()).into(),
         }
     }
 
@@ -316,6 +319,7 @@ impl Hash for Type {
             Type::Object => 8.hash(state),
             Type::Custom(b) => ptr::hash(*b, state),
             Type::Union(c) => ptr::hash(*c, state),
+            Type::Option(t) => ptr::hash(*t, state),
         }
     }
 }

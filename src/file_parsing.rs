@@ -8,6 +8,7 @@ use crate::function::Function;
 use crate::int_tools::bytes_index;
 use crate::jump_table::JumpTable;
 use crate::option::LangOption;
+use crate::std_type::Type;
 use crate::tuple::LangTuple;
 use crate::variable::Variable;
 use std::collections::HashMap;
@@ -22,6 +23,7 @@ enum LoadType {
     Class(u32),
     Option(u16),
     Tuple(Vec<u16>),
+    OptionType(u16),
 }
 
 fn load_constant(
@@ -56,6 +58,10 @@ fn load_constant(
         11 => load_range(data, index),
         12 => {
             load_later.push((constant_no, LoadType::Tuple(tuple_indices(data, index))));
+            Variable::Null()
+        }
+        13 => {
+            load_later.push((constant_no, LoadType::OptionType(option_index(data, index))));
             Variable::Null()
         }
         _ => panic!("Invalid value for constant: {}", data[*index - 1]),
@@ -145,6 +151,13 @@ pub fn parse_file(name: String, files: &mut Vec<FileInfo>) -> usize {
                     .map(|i| constants[i as usize].clone())
                     .collect(),
             )),
+            LoadType::OptionType(d) => {
+                let t = match constants[d as usize] {
+                    Variable::Type(t) => Box::leak(Box::new(t)),
+                    _ => panic!(),
+                };
+                Variable::Type(Type::Option(t))
+            }
         };
         constants[i] = val;
     }
