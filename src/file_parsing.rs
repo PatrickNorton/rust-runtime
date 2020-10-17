@@ -1,4 +1,5 @@
 use crate::base_fn::BaseFunction;
+use crate::bytecode::Bytecode::VariantNo;
 use crate::constant_loaders::{
     class_index, function_index, load_bigint, load_bool, load_builtin, load_bytes, load_class,
     load_decimal, load_int, load_range, load_std_str, load_str, option_index, tuple_indices,
@@ -35,32 +36,33 @@ fn load_constant(
 ) -> Variable {
     *index += 1;
     match data[*index - 1] {
-        0 => load_str(data, index),
-        1 => load_int(data, index),
-        2 => load_bigint(data, index),
-        3 => load_decimal(data, index),
-        4 => imports[bytes_index::<u32>(data, index) as usize].clone(),
-        5 => load_builtin(data, index),
-        6 => {
+        0 => Variable::Null(),
+        1 => load_str(data, index),
+        2 => load_int(data, index),
+        3 => load_bigint(data, index),
+        4 => load_decimal(data, index),
+        5 => imports[bytes_index::<u32>(data, index) as usize].clone(),
+        6 => load_builtin(data, index),
+        7 => {
             load_later.push((constant_no, LoadType::Function(function_index(data, index))));
             Variable::Null()
         }
-        7 => load_bool(data, index),
-        8 => {
+        8 => load_bool(data, index),
+        9 => {
             load_later.push((constant_no, LoadType::Class(class_index(data, index))));
             Variable::Null()
         }
-        9 => {
+        10 => {
             load_later.push((constant_no, LoadType::Option(option_index(data, index))));
             Variable::Null()
         }
-        10 => load_bytes(data, index),
-        11 => load_range(data, index),
-        12 => {
+        11 => load_bytes(data, index),
+        12 => load_range(data, index),
+        13 => {
             load_later.push((constant_no, LoadType::Tuple(tuple_indices(data, index))));
             Variable::Null()
         }
-        13 => {
+        14 => {
             load_later.push((constant_no, LoadType::OptionType(option_index(data, index))));
             Variable::Null()
         }
