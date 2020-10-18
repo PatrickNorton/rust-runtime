@@ -11,7 +11,7 @@ use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use std::cell::{Cell, RefCell};
 use std::iter::Iterator;
-use std::mem::replace;
+use std::mem::{replace, take};
 use std::rc::Rc;
 
 #[derive(Debug, Clone)]
@@ -110,14 +110,19 @@ impl Dict {
         runtime.return_0()
     }
 
-    fn get(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        debug_assert_eq!(args.len(), 2);
-        let val = self
-            .value
-            .borrow()
-            .get(args[0].clone(), runtime)?
-            .unwrap_or_else(|| args[1].clone());
-        runtime.return_1(val)
+    fn get(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        if args.len() == 1 {
+            let val = self.value.borrow().get(take(&mut args[0]), runtime)?.into();
+            runtime.return_1(val)
+        } else {
+            debug_assert_eq!(args.len(), 2);
+            let val = self
+                .value
+                .borrow()
+                .get(take(&mut args[0]), runtime)?
+                .unwrap_or_else(|| take(&mut args[1]));
+            runtime.return_1(val)
+        }
     }
 
     fn replace(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
