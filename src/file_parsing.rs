@@ -1,5 +1,4 @@
 use crate::base_fn::BaseFunction;
-use crate::bytecode::Bytecode::VariantNo;
 use crate::constant_loaders::{
     class_index, function_index, load_bigint, load_bool, load_builtin, load_bytes, load_class,
     load_decimal, load_int, load_range, load_std_str, load_str, option_index, tuple_indices,
