@@ -206,6 +206,7 @@ impl Variable {
             Variable::Type(t) => t.index(index, runtime),
             Variable::Custom(val) => (*val).clone().get_attr(index),
             Variable::Union(val) => val.index(index, runtime)?,
+            Variable::Option(opt) => opt.index(index),
             _ => unimplemented!(),
         })
     }
