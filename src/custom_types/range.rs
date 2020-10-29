@@ -52,6 +52,13 @@ impl Range {
         Variable::Method(StdMethod::new_native(self.clone(), func))
     }
 
+    fn get_attribute(self: &Rc<Self>, attr: StringVar) -> Variable {
+        match attr.as_str() {
+            "length" => self.len().into(),
+            _ => unimplemented!("Range::{}", attr),
+        }
+    }
+
     fn str(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         runtime.return_1(self.to_str().into())
@@ -111,6 +118,15 @@ impl Range {
         format!("[{}:{}:{}]", self.start, self.stop, self.step).into()
     }
 
+    fn len(&self) -> IntVar {
+        let (start, stop) = if self.step.is_negative() {
+            (&self.stop, &self.start)
+        } else {
+            (&self.start, &self.stop)
+        };
+        (stop - start) / self.step.abs()
+    }
+
     fn create(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 3);
         let step = args.remove(2);
@@ -129,7 +145,7 @@ impl CustomVar for Range {
     fn get_attr(self: Rc<Self>, name: Name) -> Variable {
         match name {
             Name::Operator(op) => self.get_op(op),
-            Name::Attribute(_) => unimplemented!(),
+            Name::Attribute(attr) => self.get_attribute(attr),
         }
     }
 
