@@ -52,6 +52,7 @@ pub enum Operator {
     Missing,
     Del,
     DelAttr,
+    DelSlice,
     Str,
     Repr,
     Bool,
