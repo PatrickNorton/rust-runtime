@@ -11,7 +11,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
-use num::{Signed, ToPrimitive, Zero};
+use num::{One, Signed, ToPrimitive, Zero};
 use std::cell::{Cell, RefCell};
 use std::cmp::min;
 use std::mem::{replace, take};
@@ -43,6 +43,7 @@ impl List {
             Operator::Reversed => List::reversed,
             Operator::GetSlice => List::get_slice,
             Operator::SetSlice => List::set_slice,
+            Operator::DelSlice => List::del_slice,
             Operator::IterSlice => List::iter_slice,
             _ => unimplemented!("List::{:?}", name),
         };
@@ -326,6 +327,27 @@ impl List {
                 array.insert(end, val);
             }
         }
+        runtime.return_0()
+    }
+
+    fn del_slice(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        self.slice_to_range(runtime, take(&mut args[0]))?;
+        let range = downcast_var::<Range>(runtime.pop_return()).expect("Expected a range");
+        if !range.get_step().is_one() {
+            return runtime.throw_quick(
+                value_error(),
+                format!(
+                    "list.operator del[:] is only valid with a slice step of 1, not {}",
+                    range.get_step()
+                )
+                .into(),
+            );
+        }
+        let range_start = range.get_start().to_usize().unwrap();
+        let range_end = range.get_stop().to_usize().unwrap_or(usize::MAX);
+        self.value.borrow_mut().drain(range_start..range_end);
+
         runtime.return_0()
     }
 
