@@ -19,6 +19,13 @@ impl LangOption {
         }
     }
 
+    pub fn map<U, F: FnOnce(Variable) -> U>(self, f: F) -> Option<U> {
+        match self.value {
+            Some(x) => Some(f(*x)),
+            None => None,
+        }
+    }
+
     pub fn str(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
         Result::Ok(match &**self {
             Option::Some(val) => format!("Some({})", val.str(runtime)?).into(),
@@ -35,7 +42,7 @@ impl LangOption {
 
     pub fn get_attr(&self, attr: StringVar) -> Variable {
         let func = match attr.as_str() {
-            "map" => Self::map,
+            "map" => Self::map_fn,
             "flatMap" => Self::flat_map,
             _ => unimplemented!(),
         };
@@ -46,7 +53,7 @@ impl LangOption {
         let func = match op {
             Operator::Str => Self::to_str,
             Operator::Repr => Self::to_repr,
-            _ => unimplemented!(),
+            _ => unimplemented!("Option::{:?}", op),
         };
         Variable::Method(StdMethod::new_native(self.clone(), func))
     }
@@ -81,7 +88,7 @@ impl LangOption {
         runtime.return_1(result)
     }
 
-    fn map(&self, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn map_fn(&self, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         let result = match &**self {
             Option::Some(val) => {

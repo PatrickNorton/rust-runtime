@@ -44,7 +44,7 @@ impl List {
             Operator::GetSlice => List::get_slice,
             Operator::SetSlice => List::set_slice,
             Operator::IterSlice => List::iter_slice,
-            _ => unimplemented!(),
+            _ => unimplemented!("List::{:?}", name),
         };
         Variable::Method(Box::new(StdMethod::new(self, InnerMethod::Native(value))))
     }

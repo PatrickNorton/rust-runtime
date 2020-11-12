@@ -128,10 +128,10 @@ fn int_to_var(value: Option<IntVar>) -> Variable {
 }
 
 fn var_to_int(value: Variable) -> Option<IntVar> {
-    if value.is_null() {
-        Option::None
+    if let Variable::Option(val) = value {
+        val.map(Variable::into)
     } else {
-        Option::Some(value.into())
+        panic!("var_to_int expected an option, not {:?}", value)
     }
 }
 
