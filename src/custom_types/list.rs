@@ -9,6 +9,7 @@ use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
+use crate::std_type::Type::Object;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use num::{One, Signed, ToPrimitive, Zero};
@@ -59,8 +60,12 @@ impl List {
             "count" => Self::count,
             "clear" => Self::clear,
             "add" => Self::add,
+            "addAll" => Self::add_all,
             "insert" => Self::insert,
             "indexOf" => Self::index_of,
+            "pop" => Self::pop,
+            "popFirst" => Self::pop_first,
+            "swap" => Self::swap,
             _ => unimplemented!("List::{}", name),
         };
         Variable::Method(StdMethod::new_native(self, value))
@@ -89,15 +94,7 @@ impl List {
         debug_assert!(args.len() == 1);
         match self.normalise_index(take(&mut args[0]).into()) {
             Result::Ok(index) => runtime.return_1(self.value.borrow()[index].clone()),
-            Result::Err(index) => runtime.throw_quick(
-                index_error(),
-                format!(
-                    "index {} out of range for list of length {}",
-                    index,
-                    self.value.borrow().len()
-                )
-                .into(),
-            ),
+            Result::Err(index) => self.index_error(index, runtime),
         }
     }
 
@@ -112,15 +109,7 @@ impl List {
                 }
                 runtime.return_0()
             }
-            Result::Err(index) => runtime.throw_quick(
-                index_error(),
-                format!(
-                    "Index {} out of bounds for list of length {}",
-                    index,
-                    self.value.borrow().len()
-                )
-                .into(),
-            ),
+            Result::Err(index) => self.index_error(index, runtime),
         }
     }
 
@@ -136,6 +125,34 @@ impl List {
                 Result::Ok(index) => self.value.borrow()[index].clone(),
                 Result::Err(_) => take(&mut args[1]),
             })
+        }
+    }
+
+    fn pop(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        runtime.return_1(self.value.borrow_mut().pop().into())
+    }
+
+    fn pop_first(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        if self.value.borrow().is_empty() {
+            runtime.return_1(Option::None.into())
+        } else {
+            runtime.return_1(Option::Some(self.value.borrow_mut().remove(0)).into())
+        }
+    }
+
+    fn swap(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 2);
+        match self.normalise_index(take(&mut args[0]).into()) {
+            Result::Ok(i1) => match self.normalise_index(take(&mut args[1]).into()) {
+                Result::Ok(i2) => {
+                    self.value.borrow_mut().swap(i1, i2);
+                    runtime.return_0()
+                }
+                Result::Err(i2) => self.index_error(i2, runtime),
+            },
+            Result::Err(i1) => self.index_error(i1, runtime),
         }
     }
 
@@ -156,6 +173,18 @@ impl List {
                 }
             })
             .ok_or(signed_index)
+    }
+
+    fn index_error(&self, index: IntVar, runtime: &mut Runtime) -> FnResult {
+        runtime.throw_quick(
+            index_error(),
+            format!(
+                "Index {} out of bounds for list of length {}",
+                index,
+                self.value.borrow().len()
+            )
+            .into(),
+        )
     }
 
     fn contains(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -222,6 +251,23 @@ impl List {
         self.value
             .borrow_mut()
             .push(replace(&mut args[0], Variable::Null()));
+        runtime.return_0()
+    }
+
+    fn add_all(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        let iterator = take(&mut args[0]).iter(runtime)?;
+        let mut value = self.value.borrow_mut();
+        while let Option::Some(val) = iterator.next(runtime)? {
+            if !val.get_type().is_subclass(&self.generic) {
+                panic!(
+                    "Bad type for list[{}].addAll: {}",
+                    self.generic.str(),
+                    val.get_type().str()
+                )
+            }
+            value.push(val);
+        }
         runtime.return_0()
     }
 
