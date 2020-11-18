@@ -9,7 +9,6 @@ use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
-use crate::std_type::Type::Object;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use num::{One, Signed, ToPrimitive, Zero};
