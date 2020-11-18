@@ -21,8 +21,16 @@ pub struct Slice {
 }
 
 impl Slice {
-    fn new(start: Option<IntVar>, stop: Option<IntVar>, step: Option<IntVar>) -> Slice {
+    pub fn new(start: Option<IntVar>, stop: Option<IntVar>, step: Option<IntVar>) -> Slice {
         Slice { start, stop, step }
+    }
+
+    pub fn from_vars(start: Variable, stop: Variable, step: Variable) -> Rc<Slice> {
+        Rc::new(Slice::new(
+            unwrapped_to_int(start),
+            unwrapped_to_int(stop),
+            unwrapped_to_int(step),
+        ))
     }
 
     fn str(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -132,6 +140,13 @@ fn var_to_int(value: Variable) -> Option<IntVar> {
         val.map(Variable::into)
     } else {
         panic!("var_to_int expected an option, not {:?}", value)
+    }
+}
+
+fn unwrapped_to_int(value: Variable) -> Option<IntVar> {
+    match value {
+        Variable::Null() => Option::None,
+        x => Option::Some(x.into()),
     }
 }
 

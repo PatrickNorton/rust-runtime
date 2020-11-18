@@ -2,6 +2,7 @@ use crate::bytecode::{bytecode_size, Bytecode};
 use crate::custom_types::dict::Dict;
 use crate::custom_types::list::List;
 use crate::custom_types::set::Set;
+use crate::custom_types::slice::Slice;
 use crate::int_tools::bytes_index;
 use crate::int_var::IntVar;
 use crate::jump_table::JumpTable;
@@ -464,6 +465,12 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
                     runtime.push(result);
                 }
             }
+        }
+        Bytecode::MakeSlice => {
+            let step = runtime.pop();
+            let stop = runtime.pop();
+            let start = runtime.pop();
+            runtime.push(Slice::from_vars(start, stop, step).into());
         }
         Bytecode::DoStatic => {
             if !runtime.do_static() {
