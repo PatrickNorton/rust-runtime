@@ -3,9 +3,9 @@ use crate::int_tools::bytes_index;
 use crate::int_var::IntVar;
 use crate::string_var::StringVar;
 use num::ToPrimitive;
+use std::char;
 use std::collections::HashMap;
 use std::ops::Index;
-use std::char;
 
 #[derive(Debug)]
 pub enum JumpTable {
@@ -116,7 +116,7 @@ impl Index<usize> for CompactJumpTbl {
     type Output = usize;
 
     fn index(&self, index: usize) -> &Self::Output {
-        self.values.get(index).unwrap_or_else(|| &self.default)
+        self.values.get(index).unwrap_or(&self.default)
     }
 }
 
@@ -132,7 +132,7 @@ impl Index<IntVar> for BigJumpTbl {
     type Output = usize;
 
     fn index(&self, index: IntVar) -> &Self::Output {
-        self.values.get(&index).unwrap_or_else(|| &self.default)
+        self.values.get(&index).unwrap_or(&self.default)
     }
 }
 
@@ -140,13 +140,13 @@ impl Index<StringVar> for StrJumpTbl {
     type Output = usize;
 
     fn index(&self, index: StringVar) -> &Self::Output {
-        self.values.get(&*index).unwrap_or_else(|| &self.default)
+        self.values.get(&*index).unwrap_or(&self.default)
     }
 }
 
 impl Index<char> for CharJumpTbl {
     type Output = usize;
-    
+
     fn index(&self, index: char) -> &Self::Output {
         self.values.get(&index).unwrap_or(&self.default)
     }
