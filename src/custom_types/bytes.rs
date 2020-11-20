@@ -53,6 +53,9 @@ impl LangBytes {
             "encode" => Self::encode,
             "join" => Self::join,
             "indexOf" => Self::index_of,
+            "get" => Self::get,
+            "add" => Self::add,
+            "addChar" => Self::add_char,
             _ => unimplemented!(),
         };
         Variable::Method(StdMethod::new_native(self, func))
@@ -178,6 +181,90 @@ impl LangBytes {
                     .and_then(|_| unreachable!()),
             })
             .collect::<Result<String, ()>>()
+    }
+
+    fn get(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        let value = IntVar::from(take(&mut args[0]))
+            .to_usize()
+            .and_then(|x| self.value.borrow().get(x).copied())
+            .map(|x| IntVar::Small(x as isize).into())
+            .into();
+        runtime.return_1(value)
+    }
+
+    fn add(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        let int_val = IntVar::from(take(&mut args[0]));
+        if let Option::Some(value) = int_val.to_u8() {
+            self.value.borrow_mut().push(value);
+            runtime.return_0()
+        } else {
+            runtime.throw_quick(
+                value_error(),
+                format!(
+                    "Value added to bytes must be in [-255:256], not {}",
+                    int_val
+                )
+                .into(),
+            )
+        }
+    }
+
+    fn add_char(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 2);
+        let char_val = take(&mut args[0]).into();
+        let encoding_type = take(&mut args[0]).str(runtime)?;
+        match encoding_type.as_str() {
+            "utf-8" => self.add_utf8(char_val),
+            "utf-16" => self.add_utf16(char_val),
+            "utf-16be" => self.add_utf16be(char_val),
+            "utf-32" => self.add_utf32(char_val),
+            "utf-32be" => self.add_utf32be(char_val),
+            _ => {
+                return runtime.throw_quick(
+                    value_error(),
+                    format!("{} not a valid encoding", encoding_type).into(),
+                )
+            }
+        };
+        runtime.return_0()
+    }
+
+    fn add_utf8(self: &Rc<Self>, value: char) {
+        self.value
+            .borrow_mut()
+            .extend_from_slice(value.encode_utf8(&mut [0; 4]).as_bytes())
+    }
+
+    // These two can probably be improved with #![feature(array_value_iter)]
+
+    fn add_utf16(self: &Rc<Self>, value: char) {
+        let mut val = self.value.borrow_mut();
+        value
+            .encode_utf16(&mut [0; 2])
+            .iter()
+            .for_each(|x| val.extend_from_slice(&x.to_le_bytes()));
+    }
+
+    fn add_utf16be(self: &Rc<Self>, value: char) {
+        let mut val = self.value.borrow_mut();
+        value
+            .encode_utf16(&mut [0; 2])
+            .iter()
+            .for_each(|x| val.extend_from_slice(&x.to_be_bytes()));
+    }
+
+    fn add_utf32(self: &Rc<Self>, value: char) {
+        self.value
+            .borrow_mut()
+            .extend(&(value as u32).to_le_bytes())
+    }
+
+    fn add_utf32be(self: &Rc<Self>, value: char) {
+        self.value
+            .borrow_mut()
+            .extend(&(value as u32).to_be_bytes())
     }
 
     fn index_err(&self, index: IntVar, runtime: &mut Runtime) -> FnResult {
