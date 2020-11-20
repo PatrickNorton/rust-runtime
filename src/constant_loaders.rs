@@ -17,6 +17,7 @@ use num::bigint::Sign;
 use num::traits::pow::pow;
 use num::traits::{One, Zero};
 use num::{BigInt, BigRational, FromPrimitive};
+use std::char;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
@@ -110,6 +111,10 @@ pub fn load_range(data: &[u8], index: &mut usize) -> Variable {
         step.unwrap_or_else(One::one),
     ))
     .into()
+}
+
+pub fn load_char(data: &[u8], index: &mut usize) -> Variable {
+    bytes_index::<char>(data, index).into()
 }
 
 pub fn tuple_indices(data: &[u8], index: &mut usize) -> Vec<u16> {

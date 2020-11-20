@@ -102,7 +102,7 @@ impl CharJumpTbl {
         let values = (0..size)
             .map(|_| {
                 (
-                    char::from_u32(bytes_index::<u32>(data, index)).expect("Invalid char value"),
+                    bytes_index::<char>(data, index),
                     bytes_index::<u32>(data, index) as usize,
                 )
             })

@@ -1,3 +1,4 @@
+use std::char;
 use std::convert::TryInto;
 use std::mem::size_of;
 
@@ -34,6 +35,18 @@ impl_from_bytes!(u128);
 impl_from_bytes!(i128);
 impl_from_bytes!(usize);
 impl_from_bytes!(isize);
+
+impl FromBytes for char {
+    fn from_be(bytes: &[u8]) -> Self {
+        let val = u32::from_be_bytes(bytes.try_into().unwrap());
+        char::from_u32(val).expect(&*format!("Invalid char value {}", val))
+    }
+
+    fn from_le(bytes: &[u8]) -> Self {
+        let val = u32::from_le_bytes(bytes.try_into().unwrap());
+        char::from_u32(val).expect(&*format!("Invalid char value {}", val))
+    }
+}
 
 /// Convert a `Vec<u8>` to a primitive int, beginning at the index specified.
 ///
