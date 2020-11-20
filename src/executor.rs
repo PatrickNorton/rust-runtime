@@ -292,6 +292,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
                 JumpTable::Compact(val) => val[IntVar::from(var)],
                 JumpTable::Big(val) => val[IntVar::from(var)],
                 JumpTable::String(val) => val[StringVar::from(var)],
+                JumpTable::Char(val) => val[char::from(var)],
             };
             runtime.goto(jump as u32)
         }

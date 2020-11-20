@@ -5,12 +5,14 @@ use crate::string_var::StringVar;
 use num::ToPrimitive;
 use std::collections::HashMap;
 use std::ops::Index;
+use std::char;
 
 #[derive(Debug)]
 pub enum JumpTable {
     Compact(CompactJumpTbl),
     Big(BigJumpTbl),
     String(StrJumpTbl),
+    Char(CharJumpTbl),
 }
 
 #[derive(Debug)]
@@ -31,6 +33,12 @@ pub struct StrJumpTbl {
     default: usize,
 }
 
+#[derive(Debug)]
+pub struct CharJumpTbl {
+    values: HashMap<char, usize>,
+    default: usize,
+}
+
 impl JumpTable {
     pub fn parse(data: &[u8], index: &mut usize) -> JumpTable {
         let tbl_type = data[*index];
@@ -39,6 +47,7 @@ impl JumpTable {
             0 => JumpTable::Compact(CompactJumpTbl::parse(data, index)),
             1 => JumpTable::Big(BigJumpTbl::parse(data, index)),
             2 => JumpTable::String(StrJumpTbl::parse(data, index)),
+            3 => JumpTable::Char(CharJumpTbl::parse(data, index)),
             _ => panic!("{} is an invalid table-type number", tbl_type),
         }
     }
@@ -87,6 +96,22 @@ impl StrJumpTbl {
     }
 }
 
+impl CharJumpTbl {
+    pub fn parse(data: &[u8], index: &mut usize) -> CharJumpTbl {
+        let size = bytes_index::<u32>(data, index);
+        let values = (0..size)
+            .map(|_| {
+                (
+                    char::from_u32(bytes_index::<u32>(data, index)).expect("Invalid char value"),
+                    bytes_index::<u32>(data, index) as usize,
+                )
+            })
+            .collect();
+        let default = bytes_index::<u32>(data, index) as usize;
+        CharJumpTbl { values, default }
+    }
+}
+
 impl Index<usize> for CompactJumpTbl {
     type Output = usize;
 
@@ -116,5 +141,13 @@ impl Index<StringVar> for StrJumpTbl {
 
     fn index(&self, index: StringVar) -> &Self::Output {
         self.values.get(&*index).unwrap_or_else(|| &self.default)
+    }
+}
+
+impl Index<char> for CharJumpTbl {
+    type Output = usize;
+    
+    fn index(&self, index: char) -> &Self::Output {
+        self.values.get(&index).unwrap_or(&self.default)
     }
 }
