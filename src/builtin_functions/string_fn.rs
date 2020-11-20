@@ -1,3 +1,4 @@
+use crate::custom_types::bytes::LangBytes;
 use crate::custom_types::exceptions::{arithmetic_error, index_error, value_error};
 use crate::custom_types::list::List;
 use crate::custom_var::CustomVar;
@@ -50,6 +51,7 @@ pub fn get_attr(this: StringVar, s: StringVar) -> Variable {
         "splitlines" => split_lines,
         "indexOf" => index_of,
         "chars" => return chars(&this),
+        "encode" => encode,
         _ => unimplemented!(),
     };
     Variable::Method(StdMethod::new_native(this, func))
@@ -306,6 +308,32 @@ fn index_of(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) ->
         .find(|(_, c)| *c == chr)
         .map(|(i, _)| i);
     runtime.return_1(index.map(IntVar::from).map(Variable::from).into())
+}
+
+fn encode(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert_eq!(args.len(), 1);
+    // #![feature(array_value_iter)] will make this so much easier...
+    let byte_val = match take(&mut args[0]).str(runtime)?.as_str() {
+        "utf-8" => this.as_bytes().to_vec(),
+        "utf-16" => this
+            .encode_utf16()
+            .flat_map(|x| x.to_le_bytes().to_vec())
+            .collect(),
+        "utf-16be" => this
+            .encode_utf16()
+            .flat_map(|x| x.to_be_bytes().to_vec())
+            .collect(),
+        "utf-32" => this
+            .chars()
+            .flat_map(|x| (x as u32).to_le_bytes().to_vec())
+            .collect(),
+        "utf-32be" => this
+            .chars()
+            .flat_map(|x| (x as u32).to_be_bytes().to_vec())
+            .collect(),
+        x => todo!("Error not implemented for invalid encoding {}", x),
+    };
+    runtime.return_1(Rc::new(LangBytes::new(byte_val.to_vec())).into())
 }
 
 #[derive(Debug)]
