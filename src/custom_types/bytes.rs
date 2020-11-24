@@ -214,17 +214,16 @@ impl LangBytes {
     fn add_char(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
         let char_val = take(&mut args[0]).into();
-        let encoding_type = take(&mut args[0]).str(runtime)?;
-        match encoding_type.as_str() {
+        match take(&mut args[0]).str(runtime)?.as_str() {
             "utf-8" => self.add_utf8(char_val),
             "utf-16" => self.add_utf16(char_val),
             "utf-16be" => self.add_utf16be(char_val),
             "utf-32" => self.add_utf32(char_val),
             "utf-32be" => self.add_utf32be(char_val),
-            _ => {
+            x => {
                 return runtime.throw_quick(
                     value_error(),
-                    format!("{} not a valid encoding", encoding_type).into(),
+                    format!("{} is not a valid encoding", x).into(),
                 )
             }
         };

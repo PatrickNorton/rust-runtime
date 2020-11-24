@@ -331,7 +331,12 @@ fn encode(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> F
             .chars()
             .flat_map(|x| (x as u32).to_be_bytes().to_vec())
             .collect(),
-        x => todo!("Error not implemented for invalid encoding {}", x),
+        x => {
+            return runtime.throw_quick(
+                value_error(),
+                format!("{} is not a valid encoding", x).into(),
+            )
+        }
     };
     runtime.return_1(Rc::new(LangBytes::new(byte_val.to_vec())).into())
 }
