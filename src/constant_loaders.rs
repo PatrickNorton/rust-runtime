@@ -13,6 +13,7 @@ use crate::std_type::Type;
 use crate::std_variable::StdVarMethod;
 use crate::string_var::StringVar;
 use crate::variable::Variable;
+use ascii::AsciiChar;
 use num::bigint::Sign;
 use num::traits::pow::pow;
 use num::traits::{One, Zero};
@@ -35,6 +36,17 @@ pub fn load_std_str(data: &[u8], index: &mut usize) -> String {
         }
     }
     String::from_utf8(value).expect("UTF-8 error")
+}
+
+pub fn load_ascii_str(data: &[u8], index: &mut usize) -> Box<[AsciiChar]> {
+    let size = bytes_index::<u32>(data, index);
+    let mut value = Vec::with_capacity(size as usize);
+    for _ in 0..size {
+        let char = AsciiChar::from_ascii(data[*index]).unwrap_or_else(|x| panic!("{}", x));
+        *index += 1;
+        value.push(char);
+    }
+    value.into_boxed_slice()
 }
 
 pub fn load_str(data: &[u8], index: &mut usize) -> Variable {
@@ -115,6 +127,10 @@ pub fn load_range(data: &[u8], index: &mut usize) -> Variable {
 
 pub fn load_char(data: &[u8], index: &mut usize) -> Variable {
     bytes_index::<char>(data, index).into()
+}
+
+pub fn load_ascii(data: &[u8], index: &mut usize) -> Variable {
+    StringVar::from_leak_ascii(load_ascii_str(data, index)).into()
 }
 
 pub fn tuple_indices(data: &[u8], index: &mut usize) -> Vec<u16> {

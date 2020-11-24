@@ -10,7 +10,7 @@ use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
-use crate::string_var::StringVar;
+use crate::string_var::{MaybeAscii, StringVar};
 use crate::variable::{FnResult, Variable};
 use num::{Signed, ToPrimitive};
 use std::cell::Cell;
@@ -134,7 +134,7 @@ fn index(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> Fn
     debug_assert_eq!(args.len(), 1);
     let big_index = IntVar::from(take(&mut args[0]));
     let proper_index = if big_index.is_negative() {
-        &big_index + &this.len().into()
+        &big_index + &this.char_len().into()
     } else {
         big_index.clone()
     };
@@ -146,19 +146,19 @@ fn index(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> Fn
                 format!(
                     "Index {} out of bounds for str of length {}",
                     big_index,
-                    this.len()
+                    this.char_len()
                 )
                 .into(),
             )
         }
     };
-    match this.chars().nth(index) {
+    match this.char_at(index) {
         Option::None => runtime.throw_quick(
             index_error(),
             format!(
                 "Index {} out of bounds for str of length {}",
                 big_index,
-                this.len()
+                this.char_len()
             )
             .into(),
         ),
@@ -202,7 +202,7 @@ fn join(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnR
 }
 
 fn join_all(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    let mut result = String::with_capacity(this.len() * args.len());
+    let mut result = String::with_capacity(this.char_len() * args.len());
     let len = args.len();
     for (i, val) in args.into_iter().enumerate() {
         result += val.str(runtime)?.as_str();
@@ -217,7 +217,7 @@ fn starts_with(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime)
     debug_assert_eq!(args.len(), 2);
     let val = StringVar::from(replace(&mut args[0], Variable::Null()));
     let index = IntVar::from(replace(&mut args[1], Variable::Null()));
-    if index < this.len().into() {
+    if index < this.char_len().into() {
         let usize_index = index
             .to_usize()
             .expect("String index believed to be less than a usize, but to_usize failed");
@@ -290,23 +290,26 @@ fn from_chars(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let mut result = String::new();
     let chars = take(&mut args[0]).iter(runtime)?;
     while let Option::Some(val) = chars.next(runtime)? {
-        if let Variable::Char(c) = val {
-            result.push(c);
-        } else {
-            panic!()
-        }
+        result.push(val.into());
     }
     runtime.return_1(result.into())
 }
 
 fn index_of(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    let chr = take(&mut args[0]).into();
-    let index = this
-        .chars()
-        .enumerate()
-        .find(|(_, c)| *c == chr)
-        .map(|(i, _)| i);
+    let chr: char = take(&mut args[0]).into();
+    let index = match this.as_maybe_ascii() {
+        MaybeAscii::Standard(s) => s
+            .chars()
+            .enumerate()
+            .find(|(_, c)| *c == chr)
+            .map(|(i, _)| i),
+        MaybeAscii::Ascii(a) => a
+            .chars()
+            .enumerate()
+            .find(|(_, c)| *c == chr)
+            .map(|(i, _)| i),
+    };
     runtime.return_1(index.map(IntVar::from).map(Variable::from).into())
 }
 
@@ -364,7 +367,7 @@ impl StringIter {
     }
 
     fn next_fn(&self) -> Option<Variable> {
-        if self.index.get() != self.val.len() {
+        if self.index.get() != self.val.char_len() {
             let mut indices = unsafe {
                 // We know this is safe b/c:
                 // * The slice comes from a valid str, therefore, no invalid UTF-8 can be entered
@@ -378,7 +381,7 @@ impl StringIter {
                 self.index.set(
                     indices
                         .next()
-                        .map_or_else(|| self.val.len(), |a| self.index.get() + a.0),
+                        .map_or_else(|| self.val.char_len(), |a| self.index.get() + a.0),
                 );
                 c.into()
             })
