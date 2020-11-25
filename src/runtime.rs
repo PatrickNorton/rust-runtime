@@ -466,6 +466,11 @@ impl Runtime {
         }
     }
 
+    pub fn pop_n(&mut self, count: usize) -> Vec<Variable> {
+        let len = self.variables.len();
+        self.variables.drain(len - count..).collect()
+    }
+
     pub fn static_attr(&self, cls: &Type, name: Name) -> Variable {
         self.type_vars[cls][&name].clone()
     }

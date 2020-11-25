@@ -549,6 +549,23 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let value = runtime.pop();
             runtime.push(value.get_type().into());
         }
+        Bytecode::DupTop2 => {
+            let val1 = runtime.pop();
+            let val0 = runtime.pop();
+            runtime.push(val0.clone());
+            runtime.push(val1.clone());
+            runtime.push(val0);
+            runtime.push(val1);
+        }
+        Bytecode::DupTopN => {
+            let values = runtime.pop_n(bytes_0 as usize);
+            for val in &values {
+                runtime.push(val.clone());
+            }
+            for val in values {
+                runtime.push(val);
+            }
+        }
     }
     FnResult::Ok(())
 }
