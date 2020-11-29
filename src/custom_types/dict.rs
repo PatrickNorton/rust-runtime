@@ -133,9 +133,9 @@ impl Dict {
         match self.value.borrow_mut().get_mut_entry(key, runtime)? {
             Option::Some(entry) => {
                 let old = replace(&mut entry.value, val);
-                runtime.return_1(old)
+                runtime.return_1(Option::Some(old).into())
             }
-            Option::None => runtime.throw_quick(key_error(), "Value not contained in dict".into()),
+            Option::None => runtime.return_1(Option::None.into()),
         }
     }
 
