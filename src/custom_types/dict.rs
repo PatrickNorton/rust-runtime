@@ -65,6 +65,7 @@ impl Dict {
             "get" => Dict::get,
             "replace" => Dict::replace,
             "pop" => Dict::pop,
+            "setDefault" => Dict::set_default,
             "length" => return Variable::Bigint(self.len().into()),
             _ => unimplemented!(),
         };
@@ -146,6 +147,20 @@ impl Dict {
             .del(&args[0], runtime)?
             .unwrap_or_else(Default::default);
         runtime.return_1(returned)
+    }
+
+    fn set_default(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 2);
+        let mut value = self.value.borrow_mut();
+        let arg = take(&mut args[0]);
+        match value.get(arg.clone(), runtime)? {
+            Option::Some(x) => runtime.return_1(x),
+            Option::None => {
+                let val = take(&mut args[1]);
+                value.set(arg, val.clone(), runtime)?;
+                runtime.return_1(val)
+            }
+        }
     }
 
     fn eq(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
