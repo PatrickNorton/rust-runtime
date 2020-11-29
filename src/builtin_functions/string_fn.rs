@@ -12,7 +12,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::{MaybeAscii, StringVar};
 use crate::variable::{FnResult, Variable};
-use num::{Signed, ToPrimitive};
+use num::{BigInt, Signed, ToPrimitive};
 use std::cell::Cell;
 use std::mem::{replace, take};
 use std::rc::Rc;
@@ -52,6 +52,7 @@ pub fn get_attr(this: StringVar, s: StringVar) -> Variable {
         "indexOf" => index_of,
         "chars" => return chars(&this),
         "encode" => encode,
+        "asInt" => as_int,
         _ => unimplemented!(),
     };
     Variable::Method(StdMethod::new_native(this, func))
@@ -342,6 +343,16 @@ fn encode(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> F
         }
     };
     runtime.return_1(Rc::new(LangBytes::new(byte_val.to_vec())).into())
+}
+
+fn as_int(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert!(args.is_empty());
+    runtime.return_1(
+        this.parse::<BigInt>()
+            .ok()
+            .map(|x| IntVar::from(x).into())
+            .into(),
+    )
 }
 
 #[derive(Debug)]
