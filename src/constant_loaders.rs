@@ -110,6 +110,7 @@ pub fn option_index(data: &[u8], index: &mut usize) -> u16 {
 pub fn load_bytes(data: &[u8], index: &mut usize) -> Variable {
     let len = bytes_index::<u32>(data, index) as usize;
     let byte_arr = &data[*index..*index + len];
+    *index += len;
     Rc::new(LangBytes::new(byte_arr.to_vec())).into()
 }
 

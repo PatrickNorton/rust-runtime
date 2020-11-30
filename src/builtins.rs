@@ -115,7 +115,10 @@ pub fn builtin_of(index: usize) -> Variable {
         20 => Dict::dict_type().into(),
         21 => Type::Object.into(),
         22 => not_implemented().into(),
-        _ => unimplemented!(),
+        23 => Type::Tuple.into(),
+        24 => todo!("Throwable"),
+        25 => Type::Null.into(),
+        x => unimplemented!("Builtin number {}", x),
     }
 }
 

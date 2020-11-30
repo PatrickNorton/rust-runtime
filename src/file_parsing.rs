@@ -24,7 +24,7 @@ enum LoadType {
     Class(u32),
     Option(u16),
     Tuple(Vec<u16>),
-    OptionType(u16),
+    OptionType(u32),
 }
 
 fn load_constant(
@@ -63,12 +63,12 @@ fn load_constant(
             Variable::Null()
         }
         14 => {
-            load_later.push((constant_no, LoadType::OptionType(option_index(data, index))));
+            load_later.push((constant_no, LoadType::OptionType(class_index(data, index))));
             Variable::Null()
         }
         15 => load_char(data, index),
         16 => load_ascii(data, index),
-        _ => panic!("Invalid value for constant: {}", data[*index - 1]),
+        x => panic!("Invalid value for constant: {}", x),
     }
 }
 
