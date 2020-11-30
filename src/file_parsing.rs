@@ -8,7 +8,6 @@ use crate::file_info::FileInfo;
 use crate::function::Function;
 use crate::int_tools::bytes_index;
 use crate::jump_table::JumpTable;
-use crate::option::LangOption;
 use crate::std_type::Type;
 use crate::tuple::LangTuple;
 use crate::variable::Variable;
@@ -17,6 +16,11 @@ use std::fs::read;
 use std::path::Path;
 
 const FILE_EXTENSION: &str = ".nbyte";
+
+enum Constant {
+    Current(Variable),
+    Later(LoadType),
+}
 
 #[derive(Debug, Clone)]
 enum LoadType {
@@ -27,47 +31,28 @@ enum LoadType {
     OptionType(u32),
 }
 
-fn load_constant(
-    data: &[u8],
-    index: &mut usize,
-    load_later: &mut Vec<(usize, LoadType)>,
-    imports: &[Variable],
-    constant_no: usize,
-) -> Variable {
+fn load_constant(data: &[u8], index: &mut usize, imports: &[Variable]) -> Constant {
     *index += 1;
     match data[*index - 1] {
-        0 => Variable::Null(),
-        1 => load_str(data, index),
-        2 => load_int(data, index),
-        3 => load_bigint(data, index),
-        4 => load_decimal(data, index),
-        5 => imports[bytes_index::<u32>(data, index) as usize].clone(),
-        6 => load_builtin(data, index),
-        7 => {
-            load_later.push((constant_no, LoadType::Function(function_index(data, index))));
-            Variable::Null()
-        }
-        8 => load_bool(data, index),
-        9 => {
-            load_later.push((constant_no, LoadType::Class(class_index(data, index))));
-            Variable::Null()
-        }
-        10 => {
-            load_later.push((constant_no, LoadType::Option(option_index(data, index))));
-            Variable::Null()
-        }
-        11 => load_bytes(data, index),
-        12 => load_range(data, index),
-        13 => {
-            load_later.push((constant_no, LoadType::Tuple(tuple_indices(data, index))));
-            Variable::Null()
-        }
-        14 => {
-            load_later.push((constant_no, LoadType::OptionType(class_index(data, index))));
-            Variable::Null()
-        }
-        15 => load_char(data, index),
-        16 => load_ascii(data, index),
+        0 => Variable::Null().into(),
+        1 => load_str(data, index).into(),
+        2 => load_int(data, index).into(),
+        3 => load_bigint(data, index).into(),
+        4 => load_decimal(data, index).into(),
+        5 => imports[bytes_index::<u32>(data, index) as usize]
+            .clone()
+            .into(),
+        6 => load_builtin(data, index).into(),
+        7 => LoadType::Function(function_index(data, index)).into(),
+        8 => load_bool(data, index).into(),
+        9 => LoadType::Class(class_index(data, index)).into(),
+        10 => LoadType::Option(option_index(data, index)).into(),
+        11 => load_bytes(data, index).into(),
+        12 => load_range(data, index).into(),
+        13 => LoadType::Tuple(tuple_indices(data, index)).into(),
+        14 => LoadType::OptionType(class_index(data, index)).into(),
+        15 => load_char(data, index).into(),
+        16 => load_ascii(data, index).into(),
         x => panic!("Invalid value for constant: {}", x),
     }
 }
@@ -111,16 +96,9 @@ pub fn parse_file(name: String, files: &mut Vec<FileInfo>) -> usize {
     }
 
     let constant_count = bytes_index::<u32>(&data, &mut index);
-    let mut constants: Vec<Variable> = Vec::with_capacity(constant_count as usize);
-    let mut loaded_later: Vec<(usize, LoadType)> = Vec::new();
-    for i in 0..constant_count {
-        constants.push(load_constant(
-            &data,
-            &mut index,
-            &mut loaded_later,
-            &imports,
-            i as usize,
-        ));
+    let mut constants = Vec::with_capacity(constant_count as usize);
+    for _ in 0..constant_count {
+        constants.push(load_constant(&data, &mut index, &imports));
     }
 
     let fn_count = bytes_index::<u32>(&data, &mut index);
@@ -143,29 +121,43 @@ pub fn parse_file(name: String, files: &mut Vec<FileInfo>) -> usize {
 
     debug_assert_eq!(data.len(), index);
 
-    for (i, load) in loaded_later {
-        let val = match load {
-            LoadType::Function(d) => Variable::Function(Function::Standard(file_no, d)),
-            LoadType::Class(d) => classes[d as usize].clone(),
-            LoadType::Option(d) => {
-                Variable::Option(LangOption::new(Option::Some(constants[d as usize].clone())))
-            }
-            LoadType::Tuple(v) => Variable::Tuple(LangTuple::new(
-                v.into_iter()
-                    .map(|i| constants[i as usize].clone())
-                    .collect(),
-            )),
-            LoadType::OptionType(d) => {
-                let t = match constants[d as usize] {
-                    Variable::Type(t) => Box::leak(Box::new(t)),
-                    _ => panic!(),
-                };
-                Variable::Type(Type::Option(t))
-            }
-        };
-        constants[i] = val;
+    let mut new_constants = Vec::with_capacity(constants.len());
+    for c in constants {
+        match c {
+            Constant::Current(x) => new_constants.push(x),
+            Constant::Later(x) => new_constants.push(match x {
+                LoadType::Function(d) => Variable::Function(Function::Standard(file_no, d)),
+                LoadType::Class(d) => classes[d as usize].clone(),
+                LoadType::Option(d) => Option::Some(new_constants[d as usize].clone()).into(),
+                LoadType::Tuple(v) => LangTuple::new(
+                    v.into_iter()
+                        .map(|i| new_constants[i as usize].clone())
+                        .collect(),
+                )
+                .into(),
+                LoadType::OptionType(d) => {
+                    let t = match new_constants[d as usize] {
+                        Variable::Type(t) => Box::leak(Box::new(t)),
+                        _ => panic!(),
+                    };
+                    Variable::Type(Type::Option(t))
+                }
+            }),
+        }
     }
 
-    files[file_no] = FileInfo::new(name, constants, functions, exports, jump_tables);
+    files[file_no] = FileInfo::new(name, new_constants, functions, exports, jump_tables);
     file_no
+}
+
+impl From<Variable> for Constant {
+    fn from(x: Variable) -> Self {
+        Constant::Current(x)
+    }
+}
+
+impl From<LoadType> for Constant {
+    fn from(x: LoadType) -> Self {
+        Constant::Later(x)
+    }
 }
