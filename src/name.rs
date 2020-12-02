@@ -29,4 +29,11 @@ impl Name {
             Name::Operator(o) => op(*o),
         }
     }
+
+    pub fn as_str(&self) -> StringVar {
+        match self {
+            Name::Attribute(s) => s.clone(),
+            Name::Operator(o) => o.name().into(),
+        }
+    }
 }
