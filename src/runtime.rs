@@ -585,6 +585,24 @@ impl Runtime {
         }
     }
 
+    pub fn stack_frames(&self) -> String {
+        let mut result = String::new();
+        for frame in self.frames.iter().rev() {
+            let file = &self.files[frame.file_no()];
+            let fn_no = frame.get_fn_number();
+            let fn_pos = frame.current_pos();
+            let func = &file.get_functions()[fn_no as usize];
+            let fn_name = func.get_name();
+            result.push_str(&*format!(
+                "    at {}:{} ({})\n",
+                fn_name,
+                fn_pos,
+                file.get_name()
+            ))
+        }
+        result
+    }
+
     fn create_coroutine(&mut self, fn_no: u16, args: Vec<Variable>) {
         let stack_height = self.variables.len();
         let frame = StackFrame::new(0, fn_no, self.current_file_no(), args, stack_height);
