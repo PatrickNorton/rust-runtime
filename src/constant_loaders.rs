@@ -300,7 +300,8 @@ pub fn load_class(
     functions: &mut Vec<BaseFunction>,
 ) -> Variable {
     let name = load_std_str(data, index);
-    if bytes_index::<u32>(data, index) != 0 {
+    for _ in 0..bytes_index::<u32>(data, index) {
+        bytes_index::<u32>(data, index);
         panic!("Supers not allowed yet")
     }
     let _generic_size = bytes_index::<u16>(data, index);
