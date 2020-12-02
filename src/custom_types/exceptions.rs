@@ -9,6 +9,7 @@ use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use std::collections::HashMap;
+use std::mem::take;
 use std::rc::Rc;
 
 #[derive(Debug)]
@@ -60,9 +61,14 @@ impl CustomVar for StdException {
 macro_rules! create_exc {
     ($fn_name:ident, $type_name:tt) => {
         pub fn $fn_name() -> Type {
-            fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+            fn create(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
                 debug_assert!(args.len() == 1);
-                let msg = StringVar::from(args[0].clone());
+                let msg = format!(
+                    "{}\n{}",
+                    StringVar::from(take(&mut args[0])),
+                    runtime.stack_frames()
+                )
+                .into();
                 runtime.return_1(Rc::new(StdException::new(msg, $fn_name())).into())
             }
             lazy_static! {
