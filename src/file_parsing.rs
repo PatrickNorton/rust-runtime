@@ -17,6 +17,7 @@ use std::path::Path;
 
 const FILE_EXTENSION: &str = ".nbyte";
 
+#[derive(Debug, Clone)]
 enum Constant {
     Current(Variable),
     Later(LoadType),
