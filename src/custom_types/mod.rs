@@ -19,10 +19,7 @@ macro_rules! iter_internals {
 
         fn next_fn(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
             debug_assert!(args.is_empty());
-            match self.inner_next() {
-                Option::Some(value) => runtime.return_1(Option::Some(value).into()),
-                Option::None => runtime.return_1(Option::None.into()),
-            }
+            runtime.return_1(self.inner_next().into())
         }
     };
 }
