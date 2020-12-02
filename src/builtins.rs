@@ -4,6 +4,7 @@ use crate::custom_types::dict::Dict;
 use crate::custom_types::enumerate::Enumerate;
 use crate::custom_types::exceptions::{io_error, not_implemented};
 use crate::custom_types::file::FileObj;
+use crate::custom_types::interfaces::{Callable, Throwable};
 use crate::custom_types::list::List;
 use crate::custom_types::range::Range;
 use crate::custom_types::set::Set;
@@ -93,7 +94,7 @@ fn enumerate_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
 pub fn builtin_of(index: usize) -> Variable {
     match index {
         0 => print(),
-        1 => todo!("Callable"),
+        1 => Callable::cls().into(),
         2 => Type::Bigint.into(),
         3 => Type::String.into(),
         4 => Type::Bool.into(),
@@ -116,7 +117,7 @@ pub fn builtin_of(index: usize) -> Variable {
         21 => Type::Object.into(),
         22 => not_implemented().into(),
         23 => Type::Tuple.into(),
-        24 => todo!("Throwable"),
+        24 => Throwable::cls().into(),
         25 => Type::Null.into(),
         x => unimplemented!("Builtin number {}", x),
     }
