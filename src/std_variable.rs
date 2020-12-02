@@ -119,7 +119,12 @@ impl StdVariable {
             Option::Some(val) => *val = value,
             Option::None => match self_val.cls.get_property(&name) {
                 Option::Some(val) => val.call_setter(runtime, value)?,
-                Option::None => unimplemented!(),
+                Option::None => unimplemented!(
+                    "{}.{:?}\n{}",
+                    self_val.cls.name(),
+                    name.as_str(),
+                    runtime.stack_frames()
+                ),
             },
         }
         runtime.return_0()

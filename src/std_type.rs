@@ -247,7 +247,7 @@ impl StdType {
         false
     }
 
-    fn name(&self) -> &StringVar {
+    pub fn name(&self) -> &StringVar {
         &self.name
     }
 
