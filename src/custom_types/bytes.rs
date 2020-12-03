@@ -237,6 +237,7 @@ impl LangBytes {
     }
 
     // These two can probably be improved with #![feature(array_value_iter)]
+    // val.extend(value.encode_utf16(&mut [0; 2]).flat_map(u16::to_le_bytes))
 
     fn add_utf16(self: &Rc<Self>, value: char) {
         let mut val = self.value.borrow_mut();
