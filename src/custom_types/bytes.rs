@@ -126,7 +126,7 @@ impl LangBytes {
             runtime
                 .throw_quick(
                     value_error(),
-                    "Invalid byte literal for big-endian utf-16 conversion".into(),
+                    "Invalid byte literal for little-endian utf-16 conversion".into(),
                 )
                 .and_then(|_| unreachable!())
         })
