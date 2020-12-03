@@ -45,7 +45,7 @@ impl List {
             Operator::SetSlice => List::set_slice,
             Operator::DelSlice => List::del_slice,
             Operator::IterSlice => List::iter_slice,
-            _ => unimplemented!("List::{:?}", name),
+            _ => unimplemented!("List.{}", name.name()),
         };
         Variable::Method(Box::new(StdMethod::new(self, InnerMethod::Native(value))))
     }
@@ -65,7 +65,7 @@ impl List {
             "pop" => Self::pop,
             "popFirst" => Self::pop_first,
             "swap" => Self::swap,
-            _ => unimplemented!("List::{}", name),
+            x => unimplemented!("List.{}", x),
         };
         Variable::Method(StdMethod::new_native(self, value))
     }

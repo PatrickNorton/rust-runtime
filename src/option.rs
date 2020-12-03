@@ -53,7 +53,7 @@ impl LangOption {
         let func = match op {
             Operator::Str => Self::to_str,
             Operator::Repr => Self::to_repr,
-            _ => unimplemented!("Option::{:?}", op),
+            _ => unimplemented!("Option.{}", op.name()),
         };
         Variable::Method(StdMethod::new_native(self.clone(), func))
     }

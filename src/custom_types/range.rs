@@ -55,7 +55,7 @@ impl Range {
     fn get_attribute(self: &Rc<Self>, attr: StringVar) -> Variable {
         match attr.as_str() {
             "length" => self.len().into(),
-            _ => unimplemented!("Range::{}", attr),
+            x => unimplemented!("Range.{}", x),
         }
     }
 

@@ -29,7 +29,7 @@ pub fn op_fn(o: Operator) -> NativeMethod<StringVar> {
         Operator::GetAttr => index,
         Operator::Iter => iter,
         Operator::Reversed => reversed,
-        _ => unimplemented!("Operator::{:?} unimplemented", o),
+        _ => unimplemented!("str.{}", o.name()),
     }
 }
 

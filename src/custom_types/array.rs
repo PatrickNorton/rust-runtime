@@ -46,7 +46,7 @@ impl Array {
             Operator::GetSlice => Self::get_slice,
             Operator::Iter => Self::iter,
             Operator::IterSlice => Self::iter_slice,
-            _ => unimplemented!("Array::operator {:?}", name),
+            _ => unimplemented!("Array.{}", name.name()),
         };
         Variable::Method(StdMethod::new_native(self, func))
     }

@@ -34,7 +34,7 @@ pub fn op_fn(o: Operator) -> NativeMethod<IntVar> {
         Operator::Str => to_str,
         Operator::Int => to_int,
         Operator::Repr => to_str,
-        _ => unimplemented!("Operator::{:?} unimplemented", o),
+        _ => unimplemented!("int.{} unimplemented", o.name()),
     }
 }
 
