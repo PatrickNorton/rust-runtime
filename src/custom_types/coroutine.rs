@@ -40,8 +40,11 @@ impl Generator {
         self.stack.take()
     }
 
-    pub fn create(_args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
-        panic!("Should not be creating generators")
+    pub fn create(_args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        panic!(
+            "Should not be creating generators\n{}",
+            runtime.stack_frames()
+        )
     }
 
     fn gen_type() -> Type {
