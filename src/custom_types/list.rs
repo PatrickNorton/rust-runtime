@@ -247,9 +247,7 @@ impl List {
         if !args[0].get_type().is_subclass(&self.generic) {
             panic!("Bad type for list.add\n{}", runtime.stack_frames())
         }
-        self.value
-            .borrow_mut()
-            .push(replace(&mut args[0], Variable::Null()));
+        self.value.borrow_mut().push(take(&mut args[0]));
         runtime.return_0()
     }
 
