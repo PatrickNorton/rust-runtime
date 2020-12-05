@@ -258,9 +258,10 @@ impl List {
         while let Option::Some(val) = iterator.next(runtime)? {
             if !val.get_type().is_subclass(&self.generic) {
                 panic!(
-                    "Bad type for list[{}].addAll: {}",
+                    "Bad type for list[{}].addAll: {}\n{}",
                     self.generic.str(),
-                    val.get_type().str()
+                    val.get_type().str(),
+                    runtime.stack_frames(),
                 )
             }
             value.push(val);
