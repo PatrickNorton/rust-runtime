@@ -243,11 +243,21 @@ struct RangeValueIter {
     value: Rc<Range>,
 }
 
+impl RangeValueIter {
+    fn is_done(&self) -> bool {
+        if self.value.get_step().is_negative() {
+            &self.current <= self.value.get_stop()
+        } else {
+            &self.current >= self.value.get_stop()
+        }
+    }
+}
+
 impl Iterator for RangeValueIter {
     type Item = IntVar;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if &self.current != self.value.get_stop() {
+        if !self.is_done() {
             let new = &self.current + self.value.get_step();
             Option::Some(replace(&mut self.current, new))
         } else {
