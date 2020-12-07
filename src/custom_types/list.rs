@@ -1,7 +1,7 @@
 use crate::custom_types::exceptions::{index_error, value_error};
 use crate::custom_types::range::Range;
 use crate::custom_var::{downcast_var, CustomVar};
-use crate::int_var::IntVar;
+use crate::int_var::{normalize, IntVar};
 use crate::looping;
 use crate::looping::{IterResult, NativeIterator};
 use crate::method::{InnerMethod, StdMethod};
@@ -11,7 +11,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
-use num::{One, Signed, ToPrimitive, Zero};
+use num::{One, ToPrimitive};
 use std::cell::{Cell, RefCell};
 use std::cmp::min;
 use std::mem::{replace, take};
@@ -157,21 +157,7 @@ impl List {
 
     fn normalise_index(&self, signed_index: IntVar) -> Result<usize, IntVar> {
         let len = self.value.borrow().len();
-        let index = if signed_index.is_negative() {
-            &signed_index + &len.into()
-        } else {
-            signed_index.clone()
-        };
-        index
-            .to_usize()
-            .and_then(|a| {
-                if a < len {
-                    Option::Some(a)
-                } else {
-                    Option::None
-                }
-            })
-            .ok_or(signed_index)
+        normalize(len, signed_index)
     }
 
     fn index_error(&self, index: IntVar, runtime: &mut Runtime) -> FnResult {
@@ -299,40 +285,39 @@ impl List {
 
     fn get_slice(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        self.slice_to_range(runtime, take(&mut args[0]))?;
-        let val = runtime.pop_return().iter(runtime)?;
-        let mut raw_vec = Vec::new();
-        let self_val = self.value.borrow();
-        while let Option::Some(i) = val.next(runtime)? {
-            raw_vec.push(self_val[IntVar::from(i).to_usize().expect("Conversion error")].clone());
+        let range = self.slice_to_range(runtime, take(&mut args[0]))?;
+        if range.get_step().is_one() {
+            let value = self.value.borrow();
+            let start = range.get_start().to_usize().unwrap();
+            let stop = range.get_start().to_usize().unwrap_or(usize::MAX);
+            runtime.return_1(List::from_values(self.generic, value[start..stop].to_vec()).into())
+        } else {
+            let mut raw_vec = Vec::new();
+            let self_val = self.value.borrow();
+            for i in range.values() {
+                raw_vec.push(self_val[i.to_usize().expect("Conversion error")].clone());
+            }
+            runtime.return_1(List::from_values(self.generic, raw_vec).into())
         }
-        runtime.return_1(List::from_values(self.generic, raw_vec).into())
     }
 
     fn set_slice(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        self.slice_to_range(runtime, take(&mut args[0]))?;
-        let returned = runtime.pop_return();
-        let val = match &returned {
-            Variable::Custom(_) => downcast_var::<Range>(returned).expect("Expected a slice here"),
-            _ => panic!("Expected a slice here"),
-        };
-        if !val.get_step().is_zero() {
+        let range = self.slice_to_range(runtime, take(&mut args[0]))?;
+        if !range.get_step().is_one() {
             return runtime.throw_quick(
                 value_error(),
                 format!(
-                    "list.operator [:]= is only valid with a slice step of 0, not {}",
-                    val.get_step()
+                    "list.operator [:]= is only valid with a slice step of 1, not {}",
+                    range.get_step()
                 )
                 .into(),
             );
         }
-        let range_end = val.get_stop().to_usize().unwrap_or(usize::MAX);
-        let range_iter = val.iter(runtime)?;
+        let range_end = range.get_stop().to_usize().unwrap_or(usize::MAX);
         let value_iter = take(&mut args[1]).iter(runtime)?;
         let mut array = self.value.borrow_mut();
-        while let Option::Some(next_index) = range_iter.next(runtime)? {
-            let next_index = IntVar::from(next_index);
+        for next_index in range.values() {
             let index = match next_index.to_usize() {
                 Option::None => return Self::size_error(runtime, &next_index),
                 Option::Some(val) => val,
@@ -376,8 +361,7 @@ impl List {
 
     fn del_slice(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        self.slice_to_range(runtime, take(&mut args[0]))?;
-        let range = downcast_var::<Range>(runtime.pop_return()).expect("Expected a range");
+        let range = self.slice_to_range(runtime, take(&mut args[0]))?;
         if !range.get_step().is_one() {
             return runtime.throw_quick(
                 value_error(),
@@ -402,8 +386,7 @@ impl List {
 
     fn iter_slice(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        self.slice_to_range(runtime, take(&mut args[0]))?;
-        let range = downcast_var::<Range>(runtime.pop_return()).expect("Expected a range");
+        let range = self.slice_to_range(runtime, take(&mut args[0]))?;
         let value = self.value.borrow();
         let len = value.len();
         let start = match range.get_start().to_usize() {
@@ -461,12 +444,12 @@ impl List {
         custom_class!(List, create, "list")
     }
 
-    fn slice_to_range(self: &Rc<Self>, runtime: &mut Runtime, arg: Variable) -> FnResult {
-        runtime.call_attr(
-            arg,
-            "toRange".into(),
-            vec![IntVar::from(self.value.borrow().len()).into()],
-        )
+    fn slice_to_range(
+        self: &Rc<Self>,
+        runtime: &mut Runtime,
+        arg: Variable,
+    ) -> Result<Rc<Range>, ()> {
+        Range::from_slice(self.value.borrow().len(), runtime, arg)
     }
 
     fn size_error(runtime: &mut Runtime, size: &IntVar) -> FnResult {

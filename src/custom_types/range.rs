@@ -38,6 +38,18 @@ impl Range {
         &self.step
     }
 
+    pub fn values(self: Rc<Self>) -> impl Iterator<Item = IntVar> {
+        RangeValueIter {
+            current: self.start.clone(),
+            value: self,
+        }
+    }
+
+    pub fn from_slice(len: usize, runtime: &mut Runtime, arg: Variable) -> Result<Rc<Range>, ()> {
+        runtime.call_attr(arg, "toRange".into(), vec![IntVar::from(len).into()])?;
+        Result::Ok(downcast_var(runtime.pop_return()).expect("Expected a range"))
+    }
+
     fn get_op(self: &Rc<Self>, op: Operator) -> Variable {
         let func = match op {
             Operator::Str => Self::str,
@@ -187,9 +199,7 @@ impl RangeIter {
 
     fn true_next(&self) -> Option<IntVar> {
         if &*self.current.borrow() != self.value.get_stop() {
-            let result = self.current.borrow().clone();
-            *self.current.borrow_mut() += self.value.get_step().clone();
-            Option::Some(result)
+            Option::Some(self.current.replace_with(|x| self.value.get_step() + x))
         } else {
             Option::None
         }
@@ -224,5 +234,24 @@ impl CustomVar for RangeIter {
 impl NativeIterator for RangeIter {
     fn next(self: Rc<Self>, _runtime: &mut Runtime) -> IterResult {
         IterResult::Ok(self.true_next().map(Variable::from))
+    }
+}
+
+#[derive(Debug, Clone)]
+struct RangeValueIter {
+    current: IntVar,
+    value: Rc<Range>,
+}
+
+impl Iterator for RangeValueIter {
+    type Item = IntVar;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if &self.current != self.value.get_stop() {
+            let new = &self.current + self.value.get_step();
+            Option::Some(replace(&mut self.current, new))
+        } else {
+            Option::None
+        }
     }
 }

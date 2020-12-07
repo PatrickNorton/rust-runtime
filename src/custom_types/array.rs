@@ -135,16 +135,11 @@ impl Array {
 
     fn get_slice(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        runtime.call_attr(
-            take(&mut args[0]),
-            "toRange".into(),
-            vec![IntVar::from(self.vars.borrow().len()).into()],
-        )?;
-        let val = runtime.pop_return().iter(runtime)?;
+        let range = Range::from_slice(self.vars.borrow().len(), runtime, take(&mut args[0]))?;
         let mut raw_vec = Vec::new();
         let self_val = self.vars.borrow();
-        while let Option::Some(i) = val.next(runtime)? {
-            raw_vec.push(self_val[IntVar::from(i).to_usize().expect("Conversion error")].clone());
+        for i in range.values() {
+            raw_vec.push(self_val[i.to_usize().expect("Conversion error")].clone());
         }
         runtime.return_1(Self::new(raw_vec.into_boxed_slice()).into())
     }
@@ -156,12 +151,7 @@ impl Array {
 
     fn iter_slice(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        runtime.call_attr(
-            take(&mut args[0]),
-            "toRange".into(),
-            vec![IntVar::from(self.vars.borrow().len()).into()],
-        )?;
-        let range = downcast_var::<Range>(runtime.pop_return()).expect("Expected a range");
+        let range = Range::from_slice(self.vars.borrow().len(), runtime, take(&mut args[0]))?;
         let value = self.vars.borrow();
         let len = value.len();
         let start = match range.get_start().to_usize() {
