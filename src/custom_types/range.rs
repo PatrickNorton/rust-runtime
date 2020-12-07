@@ -50,6 +50,14 @@ impl Range {
         Result::Ok(downcast_var(runtime.pop_return()).expect("Expected a range"))
     }
 
+    fn before_end(&self, value: &IntVar) -> bool {
+        if self.step.is_positive() {
+            value < &self.stop
+        } else {
+            value > &self.stop
+        }
+    }
+
     fn get_op(self: &Rc<Self>, op: Operator) -> Variable {
         let func = match op {
             Operator::Str => Self::str,
@@ -198,7 +206,7 @@ impl RangeIter {
     }
 
     fn true_next(&self) -> Option<IntVar> {
-        if &*self.current.borrow() != self.value.get_stop() {
+        if self.value.before_end(&*self.current.borrow()) {
             Option::Some(self.current.replace_with(|x| self.value.get_step() + x))
         } else {
             Option::None
@@ -243,21 +251,11 @@ struct RangeValueIter {
     value: Rc<Range>,
 }
 
-impl RangeValueIter {
-    fn is_done(&self) -> bool {
-        if self.value.get_step().is_negative() {
-            &self.current <= self.value.get_stop()
-        } else {
-            &self.current >= self.value.get_stop()
-        }
-    }
-}
-
 impl Iterator for RangeValueIter {
     type Item = IntVar;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if !self.is_done() {
+        if self.value.before_end(&self.current) {
             let new = &self.current + self.value.get_step();
             Option::Some(replace(&mut self.current, new))
         } else {
