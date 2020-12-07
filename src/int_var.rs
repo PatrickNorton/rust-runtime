@@ -388,8 +388,8 @@ impl Div for IntVar {
                 // No need for check here, div can't overflow
                 IntVar::Small(s2) => IntVar::Small(s1 / s2),
                 IntVar::Big(b2) => {
-                    let mut result = (*b2).clone();
-                    result /= s1;
+                    let mut result = BigInt::from(s1);
+                    result /= &*b2;
                     result.into()
                 }
             },
@@ -420,8 +420,8 @@ impl Rem for IntVar {
                 // No need for check here, div can't overflow
                 IntVar::Small(s2) => IntVar::Small(s1 % s2),
                 IntVar::Big(b2) => {
-                    let mut result = (*b2).clone();
-                    result %= s1;
+                    let mut result = BigInt::from(s1);
+                    result %= &*b2;
                     result.into()
                 }
             },
