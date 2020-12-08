@@ -242,204 +242,129 @@ impl Signed for IntVar {
     }
 }
 
-impl Add for IntVar {
-    type Output = Self;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        match self {
-            IntVar::Small(s1) => match rhs {
-                IntVar::Small(s2) => match s1.checked_add(s2) {
-                    Option::Some(val) => IntVar::Small(val),
-                    Option::None => (BigInt::from(s1) + s2).into(),
-                },
-                IntVar::Big(b2) => (&*b2 + s1).into(),
-            },
-            IntVar::Big(b1) => match rhs {
-                IntVar::Small(s2) => (&*b1 + s2).into(),
-                IntVar::Big(b2) => (&*b1 + &*b2).into(),
-            },
+macro_rules! checked_big {
+    ($name:ident, $n1:ident, $n2:ident) => {
+        match $n2 {
+            IntVar::Small(s2) => $n1.as_ref().$name(s2).into(),
+            IntVar::Big(b2) => $n1.as_ref().$name(b2.as_ref()).into(),
         }
-    }
+    };
 }
 
-impl Add for &IntVar {
-    type Output = IntVar;
+macro_rules! impl_checked {
+    ($name:ident, $trait:ty, $checked:ident) => {
+        impl $trait for IntVar {
+            type Output = IntVar;
 
-    fn add(self, rhs: Self) -> Self::Output {
-        match self {
-            IntVar::Small(s1) => match rhs {
-                IntVar::Small(s2) => match s1.checked_add(*s2) {
-                    Option::Some(val) => IntVar::Small(val),
-                    Option::None => (BigInt::from(*s1) + *s2).into(),
-                },
-                IntVar::Big(b2) => (&**b2 + *s1).into(),
-            },
-            IntVar::Big(b1) => match rhs {
-                IntVar::Small(s2) => (&**b1 + *s2).into(),
-                IntVar::Big(b2) => (&**b1 + &**b2).into(),
-            },
+            fn $name(self, rhs: Self) -> Self::Output {
+                match self {
+                    IntVar::Small(s1) => match rhs {
+                        IntVar::Small(s2) => match s1.$checked(s2) {
+                            Option::Some(val) => IntVar::Small(val),
+                            Option::None => BigInt::from(s1).$name(s2).into(),
+                        },
+                        IntVar::Big(b2) => s1.$name(b2.as_ref()).into(),
+                    },
+                    IntVar::Big(b1) => checked_big!($name, b1, rhs),
+                }
+            }
         }
-    }
+    };
 }
 
-impl AddAssign for IntVar {
-    fn add_assign(&mut self, rhs: Self) {
-        *self = (self as &Self) + &rhs;
-    }
-}
+macro_rules! impl_checked_ref {
+    ($name:ident, $trait:ty, $checked:ident) => {
+        impl $trait for &IntVar {
+            type Output = IntVar;
 
-impl Sub for IntVar {
-    type Output = Self;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        match self {
-            IntVar::Small(s1) => match rhs {
-                IntVar::Small(s2) => match s1.checked_sub(s2) {
-                    Option::Some(val) => IntVar::Small(val),
-                    Option::None => (BigInt::from(s1) - s2).into(),
-                },
-                IntVar::Big(b2) => (&*b2 - s1).into(),
-            },
-            IntVar::Big(b1) => match rhs {
-                IntVar::Small(s2) => (&*b1 - s2).into(),
-                IntVar::Big(b2) => (&*b1 - &*b2).into(),
-            },
+            fn $name(self, rhs: Self) -> Self::Output {
+                match self {
+                    IntVar::Small(s1) => match rhs {
+                        IntVar::Small(s2) => match s1.$checked(*s2) {
+                            Option::Some(val) => IntVar::Small(val),
+                            Option::None => BigInt::from(*s1).$name(s2).into(),
+                        },
+                        IntVar::Big(b2) => s1.$name(b2.as_ref()).into(),
+                    },
+                    IntVar::Big(b1) => checked_big!($name, b1, rhs),
+                }
+            }
         }
-    }
+    };
 }
 
-impl Sub for &IntVar {
-    type Output = IntVar;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        match self {
-            IntVar::Small(s1) => match rhs {
-                IntVar::Small(s2) => match s1.checked_sub(*s2) {
-                    Option::Some(val) => IntVar::Small(val),
-                    Option::None => (BigInt::from(*s1) - s2).into(),
-                },
-                IntVar::Big(b2) => (&**b2 - *s1).into(),
-            },
-            IntVar::Big(b1) => match rhs {
-                IntVar::Small(s2) => (&**b1 - *s2).into(),
-                IntVar::Big(b2) => (&**b1 - &**b2).into(),
-            },
+macro_rules! impl_assign {
+    ($name:ident, $trait:ty, $original:ident) => {
+        impl $trait for IntVar {
+            fn $name(&mut self, rhs: Self) {
+                *self = (self as &Self).$original(&rhs);
+            }
         }
-    }
+    };
 }
 
-impl SubAssign for IntVar {
-    fn sub_assign(&mut self, rhs: Self) {
-        *self = (self as &Self) - &rhs;
-    }
+macro_rules! inner_impl {
+    ($name:ident, $trait:ty) => {
+        fn $name(self, rhs: Self) -> Self::Output {
+            match self {
+                IntVar::Small(s1) => match rhs {
+                    IntVar::Small(s2) => IntVar::Small(s1.$name(s2)),
+                    IntVar::Big(b2) => (s1.$name(b2.as_ref())).into(),
+                },
+                IntVar::Big(b1) => checked_big!($name, b1, rhs),
+            }
+        }
+    };
 }
+
+macro_rules! impl_nonzero {
+    ($name:ident, $trait:ty, $assign:ident, $assign_tr:ty) => {
+        impl $trait for IntVar {
+            type Output = IntVar;
+
+            inner_impl!($name, $trait);
+        }
+
+        impl $trait for &IntVar {
+            type Output = IntVar;
+
+            inner_impl!($name, $trait);
+        }
+
+        impl_assign!($assign, $assign_tr, $name);
+    };
+}
+
+macro_rules! impl_op {
+    ($name:ident, $trait:ty, $checked:ident, $assign:ident, $assign_tr:ty) => {
+        impl_checked!($name, $trait, $checked);
+        impl_checked_ref!($name, $trait, $checked);
+        impl_assign!($assign, $assign_tr, $name);
+    };
+}
+
+impl_op!(add, Add, checked_add, add_assign, AddAssign);
+impl_op!(sub, Sub, checked_sub, sub_assign, SubAssign);
+impl_op!(mul, Mul, checked_mul, mul_assign, MulAssign);
+impl_nonzero!(div, Div, div_assign, DivAssign);
+impl_nonzero!(rem, Rem, rem_assign, RemAssign);
 
 impl Neg for IntVar {
     type Output = Self;
 
     fn neg(self) -> Self::Output {
+        (&self).neg()
+    }
+}
+
+impl Neg for &IntVar {
+    type Output = IntVar;
+
+    fn neg(self) -> Self::Output {
         match self {
             IntVar::Small(i) => (-i).into(),
-            IntVar::Big(b) => (-(*b).clone()).into(),
+            IntVar::Big(b) => (-b.as_ref()).into(),
         }
-    }
-}
-
-impl Mul for IntVar {
-    type Output = Self;
-
-    fn mul(self, rhs: Self) -> Self::Output {
-        match self {
-            IntVar::Small(s1) => match rhs {
-                IntVar::Small(s2) => match s1.checked_mul(s2) {
-                    Option::Some(val) => IntVar::Small(val),
-                    Option::None => (BigInt::from(s1) * s2).into(),
-                },
-                IntVar::Big(b2) => {
-                    let mut result = (*b2).clone();
-                    result *= s1;
-                    result.into()
-                }
-            },
-            IntVar::Big(b1) => match rhs {
-                IntVar::Small(s2) => {
-                    let mut result = (*b1).clone();
-                    result *= s2;
-                    result.into()
-                }
-                IntVar::Big(b2) => (&*b1 * &*b2).into(),
-            },
-        }
-    }
-}
-
-impl MulAssign for IntVar {
-    fn mul_assign(&mut self, rhs: Self) {
-        *self = self.clone() * rhs;
-    }
-}
-
-impl Div for IntVar {
-    type Output = Self;
-
-    fn div(self, rhs: Self) -> Self::Output {
-        match self {
-            IntVar::Small(s1) => match rhs {
-                // No need for check here, div can't overflow
-                IntVar::Small(s2) => IntVar::Small(s1 / s2),
-                IntVar::Big(b2) => {
-                    let mut result = BigInt::from(s1);
-                    result /= &*b2;
-                    result.into()
-                }
-            },
-            IntVar::Big(b1) => match rhs {
-                IntVar::Small(s2) => {
-                    let mut result = (*b1).clone();
-                    result /= s2;
-                    result.into()
-                }
-                IntVar::Big(b2) => (&*b1 / &*b2).into(),
-            },
-        }
-    }
-}
-
-impl DivAssign for IntVar {
-    fn div_assign(&mut self, rhs: Self) {
-        *self = self.clone() / rhs;
-    }
-}
-
-impl Rem for IntVar {
-    type Output = Self;
-
-    fn rem(self, rhs: Self) -> Self::Output {
-        match self {
-            IntVar::Small(s1) => match rhs {
-                // No need for check here, div can't overflow
-                IntVar::Small(s2) => IntVar::Small(s1 % s2),
-                IntVar::Big(b2) => {
-                    let mut result = BigInt::from(s1);
-                    result %= &*b2;
-                    result.into()
-                }
-            },
-            IntVar::Big(b1) => match rhs {
-                IntVar::Small(s2) => {
-                    let mut result = (*b1).clone();
-                    result %= s2;
-                    result.into()
-                }
-                IntVar::Big(b2) => (&*b1 % &*b2).into(),
-            },
-        }
-    }
-}
-
-impl RemAssign for IntVar {
-    fn rem_assign(&mut self, rhs: Self) {
-        *self = self.clone() % rhs;
     }
 }
 
@@ -474,7 +399,7 @@ impl Shr<usize> for IntVar {
 }
 
 macro_rules! impl_bit {
-    ($trait_name:ty, $fn_name:ident) => {
+    ($trait_name:ty, $fn_name:ident, $assign_trait:ty, $assign_fn:ident) => {
         impl $trait_name for IntVar {
             type Output = Self;
 
@@ -491,30 +416,35 @@ macro_rules! impl_bit {
                 }
             }
         }
+
+        impl $trait_name for &IntVar {
+            type Output = IntVar;
+
+            fn $fn_name(self, rhs: Self) -> Self::Output {
+                match self {
+                    IntVar::Small(s1) => match rhs {
+                        IntVar::Small(s2) => s1.$fn_name(s2).into(),
+                        IntVar::Big(b2) => (b2.as_ref()).clone().$fn_name(&(*s1).into()).into(),
+                    },
+                    IntVar::Big(b1) => match rhs {
+                        IntVar::Small(s2) => (b1.as_ref()).$fn_name(&(*s2).into()).into(),
+                        IntVar::Big(b2) => (b1.as_ref()).$fn_name(b2.as_ref()).into(),
+                    },
+                }
+            }
+        }
+
+        impl $assign_trait for IntVar {
+            fn $assign_fn(&mut self, rhs: Self) {
+                *self = (self as &Self).$fn_name(&rhs)
+            }
+        }
     };
 }
 
-impl_bit!(BitAnd, bitand);
-impl_bit!(BitOr, bitor);
-impl_bit!(BitXor, bitxor);
-
-impl BitAndAssign for IntVar {
-    fn bitand_assign(&mut self, rhs: Self) {
-        *self = self.clone() & rhs;
-    }
-}
-
-impl BitOrAssign for IntVar {
-    fn bitor_assign(&mut self, rhs: Self) {
-        *self = self.clone() | rhs;
-    }
-}
-
-impl BitXorAssign for IntVar {
-    fn bitxor_assign(&mut self, rhs: Self) {
-        *self = self.clone() ^ rhs;
-    }
-}
+impl_bit!(BitAnd, bitand, BitAndAssign, bitand_assign);
+impl_bit!(BitOr, bitor, BitOrAssign, bitor_assign);
+impl_bit!(BitXor, bitxor, BitXorAssign, bitxor_assign);
 
 impl Not for IntVar {
     type Output = Self;

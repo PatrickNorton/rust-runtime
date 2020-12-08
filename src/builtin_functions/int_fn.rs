@@ -8,6 +8,7 @@ use crate::variable::{FnResult, Variable};
 use num::traits::Pow;
 use num::{Signed, ToPrimitive};
 use std::boxed::Box;
+use std::mem::take;
 use std::vec::Vec;
 
 pub fn op_fn(o: Operator) -> NativeMethod<IntVar> {
@@ -95,10 +96,10 @@ fn pow(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     runtime.return_1(Variable::Bigint(result))
 }
 
-fn modulo(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn modulo(this: &IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.len() == 1);
-    let arg_int = IntVar::from(args[0].clone());
-    runtime.return_1(Variable::Bigint(this.clone() % arg_int))
+    let arg_int = IntVar::from(take(&mut args[0]));
+    runtime.return_1(Variable::Bigint(this % &arg_int))
 }
 
 fn eq(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

@@ -12,6 +12,7 @@ use crate::variable::{FnResult, Variable};
 use num::{One, Signed, Zero};
 use std::cell::RefCell;
 use std::mem::replace;
+use std::ops::Neg;
 use std::rc::Rc;
 
 #[derive(Debug)]
@@ -121,7 +122,7 @@ impl Range {
             value >= self.start && value < self.stop
         } else {
             value <= self.start && value > self.stop
-        } && ((&value - &self.start) % self.step.clone()).is_zero();
+        } && (&(&value - &self.start) % &self.step).is_zero();
         runtime.return_1(result.into())
     }
 
@@ -129,7 +130,7 @@ impl Range {
         debug_assert!(args.is_empty());
         let new_stop = &self.start - &self.step;
         let new_start = &self.stop - &self.step;
-        let new_step = -self.step.clone();
+        let new_step = (&self.step).neg(); // Turn into -(&self.step) when IDE stops making it an error
         runtime.return_1(Rc::new(Self::new(new_start, new_stop, new_step)).into())
     }
 

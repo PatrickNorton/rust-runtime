@@ -277,7 +277,7 @@ impl Variable {
             Variable::Bool(b) => Result::Ok(if *b { 0 } else { 1 }),
             Variable::Bigint(i) => {
                 let max = IntVar::Big(Rc::new(BigInt::from(std::usize::MAX) + 1));
-                let hash = i.clone() % max;
+                let hash = i % &max;
                 Result::Ok(hash.to_usize().unwrap())
             }
             Variable::String(s) => {
