@@ -9,7 +9,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
-use num::{Signed, Zero};
+use num::{One, Signed, Zero};
 use std::cell::RefCell;
 use std::mem::replace;
 use std::rc::Rc;
@@ -104,8 +104,7 @@ impl Range {
         debug_assert!(args.len() == 1);
         let index = IntVar::from(replace(&mut args[0], Variable::Null()));
         let result = self.start.clone() + index * self.step.clone();
-        let error = result == self.stop || (self.step.is_negative() ^ (result > self.stop));
-        if error {
+        if !self.before_end(&result) {
             runtime.throw_quick(
                 index_error(),
                 format!("Index {} out of bounds for {}", result, self.to_str()).into(),
@@ -135,7 +134,11 @@ impl Range {
     }
 
     fn to_str(&self) -> StringVar {
-        format!("[{}:{}:{}]", self.start, self.stop, self.step).into()
+        if self.step.is_one() {
+            format!("[{}:{}]", self.start, self.stop).into()
+        } else {
+            format!("[{}:{}:{}]", self.start, self.stop, self.step).into()
+        }
     }
 
     fn len(&self) -> IntVar {
