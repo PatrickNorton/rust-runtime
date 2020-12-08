@@ -1,4 +1,4 @@
-use crate::custom_types::exceptions::arithmetic_error;
+use crate::custom_types::exceptions::{arithmetic_error, value_error};
 use crate::int_var::IntVar;
 use crate::method::{InnerMethod, NativeMethod, StdMethod};
 use crate::operator::Operator;
@@ -6,7 +6,7 @@ use crate::rational_var::RationalVar;
 use crate::runtime::Runtime;
 use crate::variable::{FnResult, Variable};
 use num::traits::Pow;
-use num::{Signed, ToPrimitive};
+use num::{Signed, ToPrimitive, Zero};
 use std::boxed::Box;
 use std::mem::take;
 use std::vec::Vec;
@@ -76,7 +76,11 @@ fn mul(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
 fn floor_div(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let mut ratio = this.clone();
     for arg in args {
-        ratio /= IntVar::from(arg)
+        let var = IntVar::from(arg);
+        if var.is_zero() {
+            return runtime.throw_quick(value_error(), "Cannot divide by 0".into());
+        }
+        ratio /= var;
     }
     runtime.return_1(Variable::Bigint(ratio))
 }
@@ -84,7 +88,11 @@ fn floor_div(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnRes
 fn div(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let mut ratio = RationalVar::from_integer(this.clone().into());
     for arg in args {
-        ratio /= RationalVar::from_integer(IntVar::from(arg).into())
+        let var = IntVar::from(arg);
+        if var.is_zero() {
+            return runtime.throw_quick(value_error(), "Cannot divide by 0".into());
+        }
+        ratio /= RationalVar::from_integer(var.into())
     }
     runtime.return_1(Variable::Decimal(ratio))
 }
@@ -99,7 +107,11 @@ fn pow(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
 fn modulo(this: &IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.len() == 1);
     let arg_int = IntVar::from(take(&mut args[0]));
-    runtime.return_1(Variable::Bigint(this % &arg_int))
+    if arg_int.is_zero() {
+        runtime.throw_quick(value_error(), "Cannot modulo by 0".into())
+    } else {
+        runtime.return_1(Variable::Bigint(this % &arg_int))
+    }
 }
 
 fn eq(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
