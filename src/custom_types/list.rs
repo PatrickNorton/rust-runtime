@@ -179,7 +179,7 @@ impl List {
     fn contains_all(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         let checked_var = replace(&mut args[0], Variable::Null());
         let this_iter = checked_var.iter(runtime)?;
-        while let Option::Some(val) = this_iter.clone().next(runtime)? {
+        while let Option::Some(val) = this_iter.next(runtime)? {
             if !self.value.borrow().contains(&val) {
                 return runtime.return_1(false.into());
             }

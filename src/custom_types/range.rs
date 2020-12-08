@@ -104,7 +104,7 @@ impl Range {
     fn index(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
         let index = IntVar::from(replace(&mut args[0], Variable::Null()));
-        let result = self.start.clone() + index * self.step.clone();
+        let result = &self.start + &(&index * &self.step);
         if !self.before_end(&result) {
             runtime.throw_quick(
                 index_error(),
