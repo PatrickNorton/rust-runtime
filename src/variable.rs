@@ -276,7 +276,7 @@ impl Variable {
             Variable::Null() => Result::Ok(0),
             Variable::Bool(b) => Result::Ok(if *b { 0 } else { 1 }),
             Variable::Bigint(i) => {
-                let max = IntVar::Big(Rc::new(BigInt::from(std::usize::MAX) + 1));
+                let max = IntVar::Big(Rc::new(BigInt::from(usize::MAX) + 1));
                 let hash = i % &max;
                 Result::Ok(hash.to_usize().unwrap())
             }
@@ -288,7 +288,7 @@ impl Variable {
                 Result::Ok(result)
             }
             Variable::Decimal(d) => {
-                let max = BigInt::from(std::usize::MAX) + 1;
+                let max = BigInt::from(usize::MAX) + 1;
                 let hash: BigInt = d.to_integer() % &max;
                 Result::Ok(hash.to_usize().unwrap())
             }

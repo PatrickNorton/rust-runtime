@@ -9,6 +9,7 @@ use num::traits::Pow;
 use num::{Signed, ToPrimitive, Zero};
 use std::boxed::Box;
 use std::mem::take;
+use std::ops::Neg;
 use std::vec::Vec;
 
 pub fn op_fn(o: Operator) -> NativeMethod<IntVar> {
@@ -62,7 +63,7 @@ fn sub(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
 
 fn u_minus(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.return_1(Variable::Bigint(-this.clone()))
+    runtime.return_1(Variable::Bigint(this.neg()))
 }
 
 fn mul(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -170,7 +171,7 @@ fn left_bs(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResul
                 format!(
                     "Cannot shift by {} (max shift value is {})",
                     big_value,
-                    std::usize::MAX
+                    usize::MAX
                 )
             };
             return runtime.throw_quick(arithmetic_error(), msg.into());
@@ -191,7 +192,7 @@ fn right_bs(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
                 format!(
                     "Cannot shift by {} (max shift value is {})",
                     big_value,
-                    std::usize::MAX
+                    usize::MAX
                 )
             };
             return runtime.throw_quick(arithmetic_error(), msg.into());
