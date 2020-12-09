@@ -85,7 +85,12 @@ fn multiply(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnR
     for arg in args {
         let big_val = IntVar::from(arg);
         match big_val.to_usize() {
-            Option::Some(val) => result = result.repeat(val),
+            Option::Some(val) => match val.checked_mul(result.len()) {
+                Option::Some(_) => result = result.repeat(val),
+                Option::None => {
+                    return runtime.throw_quick(arithmetic_error(), overflow_exc(val, result.len()))
+                }
+            },
             Option::None => return runtime.throw_quick(arithmetic_error(), mul_exc(big_val)),
         }
     }
@@ -98,6 +103,16 @@ fn mul_exc(big_val: IntVar) -> StringVar {
             for a non-empty string is {}, attempted to shift by {}",
         usize::MAX,
         big_val,
+    )
+    .into()
+}
+
+fn overflow_exc(val: usize, len: usize) -> StringVar {
+    format!(
+        "Too many string repetitions: maximum string length is {}, \
+        but repetition would produce str of length {}",
+        usize::MAX,
+        BigInt::from(val) * len
     )
     .into()
 }
