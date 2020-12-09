@@ -130,7 +130,7 @@ impl Variable {
             Variable::Type(t) => t.push_create(args),
             Variable::Custom(val) => (**val).clone().call(args.0, args.1),
             Variable::Union(val) => val.call(args),
-            _ => unimplemented!(),
+            x => unimplemented!("{:?}()\n{}", x, args.1.stack_frames()),
         }
     }
 
@@ -142,7 +142,7 @@ impl Variable {
             Variable::Type(t) => t.push_create(args),
             Variable::Custom(val) => (**val).clone().call_or_goto(args.0, args.1),
             Variable::Union(val) => val.call_or_goto(args),
-            _ => unimplemented!(),
+            x => unimplemented!("{}()\n{}", x.get_type().str(), args.1.stack_frames()),
         }
     }
 
@@ -153,7 +153,7 @@ impl Variable {
             Variable::Standard(val) => val.iter(runtime),
             Variable::Custom(val) => (**val).clone().iter(runtime),
             Variable::Union(val) => val.iter(runtime),
-            _ => unimplemented!(),
+            x => unimplemented!("{}.iter()\n{}", x.get_type().str(), runtime.stack_frames()),
         }
     }
 
@@ -163,7 +163,7 @@ impl Variable {
                 if let Name::Operator(o) = index {
                     null_fn::get_operator(o)
                 } else {
-                    unimplemented!()
+                    unimplemented!("null.{}\n{}", index.as_str(), runtime.stack_frames())
                 }
             }
             Variable::Standard(val) => val.index(index, runtime)?,
@@ -171,14 +171,14 @@ impl Variable {
                 if let Name::Operator(o) = index {
                     bool_fn::get_operator(val, o)
                 } else {
-                    unimplemented!()
+                    unimplemented!("bool.{}\n{}", index.as_str(), runtime.stack_frames())
                 }
             }
             Variable::Bigint(val) => {
                 if let Name::Operator(o) = index {
                     int_fn::get_operator(val, o)
                 } else {
-                    unimplemented!()
+                    unimplemented!("int.{}\n{}", index.as_str(), runtime.stack_frames())
                 }
             }
             Variable::String(val) => match index {
@@ -193,21 +193,26 @@ impl Variable {
                 if let Name::Operator(o) = index {
                     dec_fn::get_operator(val, o)
                 } else {
-                    unimplemented!()
+                    unimplemented!("dec.{}\n{}", index.as_str(), runtime.stack_frames())
                 }
             }
             Variable::Char(val) => {
                 if let Name::Operator(o) = index {
                     char_fn::get_operator(val, o)
                 } else {
-                    unimplemented!()
+                    unimplemented!("char.{}\n{}", index.as_str(), runtime.stack_frames())
                 }
             }
             Variable::Type(t) => t.index(index, runtime),
             Variable::Custom(val) => (*val).clone().get_attr(index),
             Variable::Union(val) => val.index(index, runtime)?,
             Variable::Option(opt) => opt.index(index),
-            _ => unimplemented!(),
+            x => unimplemented!(
+                "{}.{}\n{}",
+                x.get_type().str(),
+                index.as_str(),
+                runtime.stack_frames()
+            ),
         })
     }
 
