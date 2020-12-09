@@ -12,9 +12,22 @@ pub enum StringVar {
     Ascii(Arc<AsciiStr>),
 }
 
+#[derive(Debug, Copy, Clone)]
 pub enum MaybeAscii<'a> {
     Standard(&'a str),
     Ascii(&'a AsciiStr),
+}
+
+#[derive(Debug, Clone)]
+pub enum AsciiVar {
+    Literal(&'static AsciiStr),
+    Other(Arc<AsciiStr>),
+}
+
+#[derive(Debug, Clone)]
+pub enum StrVar {
+    Literal(&'static str),
+    Other(Arc<str>),
 }
 
 impl StringVar {
@@ -59,6 +72,15 @@ impl StringVar {
             StringVar::AsciiLiteral(a) => MaybeAscii::Ascii(a),
             StringVar::Other(o) => MaybeAscii::Standard(o),
             StringVar::Ascii(a) => MaybeAscii::Ascii(a),
+        }
+    }
+
+    pub fn split_ascii(self) -> Result<AsciiVar, StrVar> {
+        match self {
+            StringVar::Literal(l) => Result::Err(StrVar::Literal(l)),
+            StringVar::AsciiLiteral(a) => Result::Ok(AsciiVar::Literal(a)),
+            StringVar::Other(o) => Result::Err(StrVar::Other(o)),
+            StringVar::Ascii(a) => Result::Ok(AsciiVar::Other(a)),
         }
     }
 }
@@ -111,5 +133,27 @@ impl std::fmt::Display for StringVar {
 impl Default for StringVar {
     fn default() -> Self {
         "".into()
+    }
+}
+
+impl Deref for StrVar {
+    type Target = str;
+
+    fn deref(&self) -> &Self::Target {
+        match self {
+            StrVar::Literal(s) => *s,
+            StrVar::Other(s) => s.as_ref(),
+        }
+    }
+}
+
+impl Deref for AsciiVar {
+    type Target = AsciiStr;
+
+    fn deref(&self) -> &Self::Target {
+        match self {
+            AsciiVar::Literal(s) => *s,
+            AsciiVar::Other(s) => s.as_ref(),
+        }
     }
 }

@@ -10,10 +10,14 @@ use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
-use crate::string_var::{MaybeAscii, StringVar};
+use crate::string_var::{AsciiVar, MaybeAscii, StrVar, StringVar};
 use crate::variable::{FnResult, Variable};
+use ascii::{AsAsciiStr, AsciiChar};
+use downcast_rs::Downcast;
 use num::{BigInt, Signed, ToPrimitive};
+use std::any::Any;
 use std::cell::Cell;
+use std::fmt::Debug;
 use std::mem::{replace, take};
 use std::rc::Rc;
 use std::str::{from_utf8_unchecked, FromStr};
@@ -169,7 +173,10 @@ fn index(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> Fn
 
 fn iter(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.return_1(Rc::new(StringIter::new(this.clone())).into())
+    runtime.return_1(match this.clone().split_ascii() {
+        Result::Ok(a) => Rc::new(AsciiIter::new(a)).into(),
+        Result::Err(s) => Rc::new(StringIter::new(s)).into(),
+    })
 }
 
 fn reversed(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -355,30 +362,40 @@ fn as_int(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnRes
     )
 }
 
+pub trait StrIter: Debug + Any + Downcast {
+    fn next_fn(&self) -> Option<Variable>;
+
+    fn next_func(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        runtime.return_1(self.next_fn().into())
+    }
+}
+
 #[derive(Debug)]
 pub struct StringIter {
     index: Cell<usize>,
-    val: StringVar,
+    val: StrVar,
+}
+
+#[derive(Debug)]
+pub struct AsciiIter {
+    index: Cell<usize>,
+    val: AsciiVar,
 }
 
 impl StringIter {
-    fn new(val: StringVar) -> StringIter {
+    fn new(val: StrVar) -> StringIter {
         StringIter {
             val,
             index: Cell::new(0),
         }
     }
+}
 
-    fn next_func(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        debug_assert!(args.is_empty());
-        match self.next_fn() {
-            Option::Some(ret) => runtime.return_1(Option::Some(ret).into()),
-            Option::None => runtime.return_1(Option::None.into()),
-        }
-    }
-
+impl StrIter for StringIter {
     fn next_fn(&self) -> Option<Variable> {
-        if self.index.get() != self.val.char_len() {
+        let len = self.val.chars().count();
+        if self.index.get() < len {
             let mut indices = unsafe {
                 // We know this is safe b/c:
                 // * The slice comes from a valid str, therefore, no invalid UTF-8 can be entered
@@ -392,7 +409,7 @@ impl StringIter {
                 self.index.set(
                     indices
                         .next()
-                        .map_or_else(|| self.val.char_len(), |a| self.index.get() + a.0),
+                        .map_or_else(|| len, |a| self.index.get() + a.0),
                 );
                 c.into()
             })
@@ -402,7 +419,27 @@ impl StringIter {
     }
 }
 
-impl CustomVar for StringIter {
+impl AsciiIter {
+    fn new(val: AsciiVar) -> AsciiIter {
+        AsciiIter {
+            val,
+            index: Cell::new(0),
+        }
+    }
+}
+
+impl StrIter for AsciiIter {
+    fn next_fn(&self) -> Option<Variable> {
+        let val = self.val.get_ascii(self.index.get()).map(AsciiChar::as_char);
+        self.index.set(self.index.get() + 1);
+        val.map(Into::into)
+    }
+}
+
+impl<T> CustomVar for T
+where
+    T: StrIter,
+{
     fn get_attr(self: Rc<Self>, name: Name) -> Variable {
         if let Name::Attribute(n) = name {
             if &*n == "next" {
@@ -424,7 +461,10 @@ impl CustomVar for StringIter {
     }
 }
 
-impl NativeIterator for StringIter {
+impl<T> NativeIterator for T
+where
+    T: StrIter + CustomVar,
+{
     fn next(self: Rc<Self>, _runtime: &mut Runtime) -> IterResult {
         IterResult::Ok(self.next_fn())
     }
