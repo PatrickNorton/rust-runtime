@@ -518,7 +518,10 @@ impl From<Variable> for IntVar {
         match var {
             Variable::Bigint(i) => i,
             Variable::Bool(b) => if b { 1 } else { 0 }.into(),
-            _ => panic!("Attempted to turn a variable not a superclass of int into an int"),
+            x => panic!(
+                "Attempted to turn a variable not a superclass of int ({}) into an int",
+                x.get_type().str()
+            ),
         }
     }
 }
@@ -528,7 +531,10 @@ impl From<Variable> for RationalVar {
         if let Variable::Decimal(d) = var {
             d
         } else {
-            panic!("Attempted to turn a variable not a superclass of dec into a dec")
+            panic!(
+                "Attempted to turn a variable not a superclass of dec ({}) into a dec",
+                var.get_type().str()
+            )
         }
     }
 }
@@ -538,7 +544,10 @@ impl From<Variable> for StringVar {
         if let Variable::String(s) = var {
             s
         } else {
-            panic!("Attempted to turn a variable not a superclass of str into a str")
+            panic!(
+                "Attempted to turn a variable not a superclass of str ({}) into a str",
+                var.get_type().str()
+            )
         }
     }
 }
@@ -548,7 +557,10 @@ impl From<Variable> for LangTuple {
         if let Variable::Tuple(t) = var {
             t
         } else {
-            panic!("Attempted to turn a variable not a superclass of tuple into a tuple")
+            panic!(
+                "Attempted to turn a variable not a superclass of tuple ({}) into a tuple",
+                var.get_type().str()
+            )
         }
     }
 }
@@ -558,7 +570,10 @@ impl From<Variable> for bool {
         if let Variable::Bool(b) = var {
             b
         } else {
-            panic!("Attempted to turn a variable not a superclass of bool into a bool")
+            panic!(
+                "Attempted to turn a variable not a superclass of bool ({}) into a bool",
+                var.get_type().str()
+            )
         }
     }
 }
@@ -568,7 +583,10 @@ impl From<Variable> for char {
         if let Variable::Char(b) = var {
             b
         } else {
-            panic!("Attempted to turn a variable not a superclass of char into a char")
+            panic!(
+                "Attempted to turn a variable not a superclass of char ({}) into a char",
+                var.get_type().str()
+            )
         }
     }
 }
