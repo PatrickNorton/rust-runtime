@@ -132,7 +132,7 @@ impl std::fmt::Display for StringVar {
 
 impl Default for StringVar {
     fn default() -> Self {
-        "".into()
+        StringVar::AsciiLiteral(Default::default())
     }
 }
 
