@@ -45,7 +45,10 @@ pub fn get_operator(this: IntVar, o: Operator) -> Variable {
     Variable::Method(Box::new(StdMethod::new(this, InnerMethod::Native(func))))
 }
 
-fn add(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn add(this: &IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    if args.len() == 1 {
+        return runtime.return_1((this + &take(&mut args[0]).into()).into());
+    }
     let mut sum = this.clone();
     for arg in args {
         sum += IntVar::from(arg)
@@ -53,7 +56,10 @@ fn add(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     runtime.return_1(Variable::Bigint(sum))
 }
 
-fn sub(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn sub(this: &IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    if args.len() == 1 {
+        return runtime.return_1((this - &take(&mut args[0]).into()).into());
+    }
     let mut diff = this.clone();
     for arg in args {
         diff -= IntVar::from(arg)
@@ -66,7 +72,10 @@ fn u_minus(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResul
     runtime.return_1(Variable::Bigint(this.neg()))
 }
 
-fn mul(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn mul(this: &IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    if args.len() == 1 {
+        return runtime.return_1((this * &take(&mut args[0]).into()).into());
+    }
     let mut prod = this.clone();
     for arg in args {
         prod *= IntVar::from(arg)
@@ -74,7 +83,10 @@ fn mul(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     runtime.return_1(Variable::Bigint(prod))
 }
 
-fn floor_div(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn floor_div(this: &IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    if args.len() == 1 {
+        return runtime.return_1((this / &take(&mut args[0]).into()).into());
+    }
     let mut ratio = this.clone();
     for arg in args {
         let var = IntVar::from(arg);
