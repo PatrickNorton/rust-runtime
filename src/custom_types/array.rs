@@ -163,13 +163,7 @@ impl Array {
             Option::Some(v) => v,
             Option::None => return Self::size_error(runtime, range.get_step()),
         };
-        let new_vec = Array::new(
-            value[start..stop]
-                .iter()
-                .step_by(step)
-                .map(Clone::clone)
-                .collect(),
-        );
+        let new_vec = Array::new(value[start..stop].iter().step_by(step).cloned().collect());
         runtime.return_1(Rc::new(ArrayIter::new(new_vec)).into())
     }
 
