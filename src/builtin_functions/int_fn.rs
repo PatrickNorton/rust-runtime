@@ -85,7 +85,11 @@ fn mul(this: &IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResul
 
 fn floor_div(this: &IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     if args.len() == 1 {
-        return runtime.return_1((this / &take(&mut args[0]).into()).into());
+        let var: IntVar = take(&mut args[0]).into();
+        if var.is_zero() {
+            return runtime.throw_quick(value_error(), "Cannot divide by 0".into());
+        }
+        return runtime.return_1((this / &var).into());
     }
     let mut ratio = this.clone();
     for arg in args {
