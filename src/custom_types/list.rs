@@ -31,6 +31,10 @@ impl List {
         })
     }
 
+    pub fn len(&self) -> usize {
+        self.value.borrow().len()
+    }
+
     fn get_operator(self: Rc<Self>, name: Operator) -> Variable {
         let value = match name {
             Operator::Bool => List::list_bool,
@@ -52,7 +56,7 @@ impl List {
 
     fn get_attribute(self: Rc<Self>, name: StringVar) -> Variable {
         let value = match name.as_str() {
-            "length" => return Variable::Bigint(self.value.borrow().len().into()),
+            "length" => return Variable::Bigint(self.len().into()),
             "containsAll" => Self::contains_all,
             "get" => Self::list_get,
             "reverse" => Self::reverse,
@@ -374,7 +378,9 @@ impl List {
         }
         let range_start = range.get_start().to_usize().unwrap();
         let range_end = range.get_stop().to_usize().unwrap_or(usize::MAX);
-        self.value.borrow_mut().drain(range_start..range_end);
+        self.value
+            .borrow_mut()
+            .drain(range_start..min(range_end, self.len()));
 
         runtime.return_0()
     }
@@ -400,11 +406,7 @@ impl List {
         };
         let new_vec = List::from_values(
             self.generic,
-            value[start..stop]
-                .iter()
-                .step_by(step)
-                .map(Clone::clone)
-                .collect(),
+            value[start..stop].iter().step_by(step).cloned().collect(),
         );
         runtime.return_1(Rc::new(ListIter::new(new_vec)).into())
     }
@@ -449,7 +451,7 @@ impl List {
         runtime: &mut Runtime,
         arg: Variable,
     ) -> Result<Rc<Range>, ()> {
-        Range::from_slice(self.value.borrow().len(), runtime, arg)
+        Range::from_slice(self.len(), runtime, arg)
     }
 
     fn size_error(runtime: &mut Runtime, size: &IntVar) -> FnResult {
