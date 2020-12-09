@@ -430,9 +430,10 @@ impl AsciiIter {
 
 impl StrIter for AsciiIter {
     fn next_fn(&self) -> Option<Variable> {
-        let val = self.val.get_ascii(self.index.get()).map(AsciiChar::as_char);
-        self.index.set(self.index.get() + 1);
-        val.map(Into::into)
+        self.val
+            .get_ascii(self.index.replace(self.index.get() + 1))
+            .map(AsciiChar::as_char)
+            .map(Into::into)
     }
 }
 
