@@ -369,12 +369,7 @@ fn encode(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> F
 
 fn as_int(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.return_1(
-        this.parse::<BigInt>()
-            .ok()
-            .map(|x| IntVar::from(x).into())
-            .into(),
-    )
+    runtime.return_1(IntVar::from_str(this).ok().map(Variable::from).into())
 }
 
 pub trait StrIter: Debug + Any + Downcast {
