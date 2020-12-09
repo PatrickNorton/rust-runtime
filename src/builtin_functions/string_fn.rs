@@ -161,29 +161,21 @@ fn index(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> Fn
     let index = match proper_index.to_usize() {
         Option::Some(val) => val,
         Option::None => {
-            return runtime.throw_quick(
-                index_error(),
-                format!(
-                    "Index {} out of bounds for str of length {}",
-                    big_index,
-                    this.char_len()
-                )
-                .into(),
-            )
+            return runtime.throw_quick(index_error(), bounds_msg(big_index, this.char_len()))
         }
     };
     match this.char_at(index) {
-        Option::None => runtime.throw_quick(
-            index_error(),
-            format!(
-                "Index {} out of bounds for str of length {}",
-                big_index,
-                this.char_len()
-            )
-            .into(),
-        ),
+        Option::None => runtime.throw_quick(index_error(), bounds_msg(big_index, this.char_len())),
         Option::Some(value) => runtime.return_1(value.into()),
     }
+}
+
+fn bounds_msg(big_index: IntVar, char_len: usize) -> StringVar {
+    format!(
+        "Index {} out of bounds for str of length {}",
+        big_index, char_len
+    )
+    .into()
 }
 
 fn iter(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
