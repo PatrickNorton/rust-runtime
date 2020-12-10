@@ -4,6 +4,7 @@ use std::boxed::Box;
 use std::cmp::{Eq, PartialEq};
 use std::fmt::{Debug, Formatter};
 use std::hash::{Hash, Hasher};
+use std::ptr;
 use std::vec::Vec;
 
 pub type NativeMethod<T> = fn(&T, Vec<Variable>, &mut Runtime) -> FnResult;
@@ -97,8 +98,8 @@ impl PartialEq for Box<dyn Method> {
 impl Eq for Box<dyn Method> {}
 
 impl Hash for Box<dyn Method> {
-    fn hash<H: Hasher>(&self, _state: &mut H) {
-        unimplemented!()
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        ptr::hash(self.as_ref(), state)
     }
 }
 
