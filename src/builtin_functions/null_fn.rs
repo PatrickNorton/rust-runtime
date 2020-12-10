@@ -9,7 +9,7 @@ pub fn op_fn(o: Operator) -> NativeCopyMethod<()> {
         Operator::Str => str,
         Operator::Repr => str,
         Operator::Bool => bool,
-        _ => unimplemented!(),
+        x => unimplemented!("null.{}", x.name()),
     }
 }
 

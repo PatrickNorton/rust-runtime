@@ -19,7 +19,7 @@ pub fn op_fn(o: Operator) -> NativeMethod<RationalVar> {
         Operator::GreaterEqual => greater_equal,
         Operator::Str => to_str,
         Operator::Int => to_int,
-        _ => unimplemented!(),
+        x => unimplemented!("dec.{}", x.name()),
     }
 }
 

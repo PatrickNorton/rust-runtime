@@ -8,7 +8,7 @@ pub fn op_fn(o: Operator) -> NativeCopyMethod<char> {
         Operator::Equals => eq,
         Operator::Str => str,
         Operator::Repr => str,
-        _ => unimplemented!(),
+        x => unimplemented!("Char.x", x.name()),
     }
 }
 

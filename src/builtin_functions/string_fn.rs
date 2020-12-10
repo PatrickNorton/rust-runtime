@@ -57,7 +57,7 @@ pub fn get_attr(this: StringVar, s: StringVar) -> Variable {
         "chars" => return chars(&this),
         "encode" => encode,
         "asInt" => as_int,
-        _ => unimplemented!(),
+        x => unimplemented!("str.{}", x),
     };
     Variable::Method(StdMethod::new_native(this, func))
 }
@@ -65,7 +65,7 @@ pub fn get_attr(this: StringVar, s: StringVar) -> Variable {
 pub fn static_attr(s: StringVar) -> Variable {
     let func = match s.as_str() {
         "fromChars" => from_chars,
-        _ => unimplemented!(),
+        x => unimplemented!("str.{}", x),
     };
     Variable::Function(Function::Native(func))
 }
