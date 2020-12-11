@@ -103,6 +103,21 @@ impl ToPrimitive for IntVar {
     to_prim_impl!(to_isize, isize);
 }
 
+macro_rules! impl_try {
+    ($typ:ty) => {
+        impl TryFrom<IntVar> for $typ {
+            type Error = IntVar;
+
+            fn try_from(x: IntVar) -> Result<Self, Self::Error> {
+                match x {
+                    IntVar::Small(i) => i.try_into().map_err(|_| IntVar::Small(i)),
+                    IntVar::Big(b) => b.as_ref().try_into().map_err(|_| IntVar::Big(b)),
+                }
+            }
+        }
+    };
+}
+
 macro_rules! impl_from {
     ($typ:ty) => {
         impl From<$typ> for IntVar {
@@ -127,6 +142,19 @@ impl_from!(i64);
 impl_from!(u128);
 impl_from!(i128);
 impl_from!(usize);
+
+impl_try!(u8);
+impl_try!(i8);
+impl_try!(u16);
+impl_try!(i16);
+impl_try!(u32);
+impl_try!(i32);
+impl_try!(u64);
+impl_try!(i64);
+impl_try!(u128);
+impl_try!(i128);
+impl_try!(usize);
+impl_try!(isize);
 
 impl PartialEq for IntVar {
     fn eq(&self, other: &Self) -> bool {
