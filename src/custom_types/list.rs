@@ -95,15 +95,16 @@ impl List {
 
     fn list_index(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
-        match self.normalise_index(take(&mut args[0]).into()) {
-            Result::Ok(index) => runtime.return_1(self.value.borrow()[index].clone()),
+        let val = self.value.borrow();
+        match normalize(val.len(), take(&mut args[0]).into()) {
+            Result::Ok(index) => runtime.return_1(val[index].clone()),
             Result::Err(index) => self.index_error(index, runtime),
         }
     }
 
     fn set_index(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
-        match self.normalise_index(take(&mut args[0]).into()) {
+        match normalize(self.value.borrow().len(), take(&mut args[0]).into()) {
             Result::Ok(index) => {
                 if args[1].get_type().is_subclass(&self.generic) {
                     self.value.borrow_mut()[index] = take(&mut args[1]);
@@ -117,15 +118,16 @@ impl List {
     }
 
     fn list_get(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        let val = self.value.borrow();
         if args.len() == 1 {
-            runtime.return_1(match self.normalise_index(take(&mut args[0]).into()) {
-                Result::Ok(index) => Option::Some(self.value.borrow()[index].clone()).into(),
+            runtime.return_1(match normalize(val.len(), take(&mut args[0]).into()) {
+                Result::Ok(index) => Option::Some(val[index].clone()).into(),
                 Result::Err(_) => Option::None.into(),
             })
         } else {
             debug_assert_eq!(args.len(), 2);
-            runtime.return_1(match self.normalise_index(take(&mut args[0]).into()) {
-                Result::Ok(index) => self.value.borrow()[index].clone(),
+            runtime.return_1(match normalize(val.len(), take(&mut args[0]).into()) {
+                Result::Ok(index) => val[index].clone(),
                 Result::Err(_) => take(&mut args[1]),
             })
         }
@@ -147,8 +149,9 @@ impl List {
 
     fn swap(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
-        match self.normalise_index(take(&mut args[0]).into()) {
-            Result::Ok(i1) => match self.normalise_index(take(&mut args[1]).into()) {
+        let len = self.value.borrow().len();
+        match normalize(len, take(&mut args[0]).into()) {
+            Result::Ok(i1) => match normalize(len, take(&mut args[1]).into()) {
                 Result::Ok(i2) => {
                     self.value.borrow_mut().swap(i1, i2);
                     runtime.return_0()
@@ -157,11 +160,6 @@ impl List {
             },
             Result::Err(i1) => self.index_error(i1, runtime),
         }
-    }
-
-    fn normalise_index(&self, signed_index: IntVar) -> Result<usize, IntVar> {
-        let len = self.value.borrow().len();
-        normalize(len, signed_index)
     }
 
     fn index_error(&self, index: IntVar, runtime: &mut Runtime) -> FnResult {
@@ -420,7 +418,7 @@ impl List {
             value.push(take(&mut args[1]));
             runtime.return_0()
         } else {
-            match self.normalise_index(index) {
+            match normalize(value.len(), index) {
                 Result::Ok(i) => {
                     value.insert(i, take(&mut args[1]));
                     runtime.return_0()
