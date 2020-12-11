@@ -29,20 +29,17 @@ impl IntVar {
 
 pub fn normalize(len: usize, signed_index: IntVar) -> Result<usize, IntVar> {
     let index = if signed_index.is_negative() {
-        &signed_index + &len.into()
+        signed_index + len.into()
     } else {
-        signed_index.clone()
+        signed_index
     };
-    index
-        .to_usize()
-        .and_then(|a| {
-            if a < len {
-                Option::Some(a)
-            } else {
-                Option::None
-            }
-        })
-        .ok_or(signed_index)
+    usize::try_from(index).and_then(|a| {
+        if a < len {
+            Result::Ok(a)
+        } else {
+            Result::Err(a.into())
+        }
+    })
 }
 
 impl From<BigInt> for IntVar {
