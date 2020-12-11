@@ -387,10 +387,11 @@ impl Pow<Self> for IntVar {
     type Output = Self;
 
     fn pow(self, rhs: Self) -> Self::Output {
-        if self.is_negative() {
-            panic!("Cannot 'pow' with negative number");
-        }
-        Pow::pow(BigInt::from(self), BigUint::try_from(rhs).unwrap()).into()
+        Pow::pow(
+            BigInt::from(self),
+            BigUint::try_from(rhs).expect("Cannot 'pow' with negative number"),
+        )
+        .into()
     }
 }
 
