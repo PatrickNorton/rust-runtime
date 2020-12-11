@@ -1,8 +1,10 @@
 use num::bigint::{ToBigInt, ToBigUint, TryFromBigIntError};
 use num::traits::{abs, FromPrimitive, Num, One, Pow, Signed};
 use num::{BigInt, BigUint, ToPrimitive, Zero};
+use std::cmp::Ordering;
 use std::convert::{TryFrom, TryInto};
 use std::fmt::{Display, Formatter};
+use std::hash::{Hash, Hasher};
 use std::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,
     Mul, MulAssign, Neg, Not, Rem, RemAssign, Shl, Shr, Sub, SubAssign,
@@ -10,7 +12,7 @@ use std::ops::{
 use std::rc::Rc;
 use std::str::FromStr;
 
-#[derive(Clone, Debug, Hash, Ord, PartialOrd, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub enum IntVar {
     Small(isize),
     Big(Rc<BigInt>),
@@ -126,6 +128,53 @@ impl_from!(u128);
 impl_from!(i128);
 impl_from!(usize);
 
+impl PartialEq for IntVar {
+    fn eq(&self, other: &Self) -> bool {
+        match self {
+            IntVar::Small(a) => match other {
+                IntVar::Small(b) => *a == *b,
+                IntVar::Big(b) => *b.as_ref() == (*a).into(),
+            },
+            IntVar::Big(a) => match other {
+                IntVar::Small(b) => *a.as_ref() == (*b).into(),
+                IntVar::Big(b) => *a.as_ref() == *b.as_ref(),
+            },
+        }
+    }
+}
+
+impl Eq for IntVar {}
+
+impl Hash for IntVar {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            IntVar::Small(i) => BigInt::from(*i).hash(state),
+            IntVar::Big(b) => b.as_ref().hash(state),
+        }
+    }
+}
+
+impl PartialOrd for IntVar {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for IntVar {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match self {
+            IntVar::Small(a) => match other {
+                IntVar::Small(b) => a.cmp(b),
+                IntVar::Big(b) => b.as_ref().cmp(&(*a).into()),
+            },
+            IntVar::Big(a) => match other {
+                IntVar::Small(b) => a.as_ref().cmp(&(*b).into()),
+                IntVar::Big(b) => a.as_ref().cmp(b.as_ref()),
+            },
+        }
+    }
+}
+
 impl From<isize> for IntVar {
     fn from(x: isize) -> Self {
         IntVar::Small(x)
@@ -220,6 +269,13 @@ impl Zero for IntVar {
 impl One for IntVar {
     fn one() -> Self {
         IntVar::Small(1)
+    }
+
+    fn is_one(&self) -> bool {
+        match self {
+            IntVar::Small(s) => s.is_one(),
+            IntVar::Big(b) => b.is_one(),
+        }
     }
 }
 
