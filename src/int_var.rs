@@ -137,7 +137,7 @@ impl From<IntVar> for BigInt {
     fn from(x: IntVar) -> Self {
         match x {
             IntVar::Small(i) => i.into(),
-            IntVar::Big(b) => (*b).clone(),
+            IntVar::Big(b) => Rc::try_unwrap(b).unwrap_or_else(|x| (*x).clone()),
         }
     }
 }
