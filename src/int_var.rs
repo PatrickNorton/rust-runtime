@@ -387,11 +387,33 @@ impl Shl<usize> for IntVar {
     }
 }
 
+impl Shl<usize> for &IntVar {
+    type Output = IntVar;
+
+    fn shl(self, rhs: usize) -> Self::Output {
+        match self {
+            IntVar::Small(i) => (BigInt::from(*i) << rhs).into(),
+            IntVar::Big(b) => (b.as_ref() << rhs).into(),
+        }
+    }
+}
+
 impl Shr<usize> for IntVar {
     type Output = Self;
 
     fn shr(self, rhs: usize) -> Self::Output {
         (BigInt::from(self) >> rhs).into()
+    }
+}
+
+impl Shr<usize> for &IntVar {
+    type Output = IntVar;
+
+    fn shr(self, rhs: usize) -> Self::Output {
+        match self {
+            IntVar::Small(i) => (BigInt::from(*i) >> rhs).into(),
+            IntVar::Big(b) => (b.as_ref() >> rhs).into(),
+        }
     }
 }
 

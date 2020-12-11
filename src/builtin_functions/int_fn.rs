@@ -192,7 +192,7 @@ fn left_bs(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResul
             };
             return runtime.throw_quick(arithmetic_error(), msg.into());
         }
-        Option::Some(b) => this.clone() << b,
+        Option::Some(b) => this << b,
     };
     runtime.return_1(Variable::Bigint(result))
 }
@@ -213,7 +213,7 @@ fn right_bs(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
             };
             return runtime.throw_quick(arithmetic_error(), msg.into());
         }
-        Option::Some(b) => this.clone() >> b,
+        Option::Some(b) => this >> b,
     };
     runtime.return_1(Variable::Bigint(result))
 }
