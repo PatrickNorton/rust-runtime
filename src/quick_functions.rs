@@ -518,7 +518,7 @@ pub fn quick_equals(this: Variable, other: Variable, runtime: &mut Runtime) -> Q
             QuickResult::Ok(runtime.pop_return())
         }
         Variable::Custom(c) => {
-            (*c).clone()
+            c.into_inner()
                 .call_op(Operator::Equals, vec![other], runtime)?;
             QuickResult::Ok(runtime.pop_return())
         }

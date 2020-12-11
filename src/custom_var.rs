@@ -88,6 +88,10 @@ impl CustomVarWrapper {
     pub fn new(value: Rc<dyn CustomVar>) -> CustomVarWrapper {
         CustomVarWrapper { value }
     }
+
+    pub fn into_inner(self) -> Rc<dyn CustomVar> {
+        self.value
+    }
 }
 
 impl Deref for CustomVarWrapper {
@@ -135,7 +139,7 @@ where
     T: 'static + CustomVar,
 {
     if let Variable::Custom(wrapper) = var {
-        (*wrapper).clone().downcast_rc::<T>().ok()
+        wrapper.into_inner().downcast_rc::<T>().ok()
     } else {
         Option::None
     }

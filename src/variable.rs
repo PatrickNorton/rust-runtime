@@ -204,7 +204,7 @@ impl Variable {
                 }
             }
             Variable::Type(t) => t.index(index, runtime),
-            Variable::Custom(val) => (*val).clone().get_attr(index),
+            Variable::Custom(val) => val.into_inner().get_attr(index),
             Variable::Union(val) => val.index(index, runtime)?,
             Variable::Option(opt) => opt.index(index),
             x => unimplemented!(
@@ -350,7 +350,7 @@ impl Variable {
             Variable::Function(_) => self
                 .index(Name::Operator(name), runtime)?
                 .call((args, runtime)),
-            Variable::Custom(c) => (*c).clone().call_op(name, args, runtime),
+            Variable::Custom(c) => c.into_inner().call_op(name, args, runtime),
             Variable::Union(u) => u.call_operator(name, args, runtime),
             Variable::Option(o) => o.call_op(name, args, runtime),
         }
@@ -370,7 +370,7 @@ impl Variable {
             Variable::Function(_) => self
                 .index(Name::Operator(name), runtime)?
                 .call_or_goto((args, runtime)),
-            Variable::Custom(c) => (*c).clone().call_op_or_goto(name, args, runtime),
+            Variable::Custom(c) => c.into_inner().call_op_or_goto(name, args, runtime),
             _ => self.call_op(name, args, runtime),
         }
     }
@@ -594,7 +594,7 @@ impl From<Variable> for char {
 impl From<Variable> for looping::Iterator {
     fn from(var: Variable) -> Self {
         match var {
-            Variable::Custom(var) => (*var).clone().into_iter(),
+            Variable::Custom(var) => var.into_inner().into_iter(),
             Variable::Standard(var) => looping::Iterator::NonNative(var),
             _ => unimplemented!(),
         }
