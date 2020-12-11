@@ -1,4 +1,4 @@
-use num::bigint::{ToBigInt, ToBigUint};
+use num::bigint::{ToBigInt, ToBigUint, TryFromBigIntError};
 use num::traits::{abs, FromPrimitive, Num, One, Pow, Signed};
 use num::{BigInt, BigUint, ToPrimitive, Zero};
 use std::convert::{TryFrom, TryInto};
@@ -141,6 +141,22 @@ impl From<IntVar> for BigInt {
     }
 }
 
+impl TryFrom<IntVar> for BigUint {
+    type Error = IntVar;
+
+    fn try_from(x: IntVar) -> Result<Self, Self::Error> {
+        match x {
+            IntVar::Small(i) => i.try_into().map_err(|_| IntVar::Small(i)),
+            IntVar::Big(b) => match Rc::try_unwrap(b) {
+                Result::Ok(x) => BigUint::try_from(x)
+                    .map_err(TryFromBigIntError::into_original)
+                    .map_err(Into::into),
+                Result::Err(e) => e.to_biguint().ok_or_else(|| e.into()),
+            },
+        }
+    }
+}
+
 impl FromStr for IntVar {
     type Err = ();
 
@@ -165,7 +181,7 @@ impl ToBigInt for IntVar {
 
 impl ToBigUint for IntVar {
     fn to_biguint(&self) -> Option<BigUint> {
-        self.to_bigint()?.to_biguint()
+        self.to_bigint()?.try_into().ok()
     }
 }
 
@@ -374,7 +390,7 @@ impl Pow<Self> for IntVar {
         if self.is_negative() {
             panic!("Cannot 'pow' with negative number");
         }
-        BigInt::from(self).pow(rhs.to_biguint().unwrap()).into()
+        Pow::pow(BigInt::from(self), BigUint::try_from(rhs).unwrap()).into()
     }
 }
 
