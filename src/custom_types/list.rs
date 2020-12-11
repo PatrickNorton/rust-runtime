@@ -378,9 +378,10 @@ impl List {
         }
         let range_start = range.get_start().to_usize().unwrap();
         let range_end = range.get_stop().to_usize().unwrap_or(usize::MAX);
+        let len = self.len();
         self.value
             .borrow_mut()
-            .drain(range_start..min(range_end, self.len()));
+            .drain(range_start..min(range_end, len));
 
         runtime.return_0()
     }
