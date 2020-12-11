@@ -426,11 +426,11 @@ macro_rules! impl_bit {
                 match self {
                     IntVar::Small(s1) => match rhs {
                         IntVar::Small(s2) => s1.$fn_name(s2).into(),
-                        IntVar::Big(b2) => (*b2).clone().$fn_name(&s1.into()).into(),
+                        IntVar::Big(b2) => b2.as_ref().$fn_name(&s1.into()).into(),
                     },
                     IntVar::Big(b1) => match rhs {
-                        IntVar::Small(s2) => (*b1).clone().$fn_name(&s2.into()).into(),
-                        IntVar::Big(b2) => (*b1).clone().$fn_name(&*b2).into(),
+                        IntVar::Small(s2) => b1.as_ref().$fn_name(&s2.into()).into(),
+                        IntVar::Big(b2) => b1.as_ref().$fn_name(&*b2).into(),
                     },
                 }
             }
@@ -443,11 +443,11 @@ macro_rules! impl_bit {
                 match self {
                     IntVar::Small(s1) => match rhs {
                         IntVar::Small(s2) => s1.$fn_name(s2).into(),
-                        IntVar::Big(b2) => (b2.as_ref()).clone().$fn_name(&(*s1).into()).into(),
+                        IntVar::Big(b2) => b2.as_ref().$fn_name(&(*s1).into()).into(),
                     },
                     IntVar::Big(b1) => match rhs {
-                        IntVar::Small(s2) => (b1.as_ref()).$fn_name(&(*s2).into()).into(),
-                        IntVar::Big(b2) => (b1.as_ref()).$fn_name(b2.as_ref()).into(),
+                        IntVar::Small(s2) => b1.as_ref().$fn_name(&(*s2).into()).into(),
+                        IntVar::Big(b2) => b1.as_ref().$fn_name(b2.as_ref()).into(),
                     },
                 }
             }
