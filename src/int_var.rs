@@ -375,10 +375,7 @@ impl Pow<Self> for IntVar {
         if self.is_negative() {
             panic!("Cannot 'pow' with negative number");
         }
-        self.to_bigint()
-            .unwrap()
-            .pow(rhs.to_biguint().unwrap())
-            .into()
+        BigInt::from(self).pow(rhs.to_biguint().unwrap()).into()
     }
 }
 
@@ -386,7 +383,7 @@ impl Shl<usize> for IntVar {
     type Output = Self;
 
     fn shl(self, rhs: usize) -> Self::Output {
-        (self.to_bigint().unwrap() << rhs).into()
+        (BigInt::from(self) << rhs).into()
     }
 }
 
@@ -394,7 +391,7 @@ impl Shr<usize> for IntVar {
     type Output = Self;
 
     fn shr(self, rhs: usize) -> Self::Output {
-        (self.to_bigint().unwrap() >> rhs).into()
+        (BigInt::from(self) >> rhs).into()
     }
 }
 
