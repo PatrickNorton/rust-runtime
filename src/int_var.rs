@@ -1,7 +1,6 @@
 use num::bigint::{ToBigInt, ToBigUint};
-use num::traits::{abs, FromPrimitive, Num, One, Signed};
+use num::traits::{abs, FromPrimitive, Num, One, Pow, Signed};
 use num::{BigInt, BigUint, ToPrimitive, Zero};
-use num_traits::Pow;
 use std::convert::{TryFrom, TryInto};
 use std::fmt::{Display, Formatter};
 use std::ops::{
