@@ -12,10 +12,8 @@ pub struct LangTuple {
 }
 
 impl LangTuple {
-    pub fn new(args: Vec<Variable>) -> Self {
-        LangTuple {
-            values: args.into(),
-        }
+    pub fn new(args: Rc<[Variable]>) -> Self {
+        LangTuple { values: args }
     }
 
     pub fn str(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {

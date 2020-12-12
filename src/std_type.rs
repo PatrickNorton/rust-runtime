@@ -122,7 +122,7 @@ impl Type {
             Type::String => Variable::String(take(&mut args[0]).str(runtime)?),
             Type::Char => unimplemented!(),
             Type::Decimal => unimplemented!(),
-            Type::Tuple => Variable::Tuple(LangTuple::new(args)),
+            Type::Tuple => Variable::Tuple(LangTuple::new(args.into())),
             Type::Type => Variable::Type(args[0].get_type()),
             Type::Object => unimplemented!(),
             Type::Custom(t) => t.create(args, runtime)?,

@@ -43,7 +43,7 @@ impl Enumerate {
         if let Option::Some(val) = self.iterable.next(runtime)? {
             let i = self.i.borrow_mut();
             let index = IntVar::from(i.clone()).into();
-            let var = LangTuple::new(vec![index, val]).into();
+            let var = LangTuple::new(Rc::from(vec![index, val])).into();
             Result::Ok(Option::Some(var))
         } else {
             Result::Ok(Option::None)
