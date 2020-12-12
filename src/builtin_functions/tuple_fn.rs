@@ -11,7 +11,7 @@ pub fn op_fn(o: Operator) -> NativeMethod<LangTuple> {
         Operator::Bool => bool,
         Operator::Str => str,
         Operator::Repr => repr,
-        _ => unimplemented!("Operator {:?} unimplemented", o),
+        _ => unimplemented!("tuple.{} unimplemented", o.name()),
     }
 }
 
@@ -26,7 +26,7 @@ pub fn get_attr(this: LangTuple, s: StringVar) -> Variable {
     }
     match s.as_str().parse() {
         Result::Ok(x) => this[x].clone(),
-        Result::Err(_) => unimplemented!(),
+        Result::Err(_) => unimplemented!("tuple.{}", s),
     }
 }
 

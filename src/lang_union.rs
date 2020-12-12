@@ -270,11 +270,11 @@ mod default_functions {
                 Operator::Equals => default_eq,
                 Operator::Bool => default_bool,
                 Operator::In => default_in,
-                _ => unimplemented!("name {:?} not found", name),
+                _ => unimplemented!("name {} not found", o.name()),
             };
             UnionMethod::Native(result)
         } else {
-            panic!("name {:?} not found", name)
+            panic!("name {} not found", name.as_str())
         }
     }
 

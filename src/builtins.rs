@@ -131,11 +131,11 @@ pub fn default_methods(name: Name) -> StdVarMethod {
             Operator::Equals => default_eq,
             Operator::Bool => default_bool,
             Operator::In => default_in,
-            _ => unimplemented!("name {:?} not found", name),
+            _ => unimplemented!("name {} not found", name.as_str()),
         };
         StdVarMethod::Native(result)
     } else {
-        panic!("name {:?} not found", name)
+        panic!("name {} not found", name.as_str())
     }
 }
 
