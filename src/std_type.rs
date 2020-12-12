@@ -209,8 +209,12 @@ impl Type {
     }
 
     pub fn make_option(self) -> Self {
+        self.make_option_n(1)
+    }
+
+    pub fn make_option_n(self, n: usize) -> Self {
         Type::Option(
-            1,
+            n,
             match self {
                 Type::Standard(s) => OptionType::Standard(s),
                 Type::Null => OptionType::Null,
@@ -224,7 +228,7 @@ impl Type {
                 Type::Object => OptionType::Object,
                 Type::Custom(c) => OptionType::Custom(c),
                 Type::Union(u) => OptionType::Union(u),
-                Type::Option(i, o) => return Type::Option(i + 1, o),
+                Type::Option(i, o) => return Type::Option(i + n, o),
             },
         )
     }

@@ -111,6 +111,14 @@ impl LangOption {
         self.value.map(Variable::from)
     }
 
+    pub fn get_type(&self) -> Type {
+        self.value
+            .as_ref()
+            .map(|x| x.get_type())
+            .unwrap_or(Type::Object)
+            .make_option_n(self.depth)
+    }
+
     fn to_str(&self, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         let result = match &**self {
