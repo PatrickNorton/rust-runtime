@@ -130,7 +130,7 @@ impl Variable {
             Variable::Type(t) => t.push_create(args),
             Variable::Custom(val) => val.into_inner().call(args.0, args.1),
             Variable::Union(val) => val.call(args),
-            x => unimplemented!("{:?}()\n{}", x, args.1.stack_frames()),
+            x => unimplemented!("{}()\n{}", x.get_type().str(), args.1.stack_frames()),
         }
     }
 
