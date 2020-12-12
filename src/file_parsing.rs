@@ -8,7 +8,6 @@ use crate::file_info::FileInfo;
 use crate::function::Function;
 use crate::int_tools::bytes_index;
 use crate::jump_table::JumpTable;
-use crate::std_type::Type;
 use crate::tuple::LangTuple;
 use crate::variable::Variable;
 use std::collections::HashMap;
@@ -141,7 +140,7 @@ pub fn parse_file(name: String, files: &mut Vec<FileInfo>) -> usize {
                         Variable::Type(t) => Box::leak(Box::new(t)),
                         _ => panic!(),
                     };
-                    Variable::Type(Type::Option(t))
+                    Variable::Type(t.make_option())
                 }
             }),
         }

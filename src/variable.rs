@@ -241,7 +241,11 @@ impl Variable {
             Variable::Function(_) => unimplemented!(),
             Variable::Custom(a) => (**a).clone().get_type(),
             Variable::Union(val) => val.get_type(),
-            Variable::Option(_) => unimplemented!(),
+            Variable::Option(x) => x
+                .as_ref()
+                .map(|x| x.get_type())
+                .unwrap_or(Type::Object)
+                .make_option(),
         }
     }
 

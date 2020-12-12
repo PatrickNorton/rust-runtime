@@ -31,7 +31,23 @@ pub enum Type {
     Object,
     Custom(&'static dyn CustomTypeImpl),
     Union(&'static UnionType),
-    Option(&'static Type),
+    Option(usize, OptionType),
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum OptionType {
+    Standard(&'static StdType),
+    Null,
+    Bool,
+    Bigint,
+    String,
+    Decimal,
+    Char,
+    Tuple,
+    Type,
+    Object,
+    Custom(&'static dyn CustomTypeImpl),
+    Union(&'static UnionType),
 }
 
 #[derive(Debug)]
@@ -127,7 +143,7 @@ impl Type {
             Type::Object => unimplemented!(),
             Type::Custom(t) => t.create(args, runtime)?,
             Type::Union(_) => unimplemented!(),
-            Type::Option(_) => unimplemented!(),
+            Type::Option(_, _) => unimplemented!(),
         })
     }
 
@@ -170,7 +186,7 @@ impl Type {
             Type::Object => "object".into(),
             Type::Custom(t) => t.get_name().clone(),
             Type::Union(u) => u.name().clone(),
-            Type::Option(t) => format!("{}?", t.str()).into(),
+            Type::Option(i, t) => format!("{}{}", Type::from(*t).str(), "?".repeat(*i)).into(),
         }
     }
 
@@ -190,6 +206,27 @@ impl Type {
             Type::Union(u) => *u as *const _ as usize,
             _ => todo!("Unique ids for special types"),
         }
+    }
+
+    pub fn make_option(self) -> Self {
+        Type::Option(
+            1,
+            match self {
+                Type::Standard(s) => OptionType::Standard(s),
+                Type::Null => OptionType::Null,
+                Type::Bool => OptionType::Bool,
+                Type::Bigint => OptionType::Bigint,
+                Type::String => OptionType::String,
+                Type::Decimal => OptionType::Decimal,
+                Type::Char => OptionType::Char,
+                Type::Tuple => OptionType::Tuple,
+                Type::Type => OptionType::Type,
+                Type::Object => OptionType::Object,
+                Type::Custom(c) => OptionType::Custom(c),
+                Type::Union(u) => OptionType::Union(u),
+                Type::Option(i, o) => return Type::Option(i + 1, o),
+            },
+        )
     }
 }
 
@@ -324,7 +361,26 @@ impl Hash for Type {
             Type::Object => 8.hash(state),
             Type::Custom(b) => ptr::hash(*b, state),
             Type::Union(c) => ptr::hash(*c, state),
-            Type::Option(t) => ptr::hash(*t, state),
+            Type::Option(_, t) => ptr::hash(t, state),
+        }
+    }
+}
+
+impl From<OptionType> for Type {
+    fn from(value: OptionType) -> Self {
+        match value {
+            OptionType::Standard(s) => Type::Standard(s),
+            OptionType::Null => Type::Null,
+            OptionType::Bool => Type::Bool,
+            OptionType::Bigint => Type::Bigint,
+            OptionType::String => Type::String,
+            OptionType::Decimal => Type::Decimal,
+            OptionType::Char => Type::Char,
+            OptionType::Tuple => Type::Tuple,
+            OptionType::Type => Type::Type,
+            OptionType::Object => Type::Object,
+            OptionType::Custom(c) => Type::Custom(c),
+            OptionType::Union(u) => Type::Union(u),
         }
     }
 }
