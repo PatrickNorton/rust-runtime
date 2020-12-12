@@ -365,7 +365,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
                         Option::Some(_) => {
                             runtime.push(iterated);
                             runtime.extend(ret.into_iter().map(|x| match x {
-                                Variable::Option(o) => *(o.take().unwrap()),
+                                Variable::Option(o) => o.take().unwrap(),
                                 _ => panic!("Iterators should return an option-wrapped value"),
                             }));
                         }
@@ -447,7 +447,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
                 runtime.call_attr(iterator.clone(), "next".into(), vec![])?;
                 match runtime.pop_return() {
                     Variable::Option(o) => match o.take() {
-                        Option::Some(val) => results.push(*val),
+                        Option::Some(val) => results.push(val),
                         Option::None => {
                             loop_done = true;
                             results.push(Variable::Null());
@@ -536,7 +536,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         Bytecode::UnwrapOption => {
             let tos = runtime.pop();
             if let Variable::Option(o) = tos {
-                runtime.push(*o.take().unwrap_or_else(|| Box::new(Variable::Null())))
+                runtime.push(o.take().unwrap_or_else(Variable::Null))
             } else {
                 panic!("Called Bytecode::UnwrapOption where TOS not an option")
             }

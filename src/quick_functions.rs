@@ -529,9 +529,7 @@ pub fn quick_equals(this: Variable, other: Variable, runtime: &mut Runtime) -> Q
         Variable::Option(o) => {
             if let Variable::Option(o2) = other {
                 match (o.take(), o2.take()) {
-                    (Option::Some(this), Option::Some(other)) => {
-                        quick_equals(*this, *other, runtime)
-                    }
+                    (Option::Some(this), Option::Some(other)) => quick_equals(this, other, runtime),
                     (Option::None, Option::None) => QuickResult::Ok(true.into()),
                     _ => QuickResult::Ok(false.into()),
                 }

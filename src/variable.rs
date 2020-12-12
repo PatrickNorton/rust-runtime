@@ -324,9 +324,10 @@ impl Variable {
                 val.call_operator(Operator::Hash, Vec::new(), runtime)?;
                 Result::Ok(IntVar::from(runtime.pop_return()).to_usize().unwrap())
             }
-            Variable::Option(val) => val
-                .as_ref()
-                .map_or_else(|| Result::Ok(0), |x| (**x).hash(runtime)),
+            Variable::Option(val) => val.as_ref().map_or_else(
+                || Result::Ok(0),
+                |x| Variable::from((*x).clone()).hash(runtime),
+            ),
         }
     }
 
@@ -405,7 +406,7 @@ impl Variable {
             Variable::Function(f) => f.id(),
             Variable::Custom(c) => &**c as *const _ as usize,
             Variable::Union(u) => u.get_value().id(),
-            Variable::Option(o) => o.as_ref().map_or(0, |x| x.id()),
+            Variable::Option(o) => o.as_ref().map_or(0, |x| Variable::from((*x).clone()).id()),
         }
     }
 }
