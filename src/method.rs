@@ -34,7 +34,7 @@ where
         match self {
             InnerMethod::Standard(file, index) => {
                 let var: Variable = (*callee).clone().into();
-                args.insert(0, Variable::Type(var.get_type()));
+                args.insert(0, var.get_type().into());
                 args.insert(0, var);
                 runtime.call_now(0, index as u16, args, file)
             }
@@ -52,7 +52,7 @@ where
         match self {
             InnerMethod::Standard(file, index) => {
                 let var: Variable = (*callee).clone().into();
-                args.insert(0, Variable::Type(var.get_type()));
+                args.insert(0, var.get_type().into());
                 args.insert(0, var);
                 runtime.push_stack(0, index as u16, args, file);
                 FnResult::Ok(())

@@ -70,11 +70,11 @@ impl CustomVar for Generator {
     fn get_attr(self: Rc<Self>, name: Name) -> Variable {
         match name {
             Name::Operator(op) => match op {
-                Operator::Iter => Variable::Method(StdMethod::new_native(self, Self::ret_self)),
+                Operator::Iter => StdMethod::new_native(self, Self::ret_self).into(),
                 _ => unimplemented!("Generator.{}", name),
             },
             Name::Attribute(attr) => match attr.as_str() {
-                "next" => Variable::Method(StdMethod::new_native(self, Self::next_fn)),
+                "next" => StdMethod::new_native(self, Self::next_fn).into(),
                 _ => unimplemented!("Generator.{}", attr),
             },
         }
@@ -94,7 +94,11 @@ impl NativeIterator for Generator {
         runtime.add_generator(self)?;
         match executor::execute(runtime) {
             FnResult::Ok(_) => match runtime.pop_return() {
-                Variable::Option(o) => IterResult::Ok(o.into()),
+                Variable::Option(i, val) => IterResult::Ok(if i == 1 {
+                    val.map(Variable::from)
+                } else {
+                    Option::Some(Variable::Option(i - 1, val))
+                }),
                 _ => panic!("Expected option to be returned from generator"),
             },
             FnResult::Err(_) => IterResult::Err(()),

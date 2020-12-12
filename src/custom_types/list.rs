@@ -14,7 +14,7 @@ use crate::variable::{FnResult, Variable};
 use num::{One, ToPrimitive};
 use std::cell::{Cell, RefCell};
 use std::cmp::min;
-use std::mem::{replace, take};
+use std::mem::take;
 use std::rc::Rc;
 
 #[derive(Debug)]
@@ -51,12 +51,12 @@ impl List {
             Operator::IterSlice => List::iter_slice,
             _ => unimplemented!("List.{}", name.name()),
         };
-        Variable::Method(Box::new(StdMethod::new(self, InnerMethod::Native(value))))
+        Box::new(StdMethod::new(self, InnerMethod::Native(value))).into()
     }
 
     fn get_attribute(self: Rc<Self>, name: StringVar) -> Variable {
         let value = match name.as_str() {
-            "length" => return Variable::Bigint(self.len().into()),
+            "length" => return IntVar::from(self.len()).into(),
             "containsAll" => Self::contains_all,
             "get" => Self::list_get,
             "reverse" => Self::reverse,
@@ -71,12 +71,12 @@ impl List {
             "swap" => Self::swap,
             x => unimplemented!("List.{}", x),
         };
-        Variable::Method(StdMethod::new_native(self, value))
+        StdMethod::new_native(self, value).into()
     }
 
     fn list_bool(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        runtime.return_1(Variable::Bool(!self.value.borrow().is_empty()))
+        runtime.return_1((!self.value.borrow().is_empty()).into())
     }
 
     fn list_str(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -179,7 +179,7 @@ impl List {
     }
 
     fn contains_all(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        let checked_var = replace(&mut args[0], Variable::Null());
+        let checked_var = take(&mut args[0]);
         let this_iter = checked_var.iter(runtime)?;
         while let Option::Some(val) = this_iter.next(runtime)? {
             if !self.value.borrow().contains(&val) {

@@ -48,7 +48,7 @@ impl Array {
             Operator::IterSlice => Self::iter_slice,
             _ => unimplemented!("Array.{}", name.name()),
         };
-        Variable::Method(StdMethod::new_native(self, func))
+        StdMethod::new_native(self, func).into()
     }
 
     fn index(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

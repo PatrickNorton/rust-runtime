@@ -5,7 +5,6 @@ use crate::looping;
 use crate::method::{InnerMethod, StdMethod};
 use crate::name::Name;
 use crate::operator::Operator;
-use crate::option::LangOption;
 use crate::property::Property;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
@@ -110,9 +109,9 @@ impl LangUnion {
         match self.cls.variant_pos(&index) {
             Option::Some(true_val) => Result::Ok(
                 if self.is_variant(true_val) {
-                    LangOption::new(Option::Some((*self.value).clone()))
+                    Option::Some((*self.value).clone())
                 } else {
-                    LangOption::new(Option::None)
+                    Option::None
                 }
                 .into(),
             ),
@@ -152,10 +151,7 @@ impl LangUnion {
             }
             Option::None => {
                 let inner_method = self.cls.get_method(index);
-                Result::Ok(Variable::Method(Box::new(StdMethod::new(
-                    self.clone(),
-                    inner_method,
-                ))))
+                Result::Ok(Box::new(StdMethod::new(self.clone(), inner_method)).into())
             }
         }
     }
@@ -203,7 +199,7 @@ impl UnionType {
                 InnerMethod::Standard(a, b) => {
                     let inner_m = InnerMethod::Standard(*a, *b);
                     let n = StdMethod::new(Type::Union(self), inner_m);
-                    Variable::Method(Box::new(n))
+                    Box::new(n).into()
                 }
                 _ => unimplemented!(),
             }
@@ -259,8 +255,9 @@ mod default_functions {
     use crate::name::Name;
     use crate::operator::Operator;
     use crate::runtime::Runtime;
+    use crate::string_var::StringVar;
     use crate::variable::{FnResult, Variable};
-    use std::mem::replace;
+    use std::mem::take;
 
     pub fn default_methods(name: Name) -> UnionMethod {
         if let Name::Operator(o) = name {
@@ -286,31 +283,31 @@ mod default_functions {
             this.variant_name(),
             this.value.clone().repr(runtime)?
         );
-        runtime.return_1(Variable::String(result.into()))
+        runtime.return_1(StringVar::from(result).into())
     }
 
     fn default_str(this: &LangUnion, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        runtime.call_op(Variable::Union(this.clone()), Operator::Repr, args)
+        runtime.call_op(this.clone().into(), Operator::Repr, args)
     }
 
     fn default_bool(_this: &LangUnion, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        runtime.return_1(Variable::Bool(true))
+        runtime.return_1(true.into())
     }
 
     fn default_eq(this: &LangUnion, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        let this_var = Variable::Union(this.clone());
+        let this_var = Variable::from(this.clone());
         for arg in args {
             if this_var != arg {
-                return runtime.return_1(Variable::Bool(false));
+                return runtime.return_1(false.into());
             }
         }
-        runtime.return_1(Variable::Bool(true))
+        runtime.return_1(true.into())
     }
 
     fn default_in(this: &LangUnion, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        let checked_var = replace(&mut args[0], Variable::Null());
+        let checked_var = take(&mut args[0]);
         let this_iter = this.iter(runtime)?;
         while let Option::Some(val) = this_iter.clone().next(runtime)? {
             if checked_var.equals(val, runtime)? {

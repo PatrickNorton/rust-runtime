@@ -1,13 +1,13 @@
 use crate::custom_types::exceptions::{arithmetic_error, value_error};
 use crate::int_var::IntVar;
-use crate::method::{InnerMethod, NativeMethod, StdMethod};
+use crate::method::{NativeMethod, StdMethod};
 use crate::operator::Operator;
 use crate::rational_var::RationalVar;
 use crate::runtime::Runtime;
+use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use num::traits::Pow;
 use num::{Signed, ToPrimitive, Zero};
-use std::boxed::Box;
 use std::mem::take;
 use std::ops::Neg;
 use std::vec::Vec;
@@ -42,7 +42,7 @@ pub fn op_fn(o: Operator) -> NativeMethod<IntVar> {
 
 pub fn get_operator(this: IntVar, o: Operator) -> Variable {
     let func = op_fn(o);
-    Variable::Method(Box::new(StdMethod::new(this, InnerMethod::Native(func))))
+    StdMethod::new_native(this, func).into()
 }
 
 fn add(this: &IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -53,7 +53,7 @@ fn add(this: &IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResul
     for arg in args {
         sum += IntVar::from(arg)
     }
-    runtime.return_1(Variable::Bigint(sum))
+    runtime.return_1(sum.into())
 }
 
 fn sub(this: &IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -64,12 +64,12 @@ fn sub(this: &IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResul
     for arg in args {
         diff -= IntVar::from(arg)
     }
-    runtime.return_1(Variable::Bigint(diff))
+    runtime.return_1(diff.into())
 }
 
 fn u_minus(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.return_1(Variable::Bigint(this.neg()))
+    runtime.return_1(this.neg().into())
 }
 
 fn mul(this: &IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -80,7 +80,7 @@ fn mul(this: &IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResul
     for arg in args {
         prod *= IntVar::from(arg)
     }
-    runtime.return_1(Variable::Bigint(prod))
+    runtime.return_1(prod.into())
 }
 
 fn floor_div(this: &IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -99,7 +99,7 @@ fn floor_div(this: &IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> F
         }
         ratio /= var;
     }
-    runtime.return_1(Variable::Bigint(ratio))
+    runtime.return_1(ratio.into())
 }
 
 fn div(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -111,14 +111,14 @@ fn div(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         }
         ratio /= RationalVar::from_integer(var.into())
     }
-    runtime.return_1(Variable::Decimal(ratio))
+    runtime.return_1(ratio.into())
 }
 
 fn pow(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.len() == 1);
     let arg_int = IntVar::from(args[0].clone());
     let result = this.clone().pow(arg_int);
-    runtime.return_1(Variable::Bigint(result))
+    runtime.return_1(result.into())
 }
 
 fn modulo(this: &IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -127,53 +127,53 @@ fn modulo(this: &IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnRe
     if arg_int.is_zero() {
         runtime.throw_quick(value_error(), "Cannot modulo by 0".into())
     } else {
-        runtime.return_1(Variable::Bigint(this % &arg_int))
+        runtime.return_1((this % &arg_int).into())
     }
 }
 
 fn eq(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
         if IntVar::from(arg) != *this {
-            return runtime.return_1(Variable::Bool(false));
+            return runtime.return_1(false.into());
         }
     }
-    runtime.return_1(Variable::Bool(true))
+    runtime.return_1(true.into())
 }
 
 fn less_than(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
         if *this >= IntVar::from(arg) {
-            return runtime.return_1(Variable::Bool(false));
+            return runtime.return_1(false.into());
         }
     }
-    runtime.return_1(Variable::Bool(true))
+    runtime.return_1(true.into())
 }
 
 fn greater_than(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
         if *this <= IntVar::from(arg) {
-            return runtime.return_1(Variable::Bool(false));
+            return runtime.return_1(false.into());
         }
     }
-    runtime.return_1(Variable::Bool(true))
+    runtime.return_1(true.into())
 }
 
 fn less_equal(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
         if *this > IntVar::from(arg) {
-            return runtime.return_1(Variable::Bool(false));
+            return runtime.return_1(false.into());
         }
     }
-    runtime.return_1(Variable::Bool(true))
+    runtime.return_1(true.into())
 }
 
 fn greater_equal(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
         if *this < IntVar::from(arg) {
-            return runtime.return_1(Variable::Bool(false));
+            return runtime.return_1(false.into());
         }
     }
-    runtime.return_1(Variable::Bool(true))
+    runtime.return_1(true.into())
 }
 
 fn left_bs(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -194,7 +194,7 @@ fn left_bs(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResul
         }
         Option::Some(b) => this << b,
     };
-    runtime.return_1(Variable::Bigint(result))
+    runtime.return_1(result.into())
 }
 
 fn right_bs(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -215,7 +215,7 @@ fn right_bs(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
         }
         Option::Some(b) => this >> b,
     };
-    runtime.return_1(Variable::Bigint(result))
+    runtime.return_1(result.into())
 }
 
 fn bitwise_and(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -223,7 +223,7 @@ fn bitwise_and(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnR
     for arg in args {
         sum &= IntVar::from(arg)
     }
-    runtime.return_1(Variable::Bigint(sum))
+    runtime.return_1(sum.into())
 }
 
 fn bitwise_or(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -231,12 +231,12 @@ fn bitwise_or(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnRe
     for arg in args {
         sum |= IntVar::from(arg)
     }
-    runtime.return_1(Variable::Bigint(sum))
+    runtime.return_1(sum.into())
 }
 
 fn bitwise_not(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.return_1(Variable::Bigint(!this.clone()))
+    runtime.return_1((!this.clone()).into())
 }
 
 fn bitwise_xor(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -244,15 +244,15 @@ fn bitwise_xor(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnR
     for arg in args {
         sum ^= IntVar::from(arg)
     }
-    runtime.return_1(Variable::Bigint(sum))
+    runtime.return_1(sum.into())
 }
 
 fn to_str(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.return_1(Variable::String(this.to_string().into()))
+    runtime.return_1(StringVar::from(this.to_string()).into())
 }
 
 fn to_int(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.return_1(Variable::Bigint(this.clone()))
+    runtime.return_1(this.clone().into())
 }

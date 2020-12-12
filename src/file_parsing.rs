@@ -9,7 +9,7 @@ use crate::function::Function;
 use crate::int_tools::bytes_index;
 use crate::jump_table::JumpTable;
 use crate::tuple::LangTuple;
-use crate::variable::Variable;
+use crate::variable::{InnerVar, Variable};
 use std::collections::HashMap;
 use std::fs::read;
 use std::path::Path;
@@ -34,7 +34,7 @@ enum LoadType {
 fn load_constant(data: &[u8], index: &mut usize, imports: &[Variable]) -> Constant {
     *index += 1;
     match data[*index - 1] {
-        0 => Variable::Null().into(),
+        0 => Variable::default().into(),
         1 => load_str(data, index).into(),
         2 => load_int(data, index).into(),
         3 => load_bigint(data, index).into(),
@@ -126,7 +126,7 @@ pub fn parse_file(name: String, files: &mut Vec<FileInfo>) -> usize {
         match c {
             Constant::Current(x) => new_constants.push(x),
             Constant::Later(x) => new_constants.push(match x {
-                LoadType::Function(d) => Variable::Function(Function::Standard(file_no, d)),
+                LoadType::Function(d) => Function::Standard(file_no, d).into(),
                 LoadType::Class(d) => classes[d as usize].clone(),
                 LoadType::Option(d) => Option::Some(new_constants[d as usize].clone()).into(),
                 LoadType::Tuple(v) => LangTuple::new(
@@ -137,10 +137,10 @@ pub fn parse_file(name: String, files: &mut Vec<FileInfo>) -> usize {
                 .into(),
                 LoadType::OptionType(d) => {
                     let t = match new_constants[d as usize] {
-                        Variable::Type(t) => Box::leak(Box::new(t)),
+                        Variable::Normal(InnerVar::Type(t)) => Box::leak(Box::new(t)),
                         _ => panic!(),
                     };
-                    Variable::Type(t.make_option())
+                    t.make_option().into()
                 }
             }),
         }

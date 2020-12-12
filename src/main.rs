@@ -33,7 +33,6 @@ mod looping;
 mod method;
 mod name;
 mod operator;
-mod option;
 mod property;
 mod quick_functions;
 mod rational_var;

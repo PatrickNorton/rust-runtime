@@ -31,7 +31,7 @@ macro_rules! iter_no_next {
                 "next" => Self::next_fn,
                 _ => unimplemented!(),
             };
-            Variable::Method(StdMethod::new_native(self.clone(), func))
+            StdMethod::new_native(self.clone(), func).into()
         }
 
         fn get_op(self: &Rc<Self>, val: Operator) -> Variable {
@@ -39,7 +39,7 @@ macro_rules! iter_no_next {
                 Operator::Iter => Self::ret_self,
                 _ => unimplemented!(),
             };
-            Variable::Method(StdMethod::new_native(self.clone(), func))
+            StdMethod::new_native(self.clone(), func).into()
         }
 
         fn ret_self(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

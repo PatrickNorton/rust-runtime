@@ -132,14 +132,14 @@ impl Type {
     ) -> Result<Variable, ()> {
         Result::Ok(match self {
             Type::Standard(std_t) => std_t.create(args, runtime)?,
-            Type::Null => Variable::Null(),
-            Type::Bool => Variable::Bool(take(&mut args[0]).into_bool(runtime)?),
-            Type::Bigint => Variable::Bigint(take(&mut args[0]).int(runtime)?),
-            Type::String => Variable::String(take(&mut args[0]).str(runtime)?),
+            Type::Null => Variable::default(),
+            Type::Bool => take(&mut args[0]).into_bool(runtime)?.into(),
+            Type::Bigint => take(&mut args[0]).int(runtime)?.into(),
+            Type::String => take(&mut args[0]).str(runtime)?.into(),
             Type::Char => unimplemented!(),
             Type::Decimal => unimplemented!(),
-            Type::Tuple => Variable::Tuple(LangTuple::new(args.into())),
-            Type::Type => Variable::Type(args[0].get_type()),
+            Type::Tuple => LangTuple::new(args.into()).into(),
+            Type::Type => args[0].get_type().into(),
             Type::Object => unimplemented!(),
             Type::Custom(t) => t.create(args, runtime)?,
             Type::Union(_) => unimplemented!(),
@@ -159,7 +159,7 @@ impl Type {
                 Option::Some(index_pair) => {
                     let inner_m = InnerMethod::Standard(index_pair.0, index_pair.1);
                     let n = StdMethod::new(self, inner_m);
-                    Variable::Method(Box::new(n))
+                    Box::new(n).into()
                 }
                 Option::None => runtime.static_attr(&self, index),
             },
@@ -308,7 +308,7 @@ impl StdType {
     fn convert_variables(&self) -> HashMap<Name, Variable> {
         self.variables
             .iter()
-            .map(|x| (Name::Attribute(x.clone()), Variable::Null()))
+            .map(|x| (Name::Attribute(x.clone()), Variable::default()))
             .collect()
     }
 
@@ -316,7 +316,7 @@ impl StdType {
         let instance = StdVariable::new(self, self.convert_variables());
         let method = self.methods.get(&Name::Operator(Operator::New)).unwrap();
         StdMethod::new(instance.clone(), *method).call((args, runtime))?;
-        Result::Ok(Variable::Standard(instance))
+        Result::Ok(instance.into())
     }
 
     pub(crate) fn get_method(&self, name: Name) -> StdVarMethod {

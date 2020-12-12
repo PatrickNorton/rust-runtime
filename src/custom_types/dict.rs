@@ -1,6 +1,7 @@
 use crate::custom_types::exceptions::key_error;
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_tools::next_power_2;
+use crate::int_var::IntVar;
 use crate::looping::{IterResult, NativeIterator};
 use crate::method::StdMethod;
 use crate::name::Name;
@@ -56,7 +57,7 @@ impl Dict {
             Operator::Iter => Dict::iter,
             _ => unimplemented!(),
         };
-        Variable::Method(StdMethod::new_native(self.clone(), func))
+        StdMethod::new_native(self.clone(), func).into()
     }
 
     fn get_attribute(self: &Rc<Self>, s: StringVar) -> Variable {
@@ -66,10 +67,10 @@ impl Dict {
             "replace" => Dict::replace,
             "pop" => Dict::pop,
             "setDefault" => Dict::set_default,
-            "length" => return Variable::Bigint(self.len().into()),
+            "length" => return IntVar::from(self.len()).into(),
             _ => unimplemented!(),
         };
-        Variable::Method(StdMethod::new_native(self.clone(), func))
+        StdMethod::new_native(self.clone(), func).into()
     }
 
     fn index(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -128,8 +129,8 @@ impl Dict {
 
     fn replace(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
-        let key = replace(&mut args[0], Variable::Null());
-        let val = replace(&mut args[1], Variable::Null());
+        let key = take(&mut args[0]);
+        let val = take(&mut args[1]);
         match self.value.borrow_mut().get_mut_entry(key, runtime)? {
             Option::Some(entry) => {
                 let old = replace(&mut entry.value, val);
@@ -410,7 +411,7 @@ impl Entry {
 
     pub fn del(&mut self, key: &Variable, runtime: &mut Runtime) -> Result<Option<Variable>, ()> {
         if key.equals(self.value.clone(), runtime)? {
-            Result::Ok(Option::Some(replace(&mut self.value, Variable::Null())))
+            Result::Ok(Option::Some(take(&mut self.value)))
         } else {
             match &mut self.next {
                 Option::None => Result::Ok(Option::None),
@@ -490,7 +491,7 @@ impl DictIter {
         let val = DictIter {
             parent,
             bucket_no: Cell::new(0),
-            index: RefCell::new(Variable::Null()),
+            index: RefCell::new(Default::default()),
         };
         val.point_to_next();
         val
@@ -531,7 +532,7 @@ impl DictIter {
             .as_ref()
             .expect("Dict iterator expects self.bucket_no to always point at a non-None value");
         let node = parent_node.get_entry(self.index.borrow().clone(), runtime)?;
-        let key = self.index.replace(Variable::Null());
+        let key = self.index.replace(Variable::default());
         let val = node.get_value().clone();
         debug_assert!(node.get_key().equals(key.clone(), runtime)?);
         if let Option::Some(next) = node.get_next() {
@@ -552,7 +553,7 @@ impl CustomVar for DictIter {
                 _ => unimplemented!(),
             },
         };
-        Variable::Method(StdMethod::new_native(self, func))
+        StdMethod::new_native(self, func).into()
     }
 
     fn set(self: Rc<Self>, _name: Name, _object: Variable) {

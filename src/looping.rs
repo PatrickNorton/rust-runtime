@@ -2,7 +2,7 @@ use crate::custom_var::CustomVar;
 use crate::name::Name;
 use crate::runtime::Runtime;
 use crate::std_variable::StdVariable;
-use crate::variable::{FnResult, Variable};
+use crate::variable::{FnResult, OptionVar, Variable};
 use std::rc::Rc;
 
 pub type IterResult = Result<Option<Variable>, ()>;
@@ -31,7 +31,7 @@ impl Iterator {
             .call((Vec::new(), runtime));
         match result {
             FnResult::Ok(_) => match runtime.pop_return() {
-                Variable::Option(o) => IterResult::Ok(o.into()),
+                Variable::Option(i, o) => IterResult::Ok(OptionVar(i, o).into()),
                 _ => panic!("Expected iterator to return an option"),
             },
             FnResult::Err(_) => IterResult::Err(()),

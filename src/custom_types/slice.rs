@@ -5,10 +5,9 @@ use crate::int_var::IntVar;
 use crate::method::StdMethod;
 use crate::name::Name;
 use crate::operator::Operator;
-use crate::option::LangOption;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
-use crate::variable::{FnResult, Variable};
+use crate::variable::{FnResult, InnerVar, Variable};
 use num::{One, Signed, Zero};
 use std::mem::take;
 use std::rc::Rc;
@@ -110,13 +109,11 @@ impl CustomVar for Slice {
                 "start" => int_to_var(self.start.clone()),
                 "stop" => int_to_var(self.stop.clone()),
                 "step" => int_to_var(self.step.clone()),
-                "toRange" => Variable::Method(StdMethod::new_native(self, Self::make_range)),
+                "toRange" => StdMethod::new_native(self, Self::make_range).into(),
                 _ => unimplemented!(),
             },
             Name::Operator(o) => match o {
-                Operator::Str | Operator::Repr => {
-                    Variable::Method(StdMethod::new_native(self, Self::str))
-                }
+                Operator::Str | Operator::Repr => StdMethod::new_native(self, Self::str).into(),
                 _ => unimplemented!(),
             },
         }
@@ -132,12 +129,16 @@ impl CustomVar for Slice {
 }
 
 fn int_to_var(value: Option<IntVar>) -> Variable {
-    LangOption::new(value.map(Variable::from)).into()
+    value.map(Variable::from).into()
 }
 
 fn var_to_int(value: Variable) -> Option<IntVar> {
-    if let Variable::Option(val) = value {
-        val.map(Variable::into)
+    if let Variable::Option(i, val) = value {
+        if i == 1 {
+            val.map(InnerVar::into).map(Variable::into)
+        } else {
+            Option::None
+        }
     } else {
         panic!("var_to_int expected an option, not {:?}", value)
     }
@@ -145,7 +146,7 @@ fn var_to_int(value: Variable) -> Option<IntVar> {
 
 fn unwrapped_to_int(value: Variable) -> Option<IntVar> {
     match value {
-        Variable::Null() => Option::None,
+        Variable::Normal(InnerVar::Null()) => Option::None,
         x => Option::Some(x.into()),
     }
 }

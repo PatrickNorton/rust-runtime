@@ -5,7 +5,7 @@ use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
-use crate::variable::{FnResult, Variable};
+use crate::variable::{FnResult, InnerVar, Variable};
 use downcast_rs::Downcast;
 use std::any::Any;
 use std::fmt::Debug;
@@ -121,7 +121,7 @@ impl Eq for CustomVarWrapper {}
 
 impl From<Rc<dyn CustomVar>> for Variable {
     fn from(x: Rc<dyn CustomVar>) -> Self {
-        Variable::Custom(CustomVarWrapper::new(x))
+        Variable::Normal(InnerVar::Custom(CustomVarWrapper::new(x)))
     }
 }
 
@@ -130,7 +130,7 @@ where
     T: CustomVar + 'static,
 {
     fn from(val: Rc<T>) -> Self {
-        Variable::Custom(CustomVarWrapper::new(val))
+        Variable::Normal(InnerVar::Custom(CustomVarWrapper::new(val)))
     }
 }
 
@@ -138,7 +138,7 @@ pub fn downcast_var<T>(var: Variable) -> Option<Rc<T>>
 where
     T: 'static + CustomVar,
 {
-    if let Variable::Custom(wrapper) = var {
+    if let Variable::Normal(InnerVar::Custom(wrapper)) = var {
         wrapper.into_inner().downcast_rc::<T>().ok()
     } else {
         Option::None

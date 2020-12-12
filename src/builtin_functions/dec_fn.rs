@@ -1,7 +1,9 @@
-use crate::method::{InnerMethod, NativeMethod, StdMethod};
+use crate::int_var::IntVar;
+use crate::method::{NativeMethod, StdMethod};
 use crate::operator::Operator;
 use crate::rational_var::RationalVar;
 use crate::runtime::Runtime;
+use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 
 pub fn op_fn(o: Operator) -> NativeMethod<RationalVar> {
@@ -25,7 +27,7 @@ pub fn op_fn(o: Operator) -> NativeMethod<RationalVar> {
 
 pub fn get_operator(this: RationalVar, o: Operator) -> Variable {
     let func = op_fn(o);
-    Variable::Method(Box::new(StdMethod::new(this, InnerMethod::Native(func))))
+    StdMethod::new_native(this, func).into()
 }
 
 fn add(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -39,18 +41,18 @@ fn sub(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
         .into_iter()
         .map(RationalVar::from)
         .fold(this.clone(), |x, y| x - y);
-    runtime.return_1(Variable::Decimal(diff))
+    runtime.return_1(diff.into())
 }
 
 fn u_minus(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.return_1(Variable::Decimal(-this.clone()))
+    runtime.return_1((-this.clone()).into())
 }
 
 fn mul(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let mut prod: RationalVar = args.into_iter().map(RationalVar::from).product();
     prod += this.clone();
-    runtime.return_1(Variable::Decimal(prod))
+    runtime.return_1(prod.into())
 }
 
 fn floor_div(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -58,7 +60,7 @@ fn floor_div(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> 
     for arg in args {
         ratio /= RationalVar::from(arg).to_integer()
     }
-    runtime.return_1(Variable::Bigint(ratio.into()))
+    runtime.return_1(IntVar::from(ratio).into())
 }
 
 fn div(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -66,40 +68,40 @@ fn div(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
     for arg in args {
         ratio /= RationalVar::from(arg)
     }
-    runtime.return_1(Variable::Decimal(ratio))
+    runtime.return_1(ratio.into())
 }
 
 fn eq(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let eq = args.into_iter().all(|x| *this == RationalVar::from(x));
-    runtime.return_1(Variable::Bool(eq))
+    runtime.return_1(eq.into())
 }
 
 fn less_than(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let lt = args.into_iter().all(|x| *this < RationalVar::from(x));
-    runtime.return_1(Variable::Bool(lt))
+    runtime.return_1(lt.into())
 }
 
 fn greater_than(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let gt = args.into_iter().all(|x| *this > RationalVar::from(x));
-    runtime.return_1(Variable::Bool(gt))
+    runtime.return_1(gt.into())
 }
 
 fn less_equal(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let le = args.into_iter().all(|x| *this <= RationalVar::from(x));
-    runtime.return_1(Variable::Bool(le))
+    runtime.return_1(le.into())
 }
 
 fn greater_equal(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let ge = args.into_iter().all(|x| *this >= RationalVar::from(x));
-    runtime.return_1(Variable::Bool(ge))
+    runtime.return_1(ge.into())
 }
 
 fn to_str(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.return_1(Variable::String(format!("{}", **this).into()))
+    runtime.return_1(StringVar::from(format!("{}", **this)).into())
 }
 
 fn to_int(this: &RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.return_1(Variable::Bigint(this.to_integer().into()))
+    runtime.return_1(IntVar::from(this.to_integer()).into())
 }

@@ -3,6 +3,7 @@ use crate::int_var::IntVar;
 use crate::method::{NativeCopyMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
+use crate::string_var::StringVar;
 use crate::variable::{FnResult, FromBool, Variable};
 
 pub fn op_fn(o: Operator) -> Option<NativeCopyMethod<bool>> {
@@ -24,7 +25,7 @@ pub fn op_fn(o: Operator) -> Option<NativeCopyMethod<bool>> {
 
 pub fn get_operator(this: bool, o: Operator) -> Variable {
     match op_fn(o) {
-        Option::Some(func) => Variable::Method(StdMethod::new_move(this, func)),
+        Option::Some(func) => StdMethod::new_move(this, func).into(),
         Option::None => int_fn::get_operator(IntVar::from_bool(this), o),
     }
 }
@@ -32,46 +33,46 @@ pub fn get_operator(this: bool, o: Operator) -> Variable {
 fn eq(this: bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
         if bool::from(arg) != this {
-            return runtime.return_1(Variable::Bool(false));
+            return runtime.return_1(false.into());
         }
     }
-    runtime.return_1(Variable::Bool(true))
+    runtime.return_1(true.into())
 }
 
 fn less_than(this: bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
         if this >= bool::from(arg) {
-            return runtime.return_1(Variable::Bool(false));
+            return runtime.return_1(false.into());
         }
     }
-    runtime.return_1(Variable::Bool(true))
+    runtime.return_1(true.into())
 }
 
 fn greater_than(this: bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
         if this <= bool::from(arg) {
-            return runtime.return_1(Variable::Bool(false));
+            return runtime.return_1(false.into());
         }
     }
-    runtime.return_1(Variable::Bool(true))
+    runtime.return_1(true.into())
 }
 
 fn less_equal(this: bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
         if this & !bool::from(arg) {
-            return runtime.return_1(Variable::Bool(false));
+            return runtime.return_1(false.into());
         }
     }
-    runtime.return_1(Variable::Bool(true))
+    runtime.return_1(true.into())
 }
 
 fn greater_equal(this: bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
         if !this & bool::from(arg) {
-            return runtime.return_1(Variable::Bool(false));
+            return runtime.return_1(false.into());
         }
     }
-    runtime.return_1(Variable::Bool(true))
+    runtime.return_1(true.into())
 }
 
 fn bitwise_and(this: bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -79,7 +80,7 @@ fn bitwise_and(this: bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
     for arg in args {
         sum &= bool::from(arg)
     }
-    runtime.return_1(Variable::Bool(sum))
+    runtime.return_1(sum.into())
 }
 
 fn bitwise_or(this: bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -87,12 +88,12 @@ fn bitwise_or(this: bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResul
     for arg in args {
         sum |= bool::from(arg)
     }
-    runtime.return_1(Variable::Bool(sum))
+    runtime.return_1(sum.into())
 }
 
 fn bitwise_not(this: bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.return_1(Variable::Bool(!this))
+    runtime.return_1((!this).into())
 }
 
 fn bitwise_xor(this: bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -100,11 +101,11 @@ fn bitwise_xor(this: bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
     for arg in args {
         sum ^= bool::from(arg)
     }
-    runtime.return_1(Variable::Bool(sum))
+    runtime.return_1(sum.into())
 }
 
 fn str(this: bool, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.push(Variable::String(if this { "true" } else { "false" }.into()));
+    runtime.push(StringVar::from(if this { "true" } else { "false" }).into());
     runtime.return_0()
 }

@@ -338,7 +338,7 @@ impl Runtime {
     }
 
     fn unwind(&mut self, exc_type: Type, exc: InnerException) -> FnResult {
-        let frame = self.exception_frames.get(&Variable::Type(exc_type));
+        let frame = self.exception_frames.get(&exc_type.into());
         match frame.and_then(|vec| vec.last()) {
             Option::Some(pair) => {
                 let pair2 = *pair;
@@ -361,7 +361,7 @@ impl Runtime {
 
     pub fn store_static(&mut self, index: usize, var: Variable) {
         self.static_vars
-            .resize(max(self.static_vars.len(), index + 1), Variable::Null());
+            .resize(max(self.static_vars.len(), index + 1), Variable::default());
         self.static_vars[index] = var;
     }
 
@@ -550,9 +550,7 @@ impl Runtime {
             .expect("pop_err called with no thrown exception")
         {
             InnerException::Std(v) => Result::Ok(v),
-            InnerException::UnConstructed(t, s, _) => {
-                t.create_inst(vec![Variable::String(s)], self)
-            }
+            InnerException::UnConstructed(t, s, _) => t.create_inst(vec![s.into()], self),
         }
     }
 
@@ -573,9 +571,8 @@ impl Runtime {
             }
             InnerException::UnConstructed(ty, s, _) => {
                 if *ty == t {
-                    let result = Result::Ok(Option::Some(
-                        t.create_inst(vec![Variable::String(take(s))], self)?,
-                    ));
+                    let result =
+                        Result::Ok(Option::Some(t.create_inst(vec![take(s).into()], self)?));
                     self.thrown_exception = Option::None;
                     result
                 } else {
@@ -644,7 +641,7 @@ impl Runtime {
             .expect("resume_throw() called with no thrown exception");
         let frame = self
             .exception_frames
-            .get(&Variable::Type(exception.get_type()))
+            .get(&exception.get_type().into())
             .expect("resume_throw called with no valid exception frame")
             .last()
             .expect("resume_throw called with no valid exception frame");
@@ -708,9 +705,7 @@ impl InnerException {
     fn create(self, runtime: &mut Runtime) -> Result<Variable, ()> {
         Result::Ok(match self {
             InnerException::Std(e) => e,
-            InnerException::UnConstructed(t, s, _) => {
-                t.create_inst(vec![Variable::String(s)], runtime)?
-            } // FIXME: Won't collect stack frames properly
+            InnerException::UnConstructed(t, s, _) => t.create_inst(vec![s.into()], runtime)?, // FIXME: Won't collect stack frames properly
         })
     }
 }

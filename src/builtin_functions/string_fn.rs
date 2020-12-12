@@ -5,7 +5,7 @@ use crate::custom_var::CustomVar;
 use crate::function::Function;
 use crate::int_var::IntVar;
 use crate::looping::{IterResult, NativeIterator};
-use crate::method::{InnerMethod, NativeMethod, StdMethod};
+use crate::method::{NativeMethod, StdMethod};
 use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
@@ -18,7 +18,7 @@ use num::{BigInt, Signed, ToPrimitive};
 use std::any::Any;
 use std::cell::Cell;
 use std::fmt::Debug;
-use std::mem::{replace, take};
+use std::mem::take;
 use std::rc::Rc;
 use std::str::{from_utf8_unchecked, FromStr};
 
@@ -38,13 +38,12 @@ pub fn op_fn(o: Operator) -> NativeMethod<StringVar> {
 }
 
 pub fn get_operator(this: StringVar, o: Operator) -> Variable {
-    let func = op_fn(o);
-    Variable::Method(Box::new(StdMethod::new(this, InnerMethod::Native(func))))
+    StdMethod::new_native(this, op_fn(o)).into()
 }
 
 pub fn get_attr(this: StringVar, s: StringVar) -> Variable {
     let func = match s.as_str() {
-        "length" => return Variable::Bigint(this.chars().count().into()),
+        "length" => return IntVar::from(this.chars().count()).into(),
         "upper" => upper,
         "lower" => lower,
         "join" => join,
@@ -59,7 +58,7 @@ pub fn get_attr(this: StringVar, s: StringVar) -> Variable {
         "asInt" => as_int,
         x => unimplemented!("str.{}", x),
     };
-    Variable::Method(StdMethod::new_native(this, func))
+    StdMethod::new_native(this, func).into()
 }
 
 pub fn static_attr(s: StringVar) -> Variable {
@@ -67,14 +66,14 @@ pub fn static_attr(s: StringVar) -> Variable {
         "fromChars" => from_chars,
         x => unimplemented!("str.{}", x),
     };
-    Variable::Function(Function::Native(func))
+    Function::Native(func).into()
 }
 
 fn add(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let result = args.into_iter().fold(this.to_string(), |acc, arg| {
         acc + StringVar::from(arg).as_ref()
     });
-    runtime.return_1(Variable::String(result.into()))
+    runtime.return_1(StringVar::from(result).into())
 }
 
 fn multiply(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -94,7 +93,7 @@ fn multiply(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnR
             Option::None => return runtime.throw_quick(arithmetic_error(), mul_exc(big_val)),
         }
     }
-    runtime.return_1(Variable::String(result.into()))
+    runtime.return_1(StringVar::from(result).into())
 }
 
 fn mul_exc(big_val: IntVar) -> StringVar {
@@ -119,13 +118,13 @@ fn overflow_exc(val: usize, len: usize) -> StringVar {
 
 fn bool(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.return_1(Variable::Bool(this.is_empty()))
+    runtime.return_1(this.is_empty().into())
 }
 
 fn int(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     match IntVar::from_str(this) {
-        Ok(val) => runtime.push(Variable::Bigint(val)),
+        Ok(val) => runtime.push(val.into()),
         Err(_) => {
             return runtime.throw_quick(
                 value_error(),
@@ -142,12 +141,12 @@ fn int(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult
 
 fn str(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.return_1(Variable::String(this.clone()))
+    runtime.return_1(this.clone().into())
 }
 
 fn repr(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.return_1(Variable::String(format!("{:?}", this.as_str()).into()))
+    runtime.return_1(StringVar::from(format!("{:?}", this.as_str())).into())
 }
 
 fn index(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -205,7 +204,7 @@ fn join(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnR
     debug_assert!(args.len() == 1);
     let mut is_first = true;
     let mut result = String::new();
-    let iter = replace(&mut args[0], Variable::Null()).iter(runtime)?;
+    let iter = take(&mut args[0]).iter(runtime)?;
     while let Option::Some(val) = iter.next(runtime)? {
         if !is_first {
             result += this;
@@ -230,8 +229,8 @@ fn join_all(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnR
 
 fn starts_with(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 2);
-    let val = StringVar::from(replace(&mut args[0], Variable::Null()));
-    let index = IntVar::from(replace(&mut args[1], Variable::Null()));
+    let val = StringVar::from(take(&mut args[0]));
+    let index = IntVar::from(take(&mut args[1]));
     if index < this.char_len().into() {
         let usize_index = index
             .to_usize()
@@ -256,8 +255,8 @@ fn ends_with(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -
 
 fn split(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 2);
-    let pat = StringVar::from(replace(&mut args[0], Variable::Null()));
-    let opt_count = replace(&mut args[1], Variable::Null());
+    let pat = StringVar::from(take(&mut args[0]));
+    let opt_count = take(&mut args[1]);
     if opt_count.is_null() {
         let result = List::from_values(
             Type::String,
@@ -297,7 +296,7 @@ fn split_lines(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> 
 }
 
 fn chars(this: &StringVar) -> Variable {
-    List::from_values(Type::Char, this.chars().map(Variable::Char).collect()).into()
+    List::from_values(Type::Char, this.chars().map(Variable::from).collect()).into()
 }
 
 fn from_chars(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -446,7 +445,7 @@ where
     fn get_attr(self: Rc<Self>, name: Name) -> Variable {
         if let Name::Attribute(n) = name {
             if &*n == "next" {
-                Variable::Method(StdMethod::new_native(self, Self::next_func))
+                StdMethod::new_native(self, Self::next_func).into()
             } else {
                 unimplemented!()
             }

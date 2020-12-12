@@ -104,10 +104,7 @@ impl StdVariable {
             }
             Option::None => {
                 let inner_method = self.value.borrow().cls.get_method(index);
-                Result::Ok(Variable::Method(Box::new(StdMethod::new(
-                    self.clone(),
-                    inner_method,
-                ))))
+                Result::Ok(Box::new(StdMethod::new(self.clone(), inner_method)).into())
             }
         }
     }

@@ -50,7 +50,7 @@ pub fn load_ascii_str(data: &[u8], index: &mut usize) -> Box<[AsciiChar]> {
 }
 
 pub fn load_str(data: &[u8], index: &mut usize) -> Variable {
-    Variable::String(StringVar::from_leak(load_std_str(data, index)))
+    StringVar::from_leak(load_std_str(data, index)).into()
 }
 
 pub fn load_builtin(data: &[u8], index: &mut usize) -> Variable {
@@ -59,11 +59,11 @@ pub fn load_builtin(data: &[u8], index: &mut usize) -> Variable {
 
 pub fn load_int(data: &[u8], index: &mut usize) -> Variable {
     let value = bytes_index::<i32>(data, index);
-    Variable::Bigint(IntVar::from_i32(value).unwrap())
+    IntVar::from_i32(value).unwrap().into()
 }
 
 pub fn load_bigint(data: &[u8], index: &mut usize) -> Variable {
-    Variable::Bigint(inner_bigint(data, index).into())
+    IntVar::from(inner_bigint(data, index)).into()
 }
 
 fn inner_bigint(data: &[u8], index: &mut usize) -> BigInt {
@@ -83,10 +83,11 @@ pub fn load_decimal(data: &[u8], index: &mut usize) -> Variable {
     for _ in 0..count {
         values.push(bytes_index::<u32>(data, index));
     }
-    Variable::Decimal(RationalVar::new(BigRational::new(
+    RationalVar::new(BigRational::new(
         BigInt::new(Sign::Plus, values),
         pow(BigInt::from_u64(10).unwrap(), scale as usize),
-    )))
+    ))
+    .into()
 }
 
 pub fn function_index(data: &[u8], index: &mut usize) -> u32 {
@@ -100,7 +101,7 @@ pub fn class_index(data: &[u8], index: &mut usize) -> u32 {
 pub fn load_bool(data: &[u8], index: &mut usize) -> Variable {
     let value = data[*index];
     *index += 1;
-    Variable::Bool(value != 0)
+    (value != 0).into()
 }
 
 pub fn option_index(data: &[u8], index: &mut usize) -> u16 {
@@ -316,15 +317,16 @@ pub fn load_class(
     let properties = get_properties(data, file_no, index, functions);
 
     match names {
-        Option::None => Variable::Type(Type::new_std(
+        Option::None => Type::new_std(
             StringVar::from_leak(name),
             file_no,
             variables,
             merge_maps(operators, methods),
             merge_maps(static_operators, static_methods),
             properties,
-        )),
-        Option::Some(variants) => Variable::Type(Type::new_union(
+        )
+        .into(),
+        Option::Some(variants) => Type::new_union(
             StringVar::from_leak(name),
             file_no,
             variants,
@@ -332,6 +334,7 @@ pub fn load_class(
             merge_maps_union(operators, methods),
             merge_maps_union(static_operators, static_methods),
             properties,
-        )),
+        )
+        .into(),
     }
 }

@@ -7,7 +7,6 @@ use crate::looping::{IterResult, NativeIterator};
 use crate::method::StdMethod;
 use crate::name::Name;
 use crate::operator::Operator;
-use crate::option::LangOption;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
@@ -44,7 +43,7 @@ impl LangBytes {
             Operator::Iter => Self::iter,
             _ => unimplemented!(),
         };
-        Variable::Method(StdMethod::new_native(self, func))
+        StdMethod::new_native(self, func).into()
     }
 
     fn get_attribute(self: Rc<Self>, attr: StringVar) -> Variable {
@@ -58,7 +57,7 @@ impl LangBytes {
             "addChar" => Self::add_char,
             _ => unimplemented!(),
         };
-        Variable::Method(StdMethod::new_native(self, func))
+        StdMethod::new_native(self, func).into()
     }
 
     fn index(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -331,9 +330,8 @@ impl LangBytes {
                 .find(|x| *x.1 == i)
                 .map(|x| x.0)
                 .map(IntVar::from)
-                .map(Variable::from)
-                .into(),
-            Option::None => LangOption::new(Option::None),
+                .map(Variable::from),
+            Option::None => Option::None,
         }))
     }
 
@@ -381,7 +379,7 @@ impl BytesIter {
             "next" => Self::next_fn,
             _ => unimplemented!(),
         };
-        Variable::Method(StdMethod::new_native(self.clone(), func))
+        StdMethod::new_native(self.clone(), func).into()
     }
 
     fn next_fn(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

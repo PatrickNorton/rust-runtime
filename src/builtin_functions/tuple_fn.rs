@@ -1,9 +1,10 @@
-use crate::method::{InnerMethod, NativeMethod, StdMethod};
+use crate::int_var::IntVar;
+use crate::method::{NativeMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::string_var::StringVar;
 use crate::tuple::LangTuple;
-use crate::variable::{FnResult, Variable};
+use crate::variable::{FnResult, InnerVar, Variable};
 
 pub fn op_fn(o: Operator) -> NativeMethod<LangTuple> {
     match o {
@@ -16,13 +17,12 @@ pub fn op_fn(o: Operator) -> NativeMethod<LangTuple> {
 }
 
 pub fn get_operator(this: LangTuple, o: Operator) -> Variable {
-    let func = op_fn(o);
-    Variable::Method(Box::new(StdMethod::new(this, InnerMethod::Native(func))))
+    StdMethod::new_native(this, op_fn(o)).into()
 }
 
 pub fn get_attr(this: LangTuple, s: StringVar) -> Variable {
     if s.as_str() == "length" {
-        return Variable::Bigint(this.len().into());
+        return IntVar::from(this.len()).into();
     }
     match s.as_str().parse() {
         Result::Ok(x) => this[x].clone(),
@@ -33,7 +33,7 @@ pub fn get_attr(this: LangTuple, s: StringVar) -> Variable {
 pub fn equals(this: &LangTuple, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
         match arg {
-            Variable::Tuple(other) => {
+            Variable::Normal(InnerVar::Tuple(other)) => {
                 if this.len() != other.len() {
                     return runtime.return_1(false.into());
                 }

@@ -29,7 +29,7 @@ impl Lambda {
             Operator::Call => Self::call_now,
             _ => unimplemented!(),
         };
-        Variable::Method(StdMethod::new_native(self.clone(), func))
+        StdMethod::new_native(self.clone(), func).into()
     }
 
     fn call_now(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

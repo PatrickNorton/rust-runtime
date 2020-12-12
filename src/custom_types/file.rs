@@ -11,7 +11,7 @@ use crate::variable::{FnResult, Variable};
 use std::cell::RefCell;
 use std::fs::File;
 use std::io::Read;
-use std::mem::replace;
+use std::mem::take;
 use std::path::PathBuf;
 use std::rc::Rc;
 
@@ -28,7 +28,7 @@ impl FileObj {
             Operator::Exit => Self::close,
             _ => unimplemented!(),
         };
-        Variable::Method(StdMethod::new_native(self, func))
+        StdMethod::new_native(self, func).into()
     }
 
     fn get_attribute(self: Rc<Self>, attr: StringVar) -> Variable {
@@ -37,7 +37,7 @@ impl FileObj {
             "read" => Self::read,
             _ => unimplemented!(),
         };
-        Variable::Method(StdMethod::new_native(self, func))
+        StdMethod::new_native(self, func).into()
     }
 
     fn open(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -90,7 +90,7 @@ impl FileObj {
 
     fn create(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
-        let path = StringVar::from(replace(&mut args[0], Variable::Null()));
+        let path = StringVar::from(take(&mut args[0]));
         runtime.return_1(
             Rc::new(FileObj {
                 path: (*path).into(),

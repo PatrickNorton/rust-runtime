@@ -16,11 +16,12 @@ use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::std_variable::{StdVarMethod, StdVariable};
+use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
-use std::mem::{replace, take};
+use std::mem::take;
 
 fn print() -> Variable {
-    Variable::Function(Function::Native(print_impl))
+    Function::Native(print_impl).into()
 }
 
 fn print_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -31,7 +32,7 @@ fn print_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
 }
 
 fn input() -> Variable {
-    Variable::Function(Function::Native(input_impl))
+    Function::Native(input_impl).into()
 }
 
 fn input_impl(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -39,14 +40,14 @@ fn input_impl(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     print!("{}", take(&mut args[0]).str(runtime)?);
     let mut input = String::new();
     match std::io::stdin().read_line(&mut input) {
-        Ok(_) => runtime.push(Variable::String(input.into())),
+        Ok(_) => runtime.push(StringVar::from(input).into()),
         Err(_) => runtime.throw_quick(io_error(), "Could not read from stdin".into())?,
     }
     runtime.return_0()
 }
 
 fn repr() -> Variable {
-    Variable::Function(Function::Native(repr_impl))
+    Function::Native(repr_impl).into()
 }
 
 fn repr_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -55,7 +56,7 @@ fn repr_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
 }
 
 fn iter() -> Variable {
-    Variable::Function(Function::Native(iter_impl))
+    Function::Native(iter_impl).into()
 }
 
 fn iter_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -64,7 +65,7 @@ fn iter_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
 }
 
 fn reversed() -> Variable {
-    Variable::Function(Function::Native(reversed_impl))
+    Function::Native(reversed_impl).into()
 }
 
 fn reversed_impl(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -73,7 +74,7 @@ fn reversed_impl(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
 }
 
 fn id() -> Variable {
-    Variable::Function(Function::Native(id_impl))
+    Function::Native(id_impl).into()
 }
 
 fn id_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -82,7 +83,7 @@ fn id_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
 }
 
 fn enumerate() -> Variable {
-    Variable::Function(Function::Native(enumerate_impl))
+    Function::Native(enumerate_impl).into()
 }
 
 fn enumerate_impl(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -142,31 +143,31 @@ pub fn default_methods(name: Name) -> StdVarMethod {
 fn default_repr(this: &StdVariable, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     let result = format!("<{}: 0x{:X}>", this.get_type().to_string(), this.var_ptr());
-    runtime.return_1(Variable::String(result.into()))
+    runtime.return_1(StringVar::from(result).into())
 }
 
 fn default_str(this: &StdVariable, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.call_op(Variable::Standard(this.clone()), Operator::Repr, args)
+    runtime.call_op(this.clone().into(), Operator::Repr, args)
 }
 
 fn default_bool(_this: &StdVariable, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.return_1(Variable::Bool(true))
+    runtime.return_1(true.into())
 }
 
 fn default_eq(this: &StdVariable, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    let this_var = Variable::Standard(this.clone());
+    let this_var: Variable = this.clone().into();
     for arg in args {
         if this_var != arg {
-            return runtime.return_1(Variable::Bool(false));
+            return runtime.return_1(false.into());
         }
     }
-    runtime.return_1(Variable::Bool(true))
+    runtime.return_1(true.into())
 }
 
 fn default_in(this: &StdVariable, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    let checked_var = replace(&mut args[0], Variable::Null());
+    let checked_var = take(&mut args[0]);
     let this_iter = this.iter(runtime)?;
     while let Option::Some(val) = this_iter.next(runtime)? {
         if checked_var.equals(val, runtime)? {

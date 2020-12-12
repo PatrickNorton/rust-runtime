@@ -1,6 +1,7 @@
 use crate::method::{NativeCopyMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
+use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 
 pub fn op_fn(o: Operator) -> NativeCopyMethod<()> {
@@ -15,12 +16,12 @@ pub fn op_fn(o: Operator) -> NativeCopyMethod<()> {
 
 pub fn get_operator(o: Operator) -> Variable {
     let func = op_fn(o);
-    Variable::Method(StdMethod::new_move((), func))
+    StdMethod::new_move((), func).into()
 }
 
 fn eq(_this: (), args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
-        if let Variable::Null() = arg {
+        if arg.is_null() {
             return runtime.return_1(false.into());
         }
     }
@@ -29,7 +30,7 @@ fn eq(_this: (), args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
 
 fn str(_this: (), args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.return_1(Variable::String("null".into()))
+    runtime.return_1(StringVar::from("null").into())
 }
 
 fn bool(_this: (), args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

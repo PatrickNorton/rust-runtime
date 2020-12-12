@@ -9,7 +9,6 @@ use crate::jump_table::JumpTable;
 use crate::lang_union::LangUnion;
 use crate::name::Name;
 use crate::operator::Operator;
-use crate::option::LangOption;
 use crate::quick_functions::{
     quick_add, quick_bitwise_and, quick_bitwise_not, quick_bitwise_or, quick_bitwise_xor,
     quick_div, quick_equals, quick_floor_div, quick_greater_equal, quick_greater_than,
@@ -19,9 +18,10 @@ use crate::quick_functions::{
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
-use crate::variable::{FnResult, Variable};
+use crate::variable::{FnResult, InnerVar, OptionVar, Variable};
 use num::traits::FromPrimitive;
 use num::Zero;
+use std::mem::take;
 use std::ops::SubAssign;
 
 pub fn execute(runtime: &mut Runtime) -> FnResult {
@@ -96,7 +96,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
     match b {
         Bytecode::Nop => {}
         Bytecode::LoadNull => {
-            runtime.push(Variable::Null());
+            runtime.push(Variable::default());
         }
         Bytecode::LoadConst => {
             let const_val = runtime.load_const(bytes_0 as u16).clone();
@@ -175,29 +175,29 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         Bytecode::BitwiseNot => quick_op_1(runtime, quick_bitwise_not)?,
         Bytecode::BoolAnd => {
             let result = bool_op(Bytecode::BoolAnd, runtime)?;
-            runtime.push(Variable::Bool(result))
+            runtime.push(result.into())
         }
         Bytecode::BoolOr => {
             let result = bool_op(Bytecode::BoolOr, runtime)?;
-            runtime.push(Variable::Bool(result))
+            runtime.push(result.into())
         }
         Bytecode::BoolNot => {
             let result = !runtime.pop_bool()?;
-            runtime.push(Variable::Bool(result))
+            runtime.push(result.into())
         }
         Bytecode::BoolXor => {
             let result = bool_op(Bytecode::BoolXor, runtime)?;
-            runtime.push(Variable::Bool(result))
+            runtime.push(result.into())
         }
         Bytecode::Identical => {
             let x = runtime.pop();
             let y = runtime.pop();
-            runtime.push(Variable::Bool(x.identical(&y)))
+            runtime.push(x.identical(&y).into())
         }
         Bytecode::Instanceof => {
             let x = runtime.pop();
             let y = runtime.pop();
-            runtime.push(Variable::Bool(y.is_type_of(&x)))
+            runtime.push(y.is_type_of(&x).into())
         }
         Bytecode::CallOp => {
             let op: Operator = FromPrimitive::from_u32(bytes_0)
@@ -206,7 +206,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         }
         Bytecode::PackTuple => unimplemented!(),
         Bytecode::UnpackTuple => match runtime.pop() {
-            Variable::Tuple(tup) => {
+            Variable::Normal(InnerVar::Tuple(tup)) => {
                 for var in &tup {
                     runtime.push(var.clone())
                 }
@@ -303,7 +303,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         Bytecode::ThrowQuick => {
             let msg = runtime.pop();
             let exc_type = runtime.pop();
-            if let Variable::Type(t) = exc_type {
+            if let Variable::Normal(InnerVar::Type(t)) = exc_type {
                 let msg_str = msg.str(runtime)?;
                 return runtime.throw_quick(t, msg_str);
             } else {
@@ -347,7 +347,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             assert_ne!(bytes_1, 0);
             if bytes_1 == 1 {
                 match runtime.pop_return() {
-                    Variable::Option(o) => match o.into() {
+                    Variable::Option(i, o) => match OptionVar(i, o).into() {
                         Option::Some(val) => {
                             runtime.push(iterated);
                             runtime.push(val);
@@ -359,13 +359,14 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
                     _ => panic!("Iterators should return an option-wrapped value"),
                 }
             } else {
-                let ret = runtime.pop_returns(bytes_1 as usize);
-                match &ret[0] {
-                    Variable::Option(o) => match o.into() {
-                        Option::Some(_) => {
+                let mut ret = runtime.pop_returns(bytes_1 as usize);
+                match take(&mut ret[0]) {
+                    Variable::Option(i, o) => match Option::<Variable>::from(OptionVar(i, o)) {
+                        Option::Some(opt) => {
+                            ret[0] = opt.into();
                             runtime.push(iterated);
                             runtime.extend(ret.into_iter().map(|x| match x {
-                                Variable::Option(o) => o.take().unwrap(),
+                                Variable::Option(i, o) => Option::from(OptionVar(i, o)).unwrap(),
                                 _ => panic!("Iterators should return an option-wrapped value"),
                             }));
                         }
@@ -380,7 +381,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         Bytecode::ListCreate => {
             let argc = bytes_0 as u16;
             let list_type = match runtime.pop() {
-                Variable::Type(t) => t,
+                Variable::Normal(InnerVar::Type(t)) => t,
                 _ => panic!("Bytecode::ListCreate should have generic type as first parameter"),
             };
             let value = List::from_values(list_type, runtime.load_args(argc));
@@ -389,7 +390,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         Bytecode::SetCreate => {
             let argc = bytes_0 as u16;
             let set_type = match runtime.pop() {
-                Variable::Type(t) => t,
+                Variable::Normal(InnerVar::Type(t)) => t,
                 _ => panic!("Bytecode::ListCreate should have generic type as first parameter"),
             };
             let argv = runtime.load_args(argc);
@@ -446,11 +447,11 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             for iterator in &iterators {
                 runtime.call_attr(iterator.clone(), "next".into(), vec![])?;
                 match runtime.pop_return() {
-                    Variable::Option(o) => match o.take() {
+                    Variable::Option(i, o) => match OptionVar(i, o).into() {
                         Option::Some(val) => results.push(val),
                         Option::None => {
                             loop_done = true;
-                            results.push(Variable::Null());
+                            results.push(Variable::default());
                         }
                     },
                     _ => panic!("Iterators should return an option-wrapped value"),
@@ -487,13 +488,13 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             runtime.push(var);
         }
         Bytecode::GetVariant => {
-            if let Variable::Union(var) = runtime.pop() {
+            if let Variable::Normal(InnerVar::Union(var)) = runtime.pop() {
                 let variant_no = bytes_0 as usize;
                 runtime.push(
                     if var.is_variant(variant_no) {
-                        LangOption::new(Option::Some(*var.take_value()))
+                        Option::Some(*var.take_value())
                     } else {
-                        LangOption::new(Option::None)
+                        Option::None
                     }
                     .into(),
                 )
@@ -505,14 +506,14 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let variant_no = bytes_0 as usize;
             let value = runtime.pop();
             let union_t = runtime.pop();
-            if let Variable::Type(Type::Union(t)) = union_t {
+            if let Variable::Normal(InnerVar::Type(Type::Union(t))) = union_t {
                 runtime.push(LangUnion::new(variant_no, Box::new(value), t).into())
             } else {
                 panic!("Called Bytecode::MakeVariant where TOS-1 not a union type")
             }
         }
         Bytecode::VariantNo => {
-            if let Variable::Union(value) = runtime.pop() {
+            if let Variable::Normal(InnerVar::Union(value)) = runtime.pop() {
                 runtime.push(IntVar::from(value.variant_no()).into())
             } else {
                 panic!("Called Bytecode::VariantNo where TOS not a union")
@@ -521,10 +522,10 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         Bytecode::MakeOption => {
             let value = runtime.pop();
             runtime.push(
-                if value == Variable::Null() {
-                    LangOption::new(Option::None)
+                if value == Variable::Normal(InnerVar::Null()) {
+                    Option::None
                 } else {
-                    LangOption::new(Option::Some(value))
+                    Option::Some(value)
                 }
                 .into(),
             )
@@ -535,8 +536,10 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         }
         Bytecode::UnwrapOption => {
             let tos = runtime.pop();
-            if let Variable::Option(o) = tos {
-                runtime.push(o.take().unwrap_or_else(Variable::Null))
+            if let Variable::Option(i, o) = tos {
+                runtime.push(
+                    Option::<Variable>::from(OptionVar(i, o)).unwrap_or_else(Variable::default),
+                )
             } else {
                 panic!("Called Bytecode::UnwrapOption where TOS not an option")
             }

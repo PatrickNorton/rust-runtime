@@ -28,7 +28,7 @@ impl StdException {
             Operator::Str => Self::str,
             _ => unimplemented!(),
         };
-        Variable::Method(StdMethod::new_native(self.clone(), func))
+        StdMethod::new_native(self.clone(), func).into()
     }
 
     pub fn get_attribute(self: &Rc<Self>, name: StringVar) -> Variable {

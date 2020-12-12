@@ -139,7 +139,7 @@ impl Index<usize> for StackFrame {
 impl IndexMut<usize> for StackFrame {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         while self.variables.len() <= index {
-            self.variables.push(Variable::Null())
+            self.variables.push(Variable::default())
         }
         &mut self.variables[index]
     }

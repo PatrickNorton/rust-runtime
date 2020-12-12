@@ -11,7 +11,7 @@ use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use num::{One, Signed, Zero};
 use std::cell::RefCell;
-use std::mem::replace;
+use std::mem::{replace, take};
 use std::ops::Neg;
 use std::rc::Rc;
 
@@ -70,7 +70,7 @@ impl Range {
             Operator::Reversed => Self::reversed,
             _ => unimplemented!(),
         };
-        Variable::Method(StdMethod::new_native(self.clone(), func))
+        StdMethod::new_native(self.clone(), func).into()
     }
 
     fn get_attribute(self: &Rc<Self>, attr: StringVar) -> Variable {
@@ -87,7 +87,7 @@ impl Range {
 
     fn eq(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
-        let is_eq = match downcast_var::<Range>(replace(&mut args[0], Variable::Null())) {
+        let is_eq = match downcast_var::<Range>(take(&mut args[0])) {
             Option::None => false,
             Option::Some(other) => {
                 self.start == other.start && self.stop == other.stop && self.step == other.step
@@ -103,7 +103,7 @@ impl Range {
 
     fn index(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
-        let index = IntVar::from(replace(&mut args[0], Variable::Null()));
+        let index = IntVar::from(take(&mut args[0]));
         let result = &self.start + &(&index * &self.step);
         if !self.before_end(&result) {
             runtime.throw_quick(
@@ -117,7 +117,7 @@ impl Range {
 
     fn contains(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
-        let value = IntVar::from(replace(&mut args[0], Variable::Null()));
+        let value = IntVar::from(take(&mut args[0]));
         let result = if self.step.is_positive() {
             value >= self.start && value < self.stop
         } else {
@@ -201,7 +201,7 @@ impl RangeIter {
             "next" => Self::next_fn,
             _ => unimplemented!(),
         };
-        Variable::Method(StdMethod::new_native(self.clone(), func))
+        StdMethod::new_native(self.clone(), func).into()
     }
 
     fn next_fn(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

@@ -1,5 +1,6 @@
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_tools::next_power_2;
+use crate::int_var::IntVar;
 use crate::looping::{IterResult, NativeIterator};
 use crate::method::StdMethod;
 use crate::name::Name;
@@ -9,7 +10,7 @@ use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use std::cell::{Cell, RefCell};
-use std::mem::replace;
+use std::mem::{replace, take};
 use std::rc::Rc;
 
 #[derive(Debug)]
@@ -60,7 +61,7 @@ impl Set {
             Operator::DelAttr => Self::del_attr,
             _ => unimplemented!(),
         };
-        Variable::Method(StdMethod::new_native(self.clone(), func))
+        StdMethod::new_native(self.clone(), func).into()
     }
 
     fn get_attribute(self: &Rc<Self>, s: StringVar) -> Variable {
@@ -68,15 +69,15 @@ impl Set {
             "add" => Self::add,
             "addAll" => Self::add_all,
             "remove" => Self::del_attr,
-            "length" => return Variable::Bigint(self.value.borrow().size().into()),
+            "length" => return IntVar::from(self.value.borrow().size()).into(),
             _ => unimplemented!(),
         };
-        Variable::Method(StdMethod::new_native(self.clone(), func))
+        StdMethod::new_native(self.clone(), func).into()
     }
 
     fn intersection(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        let other = replace(&mut args[0], Variable::Null());
+        let other = take(&mut args[0]);
         let other_iter = other.iter(runtime)?;
         let mut result_vec = Vec::new();
         while let Option::Some(val) = other_iter.next(runtime)? {
@@ -96,7 +97,7 @@ impl Set {
             values: result_vec,
             size: result_size,
         };
-        let other = replace(&mut args[0], Variable::Null());
+        let other = take(&mut args[0]);
         let other_iter = other.iter(runtime)?;
         while let Option::Some(val) = other_iter.next(runtime)? {
             result.add(val, runtime)?;
@@ -112,7 +113,7 @@ impl Set {
             values: result_vec,
             size: result_size,
         };
-        let other = replace(&mut args[0], Variable::Null());
+        let other = take(&mut args[0]);
         let other_iter = other.iter(runtime)?;
         while let Option::Some(val) = other_iter.next(runtime)? {
             if result.contains(val.clone(), runtime)? {
@@ -155,7 +156,7 @@ impl Set {
 
     fn add_all(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        let val = replace(&mut args[0], Variable::Null());
+        let val = take(&mut args[0]);
         let val_iter = val.iter(runtime)?;
         while let Option::Some(arg) = val_iter.next(runtime)? {
             if arg.get_type().is_subclass(&self.generic) {
@@ -175,7 +176,7 @@ impl Set {
 
     fn remove(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        let val = replace(&mut args[0], Variable::Null());
+        let val = take(&mut args[0]);
         let was_removed = self.value.borrow_mut().remove(val, runtime)?;
         runtime.return_1(was_removed.into())
     }
@@ -469,7 +470,7 @@ impl SetIter {
         let val = SetIter {
             parent,
             bucket_no: Cell::new(0),
-            index: RefCell::new(Variable::Null()),
+            index: RefCell::new(Variable::default()),
         };
         match val.parent.value.borrow().values[0].as_ref() {
             Option::Some(entry) => {
@@ -508,7 +509,7 @@ impl CustomVar for SetIter {
                 _ => unimplemented!(),
             },
         };
-        Variable::Method(StdMethod::new_native(self, func))
+        StdMethod::new_native(self, func).into()
     }
 
     fn set(self: Rc<Self>, _name: Name, _object: Variable) {
@@ -530,7 +531,7 @@ impl NativeIterator for SetIter {
         let parent = self.parent.value.borrow();
         let parent_node = parent.values[bucket].as_ref().unwrap();
         let node = parent_node.get_entry(self.index.borrow().clone(), runtime)?;
-        let val = self.index.replace(Variable::Null());
+        let val = self.index.replace(Variable::default());
         debug_assert!(node.get_val().equals(val.clone(), runtime)?);
         if let Option::Some(next) = node.get_next() {
             self.index.replace(next.get_val().clone());
