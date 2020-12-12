@@ -21,7 +21,7 @@ impl LangTuple {
     pub fn str(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
         let mut result = "(".to_string();
         for (i, value) in self.values.iter().enumerate() {
-            result += value.str(runtime)?.as_str();
+            result += value.clone().str(runtime)?.as_str();
             if i < self.values.len() - 1 {
                 result += ", ";
             }
@@ -32,7 +32,7 @@ impl LangTuple {
     pub fn repr(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
         let mut result = "(".to_string();
         for (i, value) in self.values.iter().enumerate() {
-            result += value.repr(runtime)?.as_str();
+            result += value.clone().repr(runtime)?.as_str();
             if i < self.values.len() - 1 {
                 result += ", ";
             }

@@ -26,15 +26,15 @@ impl LangOption {
         }
     }
 
-    pub fn str(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
-        Result::Ok(match &**self {
+    pub fn str(self, runtime: &mut Runtime) -> Result<StringVar, ()> {
+        Result::Ok(match self.take() {
             Option::Some(val) => format!("Some({})", val.str(runtime)?).into(),
             Option::None => "null".into(),
         })
     }
 
-    pub fn repr(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
-        Result::Ok(match &**self {
+    pub fn repr(self, runtime: &mut Runtime) -> Result<StringVar, ()> {
+        Result::Ok(match self.take() {
             Option::Some(val) => format!("Some({})", val.repr(runtime)?).into(),
             Option::None => "null".into(),
         })
@@ -73,7 +73,7 @@ impl LangOption {
     fn to_str(&self, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         let result = match &**self {
-            Option::Some(val) => format!("Some({})", val.str(runtime)?).into(),
+            Option::Some(val) => format!("Some({})", val.clone().str(runtime)?).into(),
             Option::None => Variable::String("null".into()),
         };
         runtime.return_1(result)
@@ -82,7 +82,7 @@ impl LangOption {
     fn to_repr(&self, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         let result = match &**self {
-            Option::Some(val) => format!("Some({})", val.repr(runtime)?).into(),
+            Option::Some(val) => format!("Some({})", val.clone().repr(runtime)?).into(),
             Option::None => Variable::String("null".into()),
         };
         runtime.return_1(result)

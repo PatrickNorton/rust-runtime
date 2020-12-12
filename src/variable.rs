@@ -51,11 +51,11 @@ pub enum Variable {
 }
 
 impl Variable {
-    pub fn str(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
+    pub fn str(self, runtime: &mut Runtime) -> Result<StringVar, ()> {
         match self {
             Variable::Null() => Result::Ok("null".into()),
-            Variable::Bool(val) => Result::Ok((if *val { "true" } else { "false" }).into()),
-            Variable::String(val) => Result::Ok(val.clone()),
+            Variable::Bool(val) => Result::Ok((if val { "true" } else { "false" }).into()),
+            Variable::String(val) => Result::Ok(val),
             Variable::Bigint(val) => Result::Ok(val.to_string().into()),
             Variable::Decimal(val) => Result::Ok(val.to_string().into()),
             Variable::Char(val) => Result::Ok(val.to_string().into()),
@@ -63,17 +63,17 @@ impl Variable {
             Variable::Standard(val) => val.str(runtime),
             Variable::Tuple(val) => val.str(runtime),
             Variable::Function(val) => Result::Ok(val.to_str(runtime)),
-            Variable::Custom(val) => (**val).clone().str(runtime),
+            Variable::Custom(val) => val.into_inner().str(runtime),
             Variable::Union(val) => val.str(runtime),
             Variable::Option(val) => val.str(runtime),
             Variable::Method(_) => unimplemented!(),
         }
     }
 
-    pub fn repr(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
+    pub fn repr(self, runtime: &mut Runtime) -> Result<StringVar, ()> {
         match self {
             Variable::Null() => Result::Ok("null".into()),
-            Variable::Bool(val) => Result::Ok((if *val { "true" } else { "false" }).into()),
+            Variable::Bool(val) => Result::Ok((if val { "true" } else { "false" }).into()),
             Variable::String(val) => Result::Ok(format!("{:?}", val.as_str()).into()),
             Variable::Bigint(val) => Result::Ok(val.to_string().into()),
             Variable::Decimal(val) => Result::Ok(val.to_string().into()),
@@ -82,7 +82,7 @@ impl Variable {
             Variable::Standard(val) => val.repr(runtime),
             Variable::Tuple(val) => val.repr(runtime),
             Variable::Function(val) => Result::Ok(val.to_str(runtime)),
-            Variable::Custom(val) => (**val).clone().repr(runtime),
+            Variable::Custom(val) => val.into_inner().repr(runtime),
             Variable::Union(val) => val.repr(runtime),
             Variable::Option(val) => val.repr(runtime),
             Variable::Method(_) => unimplemented!(),

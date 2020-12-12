@@ -235,9 +235,9 @@ impl InnerDict {
         let mut result = String::new();
         result += "{";
         self.for_each(|x, y| {
-            result += x.str(runtime)?.as_str();
+            result += x.clone().str(runtime)?.as_str();
             result += ": ";
-            result += y.str(runtime)?.as_str();
+            result += y.clone().str(runtime)?.as_str();
             result += ", ";
             FnResult::Ok(())
         })?;

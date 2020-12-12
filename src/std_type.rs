@@ -13,6 +13,7 @@ use crate::tuple::LangTuple;
 use crate::variable::{FnResult, Variable};
 use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
+use std::mem::take;
 use std::ptr;
 use std::string::{String, ToString};
 
@@ -108,13 +109,17 @@ impl Type {
         var.get_type().is_subclass(self)
     }
 
-    pub fn create_inst(&self, args: Vec<Variable>, runtime: &mut Runtime) -> Result<Variable, ()> {
+    pub fn create_inst(
+        &self,
+        mut args: Vec<Variable>,
+        runtime: &mut Runtime,
+    ) -> Result<Variable, ()> {
         Result::Ok(match self {
             Type::Standard(std_t) => std_t.create(args, runtime)?,
             Type::Null => Variable::Null(),
             Type::Bool => Variable::Bool(args[0].to_bool(runtime)?),
             Type::Bigint => Variable::Bigint(args[0].int(runtime)?),
-            Type::String => Variable::String(args[0].str(runtime)?),
+            Type::String => Variable::String(take(&mut args[0]).str(runtime)?),
             Type::Char => unimplemented!(),
             Type::Decimal => unimplemented!(),
             Type::Tuple => Variable::Tuple(LangTuple::new(args)),

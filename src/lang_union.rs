@@ -284,7 +284,7 @@ mod default_functions {
             "{}.{}({})",
             this.cls.name(),
             this.variant_name(),
-            this.value.repr(runtime)?
+            this.value.clone().repr(runtime)?
         );
         runtime.return_1(Variable::String(result.into()))
     }

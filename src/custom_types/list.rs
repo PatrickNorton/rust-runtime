@@ -84,7 +84,7 @@ impl List {
         let mut value: String = String::new();
         value += "[";
         for arg in self.value.borrow().iter().enumerate() {
-            value += arg.1.str(runtime)?.as_str();
+            value += arg.1.clone().str(runtime)?.as_str();
             if arg.0 != self.value.borrow().len() - 1 {
                 value += ", ";
             }

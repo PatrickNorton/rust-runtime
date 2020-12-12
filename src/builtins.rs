@@ -34,9 +34,9 @@ fn input() -> Variable {
     Variable::Function(Function::Native(input_impl))
 }
 
-fn input_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn input_impl(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    print!("{}", args[0].str(runtime)?);
+    print!("{}", take(&mut args[0]).str(runtime)?);
     let mut input = String::new();
     match std::io::stdin().read_line(&mut input) {
         Ok(_) => runtime.push(Variable::String(input.into())),

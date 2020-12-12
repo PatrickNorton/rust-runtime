@@ -276,7 +276,7 @@ impl InnerSet {
         let mut result = String::new();
         result += "{";
         self.for_each(|x| {
-            result += x.str(runtime)?.as_str();
+            result += x.clone().str(runtime)?.as_str();
             result += ", ";
             FnResult::Ok(())
         })?;

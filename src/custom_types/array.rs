@@ -96,7 +96,7 @@ impl Array {
         let mut value = String::new();
         value += "Array[";
         for arg in self.vars.borrow().iter().enumerate() {
-            value += arg.1.str(runtime)?.as_str();
+            value += arg.1.clone().str(runtime)?.as_str();
             if arg.0 != self.vars.borrow().len() - 1 {
                 value += ", ";
             }
