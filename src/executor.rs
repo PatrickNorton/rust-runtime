@@ -221,12 +221,12 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         Bytecode::Contains => call_operator(Operator::In, 1, runtime)?,
         Bytecode::Jump => runtime.goto(bytes_0),
         Bytecode::JumpTrue => {
-            if runtime.pop().to_bool(runtime)? {
+            if runtime.pop().into_bool(runtime)? {
                 runtime.goto(bytes_0)
             }
         }
         Bytecode::JumpFalse => {
-            if !runtime.pop().to_bool(runtime)? {
+            if !runtime.pop().into_bool(runtime)? {
                 runtime.goto(bytes_0)
             }
         }

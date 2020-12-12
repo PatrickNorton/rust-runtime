@@ -70,7 +70,7 @@ impl Runtime {
     }
 
     pub fn pop_bool(&mut self) -> Result<bool, ()> {
-        self.pop().to_bool(self)
+        self.pop().into_bool(self)
     }
 
     pub fn top(&mut self) -> &Variable {

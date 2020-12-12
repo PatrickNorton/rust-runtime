@@ -64,7 +64,7 @@ pub trait CustomVar: Debug + Any + Downcast {
 
     fn bool(self: Rc<Self>, runtime: &mut Runtime) -> Result<bool, ()> {
         self.call_op(Operator::Bool, vec![], runtime)?;
-        runtime.pop_return().to_bool(runtime)
+        runtime.pop_return().into_bool(runtime)
     }
 
     fn iter(self: Rc<Self>, runtime: &mut Runtime) -> Result<looping::Iterator, ()> {

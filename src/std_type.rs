@@ -117,8 +117,8 @@ impl Type {
         Result::Ok(match self {
             Type::Standard(std_t) => std_t.create(args, runtime)?,
             Type::Null => Variable::Null(),
-            Type::Bool => Variable::Bool(args[0].to_bool(runtime)?),
-            Type::Bigint => Variable::Bigint(args[0].int(runtime)?),
+            Type::Bool => Variable::Bool(take(&mut args[0]).into_bool(runtime)?),
+            Type::Bigint => Variable::Bigint(take(&mut args[0]).int(runtime)?),
             Type::String => Variable::String(take(&mut args[0]).str(runtime)?),
             Type::Char => unimplemented!(),
             Type::Decimal => unimplemented!(),

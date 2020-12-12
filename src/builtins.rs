@@ -85,9 +85,9 @@ fn enumerate() -> Variable {
     Variable::Function(Function::Native(enumerate_impl))
 }
 
-fn enumerate_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn enumerate_impl(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    let iterable = args[0].iter(runtime)?;
+    let iterable = take(&mut args[0]).iter(runtime)?;
     runtime.return_1(Enumerate::new(iterable).into())
 }
 

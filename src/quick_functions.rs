@@ -414,7 +414,7 @@ fn shift_err(big_val: IntVar) -> StringVar {
 pub fn quick_bitwise_and(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
     match this {
         Variable::Null() => unimplemented!(),
-        Variable::Bool(b) => Result::Ok(Variable::Bool(b & other.to_bool(runtime)?)),
+        Variable::Bool(b) => Result::Ok(Variable::Bool(b & other.into_bool(runtime)?)),
         Variable::Bigint(i) => Result::Ok(Variable::Bigint(i & IntVar::from(other))),
         Variable::String(_) => unimplemented!(),
         Variable::Decimal(_) => unimplemented!(),
@@ -439,7 +439,7 @@ pub fn quick_bitwise_and(this: Variable, other: Variable, runtime: &mut Runtime)
 pub fn quick_bitwise_or(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
     match this {
         Variable::Null() => unimplemented!(),
-        Variable::Bool(b) => Result::Ok(Variable::Bool(b | other.to_bool(runtime)?)),
+        Variable::Bool(b) => Result::Ok(Variable::Bool(b | other.into_bool(runtime)?)),
         Variable::Bigint(i) => Result::Ok(Variable::Bigint(i | IntVar::from(other))),
         Variable::String(_) => unimplemented!(),
         Variable::Decimal(_) => unimplemented!(),
@@ -464,7 +464,7 @@ pub fn quick_bitwise_or(this: Variable, other: Variable, runtime: &mut Runtime) 
 pub fn quick_bitwise_xor(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
     match this {
         Variable::Null() => unimplemented!(),
-        Variable::Bool(b) => Result::Ok(Variable::Bool(b ^ other.to_bool(runtime)?)),
+        Variable::Bool(b) => Result::Ok(Variable::Bool(b ^ other.into_bool(runtime)?)),
         Variable::Bigint(i) => Result::Ok(Variable::Bigint(i ^ IntVar::from(other))),
         Variable::String(_) => unimplemented!(),
         Variable::Decimal(_) => unimplemented!(),

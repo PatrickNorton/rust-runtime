@@ -89,69 +89,69 @@ impl Variable {
         }
     }
 
-    pub fn int(&self, runtime: &mut Runtime) -> Result<IntVar, ()> {
+    pub fn int(self, runtime: &mut Runtime) -> Result<IntVar, ()> {
         match self {
-            Variable::Bool(val) => Result::Ok(if *val { 1 } else { 0 }.into()),
-            Variable::Bigint(val) => Result::Ok(val.clone()),
+            Variable::Bool(val) => Result::Ok(if val { 1 } else { 0 }.into()),
+            Variable::Bigint(val) => Result::Ok(val),
             Variable::Decimal(val) => Result::Ok(val.to_integer().into()),
-            Variable::Char(val) => Result::Ok((*val as u32).into()),
+            Variable::Char(val) => Result::Ok((val as u32).into()),
             Variable::Standard(val) => val.int(runtime),
-            Variable::String(val) => Result::Ok(IntVar::from_str(val)?),
-            Variable::Custom(val) => (**val).clone().int(runtime),
+            Variable::String(val) => Result::Ok(IntVar::from_str(val.as_str())?),
+            Variable::Custom(val) => val.into_inner().int(runtime),
             Variable::Union(val) => val.int(runtime),
             _ => unimplemented!(),
         }
     }
 
-    pub fn to_bool(&self, runtime: &mut Runtime) -> Result<bool, ()> {
+    pub fn into_bool(self, runtime: &mut Runtime) -> Result<bool, ()> {
         match self {
             Variable::Null() => Result::Ok(false),
-            Variable::Bool(val) => Result::Ok(*val),
+            Variable::Bool(val) => Result::Ok(val),
             Variable::String(val) => Result::Ok(!val.is_empty()),
             Variable::Bigint(val) => Result::Ok(!val.is_zero()),
-            Variable::Decimal(val) => Result::Ok(val != &RationalVar::zero()),
-            Variable::Char(val) => Result::Ok(val != &'\0'),
+            Variable::Decimal(val) => Result::Ok(!val.is_zero()),
+            Variable::Char(val) => Result::Ok(val != '\0'),
             Variable::Type(_) => Result::Ok(true),
             Variable::Standard(val) => val.bool(runtime),
             Variable::Tuple(val) => Result::Ok(!val.is_empty()),
             Variable::Method(_) => Result::Ok(true),
             Variable::Function(_) => Result::Ok(true),
-            Variable::Custom(val) => (**val).clone().bool(runtime),
+            Variable::Custom(val) => val.into_inner().bool(runtime),
             Variable::Union(val) => val.bool(runtime),
             Variable::Option(val) => Result::Ok(val.is_some()),
         }
     }
 
-    pub fn call(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
+    pub fn call(self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
         match self {
             Variable::Standard(val) => val.call(args),
             Variable::Method(method) => method.call(args),
             Variable::Function(func) => func.call(args),
             Variable::Type(t) => t.push_create(args),
-            Variable::Custom(val) => (**val).clone().call(args.0, args.1),
+            Variable::Custom(val) => val.into_inner().call(args.0, args.1),
             Variable::Union(val) => val.call(args),
             x => unimplemented!("{:?}()\n{}", x, args.1.stack_frames()),
         }
     }
 
-    pub fn call_or_goto(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
+    pub fn call_or_goto(self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
         match self {
             Variable::Standard(val) => val.call_or_goto(args),
             Variable::Method(method) => method.call_or_goto(args),
             Variable::Function(func) => func.call_or_goto(args),
             Variable::Type(t) => t.push_create(args),
-            Variable::Custom(val) => (**val).clone().call_or_goto(args.0, args.1),
+            Variable::Custom(val) => val.into_inner().call_or_goto(args.0, args.1),
             Variable::Union(val) => val.call_or_goto(args),
             x => unimplemented!("{}()\n{}", x.get_type().str(), args.1.stack_frames()),
         }
     }
 
-    pub fn iter(&self, runtime: &mut Runtime) -> Result<looping::Iterator, ()> {
+    pub fn iter(self, runtime: &mut Runtime) -> Result<looping::Iterator, ()> {
         match self {
             Variable::String(_) => todo!(),
             Variable::Type(_) => unimplemented!("Enum type iteration not completed yet"),
             Variable::Standard(val) => val.iter(runtime),
-            Variable::Custom(val) => (**val).clone().iter(runtime),
+            Variable::Custom(val) => val.into_inner().iter(runtime),
             Variable::Union(val) => val.iter(runtime),
             x => unimplemented!("{}.iter()\n{}", x.get_type().str(), runtime.stack_frames()),
         }
@@ -216,10 +216,10 @@ impl Variable {
         })
     }
 
-    pub fn set(&self, index: StringVar, value: Variable, runtime: &mut Runtime) -> FnResult {
+    pub fn set(self, index: StringVar, value: Variable, runtime: &mut Runtime) -> FnResult {
         match self {
             Variable::Standard(val) => val.set(index, value, runtime)?,
-            Variable::Custom(val) => (**val).clone().set(Name::Attribute(index), value),
+            Variable::Custom(val) => val.into_inner().set(Name::Attribute(index), value),
             Variable::Type(val) => val.set(index, value, runtime),
             _ => unimplemented!(),
         }
@@ -265,7 +265,7 @@ impl Variable {
     }
 
     pub fn equals(&self, other: Variable, runtime: &mut Runtime) -> Result<bool, ()> {
-        quick_equals(self.clone(), other, runtime)?.to_bool(runtime)
+        quick_equals(self.clone(), other, runtime)?.into_bool(runtime)
     }
 
     pub fn is_type_of(&self, other: &Variable) -> bool {

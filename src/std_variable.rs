@@ -46,7 +46,7 @@ impl StdVariable {
 
     pub fn bool(&self, runtime: &mut Runtime) -> Result<bool, ()> {
         self.call_operator(Operator::Bool, vec![], runtime)?;
-        runtime.pop_return().to_bool(runtime)
+        runtime.pop_return().into_bool(runtime)
     }
 
     pub fn int(&self, runtime: &mut Runtime) -> Result<IntVar, ()> {
