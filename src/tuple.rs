@@ -8,13 +8,13 @@ use std::slice;
 
 #[derive(Debug, Clone)]
 pub struct LangTuple {
-    values: Rc<Vec<Variable>>,
+    values: Rc<[Variable]>,
 }
 
 impl LangTuple {
     pub fn new(args: Vec<Variable>) -> Self {
         LangTuple {
-            values: Rc::new(args),
+            values: args.into(),
         }
     }
 
