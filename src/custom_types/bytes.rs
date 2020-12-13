@@ -163,7 +163,7 @@ impl LangBytes {
                     )
                     .and_then(|_| unreachable!()),
             })
-            .collect::<Result<String, ()>>()
+            .collect()
     }
 
     fn convert_utf32_be(&self, runtime: &mut Runtime) -> Result<String, ()> {
@@ -179,7 +179,7 @@ impl LangBytes {
                     )
                     .and_then(|_| unreachable!()),
             })
-            .collect::<Result<String, ()>>()
+            .collect()
     }
 
     fn get(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

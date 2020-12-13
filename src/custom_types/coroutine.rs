@@ -7,7 +7,7 @@ use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::stack_frame::StackFrame;
 use crate::std_type::Type;
-use crate::variable::{FnResult, Variable};
+use crate::variable::{FnResult, OptionVar, Variable};
 use std::cell::Cell;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
@@ -94,11 +94,7 @@ impl NativeIterator for Generator {
         runtime.add_generator(self)?;
         match executor::execute(runtime) {
             FnResult::Ok(_) => match runtime.pop_return() {
-                Variable::Option(i, val) => IterResult::Ok(if i == 1 {
-                    val.map(Variable::from)
-                } else {
-                    Option::Some(Variable::Option(i - 1, val))
-                }),
+                Variable::Option(i, val) => IterResult::Ok(OptionVar(i, val).into()),
                 _ => panic!("Expected option to be returned from generator"),
             },
             FnResult::Err(_) => IterResult::Err(()),
