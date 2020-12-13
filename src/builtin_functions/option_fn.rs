@@ -4,7 +4,7 @@ use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
-use crate::variable::{FnResult, InnerVar, Variable};
+use crate::variable::{FnResult, InnerVar, OptionVar, Variable};
 use std::mem::take;
 
 pub fn str(i: usize, val: Option<InnerVar>, runtime: &mut Runtime) -> Result<StringVar, ()> {
@@ -73,19 +73,14 @@ fn map_fn(
     runtime: &mut Runtime,
 ) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    let result = if this.0 == 1 {
-        match &this.1 {
-            Option::Some(val) => {
-                take(&mut args[0]).call((vec![Variable::Normal((*val).clone())], runtime))?;
-                Option::Some(runtime.pop_return()).into()
-            }
-            Option::None => Option::None.into(),
+    let result = match OptionVar(this.0, this.1.clone()).into() {
+        Option::Some(val) => {
+            take(&mut args[0]).call((vec![val], runtime))?;
+            Option::Some(runtime.pop_return())
         }
-    } else {
-        take(&mut args[0]).call((vec![Variable::Option(this.0 - 1, this.1.clone())], runtime))?;
-        Option::Some(runtime.pop_return()).into()
+        Option::None => Option::None,
     };
-    runtime.return_1(result)
+    runtime.return_1(result.into())
 }
 
 fn flat_map(
@@ -94,19 +89,14 @@ fn flat_map(
     runtime: &mut Runtime,
 ) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    let result = if this.0 == 1 {
-        match &this.1 {
-            Option::Some(val) => {
-                take(&mut args[0]).call((vec![Variable::from((*val).clone())], runtime))?;
-                runtime.pop_return()
-            }
-            Option::None => Option::None.into(),
+    match OptionVar(this.0, this.1.clone()).into() {
+        Option::Some(val) => {
+            take(&mut args[0]).call((vec![val], runtime))?;
+            let val = runtime.pop_return();
+            runtime.return_1(val)
         }
-    } else {
-        take(&mut args[0]).call((vec![Variable::Option(this.0 - 1, this.1.clone())], runtime))?;
-        runtime.pop_return()
-    };
-    runtime.return_1(result)
+        Option::None => runtime.return_1(Option::None.into()),
+    }
 }
 
 fn to_str(
@@ -115,11 +105,8 @@ fn to_str(
     runtime: &mut Runtime,
 ) -> FnResult {
     debug_assert!(args.is_empty());
-    let result = match &this.1 {
-        Option::Some(val) => format!("Some({})", Variable::from(val.clone()).str(runtime)?).into(),
-        Option::None => StringVar::from("null").into(),
-    };
-    runtime.return_1(result)
+    let val = str(this.0, this.1.clone(), runtime)?;
+    runtime.return_1(val.into())
 }
 
 fn to_repr(
@@ -128,9 +115,6 @@ fn to_repr(
     runtime: &mut Runtime,
 ) -> FnResult {
     debug_assert!(args.is_empty());
-    let result = match &this.1 {
-        Option::Some(val) => format!("Some({})", Variable::from(val.clone()).repr(runtime)?).into(),
-        Option::None => StringVar::from("null").into(),
-    };
-    runtime.return_1(result)
+    let val = repr(this.0, this.1.clone(), runtime)?;
+    runtime.return_1(val.into())
 }
