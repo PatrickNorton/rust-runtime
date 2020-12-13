@@ -21,6 +21,7 @@ use crate::string_var::StringVar;
 use crate::variable::{FnResult, InnerVar, OptionVar, Variable};
 use num::traits::FromPrimitive;
 use num::Zero;
+use std::convert::TryInto;
 use std::mem::take;
 use std::ops::SubAssign;
 
@@ -474,6 +475,41 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let start = runtime.pop();
             runtime.push(Slice::from_vars(start, stop, step).into());
         }
+        Bytecode::ListDyn => {
+            let list_type = match runtime.pop() {
+                Variable::Normal(InnerVar::Type(t)) => t,
+                _ => panic!("Bytecode::ListDyn should have generic type as first parameter"),
+            };
+            let argc = IntVar::from(runtime.pop())
+                .try_into()
+                .expect("Too many list values");
+            let value = List::from_values(list_type, runtime.load_args(argc));
+            runtime.push(value.into())
+        }
+        Bytecode::SetDyn => {
+            let set_type = match runtime.pop() {
+                Variable::Normal(InnerVar::Type(t)) => t,
+                _ => panic!("Bytecode::SetDyn should have generic type as first parameter"),
+            };
+            let argc = IntVar::from(runtime.pop())
+                .try_into()
+                .expect("Too many set values");
+            let value = Set::new(set_type, runtime.load_args(argc), runtime)?;
+            runtime.push(value.into())
+        }
+        Bytecode::DictDyn => {
+            let argc: u16 = IntVar::from(runtime.pop())
+                .try_into()
+                .expect("Too many dict values");
+            let mut keys: Vec<Variable> = Vec::with_capacity(argc as usize);
+            let mut values: Vec<Variable> = Vec::with_capacity(argc as usize);
+            for _ in 0..argc {
+                keys.push(runtime.pop());
+                values.push(runtime.pop());
+            }
+            let value = Dict::from_args(keys, values, runtime)?;
+            runtime.push(value.into())
+        }
         Bytecode::DoStatic => {
             if !runtime.do_static() {
                 runtime.goto(bytes_0);
@@ -568,6 +604,23 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             for val in values {
                 runtime.push(val);
             }
+        }
+        Bytecode::UnpackIterable => {
+            let iterable = runtime.pop();
+            let iter = iterable.iter(runtime)?;
+            let mut i = 0;
+            while let Option::Some(val) = iter.next(runtime)? {
+                runtime.push(val);
+                i += 1;
+            }
+            runtime.push(IntVar::from(i).into())
+        }
+        Bytecode::PackIterable => {
+            unimplemented!()
+        }
+        Bytecode::SwapDyn => {
+            let argc: usize = IntVar::from(runtime.pop()).try_into().expect("Too big");
+            runtime.swap_n(argc + 2);
         }
     }
     FnResult::Ok(())

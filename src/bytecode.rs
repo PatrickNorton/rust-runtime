@@ -86,6 +86,9 @@ pub enum Bytecode {
     Dotimes = 0x57,
     ForParallel = 0x58,
     MakeSlice = 0x59,
+    ListDyn = 0x5A,
+    SetDyn = 0x5B,
+    DictDyn = 0x5C,
     // Statics
     DoStatic = 0x60,
     StoreStatic = 0x61,
@@ -103,6 +106,9 @@ pub enum Bytecode {
     // Dups, part 2
     DupTop2 = 0x78,
     DupTopN = 0x79,
+    UnpackIterable = 0x7A,
+    PackIterable = 0x7B,
+    SwapDyn = 0x7C,
 }
 
 pub fn bytecode_size(b: Bytecode) -> (usize, usize) {
@@ -175,7 +181,7 @@ pub fn bytecode_size(b: Bytecode) -> (usize, usize) {
         Bytecode::ListAdd | Bytecode::SetAdd | Bytecode::DictAdd => (0, 0),
         Bytecode::Dotimes => (4, 0),
         Bytecode::ForParallel => (4, 2),
-        Bytecode::MakeSlice => (0, 0),
+        Bytecode::MakeSlice | Bytecode::ListDyn | Bytecode::SetDyn | Bytecode::DictDyn => (0, 0),
         Bytecode::DoStatic => (4, 0),
         Bytecode::StoreStatic
         | Bytecode::LoadStatic
@@ -188,5 +194,6 @@ pub fn bytecode_size(b: Bytecode) -> (usize, usize) {
         Bytecode::GetType => (0, 0),
         Bytecode::DupTop2 => (0, 0),
         Bytecode::DupTopN => (2, 0),
+        Bytecode::UnpackIterable | Bytecode::PackIterable | Bytecode::SwapDyn => (0, 0),
     }
 }
