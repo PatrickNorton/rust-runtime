@@ -117,7 +117,7 @@ impl Runtime {
     }
 
     pub fn call_tos_or_goto(&mut self, argc: u16) -> FnResult {
-        let args = self.load_args(argc);
+        let args = self.load_args(argc as usize);
         let callee = self.pop();
         callee.call_or_goto((args, self))
     }
@@ -196,9 +196,9 @@ impl Runtime {
         self.last_mut_frame().advance(pos);
     }
 
-    pub fn load_args(&mut self, argc: u16) -> Vec<Variable> {
+    pub fn load_args(&mut self, argc: usize) -> Vec<Variable> {
         self.variables
-            .drain(self.variables.len() - argc as usize..)
+            .drain(self.variables.len() - argc..)
             .collect()
     }
 

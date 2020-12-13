@@ -59,7 +59,7 @@ fn get_bytes(bytes: &[u8], mut start: usize, byte_count: usize) -> u32 {
 }
 
 fn call_operator(o: Operator, argc: u16, runtime: &mut Runtime) -> FnResult {
-    let argv = runtime.load_args(argc);
+    let argv = runtime.load_args(argc as usize);
     let caller = runtime.pop();
     caller.call_op_or_goto(o, argv, runtime)
 }
@@ -246,7 +246,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let fn_var = runtime.load_const(fn_index).clone();
             let fn_name = fn_var.str(runtime)?;
             let argc = bytes_1 as u16;
-            let args = runtime.load_args(argc);
+            let args = runtime.load_args(argc as usize);
             let var = runtime.pop();
             var.index(Name::Attribute(fn_name), runtime)?
                 .call_or_goto((args, runtime))?;
@@ -261,7 +261,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let fn_var = runtime.load_const(fn_index).clone();
             let fn_name = fn_var.str(runtime)?;
             let argc = bytes_1 as u16;
-            let args = runtime.load_args(argc);
+            let args = runtime.load_args(argc as usize);
             let var = runtime.pop();
             runtime.pop_stack();
             var.index(Name::Attribute(fn_name), runtime)?
@@ -385,7 +385,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
                 Variable::Normal(InnerVar::Type(t)) => t,
                 _ => panic!("Bytecode::ListCreate should have generic type as first parameter"),
             };
-            let value = List::from_values(list_type, runtime.load_args(argc));
+            let value = List::from_values(list_type, runtime.load_args(argc as usize));
             runtime.push(value.into())
         }
         Bytecode::SetCreate => {
@@ -394,7 +394,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
                 Variable::Normal(InnerVar::Type(t)) => t,
                 _ => panic!("Bytecode::ListCreate should have generic type as first parameter"),
             };
-            let argv = runtime.load_args(argc);
+            let argv = runtime.load_args(argc as usize);
             let value = Set::new(set_type, argv, runtime)?;
             runtime.push(value.into())
         }
