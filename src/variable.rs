@@ -585,7 +585,7 @@ impl From<OptionVar> for Option<Variable> {
         if x.0 == 1 {
             x.1.map(Variable::from)
         } else {
-            Option::Some(Variable::Option(x.0 - 1, x.1).into())
+            Option::Some(Variable::Option(x.0 - 1, x.1))
         }
     }
 }
