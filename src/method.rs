@@ -51,7 +51,7 @@ where
     ) -> FnResult {
         match self {
             InnerMethod::Standard(file, index) => {
-                let var: Variable = (*callee).clone().into();
+                let var = (*callee).clone().into();
                 args.insert(0, var.get_type().into());
                 args.insert(0, var);
                 runtime.push_stack(0, index as u16, args, file);
