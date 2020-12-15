@@ -8,7 +8,7 @@ pub fn op_fn(o: Operator) -> NativeCopyMethod<char> {
     match o {
         Operator::Equals => eq,
         Operator::Str => str,
-        Operator::Repr => str,
+        Operator::Repr => repr,
         x => unimplemented!("char.{}", x.name()),
     }
 }
@@ -25,4 +25,13 @@ fn eq(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
 fn str(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     runtime.return_1(StringVar::from(this.to_string()).into())
+}
+
+fn repr(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert!(args.is_empty());
+    let result: StringVar = match this {
+        '\'' => "c\"'\"".into(),
+        x => format!("c{:?}", x).into(),
+    };
+    runtime.return_1(result.into())
 }
