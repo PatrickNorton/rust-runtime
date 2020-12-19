@@ -1,3 +1,4 @@
+use crate::int_var::IntVar;
 use crate::method::{NativeCopyMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
@@ -7,6 +8,7 @@ use crate::variable::{FnResult, Variable};
 pub fn op_fn(o: Operator) -> NativeCopyMethod<char> {
     match o {
         Operator::Equals => eq,
+        Operator::Int => int,
         Operator::Str => str,
         Operator::Repr => repr,
         x => unimplemented!("char.{}", x.name()),
@@ -20,6 +22,11 @@ pub fn get_operator(this: char, o: Operator) -> Variable {
 
 fn eq(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     runtime.return_1(args.into_iter().any(|arg| char::from(arg) != this).into())
+}
+
+fn int(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert!(args.is_empty());
+    runtime.return_1(IntVar::from(this as u32).into())
 }
 
 fn str(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
