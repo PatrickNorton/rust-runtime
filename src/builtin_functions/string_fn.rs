@@ -1,6 +1,7 @@
 use crate::custom_types::bytes::LangBytes;
 use crate::custom_types::exceptions::{arithmetic_error, index_error, value_error};
 use crate::custom_types::list::List;
+use crate::custom_types::range::Range;
 use crate::custom_var::CustomVar;
 use crate::function::Function;
 use crate::int_var::IntVar;
@@ -12,7 +13,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::{AsciiVar, MaybeAscii, StrVar, StringVar};
 use crate::variable::{FnResult, Variable};
-use ascii::{AsAsciiStr, AsciiChar};
+use ascii::{AsAsciiStr, AsciiChar, AsciiString};
 use downcast_rs::Downcast;
 use num::{BigInt, Signed, ToPrimitive};
 use std::any::Any;
@@ -31,6 +32,7 @@ pub fn op_fn(o: Operator) -> NativeMethod<StringVar> {
         Operator::Str => str,
         Operator::Repr => repr,
         Operator::GetAttr => index,
+        Operator::GetSlice => slice,
         Operator::Iter => iter,
         Operator::Reversed => reversed,
         _ => unimplemented!("str.{}", o.name()),
@@ -166,6 +168,53 @@ fn index(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> Fn
     match this.char_at(index) {
         Option::None => runtime.throw_quick(index_error(), bounds_msg(big_index, this.char_len())),
         Option::Some(value) => runtime.return_1(value.into()),
+    }
+}
+
+fn slice(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert_eq!(args.len(), 1);
+    let range = Range::from_slice(this.char_len(), runtime, take(&mut args[0]))?;
+    match this.as_maybe_ascii() {
+        MaybeAscii::Ascii(s) => {
+            let mut result = AsciiString::new();
+            for i in range.values() {
+                let index = match i.to_usize() {
+                    Option::Some(val) => val,
+                    Option::None => {
+                        let msg = bounds_msg(i, s.len());
+                        return runtime.throw_quick(index_error(), msg);
+                    }
+                };
+                match s.get_ascii(index) {
+                    Option::None => {
+                        let msg = bounds_msg(i, s.len());
+                        return runtime.throw_quick(index_error(), msg);
+                    }
+                    Option::Some(value) => result.push(value),
+                }
+            }
+            runtime.return_1(StringVar::from(result).into())
+        }
+        MaybeAscii::Standard(s) => {
+            let mut result = String::new();
+            for i in range.values() {
+                let index = match i.to_usize() {
+                    Option::Some(val) => val,
+                    Option::None => {
+                        let msg = bounds_msg(i, s.chars().count());
+                        return runtime.throw_quick(index_error(), msg);
+                    }
+                };
+                match s.chars().nth(index) {
+                    Option::None => {
+                        let msg = bounds_msg(i, s.chars().count());
+                        return runtime.throw_quick(index_error(), msg);
+                    }
+                    Option::Some(value) => result.push(value),
+                }
+            }
+            runtime.return_1(StringVar::from(result).into())
+        }
     }
 }
 

@@ -1,4 +1,4 @@
-use ascii::{AsciiChar, AsciiStr};
+use ascii::{AsciiChar, AsciiStr, AsciiString};
 use std::fmt::{Debug, Formatter};
 use std::hash::{Hash, Hasher};
 use std::ops::Deref;
@@ -93,7 +93,17 @@ impl From<&'static str> for StringVar {
 
 impl From<String> for StringVar {
     fn from(x: String) -> Self {
-        StringVar::Other(Arc::from(x.as_str()))
+        StringVar::Other(Arc::from(x))
+    }
+}
+
+impl From<AsciiString> for StringVar {
+    fn from(x: AsciiString) -> Self {
+        let arc = Arc::<[u8]>::from(x.as_bytes());
+        // SAFETY: The internal representation of AsciiStr is the same as [u8]
+        // This is the same as Arc::from(
+        let arc = unsafe { Arc::from_raw(Arc::into_raw(arc) as *const AsciiStr) };
+        StringVar::Ascii(arc)
     }
 }
 

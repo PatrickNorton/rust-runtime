@@ -354,8 +354,19 @@ impl CustomVar for UnionMaker {
     }
 
     fn call_or_goto(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        debug_assert_eq!(args.len(), 1);
-        let value = take(&mut args[0]);
-        runtime.return_1(LangUnion::new(self.variant_no, Box::new(value), self.cls).into())
+        match args.len() {
+            0 => runtime.return_1(
+                LangUnion::new(self.variant_no, Box::new(Variable::default()), self.cls).into(),
+            ),
+            1 => {
+                let value = take(&mut args[0]);
+                runtime.return_1(LangUnion::new(self.variant_no, Box::new(value), self.cls).into())
+            }
+            x => panic!(
+                "Expected 1 or 0 args, got {}\n{}",
+                x,
+                runtime.stack_frames()
+            ),
+        }
     }
 }

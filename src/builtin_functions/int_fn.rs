@@ -36,6 +36,7 @@ pub fn op_fn(o: Operator) -> NativeMethod<IntVar> {
         Operator::Str => to_str,
         Operator::Int => to_int,
         Operator::Repr => to_str,
+        Operator::Bool => to_bool,
         _ => unimplemented!("int.{} unimplemented", o.name()),
     }
 }
@@ -255,4 +256,9 @@ fn to_str(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult
 fn to_int(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     runtime.return_1(this.clone().into())
+}
+
+fn to_bool(this: &IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert!(args.is_empty());
+    runtime.return_1((!this.is_zero()).into())
 }
