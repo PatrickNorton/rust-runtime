@@ -124,7 +124,7 @@ pub fn builtin_of(index: usize) -> Variable {
     }
 }
 
-pub fn default_methods(name: Name) -> StdVarMethod {
+pub fn default_methods(name: &Name) -> Option<StdVarMethod> {
     if let Name::Operator(o) = name {
         let result = match o {
             Operator::Repr => default_repr,
@@ -132,11 +132,11 @@ pub fn default_methods(name: Name) -> StdVarMethod {
             Operator::Equals => default_eq,
             Operator::Bool => default_bool,
             Operator::In => default_in,
-            _ => unimplemented!("name {} not found", name.as_str()),
+            _ => return Option::None,
         };
-        StdVarMethod::Native(result)
+        Option::Some(StdVarMethod::Native(result))
     } else {
-        panic!("name {} not found", name.as_str())
+        Option::None
     }
 }
 

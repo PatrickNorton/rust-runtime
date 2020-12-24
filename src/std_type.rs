@@ -322,7 +322,8 @@ impl StdType {
     pub(crate) fn get_method(&self, name: Name) -> StdVarMethod {
         match self.methods.get(&name) {
             Option::Some(t) => *t,
-            Option::None => default_methods(name),
+            Option::None => default_methods(&name)
+                .unwrap_or_else(|| panic!("{}.{} does not exist", self.name, name.as_str())),
         }
     }
 }

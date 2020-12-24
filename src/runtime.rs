@@ -704,7 +704,12 @@ impl InnerException {
 
     fn str(self, runtime: &mut Runtime) -> Result<StringVar, ()> {
         match self {
-            InnerException::Std(var) => var.str(runtime),
+            InnerException::Std(var) => {
+                runtime.push_native();
+                let result = var.str(runtime);
+                runtime.pop_native();
+                result
+            }
             InnerException::UnConstructed(_, msg, frames) => {
                 Result::Ok(format!("{}\n{}", msg, runtime.frame_strings(&*frames)).into())
             }
