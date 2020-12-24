@@ -35,7 +35,16 @@ pub fn execute(runtime: &mut Runtime) -> FnResult {
         let byte_0 = get_bytes(bytes, byte_start, byte_size.0);
         let byte_1 = get_bytes(bytes, byte_start + byte_size.0, byte_size.1);
         runtime.advance((byte_size.0 + byte_size.1 + 1) as u32);
-        parse(b, byte_0, byte_1, runtime)?; // FIXME: Exception throwing is broken
+        match parse(b, byte_0, byte_1, runtime) {
+            Result::Ok(_) => {}
+            Result::Err(_) => {
+                if runtime.is_native() {
+                    return Result::Err(());
+                } else {
+                    runtime.resume_throw()?;
+                }
+            }
+        };
         if runtime.current_pos() == runtime.current_fn().len() && !runtime.is_bottom_stack() {
             runtime.pop_stack();
         }

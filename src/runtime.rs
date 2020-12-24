@@ -552,14 +552,10 @@ impl Runtime {
     }
 
     pub fn pop_err(&mut self) -> Result<Variable, ()> {
-        match self
-            .thrown_exception
+        self.thrown_exception
             .take()
             .expect("pop_err called with no thrown exception")
-        {
-            InnerException::Std(v) => Result::Ok(v),
-            InnerException::UnConstructed(t, s, _) => t.create_inst(vec![s.into()], self),
-        }
+            .create(self)
     }
 
     pub fn pop_err_if(&mut self, t: Type) -> Result<Option<Variable>, ()> {
@@ -644,19 +640,21 @@ impl Runtime {
         }
     }
 
-    fn resume_throw(&mut self) -> FnResult {
+    pub fn resume_throw(&mut self) -> FnResult {
         let exception = self
             .thrown_exception
             .take()
             .expect("resume_throw() called with no thrown exception");
-        let frame = self
+        match self
             .exception_frames
             .get(&exception.get_type().into())
-            .expect("resume_throw called with no valid exception frame")
-            .last()
-            .expect("resume_throw called with no valid exception frame");
-        let (location, frame_height) = *frame;
-        self.unwind_to_height(location, frame_height, exception)
+            .and_then(|x| x.last().copied())
+        {
+            Option::Some((location, frame_height)) => {
+                self.unwind_to_height(location, frame_height, exception)
+            }
+            Option::None => self.unwind_to_empty(exception),
+        }
     }
 
     fn unwind_to_height(
@@ -667,8 +665,7 @@ impl Runtime {
     ) -> FnResult {
         while self.frames.len() > frame_height {
             if self.is_native() {
-                let true_exc = exception.create(self)?;
-                self.push(true_exc);
+                self.thrown_exception = Option::Some(exception);
                 return FnResult::Err(());
             }
             self.pop_stack();
@@ -687,8 +684,7 @@ impl Runtime {
         self.ret_count = 0;
         while !self.frames.is_empty() {
             if self.is_native() {
-                let true_exc = exception.create(self)?;
-                self.push(true_exc);
+                self.thrown_exception = Option::Some(exception);
                 return FnResult::Err(());
             }
             self.pop_stack();
