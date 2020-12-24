@@ -37,7 +37,11 @@ pub fn quick_add(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
         Variable::Normal(InnerVar::Tuple(_)) => unimplemented!(),
         Variable::Normal(InnerVar::Method(_)) => unimplemented!(),
         Variable::Normal(InnerVar::Function(_)) => unimplemented!(),
-        Variable::Normal(InnerVar::Custom(_)) => unimplemented!(),
+        Variable::Normal(InnerVar::Custom(c)) => {
+            c.into_inner()
+                .call_op(Operator::Add, vec![other], runtime)?;
+            QuickResult::Ok(runtime.pop_return())
+        }
         Variable::Normal(InnerVar::Union(u)) => {
             u.call_operator(Operator::Add, vec![other], runtime)?;
             QuickResult::Ok(runtime.pop_return())

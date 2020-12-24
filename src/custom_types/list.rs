@@ -49,6 +49,7 @@ impl List {
             Operator::SetSlice => List::set_slice,
             Operator::DelSlice => List::del_slice,
             Operator::IterSlice => List::iter_slice,
+            Operator::Add => List::plus,
             _ => unimplemented!("List.{}", name.name()),
         };
         Box::new(StdMethod::new(self, InnerMethod::Native(value))).into()
@@ -131,6 +132,25 @@ impl List {
                 Result::Err(_) => take(&mut args[1]),
             })
         }
+    }
+
+    fn plus(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        let iter = take(&mut args[0]).iter(runtime)?;
+        let mut new = Vec::new();
+        while let Option::Some(val) = iter.next(runtime)? {
+            if !val.get_type().is_subclass(&self.generic) {
+                panic!(
+                    "Bad type for list[{}].addAll: {}\n{}",
+                    self.generic.str(),
+                    val.get_type().str(),
+                    runtime.stack_frames(),
+                )
+            } else {
+                new.push(val)
+            }
+        }
+        runtime.return_1(List::from_values(self.generic, new).into())
     }
 
     fn pop(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
