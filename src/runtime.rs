@@ -306,6 +306,14 @@ impl Runtime {
         let stack_h = last_stack_frame.original_stack_height();
         if stack_h != 0 {
             let drain_end = self.variables.len() - self.ret_count;
+            if drain_end < stack_h {
+                panic!(
+                    "Attempted to remove a negative number of values ({}..{})\n{}",
+                    stack_h,
+                    drain_end,
+                    self.stack_frames()
+                )
+            }
             self.variables.drain(stack_h..drain_end);
         }
     }
@@ -585,17 +593,19 @@ impl Runtime {
     pub fn stack_frames(&self) -> String {
         let mut result = String::new();
         for frame in self.frames.iter().rev() {
-            let file = &self.files[frame.file_no()];
-            let fn_no = frame.get_fn_number();
-            let fn_pos = frame.current_pos();
-            let func = &file.get_functions()[fn_no as usize];
-            let fn_name = func.get_name();
-            result.push_str(&*format!(
-                "    at {}:{} ({})\n",
-                fn_name,
-                fn_pos,
-                file.get_name()
-            ))
+            if !frame.is_native() {
+                let file = &self.files[frame.file_no()];
+                let fn_no = frame.get_fn_number();
+                let fn_pos = frame.current_pos();
+                let func = &file.get_functions()[fn_no as usize];
+                let fn_name = func.get_name();
+                result.push_str(&*format!(
+                    "    at {}:{} ({})\n",
+                    fn_name,
+                    fn_pos,
+                    file.get_name()
+                ))
+            }
         }
         result
     }
@@ -673,6 +683,8 @@ impl Runtime {
     }
 
     fn unwind_to_empty(&mut self, exception: InnerException) -> FnResult {
+        let old_ret = self.ret_count;
+        self.ret_count = 0;
         while !self.frames.is_empty() {
             if self.is_native() {
                 let true_exc = exception.create(self)?;
@@ -681,6 +693,7 @@ impl Runtime {
             }
             self.pop_stack();
         }
+        self.ret_count = old_ret;
         exception.str(self).map(|x| panic!("{}", x))
     }
 }

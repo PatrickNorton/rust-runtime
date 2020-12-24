@@ -302,8 +302,8 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             return runtime.throw(result);
         }
         Bytecode::ThrowQuick => {
-            let msg = runtime.pop();
             let exc_type = runtime.pop();
+            let msg = runtime.pop();
             if let Variable::Normal(InnerVar::Type(t)) = exc_type {
                 let msg_str = msg.str(runtime)?;
                 return runtime.throw_quick(t, msg_str);

@@ -165,6 +165,7 @@ fn get_variables(data: &[u8], index: &mut usize) -> HashSet<StringVar> {
 }
 
 fn get_operators(
+    cls_name: &str,
     data: &[u8],
     file_no: usize,
     index: &mut usize,
@@ -178,13 +179,15 @@ fn get_operators(
         let method_size = bytes_index::<u32>(data, index);
         let values = data[*index..*index + method_size as usize].to_vec();
         *index += method_size as usize;
+        let full_name = format!("{}.{}", cls_name, op.name());
         operators.insert(op, StdVarMethod::Standard(file_no, functions.len() as u32));
-        functions.push(BaseFunction::new(String::new(), 0, values));
+        functions.push(BaseFunction::new(full_name, 0, values));
     }
     operators
 }
 
 fn get_methods(
+    cls_name: &str,
     data: &[u8],
     file_no: usize,
     index: &mut usize,
@@ -197,11 +200,12 @@ fn get_methods(
         let method_size = bytes_index::<u32>(data, index);
         let values = data[*index..*index + method_size as usize].to_vec();
         *index += method_size as usize;
+        let full_name = format!("{}.{}", cls_name, name);
         methods.insert(
             name,
             StdVarMethod::Standard(file_no, functions.len() as u32),
         );
-        functions.push(BaseFunction::new(String::new(), 0, values));
+        functions.push(BaseFunction::new(full_name, 0, values));
     }
     methods
 }
@@ -303,17 +307,17 @@ pub fn load_class(
     let name = load_std_str(data, index);
     for _ in 0..bytes_index::<u32>(data, index) {
         bytes_index::<u32>(data, index);
-        panic!("Supers not allowed yet")
+        // panic!("Supers not allowed yet")
     }
     let _generic_size = bytes_index::<u16>(data, index);
-    assert_eq!(_generic_size, 0);
+    // assert_eq!(_generic_size, 0);
     let names = get_names(data, index);
     let variables = get_variables(data, index);
     get_variables(data, index);
-    let operators = get_operators(data, file_no, index, functions);
-    let static_operators = get_operators(data, file_no, index, functions);
-    let methods = get_methods(data, file_no, index, functions);
-    let static_methods = get_methods(data, file_no, index, functions);
+    let operators = get_operators(&*name, data, file_no, index, functions);
+    let static_operators = get_operators(&*name, data, file_no, index, functions);
+    let methods = get_methods(&*name, data, file_no, index, functions);
+    let static_methods = get_methods(&*name, data, file_no, index, functions);
     let properties = get_properties(data, file_no, index, functions);
 
     match names {
