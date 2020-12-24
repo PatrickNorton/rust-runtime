@@ -211,6 +211,7 @@ fn get_methods(
 }
 
 fn get_properties(
+    cls_name: &str,
     data: &[u8],
     file_no: usize,
     index: &mut usize,
@@ -225,13 +226,21 @@ fn get_properties(
         let getter = data[*index..*index + getter_size as usize].to_vec();
         *index += getter_size as usize;
         let getter_index = functions.len();
-        functions.push(BaseFunction::new(name.clone(), 0, getter));
+        functions.push(BaseFunction::new(
+            format!("{}.{}$get", cls_name, name),
+            0,
+            getter,
+        ));
 
         let setter_size = bytes_index::<u32>(data, index);
         let setter = data[*index..*index + setter_size as usize].to_vec();
         *index += setter_size as usize;
         let setter_index = functions.len();
-        functions.push(BaseFunction::new(name.clone(), 0, setter));
+        functions.push(BaseFunction::new(
+            format!("{}.{}$set", cls_name, name),
+            0,
+            setter,
+        ));
 
         properties.insert(
             StringVar::from_leak(name),
@@ -318,7 +327,7 @@ pub fn load_class(
     let static_operators = get_operators(&*name, data, file_no, index, functions);
     let methods = get_methods(&*name, data, file_no, index, functions);
     let static_methods = get_methods(&*name, data, file_no, index, functions);
-    let properties = get_properties(data, file_no, index, functions);
+    let properties = get_properties(&*name, data, file_no, index, functions);
 
     match names {
         Option::None => Type::new_std(
