@@ -63,9 +63,10 @@ macro_rules! create_exc {
         pub fn $fn_name() -> Type {
             fn create(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
                 let msg = match args.len() {
-                    0 => format!("\n{}", runtime.stack_frames()),
+                    0 => format!("{}\n{}", stringify!($type_name), runtime.stack_frames()),
                     1 => format!(
-                        "{}\n{}",
+                        "{}:\n{}\n{}",
+                        stringify!($type_name),
                         StringVar::from(take(&mut args[0])),
                         runtime.stack_frames()
                     ),

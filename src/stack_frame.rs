@@ -1,3 +1,4 @@
+use crate::runtime::Runtime;
 use crate::variable::Variable;
 use std::collections::HashSet;
 use std::ops::{Index, IndexMut};
@@ -19,6 +20,7 @@ pub struct StackFrame {
 pub struct SFInfo {
     function_number: u16,
     file_number: usize,
+    current_pos: u32,
     native: bool,
 }
 
@@ -124,7 +126,12 @@ impl StackFrame {
     }
 
     pub fn exc_info(&self) -> SFInfo {
-        SFInfo::new(self.function_number, self.file_number, self.native)
+        SFInfo::new(
+            self.function_number,
+            self.file_number,
+            self.location,
+            self.native,
+        )
     }
 }
 
@@ -146,10 +153,11 @@ impl IndexMut<usize> for StackFrame {
 }
 
 impl SFInfo {
-    pub fn new(function_number: u16, file_number: usize, native: bool) -> SFInfo {
+    pub fn new(function_number: u16, file_number: usize, current_pos: u32, native: bool) -> SFInfo {
         SFInfo {
             function_number,
             file_number,
+            current_pos,
             native,
         }
     }
@@ -165,4 +173,28 @@ impl SFInfo {
     pub fn is_native(&self) -> bool {
         self.native
     }
+
+    pub fn current_pos(&self) -> u32 {
+        self.current_pos
+    }
+}
+
+pub fn frame_strings(frames: impl Iterator<Item = SFInfo>, runtime: &Runtime) -> String {
+    let mut result = String::new();
+    for frame in frames {
+        if !frame.is_native() {
+            let file = &runtime.file_no(frame.file_no());
+            let fn_no = frame.fn_no();
+            let fn_pos = frame.current_pos();
+            let func = &file.get_functions()[fn_no as usize];
+            let fn_name = func.get_name();
+            result.push_str(&*format!(
+                "    at {}:{} ({})\n",
+                fn_name,
+                fn_pos,
+                file.get_name()
+            ))
+        }
+    }
+    result
 }

@@ -8,7 +8,7 @@ use crate::jump_table::JumpTable;
 use crate::method::{NativeCopyMethod, NativeMethod};
 use crate::name::Name;
 use crate::operator::Operator;
-use crate::stack_frame::{SFInfo, StackFrame};
+use crate::stack_frame::{frame_strings, SFInfo, StackFrame};
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
@@ -237,6 +237,10 @@ impl Runtime {
 
     fn current_file(&self) -> &FileInfo {
         &self.files[self.current_file_no()]
+    }
+
+    pub(crate) fn file_no(&self, file_no: usize) -> &FileInfo {
+        &self.files[file_no]
     }
 
     pub fn push_stack(&mut self, var_count: u16, fn_no: u16, args: Vec<Variable>, info_no: usize) {
@@ -588,23 +592,7 @@ impl Runtime {
     }
 
     pub fn stack_frames(&self) -> String {
-        let mut result = String::new();
-        for frame in self.frames.iter().rev() {
-            if !frame.is_native() {
-                let file = &self.files[frame.file_no()];
-                let fn_no = frame.get_fn_number();
-                let fn_pos = frame.current_pos();
-                let func = &file.get_functions()[fn_no as usize];
-                let fn_name = func.get_name();
-                result.push_str(&*format!(
-                    "    at {}:{} ({})\n",
-                    fn_name,
-                    fn_pos,
-                    file.get_name()
-                ))
-            }
-        }
-        result
+        frame_strings(self.frames.iter().rev().map(StackFrame::exc_info), self)
     }
 
     pub fn class_no(&self, val: u32) -> Type {
@@ -626,25 +614,6 @@ impl Runtime {
             StackFrame::from_old(0, fn_no, self.current_file_no(), args, frame, stack_height);
         let stack = Vec::new();
         self.push(Rc::new(Generator::new(new_frame, stack)).into())
-    }
-
-    fn frame_strings(&self, frames: &[SFInfo]) -> String {
-        frames
-            .iter()
-            .enumerate()
-            .map(|f| self.frame_str(f.0, f.1))
-            .collect()
-    }
-
-    fn frame_str(&self, no: usize, frame: &SFInfo) -> String {
-        if frame.is_native() {
-            format!("{}: [unknown native function]\n", no)
-        } else {
-            let file = &self.files[frame.file_no()];
-            let file_name = file.get_name();
-            let fn_name = file.get_functions()[frame.fn_no() as usize].get_name();
-            format!("{}: {} {}\n", no, file_name, fn_name)
-        }
     }
 
     pub fn resume_throw(&mut self) -> FnResult {
@@ -717,9 +686,15 @@ impl InnerException {
                 runtime.pop_native();
                 result
             }
-            InnerException::UnConstructed(_, msg, frames) => {
-                Result::Ok(format!("{}\n{}", msg, runtime.frame_strings(&*frames)).into())
-            }
+            InnerException::UnConstructed(cls, msg, frames) => Result::Ok(
+                format!(
+                    "{}:\n{}\n{}",
+                    cls.str(),
+                    msg,
+                    frame_strings(frames.into_iter().rev(), runtime)
+                )
+                .into(),
+            ),
         }
     }
 
