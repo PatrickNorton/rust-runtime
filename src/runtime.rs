@@ -307,6 +307,7 @@ impl Runtime {
         if stack_h != 0 {
             let drain_end = self.variables.len() - self.ret_count;
             if drain_end < stack_h {
+                self.frames.push(last_stack_frame);
                 panic!(
                     "Attempted to remove a negative number of values ({}..{})\n{}",
                     stack_h,
@@ -725,7 +726,8 @@ impl InnerException {
     fn create(self, runtime: &mut Runtime) -> Result<Variable, ()> {
         Result::Ok(match self {
             InnerException::Std(e) => e,
-            InnerException::UnConstructed(t, s, _) => t.create_inst(vec![s.into()], runtime)?, // FIXME: Won't collect stack frames properly
+            // FIXME: Won't collect stack frames properly
+            InnerException::UnConstructed(t, s, _) => t.create_inst(vec![s.into()], runtime)?,
         })
     }
 }
