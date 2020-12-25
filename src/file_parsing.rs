@@ -8,6 +8,7 @@ use crate::file_info::FileInfo;
 use crate::function::Function;
 use crate::int_tools::bytes_index;
 use crate::jump_table::JumpTable;
+use crate::std_type::Type;
 use crate::tuple::LangTuple;
 use crate::variable::{InnerVar, Variable};
 use std::collections::HashMap;
@@ -108,7 +109,7 @@ pub fn parse_file(name: String, files: &mut Vec<FileInfo>) -> usize {
     }
 
     let class_count = bytes_index::<u32>(&data, &mut index);
-    let mut classes: Vec<Variable> = Vec::with_capacity(fn_count as usize);
+    let mut classes: Vec<Type> = Vec::with_capacity(fn_count as usize);
     for _ in 0..class_count {
         classes.push(load_class(file_no, &data, &mut index, &mut functions));
     }
@@ -127,7 +128,7 @@ pub fn parse_file(name: String, files: &mut Vec<FileInfo>) -> usize {
             Constant::Current(x) => new_constants.push(x),
             Constant::Later(x) => new_constants.push(match x {
                 LoadType::Function(d) => Function::Standard(file_no, d).into(),
-                LoadType::Class(d) => classes[d as usize].clone(),
+                LoadType::Class(d) => classes[d as usize].into(),
                 LoadType::Option(d) => Option::Some(new_constants[d as usize].clone()).into(),
                 LoadType::Tuple(v) => LangTuple::new(
                     v.into_iter()
@@ -146,7 +147,14 @@ pub fn parse_file(name: String, files: &mut Vec<FileInfo>) -> usize {
         }
     }
 
-    files[file_no] = FileInfo::new(name, new_constants, functions, exports, jump_tables);
+    files[file_no] = FileInfo::new(
+        name,
+        new_constants,
+        functions,
+        exports,
+        jump_tables,
+        classes,
+    );
     file_no
 }
 

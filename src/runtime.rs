@@ -606,6 +606,10 @@ impl Runtime {
         result
     }
 
+    pub fn class_no(&self, val: u32) -> Type {
+        self.current_file().get_classes()[val as usize]
+    }
+
     fn create_coroutine(&mut self, fn_no: u16, args: Vec<Variable>) {
         let stack_height = self.variables.len();
         let frame = StackFrame::new(0, fn_no, self.current_file_no(), args, stack_height);

@@ -312,12 +312,11 @@ pub fn load_class(
     data: &[u8],
     index: &mut usize,
     functions: &mut Vec<BaseFunction>,
-) -> Variable {
+) -> Type {
     let name = load_std_str(data, index);
-    for _ in 0..bytes_index::<u32>(data, index) {
-        bytes_index::<u32>(data, index);
-        // panic!("Supers not allowed yet")
-    }
+    let supers = (0..bytes_index::<u32>(data, index))
+        .map(|_| bytes_index::<u32>(data, index))
+        .collect();
     let _generic_size = bytes_index::<u16>(data, index);
     // assert_eq!(_generic_size, 0);
     let names = get_names(data, index);
@@ -333,21 +332,21 @@ pub fn load_class(
         Option::None => Type::new_std(
             StringVar::from_leak(name),
             file_no,
+            supers,
             variables,
             merge_maps(operators, methods),
             merge_maps(static_operators, static_methods),
             properties,
-        )
-        .into(),
+        ),
         Option::Some(variants) => Type::new_union(
             StringVar::from_leak(name),
             file_no,
+            supers,
             variants,
             variables,
             merge_maps_union(operators, methods),
             merge_maps_union(static_operators, static_methods),
             properties,
-        )
-        .into(),
+        ),
     }
 }

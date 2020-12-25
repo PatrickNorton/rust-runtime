@@ -13,7 +13,7 @@ pub trait CustomTypeImpl: Debug + Sync {
 
     fn create(&self, args: Vec<Variable>, runtime: &mut Runtime) -> Result<Variable, ()>;
 
-    fn is_subclass(&self, other: &Type) -> bool;
+    fn is_subclass(&self, other: &Type, runtime: &Runtime) -> bool;
 }
 
 #[derive(Debug)]
@@ -53,9 +53,9 @@ where
         Result::Ok(runtime.pop_return())
     }
 
-    fn is_subclass(&self, other: &Type) -> bool {
+    fn is_subclass(&self, other: &Type, runtime: &Runtime) -> bool {
         for s in &self.supers {
-            if s.is_subclass(other) {
+            if s.is_subclass(other, runtime) {
                 return true;
             }
         }

@@ -146,7 +146,7 @@ impl Set {
     fn add(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         let val = args.remove(0);
-        if val.get_type().is_subclass(&self.generic) {
+        if val.get_type().is_subclass(&self.generic, runtime) {
             self.value.borrow_mut().add(val, runtime)?;
         } else {
             panic!("Bad type for set.add")
@@ -159,7 +159,7 @@ impl Set {
         let val = take(&mut args[0]);
         let val_iter = val.iter(runtime)?;
         while let Option::Some(arg) = val_iter.next(runtime)? {
-            if arg.get_type().is_subclass(&self.generic) {
+            if arg.get_type().is_subclass(&self.generic, runtime) {
                 self.value.borrow_mut().add(arg, runtime)?;
             } else {
                 panic!("Bad type for set.addAll")

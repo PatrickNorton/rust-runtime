@@ -54,7 +54,7 @@ pub enum OptionType {
 pub struct StdType {
     name: StringVar,
     file_no: usize,
-    supers: Vec<Type>,
+    supers: Vec<u32>,
     variables: HashSet<StringVar>,
     methods: HashMap<Name, StdVarMethod>,
     static_methods: HashMap<Name, StdVarMethod>,
@@ -65,6 +65,7 @@ impl Type {
     pub fn new_std(
         name: StringVar,
         file_no: usize,
+        supers: Vec<u32>,
         variables: HashSet<StringVar>,
         methods: HashMap<Name, StdVarMethod>,
         static_methods: HashMap<Name, StdVarMethod>,
@@ -73,6 +74,7 @@ impl Type {
         let t = Box::new(StdType::new(
             name,
             file_no,
+            supers,
             variables,
             methods,
             static_methods,
@@ -81,9 +83,11 @@ impl Type {
         Type::Standard(Box::leak(t)) // Classes live forever, why worry about cleanup?
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn new_union(
         name: StringVar,
         file_no: usize,
+        supers: Vec<u32>,
         variants: Vec<StringVar>,
         variables: HashSet<StringVar>,
         methods: HashMap<Name, UnionMethod>,
@@ -93,6 +97,7 @@ impl Type {
         let t = Box::new(UnionType::new(
             name,
             file_no,
+            supers,
             variants,
             variables,
             methods,
@@ -102,9 +107,9 @@ impl Type {
         Type::Union(Box::leak(t)) // Classes live forever, why worry about cleanup?
     }
 
-    pub fn is_subclass(&self, other: &Type) -> bool {
+    pub fn is_subclass(&self, other: &Type, runtime: &Runtime) -> bool {
         match (self, other) {
-            (Type::Standard(t), _) => t.is_subclass(other),
+            (Type::Standard(t), _) => t.is_subclass(other, runtime),
             (Type::Null, Type::Null) => true,
             (Type::Bool, Type::Bool) => true,
             (Type::Bool, Type::Bigint) => true,
@@ -115,14 +120,14 @@ impl Type {
             (Type::Tuple, Type::Tuple) => true,
             (Type::Type, Type::Type) => true,
             (Type::Object, _) => true,
-            (Type::Custom(t), _) => t.is_subclass(other),
+            (Type::Custom(t), _) => t.is_subclass(other, runtime),
             (Type::Union(t), Type::Union(u)) => ptr::eq(*t, *u),
             _ => false,
         }
     }
 
-    pub fn is_type_of(&self, var: &Variable) -> bool {
-        var.get_type().is_subclass(self)
+    pub fn is_type_of(&self, var: &Variable, runtime: &Runtime) -> bool {
+        var.get_type().is_subclass(self, runtime)
     }
 
     pub fn create_inst(
@@ -259,6 +264,7 @@ impl StdType {
     pub const fn new(
         name: StringVar,
         file_no: usize,
+        supers: Vec<u32>,
         variables: HashSet<StringVar>,
         methods: HashMap<Name, StdVarMethod>,
         static_methods: HashMap<Name, StdVarMethod>,
@@ -267,8 +273,8 @@ impl StdType {
         StdType {
             name,
             file_no,
+            supers,
             variables,
-            supers: Vec::new(),
             methods,
             static_methods,
             properties,
@@ -279,14 +285,14 @@ impl StdType {
         name.do_each_ref(|_| Option::None, |str| self.properties.get(&str))
     }
 
-    fn is_subclass(&self, other: &Type) -> bool {
+    fn is_subclass(&self, other: &Type, runtime: &Runtime) -> bool {
         if let Type::Standard(o) = other {
             if self == *o {
                 return true;
             }
         }
         for sup in &self.supers {
-            if sup.is_subclass(other) {
+            if runtime.class_no(*sup).is_subclass(other, runtime) {
                 return true;
             }
         }

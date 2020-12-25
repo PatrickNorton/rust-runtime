@@ -29,7 +29,7 @@ pub struct LangUnion {
 pub struct UnionType {
     name: StringVar,
     file_no: usize,
-    supers: Vec<Type>,
+    supers: Vec<u32>,
     variants: Vec<StringVar>,
     variables: HashSet<StringVar>,
     methods: HashMap<Name, UnionMethod>,
@@ -161,6 +161,7 @@ impl UnionType {
     pub const fn new(
         name: StringVar,
         file_no: usize,
+        supers: Vec<u32>,
         variants: Vec<StringVar>,
         variables: HashSet<StringVar>,
         methods: HashMap<Name, UnionMethod>,
@@ -170,9 +171,9 @@ impl UnionType {
         UnionType {
             name,
             file_no,
+            supers,
             variants,
             variables,
-            supers: Vec::new(),
             methods,
             static_methods,
             properties,

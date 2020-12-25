@@ -107,7 +107,7 @@ impl List {
         debug_assert_eq!(args.len(), 2);
         match normalize(self.value.borrow().len(), take(&mut args[0]).into()) {
             Result::Ok(index) => {
-                if args[1].get_type().is_subclass(&self.generic) {
+                if args[1].get_type().is_subclass(&self.generic, runtime) {
                     self.value.borrow_mut()[index] = take(&mut args[1]);
                 } else {
                     panic!("Bad type for list.operator []=")
@@ -139,7 +139,7 @@ impl List {
         let iter = take(&mut args[0]).iter(runtime)?;
         let mut new = Vec::new();
         while let Option::Some(val) = iter.next(runtime)? {
-            if !val.get_type().is_subclass(&self.generic) {
+            if !val.get_type().is_subclass(&self.generic, runtime) {
                 panic!(
                     "Bad type for list[{}].addAll: {}\n{}",
                     self.generic.str(),
@@ -252,7 +252,7 @@ impl List {
 
     fn add(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        if !args[0].get_type().is_subclass(&self.generic) {
+        if !args[0].get_type().is_subclass(&self.generic, runtime) {
             panic!("Bad type for list.add\n{}", runtime.stack_frames())
         }
         self.value.borrow_mut().push(take(&mut args[0]));
@@ -264,7 +264,7 @@ impl List {
         let iterator = take(&mut args[0]).iter(runtime)?;
         let mut value = self.value.borrow_mut();
         while let Option::Some(val) = iterator.next(runtime)? {
-            if !val.get_type().is_subclass(&self.generic) {
+            if !val.get_type().is_subclass(&self.generic, runtime) {
                 panic!(
                     "Bad type for list[{}].addAll: {}\n{}",
                     self.generic.str(),

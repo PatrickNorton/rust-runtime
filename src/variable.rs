@@ -152,9 +152,9 @@ impl Variable {
         quick_equals(self.clone(), other, runtime)?.into_bool(runtime)
     }
 
-    pub fn is_type_of(&self, other: &Variable) -> bool {
+    pub fn is_type_of(&self, other: &Variable, runtime: &Runtime) -> bool {
         if let Variable::Normal(InnerVar::Type(t)) = self {
-            t.is_type_of(other)
+            t.is_type_of(other, runtime)
         } else {
             false
         }

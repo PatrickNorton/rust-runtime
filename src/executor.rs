@@ -207,7 +207,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         Bytecode::Instanceof => {
             let x = runtime.pop();
             let y = runtime.pop();
-            runtime.push(y.is_type_of(&x).into())
+            runtime.push(y.is_type_of(&x, runtime).into())
         }
         Bytecode::CallOp => {
             let op: Operator = FromPrimitive::from_u32(bytes_0)
