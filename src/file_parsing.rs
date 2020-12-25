@@ -147,14 +147,7 @@ pub fn parse_file(name: String, files: &mut Vec<FileInfo>) -> usize {
         }
     }
 
-    files[file_no] = FileInfo::new(
-        name,
-        new_constants,
-        functions,
-        exports,
-        jump_tables,
-        classes,
-    );
+    files[file_no] = FileInfo::new(name, new_constants, functions, exports, jump_tables);
     file_no
 }
 

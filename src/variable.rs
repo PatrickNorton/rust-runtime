@@ -765,6 +765,19 @@ impl From<Variable> for char {
     }
 }
 
+impl From<Variable> for Type {
+    fn from(var: Variable) -> Self {
+        if let Variable::Normal(InnerVar::Type(t)) = var {
+            t
+        } else {
+            panic!(
+                "Attempted to turn a variable not a type ({}) into a type",
+                var.get_type().str()
+            )
+        }
+    }
+}
+
 impl From<Variable> for looping::Iterator {
     fn from(var: Variable) -> Self {
         match var {

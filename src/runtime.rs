@@ -607,7 +607,9 @@ impl Runtime {
     }
 
     pub fn class_no(&self, val: u32) -> Type {
-        self.current_file().get_classes()[val as usize]
+        self.current_file().get_constants()[val as usize]
+            .clone()
+            .into()
     }
 
     fn create_coroutine(&mut self, fn_no: u16, args: Vec<Variable>) {
