@@ -27,7 +27,7 @@ impl Iterator {
 
     fn next_non_native(val: &StdVariable, runtime: &mut Runtime) -> IterResult {
         let result = val
-            .index(Name::Attribute("next".into()), runtime)?
+            .index(&Name::Attribute("next".into()), runtime)?
             .call((Vec::new(), runtime));
         match result {
             FnResult::Ok(_) => match runtime.pop_return() {

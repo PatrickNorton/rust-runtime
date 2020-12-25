@@ -237,6 +237,13 @@ impl Type {
             },
         )
     }
+
+    fn std_method(self, name: &Name, runtime: &Runtime) -> Option<StdVarMethod> {
+        match self {
+            Type::Standard(s) => s.try_method(name, runtime),
+            _ => Option::None,
+        }
+    }
 }
 
 impl ToString for Type {
@@ -325,11 +332,23 @@ impl StdType {
         Result::Ok(instance.into())
     }
 
-    pub(crate) fn get_method(&self, name: Name) -> StdVarMethod {
+    pub(crate) fn get_method(&self, name: &Name, runtime: &Runtime) -> StdVarMethod {
+        self.try_method(&name, runtime)
+            .unwrap_or_else(|| panic!("{}.{} does not exist", self.name, name.as_str()))
+    }
+
+    fn try_method(&self, name: &Name, runtime: &Runtime) -> Option<StdVarMethod> {
         match self.methods.get(&name) {
-            Option::Some(t) => *t,
-            Option::None => default_methods(&name)
-                .unwrap_or_else(|| panic!("{}.{} does not exist", self.name, name.as_str())),
+            Option::Some(t) => Option::Some(*t),
+            Option::None => {
+                for sup in &self.supers {
+                    match runtime.class_no(*sup).std_method(name, runtime) {
+                        Option::Some(t) => return Option::Some(t),
+                        Option::None => {}
+                    }
+                }
+                default_methods(name)
+            }
         }
     }
 }

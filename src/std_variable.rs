@@ -65,7 +65,11 @@ impl StdVariable {
         args: Vec<Variable>,
         runtime: &mut Runtime,
     ) -> FnResult {
-        let inner_method = self.value.borrow().cls.get_method(Name::Operator(op));
+        let inner_method = self
+            .value
+            .borrow()
+            .cls
+            .get_method(&Name::Operator(op), runtime);
         inner_method.call(self, args, runtime)
     }
 
@@ -79,7 +83,11 @@ impl StdVariable {
         args: Vec<Variable>,
         runtime: &mut Runtime,
     ) -> FnResult {
-        let inner_method = self.value.borrow().cls.get_method(Name::Operator(op));
+        let inner_method = self
+            .value
+            .borrow()
+            .cls
+            .get_method(&Name::Operator(op), runtime);
         inner_method.call_or_goto(self, args, runtime)
     }
 
@@ -87,7 +95,7 @@ impl StdVariable {
         self.call_op_or_goto(Operator::Call, args.0, args.1)
     }
 
-    pub fn index(&self, index: Name, runtime: &mut Runtime) -> Result<Variable, ()> {
+    pub fn index(&self, index: &Name, runtime: &mut Runtime) -> Result<Variable, ()> {
         let self_value = self.value.borrow();
         let val = self_value.values.get(&index);
         match val {
@@ -96,14 +104,14 @@ impl StdVariable {
         }
     }
 
-    fn index_harder(&self, index: Name, runtime: &mut Runtime) -> Result<Variable, ()> {
+    fn index_harder(&self, index: &Name, runtime: &mut Runtime) -> Result<Variable, ()> {
         match self.value.borrow().cls.get_property(&index) {
             Option::Some(val) => {
                 val.call_getter(runtime)?;
                 Result::Ok(runtime.pop_return())
             }
             Option::None => {
-                let inner_method = self.value.borrow().cls.get_method(index);
+                let inner_method = self.value.borrow().cls.get_method(&index, runtime);
                 Result::Ok(Box::new(StdMethod::new(self.clone(), inner_method)).into())
             }
         }

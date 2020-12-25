@@ -316,7 +316,7 @@ impl InnerVar {
                     unimplemented!("null.{}\n{}", index.as_str(), runtime.stack_frames())
                 }
             }
-            InnerVar::Standard(val) => val.index(index, runtime)?,
+            InnerVar::Standard(val) => val.index(&index, runtime)?,
             InnerVar::Bool(val) => {
                 if let Name::Operator(o) = index {
                     bool_fn::get_operator(val, o)
