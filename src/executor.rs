@@ -26,7 +26,12 @@ use std::mem::take;
 use std::ops::SubAssign;
 
 pub fn execute(runtime: &mut Runtime) -> FnResult {
-    while !runtime.is_native() && runtime.current_pos() as usize != runtime.current_fn().len() {
+    while !runtime.is_native() {
+        if runtime.current_pos() == runtime.current_fn().len() && !runtime.is_bottom_stack() {
+            runtime.set_ret(0);
+            runtime.pop_stack();
+            continue;
+        }
         let bytes = runtime.current_fn();
         let b: Bytecode = FromPrimitive::from_u8(bytes[runtime.current_pos()])
             .expect("Attempted to parse invalid bytecode");
@@ -45,15 +50,6 @@ pub fn execute(runtime: &mut Runtime) -> FnResult {
                 }
             }
         };
-        if runtime.current_pos() == runtime.current_fn().len() && !runtime.is_bottom_stack() {
-            runtime.pop_stack();
-        }
-    }
-    if !runtime.is_native()
-        && runtime.current_pos() == runtime.current_fn().len()
-        && !runtime.is_bottom_stack()
-    {
-        runtime.pop_stack();
     }
     Result::Ok(())
 }
