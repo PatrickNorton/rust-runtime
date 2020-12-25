@@ -2,7 +2,7 @@ use crate::custom_types::array::Array;
 use crate::custom_types::bytes::LangBytes;
 use crate::custom_types::dict::Dict;
 use crate::custom_types::enumerate::Enumerate;
-use crate::custom_types::exceptions::{io_error, not_implemented};
+use crate::custom_types::exceptions::{io_error, not_implemented, value_error};
 use crate::custom_types::file::FileObj;
 use crate::custom_types::interfaces::{Callable, Throwable};
 use crate::custom_types::list::List;
@@ -92,6 +92,16 @@ fn enumerate_impl(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     runtime.return_1(Enumerate::new(iterable).into())
 }
 
+fn hash() -> Variable {
+    Function::Native(hash_impl).into()
+}
+
+fn hash_impl(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert_eq!(args.len(), 1);
+    let hash = take(&mut args[0]).hash(runtime)?;
+    runtime.return_1(IntVar::from(hash).into())
+}
+
 pub fn builtin_of(index: usize) -> Variable {
     match index {
         0 => print(),
@@ -120,6 +130,8 @@ pub fn builtin_of(index: usize) -> Variable {
         23 => Type::Tuple.into(),
         24 => Throwable::cls().into(),
         25 => Type::Null.into(),
+        26 => hash(),
+        27 => value_error().into(),
         x => unimplemented!("Builtin number {}", x),
     }
 }
