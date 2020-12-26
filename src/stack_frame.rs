@@ -194,6 +194,8 @@ pub fn frame_strings(frames: impl Iterator<Item = SFInfo>, runtime: &Runtime) ->
                 fn_pos,
                 file.get_name()
             ))
+        } else {
+            result.push_str("    at [unknown native function]\n")
         }
     }
     result

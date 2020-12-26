@@ -287,7 +287,12 @@ impl List {
     fn add(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         if !args[0].get_type().is_subclass(&self.generic, runtime) {
-            panic!("Bad type for list.add\n{}", runtime.stack_frames())
+            panic!(
+                "Bad type for list.add: got {}, expected {}\n{}",
+                args[0].get_type().str(),
+                self.generic.str(),
+                runtime.stack_frames()
+            )
         }
         self.value.borrow_mut().push(take(&mut args[0]));
         runtime.return_0()
