@@ -279,7 +279,8 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         Bytecode::TailFunction => runtime.tail_quick(bytes_0 as u16),
         Bytecode::Return => {
             if runtime.is_generator() {
-                return runtime.return_1(Option::None.into());
+                debug_assert_eq!(bytes_0, 0);
+                runtime.generator_end();
             } else {
                 let ret_count = bytes_0 as usize;
                 runtime.set_ret(ret_count);

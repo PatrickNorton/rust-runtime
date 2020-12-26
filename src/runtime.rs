@@ -312,6 +312,7 @@ impl Runtime {
             let drain_end = self.variables.len() - self.ret_count;
             if drain_end < stack_h {
                 self.frames.push(last_stack_frame);
+                println!("{:#?}", self.variables);
                 panic!(
                     "Attempted to remove a negative number of values ({}..{})\n{}",
                     stack_h,
@@ -534,6 +535,19 @@ impl Runtime {
         self.variables.append(&mut gen.take_stack());
         self.borrowed_iterators.push(gen);
         FnResult::Ok(())
+    }
+
+    pub fn generator_end(&mut self) {
+        debug_assert!(self.is_generator());
+        self.variables.push(Option::None.into());
+        self.set_ret(1);
+        let frame = self.frames.pop().unwrap();
+        let vec = Vec::new(); // FIXME: Clear stack
+        let gen = self
+            .borrowed_iterators
+            .pop()
+            .expect("Yield called with no generator");
+        gen.replace_vars(frame, vec);
     }
 
     pub fn generator_yield(&mut self, ret_count: usize) {
