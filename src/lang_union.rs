@@ -146,7 +146,7 @@ impl LangUnion {
     fn index_harder(&self, index: Name, runtime: &mut Runtime) -> Result<Variable, ()> {
         match self.cls.get_property(&index) {
             Option::Some(val) => {
-                val.call_getter(runtime)?;
+                val.call_getter(runtime, self.clone().into())?;
                 Result::Ok(runtime.pop_return())
             }
             Option::None => {

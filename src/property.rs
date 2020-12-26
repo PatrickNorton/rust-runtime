@@ -24,21 +24,25 @@ pub struct NativeProperty {
 }
 
 impl Property {
-    pub fn call_getter(&self, runtime: &mut Runtime) -> FnResult {
+    pub fn call_getter(&self, runtime: &mut Runtime, this: Variable) -> FnResult {
+        let typ = this.get_type();
+        let args = vec![this, typ.into()];
         match self {
             Property::Standard(std_prop) => {
-                runtime.call_now(0, std_prop.getter as u16, Vec::new(), std_prop.file_no)
+                runtime.call_now(0, std_prop.getter as u16, args, std_prop.file_no)
             }
-            Property::Native(nat_prop) => runtime.call_native(nat_prop.getter, Vec::new()),
+            Property::Native(nat_prop) => runtime.call_native(nat_prop.getter, args),
         }
     }
 
-    pub fn call_setter(&self, runtime: &mut Runtime, val: Variable) -> FnResult {
+    pub fn call_setter(&self, runtime: &mut Runtime, this: Variable, val: Variable) -> FnResult {
+        let typ = this.get_type();
+        let args = vec![this, typ.into(), val];
         match self {
             Property::Standard(std_prop) => {
-                runtime.call_now(0, std_prop.setter as u16, vec![val], std_prop.file_no)
+                runtime.call_now(0, std_prop.setter as u16, args, std_prop.file_no)
             }
-            Property::Native(nat_prop) => runtime.call_native(nat_prop.setter, vec![val]),
+            Property::Native(nat_prop) => runtime.call_native(nat_prop.setter, args),
         }
     }
 }

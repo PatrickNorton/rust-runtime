@@ -107,7 +107,7 @@ impl StdVariable {
     fn index_harder(&self, index: &Name, runtime: &mut Runtime) -> Result<Variable, ()> {
         match self.value.borrow().cls.get_property(&index) {
             Option::Some(val) => {
-                val.call_getter(runtime)?;
+                val.call_getter(runtime, self.clone().into())?;
                 Result::Ok(runtime.pop_return())
             }
             Option::None => {
@@ -122,15 +122,19 @@ impl StdVariable {
         let mut self_val = self.value.borrow_mut();
         match self_val.values.get_mut(&name) {
             Option::Some(val) => *val = value,
-            Option::None => match self_val.cls.get_property(&name) {
-                Option::Some(val) => val.call_setter(runtime, value)?,
-                Option::None => unimplemented!(
-                    "{}.{}\n{}",
-                    self_val.cls.name(),
-                    name.as_str(),
-                    runtime.stack_frames()
-                ),
-            },
+            Option::None => {
+                drop(self_val); // Will cause double-mutable borrow otherwise
+                let self_val = self.value.borrow();
+                match self_val.cls.get_property(&name) {
+                    Option::Some(val) => val.call_setter(runtime, self.clone().into(), value)?,
+                    Option::None => unimplemented!(
+                        "{}.{}\n{}",
+                        self_val.cls.name(),
+                        name.as_str(),
+                        runtime.stack_frames()
+                    ),
+                }
+            }
         }
         runtime.return_0()
     }

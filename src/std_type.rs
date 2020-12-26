@@ -288,8 +288,8 @@ impl StdType {
         }
     }
 
-    pub fn get_property(&self, name: &Name) -> Option<&Property> {
-        name.do_each_ref(|_| Option::None, |str| self.properties.get(&str))
+    pub fn get_property(&self, name: &Name) -> Option<Property> {
+        name.do_each_ref(|_| Option::None, |str| self.properties.get(&str).cloned())
     }
 
     fn is_subclass(&self, other: &Type, runtime: &Runtime) -> bool {
