@@ -447,7 +447,10 @@ impl Runtime {
 
     pub fn pop_return(&mut self) -> Variable {
         match self.ret_count {
-            0 => panic!("Attempted to call pop_return where no values were returned"),
+            0 => panic!(
+                "Attempted to call pop_return where no values were returned\n{}",
+                self.stack_frames()
+            ),
             1 => self.pop(),
             _ => {
                 let new_len = self.variables.len() - self.ret_count + 1;
@@ -461,10 +464,13 @@ impl Runtime {
     pub fn pop_returns(&mut self, ret_count: usize) -> Vec<Variable> {
         match self.ret_count {
             0 if ret_count == 0 => vec![],
-            0 => panic!("Attempted to call pop_returns where no values were returned"),
+            0 => panic!(
+                "Attempted to call pop_returns where no values were returned\n{}",
+                self.stack_frames()
+            ),
             i if i < ret_count => panic!(
-                "Runtime::pop_returns called with a count of {}, but only {} values were returned",
-                ret_count, i
+                "Runtime::pop_returns called with a count of {}, but only {} values were returned\n{}",
+                ret_count, i, self.stack_frames()
             ),
             i if i == ret_count => self
                 .variables
