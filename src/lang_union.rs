@@ -109,6 +109,7 @@ impl LangUnion {
         match self.cls.variant_pos(&index) {
             Option::Some(true_val) => Result::Ok(
                 if self.is_variant(true_val) {
+                    println!("{}.{}: {}", self.cls.name(), index.as_str(), true_val);
                     Option::Some((*self.value).clone())
                 } else {
                     Option::None
@@ -183,13 +184,10 @@ impl UnionType {
     pub fn index(&'static self, name: Name) -> Variable {
         match name {
             Name::Operator(_) => unimplemented!(),
-            Name::Attribute(var) => {
-                if self.variants.contains(&var) {
-                    Rc::new(UnionMaker::new(0, self)).into()
-                } else {
-                    self.index_attr(var)
-                }
-            }
+            Name::Attribute(var) => match self.variants.iter().position(|x| x == &var) {
+                Option::Some(i) => Rc::new(UnionMaker::new(i, self)).into(),
+                Option::None => self.index_attr(var),
+            },
         }
     }
 
