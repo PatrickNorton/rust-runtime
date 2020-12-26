@@ -33,7 +33,7 @@ pub fn op_fn(o: Operator) -> NativeMethod<StringVar> {
         Operator::Repr => repr,
         Operator::GetAttr => index,
         Operator::GetSlice => slice,
-        Operator::Iter => iter,
+        Operator::Iter => str_iter,
         Operator::Reversed => reversed,
         _ => unimplemented!("str.{}", o.name()),
     }
@@ -226,7 +226,14 @@ fn bounds_msg(big_index: IntVar, char_len: usize) -> StringVar {
     .into()
 }
 
-fn iter(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+pub fn iter(this: StringVar) -> Rc<dyn NativeIterator> {
+    match this.split_ascii() {
+        Result::Ok(a) => Rc::new(AsciiIter::new(a)),
+        Result::Err(s) => Rc::new(StringIter::new(s)),
+    }
+}
+
+fn str_iter(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     runtime.return_1(match this.clone().split_ascii() {
         Result::Ok(a) => Rc::new(AsciiIter::new(a)).into(),

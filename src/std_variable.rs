@@ -126,10 +126,13 @@ impl StdVariable {
                 drop(self_val); // Will cause double-mutable borrow otherwise
                 let self_val = self.value.borrow();
                 match self_val.cls.get_property(&name) {
-                    Option::Some(val) => val.call_setter(runtime, self.clone().into(), value)?,
+                    Option::Some(val) => {
+                        drop(self_val); // Ditto
+                        val.call_setter(runtime, self.clone().into(), value)?
+                    }
                     Option::None => unimplemented!(
                         "{}.{}\n{}",
-                        self_val.cls.name(),
+                        self.get_type().str(),
                         name.as_str(),
                         runtime.stack_frames()
                     ),

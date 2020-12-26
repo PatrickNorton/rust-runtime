@@ -38,3 +38,9 @@ impl Iterator {
         }
     }
 }
+
+impl From<Rc<dyn NativeIterator>> for Iterator {
+    fn from(x: Rc<dyn NativeIterator>) -> Self {
+        Iterator::Native(x)
+    }
+}

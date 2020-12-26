@@ -333,8 +333,14 @@ impl StdType {
     }
 
     pub(crate) fn get_method(&self, name: &Name, runtime: &Runtime) -> StdVarMethod {
-        self.try_method(&name, runtime)
-            .unwrap_or_else(|| panic!("{}.{} does not exist", self.name, name.as_str()))
+        self.try_method(&name, runtime).unwrap_or_else(|| {
+            panic!(
+                "{}.{} does not exist\n{}",
+                self.name,
+                name.as_str(),
+                runtime.stack_frames()
+            )
+        })
     }
 
     fn try_method(&self, name: &Name, runtime: &Runtime) -> Option<StdVarMethod> {

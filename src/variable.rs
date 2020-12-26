@@ -298,7 +298,7 @@ impl InnerVar {
 
     pub fn iter(self, runtime: &mut Runtime) -> Result<looping::Iterator, ()> {
         match self {
-            InnerVar::String(_) => todo!(),
+            InnerVar::String(s) => Result::Ok(string_fn::iter(s).into()),
             InnerVar::Type(_) => unimplemented!("Enum type iteration not completed yet"),
             InnerVar::Standard(val) => val.iter(runtime),
             InnerVar::Custom(val) => val.into_inner().iter(runtime),
