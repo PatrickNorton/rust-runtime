@@ -11,9 +11,10 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
-use num::{One, ToPrimitive};
+use num::{One, Signed, ToPrimitive, Zero};
 use std::cell::{Cell, RefCell};
 use std::cmp::min;
+use std::iter::repeat_with;
 use std::mem::take;
 use std::rc::Rc;
 
@@ -50,6 +51,7 @@ impl List {
             Operator::DelSlice => List::del_slice,
             Operator::IterSlice => List::iter_slice,
             Operator::Add => List::plus,
+            Operator::Multiply => List::times,
             _ => unimplemented!("List.{}", name.name()),
         };
         Box::new(StdMethod::new(self, InnerMethod::Native(value))).into()
@@ -151,6 +153,38 @@ impl List {
             }
         }
         runtime.return_1(List::from_values(self.generic, new).into())
+    }
+
+    fn times(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        let times = IntVar::from(take(&mut args[0]));
+        if times.is_negative() {
+            return runtime.throw_quick(
+                value_error(),
+                format!(
+                    "Cannot multiply list: Expected non-negative number, got {}",
+                    times
+                )
+                .into(),
+            );
+        }
+        let values = self.value.borrow();
+        if values.is_empty() || times.is_zero() {
+            runtime.return_1(List::from_values(self.generic, Vec::new()).into())
+        } else if times.is_one() {
+            runtime.return_1(List::from_values(self.generic, values.clone()).into())
+        } else {
+            match times.to_usize() {
+                Option::Some(x) => {
+                    let new = repeat_with(|| values.clone()).take(x).flatten().collect();
+                    runtime.return_1(List::from_values(self.generic, new).into())
+                }
+                Option::None => runtime.throw_quick(
+                    value_error(),
+                    format!("List repetition {} too big to fit in memory", times).into(),
+                ),
+            }
+        }
     }
 
     fn pop(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

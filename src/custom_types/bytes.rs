@@ -41,7 +41,8 @@ impl LangBytes {
             Operator::SetAttr => Self::set_index,
             Operator::Str => Self::str,
             Operator::Iter => Self::iter,
-            _ => unimplemented!(),
+            Operator::Bool => Self::bool,
+            _ => unimplemented!("bytes.{}", op.name()),
         };
         StdMethod::new_native(self, func).into()
     }
@@ -301,6 +302,11 @@ impl LangBytes {
     fn iter(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         runtime.return_1(Rc::new(BytesIter::new(self.clone())).into())
+    }
+
+    fn bool(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        runtime.return_1((!self.value.borrow().is_empty()).into())
     }
 
     fn join(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
