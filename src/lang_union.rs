@@ -109,7 +109,6 @@ impl LangUnion {
         match self.cls.variant_pos(&index) {
             Option::Some(true_val) => Result::Ok(
                 if self.is_variant(true_val) {
-                    println!("{}.{}: {}", self.cls.name(), index.as_str(), true_val);
                     Option::Some((*self.value).clone())
                 } else {
                     Option::None
