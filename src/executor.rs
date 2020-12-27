@@ -18,6 +18,7 @@ use crate::quick_functions::{
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
+use crate::tuple::LangTuple;
 use crate::variable::{FnResult, InnerVar, OptionVar, Variable};
 use num::traits::FromPrimitive;
 use num::Zero;
@@ -214,7 +215,11 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
                 .unwrap_or_else(|| panic!("operator {} not found", bytes_0));
             call_operator(op, bytes_1 as u16, runtime)?
         }
-        Bytecode::PackTuple => unimplemented!(),
+        Bytecode::PackTuple => {
+            let argc = bytes_0 as u16;
+            let value = LangTuple::new(runtime.load_args(argc as usize).into_boxed_slice().into());
+            runtime.push(value.into())
+        }
         Bytecode::UnpackTuple => match runtime.pop() {
             Variable::Normal(InnerVar::Tuple(tup)) => {
                 for var in &tup {
@@ -587,7 +592,10 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
                     Option::<Variable>::from(OptionVar(i, o)).unwrap_or_else(Variable::default),
                 )
             } else {
-                panic!("Called Bytecode::UnwrapOption where TOS not an option")
+                panic!(
+                    "Called Bytecode::UnwrapOption where TOS not an option\n{}",
+                    runtime.stack_frames()
+                )
             }
         }
         Bytecode::LoadFunction => {
