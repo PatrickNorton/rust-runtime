@@ -1,6 +1,6 @@
 use crate::builtin_functions::string_fn;
 use crate::builtins::default_methods;
-use crate::custom_types::types::CustomTypeImpl;
+use crate::custom_types::types::{CustomTypeImpl, TypeIdentity};
 use crate::lang_union::{UnionMethod, UnionType};
 use crate::method::{InnerMethod, Method, StdMethod};
 use crate::name::Name;
@@ -166,7 +166,21 @@ impl Type {
                     let n = StdMethod::new(self, inner_m);
                     Box::new(n).into()
                 }
-                Option::None => runtime.static_attr(&self, index),
+                Option::None => {
+                    if index == Name::Operator(Operator::GetAttr) {
+                        // FIXME: This is used for type generification, but enum indexing won't work
+                        TypeIdentity::new(self).into()
+                    } else {
+                        runtime.static_attr(&self, &index).unwrap_or_else(|| {
+                            panic!(
+                                "{}.{} not found\n{}",
+                                self.str(),
+                                index.as_str(),
+                                runtime.stack_frames()
+                            )
+                        })
+                    }
+                }
             },
             Type::Union(union_t) => union_t.index(index),
             Type::String => match index {

@@ -491,8 +491,8 @@ impl Runtime {
         self.variables.drain(len - count..).collect()
     }
 
-    pub fn static_attr(&self, cls: &Type, name: Name) -> Variable {
-        self.type_vars[cls][&name].clone()
+    pub fn static_attr(&self, cls: &Type, name: &Name) -> Option<Variable> {
+        self.type_vars.get(cls).and_then(|x| x.get(name)).cloned()
     }
 
     pub fn set_static_attr(&mut self, cls: &Type, name: Name, var: Variable) {

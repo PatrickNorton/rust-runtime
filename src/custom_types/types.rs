@@ -1,10 +1,12 @@
+use crate::custom_var::CustomVar;
 use crate::function::Function;
 use crate::method::InnerMethod;
 use crate::name::Name;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
-use crate::variable::Variable;
+use crate::variable::{FnResult, Variable};
+use downcast_rs::__alloc::rc::Rc;
 use std::collections::HashMap;
 use std::fmt::Debug;
 
@@ -60,5 +62,38 @@ where
             }
         }
         false
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct TypeIdentity {
+    value: Type,
+}
+
+impl TypeIdentity {
+    pub fn new(value: Type) -> Rc<TypeIdentity> {
+        Rc::new(TypeIdentity { value })
+    }
+}
+
+impl CustomVar for TypeIdentity {
+    fn get_attr(self: Rc<Self>, _name: Name) -> Variable {
+        unimplemented!()
+    }
+
+    fn set(self: Rc<Self>, _name: Name, _object: Variable) {
+        unimplemented!()
+    }
+
+    fn get_type(self: Rc<Self>) -> Type {
+        unimplemented!()
+    }
+
+    fn call(self: Rc<Self>, _args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        runtime.return_1(self.value.into())
+    }
+
+    fn call_or_goto(self: Rc<Self>, _args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        runtime.return_1(self.value.into())
     }
 }
