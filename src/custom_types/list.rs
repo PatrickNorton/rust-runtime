@@ -107,7 +107,8 @@ impl List {
 
     fn set_index(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
-        match normalize(self.value.borrow().len(), take(&mut args[0]).into()) {
+        let len = self.value.borrow().len(); // Keep out of match to prevent double-borrow error
+        match normalize(len, take(&mut args[0]).into()) {
             Result::Ok(index) => {
                 if args[1].get_type().is_subclass(&self.generic, runtime) {
                     self.value.borrow_mut()[index] = take(&mut args[1]);
