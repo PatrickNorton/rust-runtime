@@ -1,5 +1,5 @@
-use crate::custom_types::exceptions::{index_error, value_error};
-use crate::custom_var::CustomVar;
+use crate::custom_types::exceptions::{arithmetic_error, index_error, value_error};
+use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_tools::{bytes_index, bytes_index_le};
 use crate::int_var::{normalize, IntVar};
 use crate::looping;
@@ -11,7 +11,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
-use num::ToPrimitive;
+use num::{BigInt, ToPrimitive};
 use std::cell::{Cell, RefCell};
 use std::char;
 use std::mem::take;
@@ -42,6 +42,8 @@ impl LangBytes {
             Operator::Str => Self::str,
             Operator::Iter => Self::iter,
             Operator::Bool => Self::bool,
+            Operator::Add => Self::plus,
+            Operator::Multiply => Self::mul,
             _ => unimplemented!("bytes.{}", op.name()),
         };
         StdMethod::new_native(self, func).into()
@@ -71,7 +73,8 @@ impl LangBytes {
 
     fn set_index(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
-        match normalize(self.value.borrow().len(), take(&mut args[0]).into()) {
+        let len = self.value.borrow().len();
+        match normalize(len, take(&mut args[0]).into()) {
             Result::Ok(index) => {
                 let value = IntVar::from(take(&mut args[1]));
                 self.value.borrow_mut()[index] = match value.to_u8() {
@@ -309,6 +312,38 @@ impl LangBytes {
         runtime.return_1((!self.value.borrow().is_empty()).into())
     }
 
+    fn plus(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        let mut result = self.value.borrow().clone();
+        for value in args {
+            let val = downcast_var::<LangBytes>(value).expect("Invalid type to bytes.+");
+            result.extend(&*val.value.borrow());
+        }
+        runtime.return_1(Rc::new(LangBytes::new(result)).into())
+    }
+
+    fn mul(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        if self.value.borrow().is_empty() {
+            return runtime.return_1(Rc::new(LangBytes::new(Vec::new())).into());
+        }
+        let mut result = self.value.borrow().clone();
+        for arg in args {
+            let big_val = IntVar::from(arg);
+            match big_val.to_usize() {
+                Option::Some(val) => match val.checked_mul(result.len()) {
+                    Option::Some(_) => result = result.repeat(val),
+                    Option::None => {
+                        return runtime
+                            .throw_quick(arithmetic_error(), overflow_exc(val, result.len()))
+                    }
+                },
+                Option::None => {
+                    return runtime.throw_quick(arithmetic_error(), "Cannot multiply".into())
+                }
+            }
+        }
+        runtime.return_1(Rc::new(LangBytes::new(result)).into())
+    }
+
     fn join(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
         let mut is_first = true;
@@ -410,6 +445,16 @@ impl BytesIter {
     fn bytes_iter_type() -> Type {
         custom_class!(BytesIter, create, "BytesIter")
     }
+}
+
+fn overflow_exc(val: usize, len: usize) -> StringVar {
+    format!(
+        "Too many string repetitions: maximum bytes length is {}, \
+        but repetition would produce bytes of length {}",
+        usize::MAX,
+        BigInt::from(val) * len
+    )
+    .into()
 }
 
 impl CustomVar for BytesIter {

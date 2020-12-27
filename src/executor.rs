@@ -379,18 +379,30 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
                 match take(&mut ret[0]) {
                     Variable::Option(i, o) => match Option::<Variable>::from(OptionVar(i, o)) {
                         Option::Some(opt) => {
-                            ret[0] = opt;
+                            ret[0] = Option::Some(opt).into();
                             runtime.push(iterated);
-                            runtime.extend(ret.into_iter().map(|x| match x {
-                                Variable::Option(i, o) => Option::from(OptionVar(i, o)).unwrap(),
-                                _ => panic!("Iterators should return an option-wrapped value"),
-                            }));
+                            let values = ret
+                                .into_iter()
+                                .map(|x| match x {
+                                    Variable::Option(i, o) => {
+                                        Option::from(OptionVar(i, o)).unwrap()
+                                    }
+                                    _ => panic!(
+                                        "Iterators should return an option-wrapped value\n{}",
+                                        runtime.stack_frames()
+                                    ),
+                                })
+                                .collect::<Vec<_>>();
+                            runtime.extend(values);
                         }
                         Option::None => {
                             runtime.goto(jump_loc);
                         }
                     },
-                    _ => panic!("Iterators should return an option-wrapped value"),
+                    _ => panic!(
+                        "Iterators should return an option-wrapped value\n{}",
+                        runtime.stack_frames()
+                    ),
                 }
             }
         }
