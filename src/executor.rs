@@ -28,8 +28,12 @@ use std::ops::SubAssign;
 pub fn execute(runtime: &mut Runtime) -> FnResult {
     while !runtime.is_native() {
         if runtime.current_pos() == runtime.current_fn().len() && !runtime.is_bottom_stack() {
-            runtime.set_ret(0);
-            runtime.pop_stack();
+            if runtime.is_generator() {
+                runtime.generator_end();
+            } else {
+                runtime.set_ret(0);
+                runtime.pop_stack();
+            }
             continue;
         }
         let bytes = runtime.current_fn();
@@ -366,11 +370,11 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
                     _ => panic!("Iterators should return an option-wrapped value"),
                 }
             } else {
-                let mut ret = runtime.pop_returns(bytes_1 as usize);
+                let mut ret = runtime.pop_generator_returns(bytes_1 as usize);
                 match take(&mut ret[0]) {
                     Variable::Option(i, o) => match Option::<Variable>::from(OptionVar(i, o)) {
                         Option::Some(opt) => {
-                            ret[0] = opt.into();
+                            ret[0] = opt;
                             runtime.push(iterated);
                             runtime.extend(ret.into_iter().map(|x| match x {
                                 Variable::Option(i, o) => Option::from(OptionVar(i, o)).unwrap(),

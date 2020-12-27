@@ -12,6 +12,7 @@ use crate::stack_frame::{frame_strings, SFInfo, StackFrame};
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
+use downcast_rs::__std::cmp::min;
 use std::cmp::max;
 use std::collections::{HashMap, HashSet};
 use std::mem::take;
@@ -482,6 +483,19 @@ impl Runtime {
                 self.ret_count = 0;
                 self.variables.truncate(new_len);
                 self.variables.drain(new_len - ret_count..).collect()
+            }
+        }
+    }
+
+    pub fn pop_generator_returns(&mut self, ret_count: usize) -> Vec<Variable> {
+        match self.ret_count {
+            0 => panic!(
+                "Attempted to return 0 values from generator\n{}",
+                self.stack_frames()
+            ),
+            i => {
+                assert!(ret_count > 0 && i > 0);
+                self.pop_returns(min(i, ret_count))
             }
         }
     }
