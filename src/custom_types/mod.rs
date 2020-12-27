@@ -29,7 +29,7 @@ macro_rules! iter_no_next {
         fn get_attribute(self: &Rc<Self>, val: StringVar) -> Variable {
             let func = match val.as_str() {
                 "next" => Self::next_fn,
-                _ => unimplemented!(),
+                _ => unimplemented!("{}", val),
             };
             StdMethod::new_native(self.clone(), func).into()
         }
@@ -37,7 +37,7 @@ macro_rules! iter_no_next {
         fn get_op(self: &Rc<Self>, val: Operator) -> Variable {
             let func = match val {
                 Operator::Iter => Self::ret_self,
-                _ => unimplemented!(),
+                _ => unimplemented!("{}", val.name()),
             };
             StdMethod::new_native(self.clone(), func).into()
         }

@@ -393,6 +393,14 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
                                     ),
                                 })
                                 .collect::<Vec<_>>();
+                            if values.len() < bytes_1 as usize {
+                                panic!(
+                                    "Not enough values yielded: expected {}, got {}\n{}",
+                                    bytes_1,
+                                    values.len(),
+                                    runtime.stack_frames()
+                                );
+                            }
                             runtime.extend(values);
                         }
                         Option::None => {

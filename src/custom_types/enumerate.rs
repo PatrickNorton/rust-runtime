@@ -34,17 +34,19 @@ impl Enumerate {
     fn next_fn(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         match self.inner_next(runtime)? {
-            Option::Some(value) => runtime.return_1(Option::Some(value).into()),
+            Option::Some(value) => runtime.return_n(vec![
+                Option::Some(value.0).into(),
+                Option::Some(value.1).into(),
+            ]),
             Option::None => runtime.return_1(Option::None.into()),
         }
     }
 
-    fn inner_next(&self, runtime: &mut Runtime) -> IterResult {
+    fn inner_next(&self, runtime: &mut Runtime) -> Result<Option<(Variable, Variable)>, ()> {
         if let Option::Some(val) = self.iterable.next(runtime)? {
             let i = self.i.borrow_mut();
             let index = IntVar::from(i.clone()).into();
-            let var = LangTuple::new(Rc::from(vec![index, val])).into();
-            Result::Ok(Option::Some(var))
+            Result::Ok(Option::Some((index, val)))
         } else {
             Result::Ok(Option::None)
         }
@@ -75,6 +77,9 @@ impl CustomVar for Enumerate {
 
 impl NativeIterator for Enumerate {
     fn next(self: Rc<Self>, runtime: &mut Runtime) -> IterResult {
-        self.inner_next(runtime)
+        Result::Ok(
+            self.inner_next(runtime)?
+                .map(|(x, y)| LangTuple::new(Rc::from(vec![x, y])).into()),
+        )
     }
 }
