@@ -177,8 +177,16 @@ impl List {
         } else {
             match times.to_usize() {
                 Option::Some(x) => {
-                    let new = repeat_with(|| values.clone()).take(x).flatten().collect();
-                    runtime.return_1(List::from_values(self.generic, new).into())
+                    if x.checked_mul(values.len()).is_none() {
+                        runtime.throw_quick(
+                            value_error(),
+                            format!("List repetition {} times too big to fit in memory", times)
+                                .into(),
+                        )
+                    } else {
+                        let new = repeat_with(|| values.clone()).take(x).flatten().collect();
+                        runtime.return_1(List::from_values(self.generic, new).into())
+                    }
                 }
                 Option::None => runtime.throw_quick(
                     value_error(),
