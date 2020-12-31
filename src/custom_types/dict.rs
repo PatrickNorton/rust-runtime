@@ -223,9 +223,13 @@ impl InnerDict {
 
     pub fn get(&self, key: Variable, runtime: &mut Runtime) -> Result<Option<Variable>, ()> {
         let hash = key.hash(runtime)?;
-        match &self.entries[hash % self.entries.len()] {
-            Option::None => Result::Err(()),
-            Option::Some(e) => e.get(key, runtime),
+        if self.entries.is_empty() {
+            Result::Ok(Option::None)
+        } else {
+            match &self.entries[hash % self.entries.len()] {
+                Option::None => Result::Ok(Option::None),
+                Option::Some(e) => e.get(key, runtime),
+            }
         }
     }
 
@@ -264,10 +268,18 @@ impl InnerDict {
 
     pub fn set(&mut self, key: Variable, val: Variable, runtime: &mut Runtime) -> FnResult {
         let hash = key.hash(runtime)?;
-        let len = self.entries.len();
         self.resize(next_power_2(self.size + 1), runtime)?;
+        let len = self.entries.len();
         match &mut self.entries[hash % len] {
-            Option::None => Result::Err(()),
+            e @ Option::None => {
+                e.replace(Entry {
+                    key,
+                    value: val,
+                    hash,
+                    next: None,
+                });
+                runtime.return_0()
+            }
             Option::Some(e) => {
                 let val = e.set(key, val, runtime).ok_or(())?;
                 if val {

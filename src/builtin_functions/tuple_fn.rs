@@ -12,6 +12,7 @@ pub fn op_fn(o: Operator) -> NativeMethod<LangTuple> {
         Operator::Bool => bool,
         Operator::Str => str,
         Operator::Repr => repr,
+        Operator::Hash => hash,
         _ => unimplemented!("tuple.{} unimplemented", o.name()),
     }
 }
@@ -67,5 +68,11 @@ pub fn str(this: &LangTuple, args: Vec<Variable>, runtime: &mut Runtime) -> FnRe
 pub fn repr(this: &LangTuple, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     let result = this.repr(runtime)?.into();
+    runtime.return_1(result)
+}
+
+pub fn hash(this: &LangTuple, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert!(args.is_empty());
+    let result = IntVar::from(this.lang_hash(runtime)?).into();
     runtime.return_1(result)
 }
