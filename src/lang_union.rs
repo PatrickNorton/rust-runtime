@@ -158,6 +158,7 @@ impl LangUnion {
 }
 
 impl UnionType {
+    #[allow(clippy::too_many_arguments)] // Probably should fix this at some point
     pub const fn new(
         name: StringVar,
         file_no: usize,
