@@ -320,13 +320,17 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             return runtime.throw(result);
         }
         Bytecode::ThrowQuick => {
-            let exc_type = runtime.pop();
             let msg = runtime.pop();
+            let exc_type = runtime.pop();
             if let Variable::Normal(InnerVar::Type(t)) = exc_type {
                 let msg_str = msg.str(runtime)?;
                 return runtime.throw_quick(t, msg_str);
             } else {
-                panic!("ThrowQuick must be called with a type, not {:?}", exc_type);
+                panic!(
+                    "ThrowQuick must be called with a type, not {:?}\n{}",
+                    exc_type,
+                    runtime.stack_frames()
+                );
             }
         }
         Bytecode::EnterTry => {
