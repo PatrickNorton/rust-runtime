@@ -359,7 +359,7 @@ impl List {
         if range.get_step().is_one() {
             let value = self.value.borrow();
             let start = range.get_start().to_usize().unwrap();
-            let stop = range.get_start().to_usize().unwrap_or(usize::MAX);
+            let stop = range.get_stop().to_usize().unwrap_or(usize::MAX);
             runtime.return_1(List::from_values(self.generic, value[start..stop].to_vec()).into())
         } else {
             let mut raw_vec = Vec::new();
