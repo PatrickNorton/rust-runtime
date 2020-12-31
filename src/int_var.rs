@@ -190,7 +190,7 @@ impl Ord for IntVar {
         match self {
             IntVar::Small(a) => match other {
                 IntVar::Small(b) => a.cmp(b),
-                IntVar::Big(b) => b.as_ref().cmp(&(*a).into()),
+                IntVar::Big(b) => BigInt::from(*a).cmp(b.as_ref()),
             },
             IntVar::Big(a) => match other {
                 IntVar::Small(b) => a.as_ref().cmp(&(*b).into()),
