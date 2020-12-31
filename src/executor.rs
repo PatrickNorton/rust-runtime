@@ -28,7 +28,10 @@ use std::ops::SubAssign;
 
 pub fn execute(runtime: &mut Runtime) -> FnResult {
     while !runtime.is_native() {
-        if runtime.current_pos() == runtime.current_fn().len() && !runtime.is_bottom_stack() {
+        if runtime.current_pos() == runtime.current_fn().len() {
+            if runtime.is_bottom_stack() {
+                return FnResult::Ok(());
+            }
             if runtime.is_generator() {
                 runtime.generator_end();
             } else {
