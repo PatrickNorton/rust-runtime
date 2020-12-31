@@ -103,7 +103,16 @@ impl NativeIterator for Generator {
 }
 
 impl Debug for Generator {
-    fn fmt(&self, _f: &mut Formatter<'_>) -> fmt::Result {
-        unimplemented!()
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let frame = self.frame.take();
+        let stack = self.stack.take();
+        let result = f
+            .debug_struct("Generator")
+            .field("frame", &frame)
+            .field("stack", &stack)
+            .finish();
+        self.frame.replace(frame);
+        self.stack.replace(stack);
+        result
     }
 }
