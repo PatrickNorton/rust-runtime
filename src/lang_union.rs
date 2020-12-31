@@ -225,7 +225,8 @@ impl UnionType {
     pub(self) fn get_method(&self, name: Name) -> UnionMethod {
         match self.methods.get(&name) {
             Option::Some(t) => *t,
-            Option::None => default_methods(name),
+            Option::None => default_methods(&name)
+                .unwrap_or_else(|| panic!("{}.{} does not exist", self.name, name.as_str())),
         }
     }
 }
@@ -257,7 +258,7 @@ mod default_functions {
     use crate::variable::{FnResult, Variable};
     use std::mem::take;
 
-    pub fn default_methods(name: Name) -> UnionMethod {
+    pub fn default_methods(name: &Name) -> Option<UnionMethod> {
         if let Name::Operator(o) = name {
             let result = match o {
                 Operator::Repr => default_repr,
@@ -265,11 +266,11 @@ mod default_functions {
                 Operator::Equals => default_eq,
                 Operator::Bool => default_bool,
                 Operator::In => default_in,
-                _ => unimplemented!("name {} not found", o.name()),
+                _ => return Option::None,
             };
-            UnionMethod::Native(result)
+            Option::Some(UnionMethod::Native(result))
         } else {
-            panic!("name {} not found", name.as_str())
+            Option::None
         }
     }
 

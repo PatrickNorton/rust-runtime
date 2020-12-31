@@ -1,5 +1,6 @@
 use crate::builtin_functions::string_fn;
 use crate::builtins::default_methods;
+use crate::custom_types::exceptions::value_error;
 use crate::custom_types::types::{CustomTypeImpl, TypeIdentity};
 use crate::lang_union::{UnionMethod, UnionType};
 use crate::method::{InnerMethod, Method, StdMethod};
@@ -11,7 +12,9 @@ use crate::std_variable::{StdVarMethod, StdVariable};
 use crate::string_var::StringVar;
 use crate::tuple::LangTuple;
 use crate::variable::{FnResult, Variable};
+use num::ToPrimitive;
 use std::collections::{HashMap, HashSet};
+use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
 use std::mem::take;
 use std::ptr;
@@ -141,7 +144,7 @@ impl Type {
             Type::Bool => take(&mut args[0]).into_bool(runtime)?.into(),
             Type::Bigint => take(&mut args[0]).int(runtime)?.into(),
             Type::String => take(&mut args[0]).str(runtime)?.into(),
-            Type::Char => unimplemented!(),
+            Type::Char => create_char(take(&mut args[0]), runtime)?,
             Type::Decimal => unimplemented!(),
             Type::Tuple => LangTuple::new(args.into()).into(),
             Type::Type => args[0].get_type().into(),
@@ -257,6 +260,19 @@ impl Type {
             Type::Standard(s) => s.try_method(name, runtime),
             _ => Option::None,
         }
+    }
+}
+
+fn create_char(var: Variable, runtime: &mut Runtime) -> Result<Variable, ()> {
+    let int_val = var.int(runtime)?;
+    match int_val.to_u32().and_then(|i| char::try_from(i).ok()) {
+        Option::Some(c) => Result::Ok(c.into()),
+        Option::None => runtime
+            .throw_quick(
+                value_error(),
+                format!("Cannot convert scalar value {} to a char", int_val).into(),
+            )
+            .and_then(|_| unreachable!("Should be in native function here")),
     }
 }
 

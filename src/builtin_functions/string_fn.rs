@@ -386,7 +386,7 @@ fn index_of(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) ->
 fn encode(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
     // #![feature(array_value_iter)] will make this so much easier...
-    let byte_val = match take(&mut args[0]).str(runtime)?.as_str() {
+    let byte_val = match take(&mut args[0]).str(runtime)?.to_lowercase().as_str() {
         "utf-8" => this.as_bytes().to_vec(),
         "utf-16" => this
             .encode_utf16()

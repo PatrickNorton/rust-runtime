@@ -40,6 +40,7 @@ impl LangBytes {
             Operator::GetAttr => Self::index,
             Operator::SetAttr => Self::set_index,
             Operator::Str => Self::str,
+            Operator::Repr => Self::repr,
             Operator::Iter => Self::iter,
             Operator::Bool => Self::bool,
             Operator::Add => Self::plus,
@@ -90,6 +91,15 @@ impl LangBytes {
     fn str(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         self.encode(args, runtime)
+    }
+
+    fn repr(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        let val = format!(
+            "{:?}",
+            String::from_utf8(self.value.borrow().clone()).or_else(|_| self.utf8_err(runtime))?
+        );
+        runtime.return_1(StringVar::from(val).into())
     }
 
     fn encode(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
