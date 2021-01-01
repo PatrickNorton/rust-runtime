@@ -453,7 +453,7 @@ impl CustomVar for Set {
         unimplemented!()
     }
 
-    fn get_type(self: Rc<Self>) -> Type {
+    fn get_type(&self) -> Type {
         Set::set_type()
     }
 }
@@ -516,7 +516,7 @@ impl CustomVar for SetIter {
         unimplemented!()
     }
 
-    fn get_type(self: Rc<Self>) -> Type {
+    fn get_type(&self) -> Type {
         unimplemented!()
     }
 }

@@ -29,7 +29,7 @@ macro_rules! std_interface {
                 unimplemented!()
             }
 
-            fn get_type(self: Rc<Self>) -> Type {
+            fn get_type(&self) -> Type {
                 Self::cls()
             }
         }

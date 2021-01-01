@@ -84,7 +84,7 @@ impl CustomVar for Generator {
         unimplemented!()
     }
 
-    fn get_type(self: Rc<Self>) -> Type {
+    fn get_type(&self) -> Type {
         Self::gen_type()
     }
 }

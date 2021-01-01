@@ -53,7 +53,7 @@ impl CustomVar for StdException {
         unimplemented!()
     }
 
-    fn get_type(self: Rc<Self>) -> Type {
+    fn get_type(&self) -> Type {
         self.exc_type
     }
 }

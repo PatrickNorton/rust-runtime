@@ -546,7 +546,7 @@ impl CustomVar for List {
         unimplemented!()
     }
 
-    fn get_type(self: Rc<Self>) -> Type {
+    fn get_type(&self) -> Type {
         List::list_type()
     }
 }
@@ -595,7 +595,7 @@ impl CustomVar for ListIter {
         unimplemented!()
     }
 
-    fn get_type(self: Rc<Self>) -> Type {
+    fn get_type(&self) -> Type {
         Self::range_iter_type()
     }
 

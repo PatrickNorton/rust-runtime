@@ -17,7 +17,7 @@ use std::rc::Rc;
 pub trait CustomVar: Debug + Any + Downcast {
     fn get_attr(self: Rc<Self>, name: Name) -> Variable;
     fn set(self: Rc<Self>, name: Name, object: Variable);
-    fn get_type(self: Rc<Self>) -> Type;
+    fn get_type(&self) -> Type;
 
     fn call(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         self.call_op(Operator::Call, args, runtime)

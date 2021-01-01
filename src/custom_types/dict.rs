@@ -486,7 +486,7 @@ impl CustomVar for Dict {
         unimplemented!()
     }
 
-    fn get_type(self: Rc<Self>) -> Type {
+    fn get_type(&self) -> Type {
         Dict::dict_type()
     }
 }
@@ -572,7 +572,7 @@ impl CustomVar for DictIter {
         unimplemented!()
     }
 
-    fn get_type(self: Rc<Self>) -> Type {
+    fn get_type(&self) -> Type {
         unimplemented!()
     }
 }

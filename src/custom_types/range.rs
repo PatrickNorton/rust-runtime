@@ -177,7 +177,7 @@ impl CustomVar for Range {
         unimplemented!()
     }
 
-    fn get_type(self: Rc<Self>) -> Type {
+    fn get_type(&self) -> Type {
         Self::range_type()
     }
 }
@@ -238,7 +238,7 @@ impl CustomVar for RangeIter {
         unimplemented!()
     }
 
-    fn get_type(self: Rc<Self>) -> Type {
+    fn get_type(&self) -> Type {
         Self::range_iter_type()
     }
 }

@@ -388,7 +388,7 @@ impl InnerVar {
             InnerVar::Standard(a) => a.get_type(),
             InnerVar::Tuple(_) => Type::Tuple,
             InnerVar::Function(_) => unimplemented!(),
-            InnerVar::Custom(a) => (**a).clone().get_type(),
+            InnerVar::Custom(a) => a.get_type(),
             InnerVar::Union(val) => val.get_type(),
         }
     }

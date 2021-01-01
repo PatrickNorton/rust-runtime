@@ -124,7 +124,7 @@ impl CustomVar for FileObj {
         unimplemented!()
     }
 
-    fn get_type(self: Rc<Self>) -> Type {
+    fn get_type(&self) -> Type {
         Self::open_type()
     }
 }

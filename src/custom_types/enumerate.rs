@@ -70,7 +70,7 @@ impl CustomVar for Enumerate {
         unimplemented!()
     }
 
-    fn get_type(self: Rc<Self>) -> Type {
+    fn get_type(&self) -> Type {
         Self::enumerate_type()
     }
 }

@@ -514,7 +514,7 @@ where
         unimplemented!()
     }
 
-    fn get_type(self: Rc<Self>) -> Type {
+    fn get_type(&self) -> Type {
         unimplemented!()
     }
 }

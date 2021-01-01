@@ -412,7 +412,7 @@ impl CustomVar for LangBytes {
         unimplemented!()
     }
 
-    fn get_type(self: Rc<Self>) -> Type {
+    fn get_type(&self) -> Type {
         Self::bytes_type()
     }
 }
@@ -476,7 +476,7 @@ impl CustomVar for BytesIter {
         unimplemented!()
     }
 
-    fn get_type(self: Rc<Self>) -> Type {
+    fn get_type(&self) -> Type {
         Self::bytes_iter_type()
     }
 

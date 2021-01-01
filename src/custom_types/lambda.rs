@@ -57,7 +57,7 @@ impl CustomVar for Lambda {
         unimplemented!()
     }
 
-    fn get_type(self: Rc<Self>) -> Type {
+    fn get_type(&self) -> Type {
         Self::lambda_type()
     }
 
