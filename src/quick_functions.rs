@@ -587,7 +587,7 @@ pub fn quick_bitwise_not(this: Variable, runtime: &mut Runtime) -> QuickResult {
 pub fn quick_equals(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
     match this {
         Variable::Normal(InnerVar::Standard(v)) => {
-            v.call_operator(Operator::Equals, Vec::new(), runtime)?;
+            v.call_operator(Operator::Equals, vec![other], runtime)?;
             QuickResult::Ok(runtime.pop_return())
         }
         Variable::Normal(InnerVar::Custom(c)) => {

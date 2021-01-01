@@ -390,7 +390,7 @@ impl InnerDict {
 
 impl Entry {
     pub fn get(&self, key: Variable, runtime: &mut Runtime) -> Result<Option<Variable>, ()> {
-        if key.equals(self.value.clone(), runtime)? {
+        if key.equals(self.key.clone(), runtime)? {
             Result::Ok(Option::Some(self.value.clone()))
         } else {
             match &self.next {
@@ -401,7 +401,7 @@ impl Entry {
     }
 
     pub fn set(&mut self, key: Variable, val: Variable, runtime: &mut Runtime) -> Option<bool> {
-        if key.equals(self.value.clone(), runtime).ok()? {
+        if key.equals(self.key.clone(), runtime).ok()? {
             self.value = val;
             Option::Some(false)
         } else {
