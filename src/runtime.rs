@@ -96,6 +96,15 @@ impl Runtime {
     }
 
     pub fn load_value(&self, index: u16) -> &Variable {
+        #[cfg(debug_assertions)]
+        if index as usize >= self.last_frame().len() {
+            panic!(
+                "Index {} out of bounds for len {}\n{}",
+                index,
+                self.last_frame().len(),
+                self.stack_frames()
+            )
+        }
         &self.last_frame()[index as usize]
     }
 

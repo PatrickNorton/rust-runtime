@@ -133,6 +133,10 @@ impl StackFrame {
             self.native,
         )
     }
+
+    pub fn len(&self) -> usize {
+        self.variables.len()
+    }
 }
 
 impl Index<usize> for StackFrame {
