@@ -12,7 +12,7 @@ use crate::stack_frame::{frame_strings, SFInfo, StackFrame};
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
-use downcast_rs::__std::cmp::min;
+use downcast_rs::__std::cmp::{min, Ordering};
 use std::cmp::max;
 use std::collections::{HashMap, HashSet};
 use std::mem::take;
@@ -479,19 +479,21 @@ impl Runtime {
                 "Attempted to call pop_returns where no values were returned\n{}",
                 self.stack_frames()
             ),
-            i if i < ret_count => panic!(
-                "Runtime::pop_returns called with a count of {}, but only {} values were returned\n{}",
-                ret_count, i, self.stack_frames()
-            ),
-            i if i == ret_count => self
-                .variables
-                .drain(self.variables.len() - ret_count..)
-                .collect(),
-            i => {
-                let new_len = self.variables.len() - i + ret_count;
-                self.ret_count = 0;
-                self.variables.truncate(new_len);
-                self.variables.drain(new_len - ret_count..).collect()
+            i => match i.cmp(&ret_count) {
+                Ordering::Less => panic!(
+                    "Runtime::pop_returns called with a count of {}, but only {} values were returned\n{}",
+                    ret_count, i, self.stack_frames()
+                ),
+                Ordering::Equal => self
+                    .variables
+                    .drain(self.variables.len() - ret_count..)
+                    .collect(),
+                Ordering::Greater => {
+                    let new_len = self.variables.len() - i + ret_count;
+                    self.ret_count = 0;
+                    self.variables.truncate(new_len);
+                    self.variables.drain(new_len - ret_count..).collect()
+                }
             }
         }
     }
