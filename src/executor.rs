@@ -124,7 +124,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let dot_val = runtime.load_const(bytes_0 as u16).clone();
             let index = runtime
                 .pop()
-                .index(Name::Attribute(dot_val.str(runtime)?), runtime)?;
+                .index(Name::Attribute(dot_val.str(runtime)?.as_str()), runtime)?;
             runtime.push(index)
         }
         Bytecode::LoadSubscript => call_operator(Operator::GetAttr, bytes_0 as u16, runtime)?,
@@ -165,7 +165,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let value = runtime.pop();
             let attr_name = runtime.load_const(bytes_0 as u16).clone();
             let str_name = attr_name.str(runtime)?;
-            value.set(str_name, stored, runtime)?;
+            value.set(str_name.as_str(), stored, runtime)?;
         }
         Bytecode::SwapStack => {
             runtime.swap_stack(bytes_0 as usize, bytes_1 as usize);
@@ -265,7 +265,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let argc = bytes_1 as u16;
             let args = runtime.load_args(argc as usize);
             let var = runtime.pop();
-            var.index(Name::Attribute(fn_name), runtime)?
+            var.index(Name::Attribute(fn_name.as_str()), runtime)?
                 .call_or_goto((args, runtime))?;
         }
         Bytecode::CallTos => {
@@ -281,7 +281,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let args = runtime.load_args(argc as usize);
             let var = runtime.pop();
             runtime.pop_stack();
-            var.index(Name::Attribute(fn_name), runtime)?
+            var.index(Name::Attribute(fn_name.as_str()), runtime)?
                 .call_or_goto((args, runtime))?;
         }
         Bytecode::TailTos => {
@@ -366,7 +366,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         Bytecode::ForIter => {
             let iterated = runtime.pop();
             let jump_loc = bytes_0;
-            runtime.call_attr(iterated.clone(), "next".into(), Vec::new())?;
+            runtime.call_attr(iterated.clone(), "next", Vec::new())?;
             assert_ne!(bytes_1, 0);
             if bytes_1 == 1 {
                 match runtime.pop_return() {
@@ -454,13 +454,13 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         Bytecode::ListAdd => {
             let added = runtime.pop();
             let list = runtime.pop();
-            runtime.call_attr(list.clone(), "add".into(), vec![added])?;
+            runtime.call_attr(list.clone(), "add", vec![added])?;
             runtime.push(list)
         }
         Bytecode::SetAdd => {
             let added = runtime.pop();
             let set = runtime.pop();
-            runtime.call_attr(set.clone(), "add".into(), vec![added])?;
+            runtime.call_attr(set.clone(), "add", vec![added])?;
             runtime.push(set)
         }
         Bytecode::DictAdd => {
@@ -488,7 +488,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let mut results = Vec::with_capacity(iterators.len());
             let mut loop_done = false;
             for iterator in &iterators {
-                runtime.call_attr(iterator.clone(), "next".into(), vec![])?;
+                runtime.call_attr(iterator.clone(), "next", vec![])?;
                 match runtime.pop_return() {
                     Variable::Option(i, o) => match OptionVar(i, o).into() {
                         Option::Some(val) => results.push(val),

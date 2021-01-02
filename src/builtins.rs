@@ -136,7 +136,7 @@ pub fn builtin_of(index: usize) -> Variable {
     }
 }
 
-pub fn default_methods(name: &Name) -> Option<StdVarMethod> {
+pub fn default_methods(name: Name) -> Option<StdVarMethod> {
     if let Name::Operator(o) = name {
         let result = match o {
             Operator::Repr => default_repr,

@@ -32,6 +32,7 @@ mod lang_union;
 mod looping;
 mod method;
 mod name;
+mod name_map;
 mod operator;
 mod property;
 mod quick_functions;

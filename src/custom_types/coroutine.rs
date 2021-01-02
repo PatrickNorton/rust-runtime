@@ -71,9 +71,9 @@ impl CustomVar for Generator {
         match name {
             Name::Operator(op) => match op {
                 Operator::Iter => StdMethod::new_native(self, Self::ret_self).into(),
-                _ => unimplemented!("Generator.{}", name),
+                _ => unimplemented!("Generator.{}", op.name()),
             },
-            Name::Attribute(attr) => match attr.as_str() {
+            Name::Attribute(attr) => match attr {
                 "next" => StdMethod::new_native(self, Self::next_fn).into(),
                 _ => unimplemented!("Generator.{}", attr),
             },

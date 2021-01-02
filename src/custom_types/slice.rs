@@ -105,7 +105,7 @@ impl Slice {
 impl CustomVar for Slice {
     fn get_attr(self: Rc<Self>, name: Name) -> Variable {
         match name {
-            Name::Attribute(s) => match s.as_str() {
+            Name::Attribute(s) => match s {
                 "start" => int_to_var(self.start.clone()),
                 "stop" => int_to_var(self.stop.clone()),
                 "step" => int_to_var(self.step.clone()),

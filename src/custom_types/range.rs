@@ -47,7 +47,7 @@ impl Range {
     }
 
     pub fn from_slice(len: usize, runtime: &mut Runtime, arg: Variable) -> Result<Rc<Range>, ()> {
-        runtime.call_attr(arg, "toRange".into(), vec![IntVar::from(len).into()])?;
+        runtime.call_attr(arg, "toRange", vec![IntVar::from(len).into()])?;
         Result::Ok(downcast_var(runtime.pop_return()).expect("Expected a range"))
     }
 
@@ -73,8 +73,8 @@ impl Range {
         StdMethod::new_native(self.clone(), func).into()
     }
 
-    fn get_attribute(self: &Rc<Self>, attr: StringVar) -> Variable {
-        match attr.as_str() {
+    fn get_attribute(self: &Rc<Self>, attr: &str) -> Variable {
+        match attr {
             "length" => self.len().into(),
             x => unimplemented!("Range.{}", x),
         }
@@ -196,8 +196,8 @@ impl RangeIter {
         }
     }
 
-    fn get_attribute(self: &Rc<Self>, val: StringVar) -> Variable {
-        let func = match val.as_str() {
+    fn get_attribute(self: &Rc<Self>, val: &str) -> Variable {
+        let func = match val {
             "next" => Self::next_fn,
             _ => unimplemented!(),
         };

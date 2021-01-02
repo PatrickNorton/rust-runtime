@@ -2,13 +2,13 @@ use crate::custom_var::CustomVar;
 use crate::function::Function;
 use crate::method::InnerMethod;
 use crate::name::Name;
+use crate::name_map::NameMap;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
-use downcast_rs::__alloc::rc::Rc;
-use std::collections::HashMap;
 use std::fmt::Debug;
+use std::rc::Rc;
 
 pub trait CustomTypeImpl: Debug + Sync {
     fn get_name(&self) -> &StringVar;
@@ -23,7 +23,7 @@ pub struct CustomType<T> {
     name: StringVar,
     supers: Vec<Type>,
     constructor: Function,
-    static_methods: HashMap<Name, InnerMethod<T>>,
+    static_methods: NameMap<InnerMethod<T>>,
 }
 
 impl<T> CustomType<T> {
@@ -31,7 +31,7 @@ impl<T> CustomType<T> {
         name: StringVar,
         supers: Vec<Type>,
         constructor: Function,
-        static_methods: HashMap<Name, InnerMethod<T>>,
+        static_methods: NameMap<InnerMethod<T>>,
     ) -> CustomType<T> {
         CustomType {
             name,

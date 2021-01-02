@@ -9,7 +9,6 @@ use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
-use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use num::{One, Signed, ToPrimitive, Zero};
 use std::cell::{Cell, RefCell};
@@ -57,8 +56,8 @@ impl List {
         Box::new(StdMethod::new(self, InnerMethod::Native(value))).into()
     }
 
-    fn get_attribute(self: Rc<Self>, name: StringVar) -> Variable {
-        let value = match name.as_str() {
+    fn get_attribute(self: Rc<Self>, name: &str) -> Variable {
+        let value = match name {
             "length" => return IntVar::from(self.len()).into(),
             "containsAll" => Self::contains_all,
             "get" => Self::list_get,

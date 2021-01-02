@@ -4,6 +4,7 @@ use crate::lang_union::default_functions::default_methods;
 use crate::looping;
 use crate::method::{InnerMethod, StdMethod};
 use crate::name::Name;
+use crate::name_map::NameMap;
 use crate::operator::Operator;
 use crate::property::Property;
 use crate::runtime::Runtime;
@@ -30,11 +31,11 @@ pub struct UnionType {
     name: StringVar,
     file_no: usize,
     supers: Vec<u32>,
-    variants: Vec<StringVar>,
-    variables: HashSet<StringVar>,
-    methods: HashMap<Name, UnionMethod>,
-    static_methods: HashMap<Name, UnionMethod>,
-    properties: HashMap<StringVar, Property>,
+    variants: Vec<String>,
+    variables: HashSet<String>,
+    methods: NameMap<UnionMethod>,
+    static_methods: NameMap<UnionMethod>,
+    properties: HashMap<String, Property>,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -106,7 +107,7 @@ impl LangUnion {
     }
 
     pub fn index(&self, index: Name, runtime: &mut Runtime) -> Result<Variable, ()> {
-        match self.cls.variant_pos(&index) {
+        match self.cls.variant_pos(index) {
             Option::Some(true_val) => Result::Ok(
                 if self.is_variant(true_val) {
                     Option::Some((*self.value).clone())
@@ -123,8 +124,8 @@ impl LangUnion {
         Type::Union(self.cls)
     }
 
-    pub fn variant_name(&self) -> &StringVar {
-        &self.cls.variants[self.variant_no]
+    pub fn variant_name(&self) -> &str {
+        self.cls.variants[self.variant_no].as_str()
     }
 
     pub fn is_variant(&self, variant_no: usize) -> bool {
@@ -144,7 +145,7 @@ impl LangUnion {
     }
 
     fn index_harder(&self, index: Name, runtime: &mut Runtime) -> Result<Variable, ()> {
-        match self.cls.get_property(&index) {
+        match self.cls.get_property(index) {
             Option::Some(val) => {
                 val.call_getter(runtime, self.clone().into())?;
                 Result::Ok(runtime.pop_return())
@@ -163,11 +164,11 @@ impl UnionType {
         name: StringVar,
         file_no: usize,
         supers: Vec<u32>,
-        variants: Vec<StringVar>,
-        variables: HashSet<StringVar>,
-        methods: HashMap<Name, UnionMethod>,
-        static_methods: HashMap<Name, UnionMethod>,
-        properties: HashMap<StringVar, Property>,
+        variants: Vec<String>,
+        variables: HashSet<String>,
+        methods: NameMap<UnionMethod>,
+        static_methods: NameMap<UnionMethod>,
+        properties: HashMap<String, Property>,
     ) -> UnionType {
         UnionType {
             name,
@@ -184,17 +185,17 @@ impl UnionType {
     pub fn index(&'static self, name: Name) -> Variable {
         match name {
             Name::Operator(_) => unimplemented!(),
-            Name::Attribute(var) => match self.variants.iter().position(|x| x == &var) {
+            Name::Attribute(var) => match self.variants.iter().position(|x| &*x == var) {
                 Option::Some(i) => Rc::new(UnionMaker::new(i, self)).into(),
                 Option::None => self.index_attr(var),
             },
         }
     }
 
-    fn index_attr(&'static self, attr: StringVar) -> Variable {
+    fn index_attr(&'static self, attr: &str) -> Variable {
         let var_attr = Name::Attribute(attr);
-        if self.static_methods.contains_key(&var_attr) {
-            match self.static_methods.get(&var_attr).unwrap() {
+        if self.static_methods.contains_key(var_attr) {
+            match self.static_methods.get(var_attr).unwrap() {
                 InnerMethod::Standard(a, b) => {
                     let inner_m = InnerMethod::Standard(*a, *b);
                     let n = StdMethod::new(Type::Union(self), inner_m);
@@ -207,9 +208,9 @@ impl UnionType {
         }
     }
 
-    fn variant_pos(&self, index: &Name) -> Option<usize> {
+    fn variant_pos(&self, index: Name) -> Option<usize> {
         if let Name::Attribute(name) = index {
-            self.variants.iter().position(|x| x == name)
+            self.variants.iter().position(|x| &*x == name)
         } else {
             Option::None
         }
@@ -219,14 +220,17 @@ impl UnionType {
         &self.name
     }
 
-    pub fn get_property(&self, name: &Name) -> Option<&Property> {
-        name.do_each_ref(|_| Option::None, |str| self.properties.get(&str))
+    pub fn get_property(&self, name: Name) -> Option<&Property> {
+        match name {
+            Name::Operator(_) => Option::None,
+            Name::Attribute(str) => self.properties.get(str),
+        }
     }
 
     pub(self) fn get_method(&self, name: Name) -> UnionMethod {
-        match self.methods.get(&name) {
+        match self.methods.get(name) {
             Option::Some(t) => *t,
-            Option::None => default_methods(&name)
+            Option::None => default_methods(name)
                 .unwrap_or_else(|| panic!("{}.{} does not exist", self.name, name.as_str())),
         }
     }
@@ -259,7 +263,7 @@ mod default_functions {
     use crate::variable::{FnResult, Variable};
     use std::mem::take;
 
-    pub fn default_methods(name: &Name) -> Option<UnionMethod> {
+    pub fn default_methods(name: Name) -> Option<UnionMethod> {
         if let Name::Operator(o) = name {
             let result = match o {
                 Operator::Repr => default_repr,

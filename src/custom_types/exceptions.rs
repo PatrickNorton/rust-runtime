@@ -3,12 +3,12 @@ use crate::custom_var::CustomVar;
 use crate::function::Function;
 use crate::method::StdMethod;
 use crate::name::Name;
+use crate::name_map::NameMap;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
-use std::collections::HashMap;
 use std::mem::take;
 use std::rc::Rc;
 
@@ -31,8 +31,8 @@ impl StdException {
         StdMethod::new_native(self.clone(), func).into()
     }
 
-    pub fn get_attribute(self: &Rc<Self>, name: StringVar) -> Variable {
-        match name.as_str() {
+    pub fn get_attribute(self: &Rc<Self>, name: &str) -> Variable {
+        match name {
             "message" => self.msg.clone().into(),
             _ => unimplemented!(),
         }
@@ -84,7 +84,7 @@ macro_rules! create_exc {
                     $type_name.into(),
                     Vec::new(),
                     Function::Native(create),
-                    HashMap::new()
+                    NameMap::new()
                 );
             }
             Type::Custom(&*TYPE)

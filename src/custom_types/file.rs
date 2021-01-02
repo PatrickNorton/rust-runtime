@@ -31,8 +31,8 @@ impl FileObj {
         StdMethod::new_native(self, func).into()
     }
 
-    fn get_attribute(self: Rc<Self>, attr: StringVar) -> Variable {
-        let func = match attr.as_str() {
+    fn get_attribute(self: Rc<Self>, attr: &str) -> Variable {
+        let func = match attr {
             "readLines" => Self::read_lines,
             "read" => Self::read,
             _ => unimplemented!(),

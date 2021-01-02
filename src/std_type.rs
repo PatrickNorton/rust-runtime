@@ -5,6 +5,7 @@ use crate::custom_types::types::{CustomTypeImpl, TypeIdentity};
 use crate::lang_union::{UnionMethod, UnionType};
 use crate::method::{InnerMethod, Method, StdMethod};
 use crate::name::Name;
+use crate::name_map::NameMap;
 use crate::operator::Operator;
 use crate::property::Property;
 use crate::runtime::Runtime;
@@ -58,10 +59,10 @@ pub struct StdType {
     name: StringVar,
     file_no: usize,
     supers: Vec<u32>,
-    variables: HashSet<StringVar>,
-    methods: HashMap<Name, StdVarMethod>,
-    static_methods: HashMap<Name, StdVarMethod>,
-    properties: HashMap<StringVar, Property>,
+    variables: HashSet<String>,
+    methods: NameMap<StdVarMethod>,
+    static_methods: NameMap<StdVarMethod>,
+    properties: HashMap<String, Property>,
 }
 
 impl Type {
@@ -69,10 +70,10 @@ impl Type {
         name: StringVar,
         file_no: usize,
         supers: Vec<u32>,
-        variables: HashSet<StringVar>,
-        methods: HashMap<Name, StdVarMethod>,
-        static_methods: HashMap<Name, StdVarMethod>,
-        properties: HashMap<StringVar, Property>,
+        variables: HashSet<String>,
+        methods: NameMap<StdVarMethod>,
+        static_methods: NameMap<StdVarMethod>,
+        properties: HashMap<String, Property>,
     ) -> Type {
         let t = Box::new(StdType::new(
             name,
@@ -91,11 +92,11 @@ impl Type {
         name: StringVar,
         file_no: usize,
         supers: Vec<u32>,
-        variants: Vec<StringVar>,
-        variables: HashSet<StringVar>,
-        methods: HashMap<Name, UnionMethod>,
-        static_methods: HashMap<Name, UnionMethod>,
-        properties: HashMap<StringVar, Property>,
+        variants: Vec<String>,
+        variables: HashSet<String>,
+        methods: NameMap<UnionMethod>,
+        static_methods: NameMap<UnionMethod>,
+        properties: HashMap<String, Property>,
     ) -> Type {
         let t = Box::new(UnionType::new(
             name,
@@ -163,7 +164,7 @@ impl Type {
 
     pub fn index(self, index: Name, runtime: &mut Runtime) -> Variable {
         match self {
-            Type::Standard(std_t) => match std_t.index_method(&index) {
+            Type::Standard(std_t) => match std_t.index_method(index) {
                 Option::Some(index_pair) => {
                     let inner_m = InnerMethod::Standard(index_pair.0, index_pair.1);
                     let n = StdMethod::new(self, inner_m);
@@ -174,7 +175,7 @@ impl Type {
                         // FIXME: This is used for type generification, but enum indexing won't work
                         TypeIdentity::new(self).into()
                     } else {
-                        runtime.static_attr(&self, &index).unwrap_or_else(|| {
+                        runtime.static_attr(&self, index).unwrap_or_else(|| {
                             panic!(
                                 "{}.{} not found\n{}",
                                 self.str(),
@@ -212,7 +213,7 @@ impl Type {
         }
     }
 
-    pub fn set(&self, index: StringVar, value: Variable, runtime: &mut Runtime) {
+    pub fn set(&self, index: &str, value: Variable, runtime: &mut Runtime) {
         match self {
             Type::Standard(_) | Type::Custom(_) => {
                 runtime.set_static_attr(self, Name::Attribute(index), value)
@@ -255,7 +256,7 @@ impl Type {
         )
     }
 
-    fn std_method(self, name: &Name, runtime: &Runtime) -> Option<StdVarMethod> {
+    fn std_method(self, name: Name, runtime: &Runtime) -> Option<StdVarMethod> {
         match self {
             Type::Standard(s) => s.try_method(name, runtime),
             _ => Option::None,
@@ -302,10 +303,10 @@ impl StdType {
         name: StringVar,
         file_no: usize,
         supers: Vec<u32>,
-        variables: HashSet<StringVar>,
-        methods: HashMap<Name, StdVarMethod>,
-        static_methods: HashMap<Name, StdVarMethod>,
-        properties: HashMap<StringVar, Property>,
+        variables: HashSet<String>,
+        methods: NameMap<StdVarMethod>,
+        static_methods: NameMap<StdVarMethod>,
+        properties: HashMap<String, Property>,
     ) -> StdType {
         StdType {
             name,
@@ -318,8 +319,11 @@ impl StdType {
         }
     }
 
-    pub fn get_property(&self, name: &Name) -> Option<Property> {
-        name.do_each_ref(|_| Option::None, |str| self.properties.get(&str).cloned())
+    pub fn get_property(&self, name: Name) -> Option<&Property> {
+        match name {
+            Name::Operator(_) => Option::None,
+            Name::Attribute(s) => self.properties.get(s),
+        }
     }
 
     fn is_subclass(&self, other: &Type, runtime: &Runtime) -> bool {
@@ -340,7 +344,7 @@ impl StdType {
         &self.name
     }
 
-    fn index_method(&self, name: &Name) -> Option<(usize, u32)> {
+    fn index_method(&self, name: Name) -> Option<(usize, u32)> {
         if let StdVarMethod::Standard(f, a) = self.static_methods.get(name)? {
             Some((*f, *a))
         } else {
@@ -348,22 +352,24 @@ impl StdType {
         }
     }
 
-    fn convert_variables(&self) -> HashMap<Name, Variable> {
-        self.variables
+    fn convert_variables(&self) -> NameMap<Variable> {
+        let val = self
+            .variables
             .iter()
-            .map(|x| (Name::Attribute(x.clone()), Variable::default()))
-            .collect()
+            .map(|x| (x.clone(), Variable::default()))
+            .collect();
+        NameMap::from_values(HashMap::new(), val)
     }
 
     fn create(&'static self, args: Vec<Variable>, runtime: &mut Runtime) -> Result<Variable, ()> {
         let instance = StdVariable::new(self, self.convert_variables());
-        let method = self.methods.get(&Name::Operator(Operator::New)).unwrap();
+        let method = self.methods.get(Name::Operator(Operator::New)).unwrap();
         StdMethod::new(instance.clone(), *method).call((args, runtime))?;
         Result::Ok(instance.into())
     }
 
-    pub(crate) fn get_method(&self, name: &Name, runtime: &Runtime) -> StdVarMethod {
-        self.try_method(&name, runtime).unwrap_or_else(|| {
+    pub(crate) fn get_method(&self, name: Name, runtime: &Runtime) -> StdVarMethod {
+        self.try_method(name, runtime).unwrap_or_else(|| {
             panic!(
                 "{}.{} does not exist\n{}",
                 self.name,
@@ -373,8 +379,8 @@ impl StdType {
         })
     }
 
-    fn try_method(&self, name: &Name, runtime: &Runtime) -> Option<StdVarMethod> {
-        match self.methods.get(&name) {
+    fn try_method(&self, name: Name, runtime: &Runtime) -> Option<StdVarMethod> {
+        match self.methods.get(name) {
             Option::Some(t) => Option::Some(*t),
             Option::None => {
                 for sup in &self.supers {

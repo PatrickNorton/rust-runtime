@@ -64,8 +64,8 @@ impl Set {
         StdMethod::new_native(self.clone(), func).into()
     }
 
-    fn get_attribute(self: &Rc<Self>, s: StringVar) -> Variable {
-        let func = match s.as_str() {
+    fn get_attribute(self: &Rc<Self>, s: &str) -> Variable {
+        let func = match s {
             "add" => Self::add,
             "addAll" => Self::add_all,
             "remove" => Self::del_attr,
@@ -504,7 +504,7 @@ impl CustomVar for SetIter {
     fn get_attr(self: Rc<Self>, name: Name) -> Variable {
         let func = match name {
             Name::Operator(_) => unimplemented!(),
-            Name::Attribute(val) => match val.as_str() {
+            Name::Attribute(val) => match val {
                 "next" => Self::next_fn,
                 _ => unimplemented!(),
             },

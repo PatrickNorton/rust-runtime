@@ -2,6 +2,7 @@ use crate::int_var::IntVar;
 use crate::looping;
 use crate::method::{InnerMethod, StdMethod};
 use crate::name::Name;
+use crate::name_map::NameMap;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::{StdType, Type};
@@ -9,7 +10,6 @@ use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use std::cell::RefCell;
 use std::cmp::{Eq, PartialEq};
-use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 use std::vec::Vec;
@@ -24,11 +24,11 @@ pub struct StdVariable {
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct InnerVar {
     pub cls: &'static StdType,
-    pub values: HashMap<Name, Variable>,
+    pub values: NameMap<Variable>,
 }
 
 impl StdVariable {
-    pub fn new(cls: &'static StdType, values: HashMap<Name, Variable>) -> StdVariable {
+    pub fn new(cls: &'static StdType, values: NameMap<Variable>) -> StdVariable {
         StdVariable {
             value: Rc::new(RefCell::new(InnerVar::new(cls, values))),
         }
@@ -69,7 +69,7 @@ impl StdVariable {
             .value
             .borrow()
             .cls
-            .get_method(&Name::Operator(op), runtime);
+            .get_method(Name::Operator(op), runtime);
         inner_method.call(self, args, runtime)
     }
 
@@ -87,7 +87,7 @@ impl StdVariable {
             .value
             .borrow()
             .cls
-            .get_method(&Name::Operator(op), runtime);
+            .get_method(Name::Operator(op), runtime);
         inner_method.call_or_goto(self, args, runtime)
     }
 
@@ -95,37 +95,36 @@ impl StdVariable {
         self.call_op_or_goto(Operator::Call, args.0, args.1)
     }
 
-    pub fn index(&self, index: &Name, runtime: &mut Runtime) -> Result<Variable, ()> {
+    pub fn index(&self, index: Name, runtime: &mut Runtime) -> Result<Variable, ()> {
         let self_value = self.value.borrow();
-        let val = self_value.values.get(&index);
+        let val = self_value.values.get(index);
         match val {
             Option::Some(true_val) => Result::Ok(true_val.clone()),
             Option::None => self.index_harder(index, runtime),
         }
     }
 
-    fn index_harder(&self, index: &Name, runtime: &mut Runtime) -> Result<Variable, ()> {
-        match self.value.borrow().cls.get_property(&index) {
+    fn index_harder(&self, index: Name, runtime: &mut Runtime) -> Result<Variable, ()> {
+        match self.value.borrow().cls.get_property(index) {
             Option::Some(val) => {
                 val.call_getter(runtime, self.clone().into())?;
                 Result::Ok(runtime.pop_return())
             }
             Option::None => {
-                let inner_method = self.value.borrow().cls.get_method(&index, runtime);
+                let inner_method = self.value.borrow().cls.get_method(index, runtime);
                 Result::Ok(Box::new(StdMethod::new(self.clone(), inner_method)).into())
             }
         }
     }
 
-    pub fn set(&self, index: StringVar, value: Variable, runtime: &mut Runtime) -> FnResult {
-        let name = Name::Attribute(index);
+    pub fn set(&self, index: &str, value: Variable, runtime: &mut Runtime) -> FnResult {
         let mut self_val = self.value.borrow_mut();
-        match self_val.values.get_mut(&name) {
+        match self_val.values.get_mut(Name::Attribute(index)) {
             Option::Some(val) => *val = value,
             Option::None => {
                 drop(self_val); // Will cause double-mutable borrow otherwise
                 let self_val = self.value.borrow();
-                match self_val.cls.get_property(&name) {
+                match self_val.cls.get_property(Name::Attribute(index)) {
                     Option::Some(val) => {
                         drop(self_val); // Ditto
                         val.call_setter(runtime, self.clone().into(), value)?
@@ -133,7 +132,7 @@ impl StdVariable {
                     Option::None => unimplemented!(
                         "{}.{}\n{}",
                         self.get_type().str(),
-                        name.as_str(),
+                        index,
                         runtime.stack_frames()
                     ),
                 }
@@ -156,7 +155,7 @@ impl StdVariable {
 }
 
 impl InnerVar {
-    fn new(cls: &'static StdType, values: HashMap<Name, Variable>) -> InnerVar {
+    fn new(cls: &'static StdType, values: NameMap<Variable>) -> InnerVar {
         InnerVar { cls, values }
     }
 }

@@ -2,7 +2,6 @@ use crate::int_var::IntVar;
 use crate::method::{NativeMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
-use crate::string_var::StringVar;
 use crate::tuple::LangTuple;
 use crate::variable::{FnResult, InnerVar, Variable};
 
@@ -21,11 +20,11 @@ pub fn get_operator(this: LangTuple, o: Operator) -> Variable {
     StdMethod::new_native(this, op_fn(o)).into()
 }
 
-pub fn get_attr(this: LangTuple, s: StringVar) -> Variable {
-    if s.as_str() == "length" {
+pub fn get_attr(this: LangTuple, s: &str) -> Variable {
+    if s == "length" {
         return IntVar::from(this.len()).into();
     }
-    match s.as_str().parse() {
+    match s.parse() {
         Result::Ok(x) => this[x].clone(),
         Result::Err(_) => unimplemented!("tuple.{}", s),
     }

@@ -6,7 +6,7 @@ macro_rules! custom_class {
                     $str_name.into(),
                     ::std::vec::Vec::new(),
                     $crate::function::Function::Native(<$type_value>::$create_fn),
-                    ::std::collections::HashMap::new()
+                    $crate::name_map::NameMap::new()
                 );
         }
         Type::Custom(&*TYPE)
@@ -26,8 +26,8 @@ macro_rules! iter_internals {
 
 macro_rules! iter_no_next {
     () => {
-        fn get_attribute(self: &Rc<Self>, val: StringVar) -> Variable {
-            let func = match val.as_str() {
+        fn get_attribute(self: &Rc<Self>, val: &str) -> Variable {
+            let func = match val {
                 "next" => Self::next_fn,
                 _ => unimplemented!("{}", val),
             };

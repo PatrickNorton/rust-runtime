@@ -7,7 +7,6 @@ use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
-use crate::string_var::StringVar;
 use crate::tuple::LangTuple;
 use crate::variable::{FnResult, Variable};
 use num::traits::Zero;

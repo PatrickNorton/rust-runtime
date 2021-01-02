@@ -43,8 +43,8 @@ pub fn get_operator(this: StringVar, o: Operator) -> Variable {
     StdMethod::new_native(this, op_fn(o)).into()
 }
 
-pub fn get_attr(this: StringVar, s: StringVar) -> Variable {
-    let func = match s.as_str() {
+pub fn get_attr(this: StringVar, s: &str) -> Variable {
+    let func = match s {
         "length" => return IntVar::from(this.chars().count()).into(),
         "upper" => upper,
         "lower" => lower,
@@ -64,8 +64,8 @@ pub fn get_attr(this: StringVar, s: StringVar) -> Variable {
     StdMethod::new_native(this, func).into()
 }
 
-pub fn static_attr(s: StringVar) -> Variable {
-    let func = match s.as_str() {
+pub fn static_attr(s: &str) -> Variable {
+    let func = match s {
         "fromChars" => from_chars,
         x => unimplemented!("str.{}", x),
     };
@@ -524,7 +524,7 @@ where
 {
     fn get_attr(self: Rc<Self>, name: Name) -> Variable {
         if let Name::Attribute(n) = name {
-            if &*n == "next" {
+            if n == "next" {
                 StdMethod::new_native(self, Self::next_func).into()
             } else {
                 unimplemented!()

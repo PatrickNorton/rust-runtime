@@ -50,8 +50,8 @@ impl LangBytes {
         StdMethod::new_native(self, func).into()
     }
 
-    fn get_attribute(self: Rc<Self>, attr: StringVar) -> Variable {
-        let func = match attr.as_str() {
+    fn get_attribute(self: Rc<Self>, attr: &str) -> Variable {
+        let func = match attr {
             "length" => return IntVar::from(self.value.borrow().len()).into(),
             "encode" => Self::encode,
             "join" => Self::join,
@@ -462,8 +462,8 @@ impl BytesIter {
         }
     }
 
-    fn get_attribute(self: &Rc<Self>, val: StringVar) -> Variable {
-        let func = match val.as_str() {
+    fn get_attribute(self: &Rc<Self>, val: &str) -> Variable {
+        let func = match val {
             "next" => Self::next_fn,
             _ => unimplemented!(),
         };

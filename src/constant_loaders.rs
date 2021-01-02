@@ -5,7 +5,7 @@ use crate::custom_types::range::Range;
 use crate::int_tools::bytes_index;
 use crate::int_var::IntVar;
 use crate::lang_union::UnionMethod;
-use crate::name::Name;
+use crate::name_map::NameMap;
 use crate::operator::Operator;
 use crate::property::{Property, StdProperty};
 use crate::rational_var::RationalVar;
@@ -20,6 +20,7 @@ use num::traits::{One, Zero};
 use num::{BigInt, BigRational, FromPrimitive};
 use std::char;
 use std::collections::{HashMap, HashSet};
+use std::hash::Hash;
 use std::rc::Rc;
 
 pub fn load_std_str(data: &[u8], index: &mut usize) -> String {
@@ -153,11 +154,11 @@ fn get_range_index(data: &[u8], index: &mut usize) -> Option<IntVar> {
     }
 }
 
-fn get_variables(data: &[u8], index: &mut usize) -> HashSet<StringVar> {
-    let mut variables: HashSet<StringVar> = HashSet::new();
+fn get_variables(data: &[u8], index: &mut usize) -> HashSet<String> {
+    let mut variables = HashSet::new();
     let byte_size = bytes_index::<u32>(data, index);
     for _ in 0..byte_size {
-        let name = StringVar::from_leak(load_std_str(data, index));
+        let name = load_std_str(data, index);
         bytes_index::<u16>(data, index); // TODO: Get classes properly
         variables.insert(name);
     }
@@ -230,8 +231,8 @@ fn get_properties(
     file_no: usize,
     index: &mut usize,
     functions: &mut Vec<BaseFunction>,
-) -> HashMap<StringVar, Property> {
-    let mut properties: HashMap<StringVar, Property> = HashMap::new();
+) -> HashMap<String, Property> {
+    let mut properties: HashMap<String, Property> = HashMap::new();
     let byte_size = bytes_index::<u32>(data, index);
     for _ in 0..byte_size {
         let name = load_std_str(data, index);
@@ -261,7 +262,7 @@ fn get_properties(
         ));
 
         properties.insert(
-            StringVar::from_leak(name),
+            name,
             Property::Standard(StdProperty::new(
                 file_no,
                 getter_index as u32,
@@ -272,35 +273,20 @@ fn get_properties(
     properties
 }
 
-fn merge_maps(
-    ops: HashMap<Operator, StdVarMethod>,
-    strings: HashMap<String, StdVarMethod>,
-) -> HashMap<Name, StdVarMethod> {
-    let mut result: HashMap<Name, StdVarMethod> = HashMap::with_capacity(ops.len() + strings.len());
-    for i in ops {
-        result.insert(Name::Operator(i.0), i.1);
-    }
-    for i in strings {
-        result.insert(Name::Attribute(StringVar::from_leak(i.0)), i.1);
-    }
-    result
-}
-
 fn merge_maps_union(
     ops: HashMap<Operator, StdVarMethod>,
     strings: HashMap<String, StdVarMethod>,
-) -> HashMap<Name, UnionMethod> {
-    let mut result: HashMap<Name, UnionMethod> = HashMap::with_capacity(ops.len() + strings.len());
-    for i in ops {
-        result.insert(Name::Operator(i.0), std_to_union(i.1));
-    }
-    for i in strings {
-        result.insert(
-            Name::Attribute(StringVar::from_leak(i.0)),
-            std_to_union(i.1),
-        );
-    }
-    result
+) -> NameMap<UnionMethod> {
+    let new_ops = unionize_map(ops);
+    let new_strings = unionize_map(strings);
+    NameMap::from_values(new_ops, new_strings)
+}
+
+fn unionize_map<T: Eq + Hash>(value: HashMap<T, StdVarMethod>) -> HashMap<T, UnionMethod> {
+    value
+        .into_iter()
+        .map(|(k, v)| (k, std_to_union(v)))
+        .collect()
 }
 
 fn std_to_union(val: StdVarMethod) -> UnionMethod {
@@ -310,16 +296,12 @@ fn std_to_union(val: StdVarMethod) -> UnionMethod {
     }
 }
 
-fn get_names(data: &[u8], index: &mut usize) -> Option<Vec<StringVar>> {
+fn get_names(data: &[u8], index: &mut usize) -> Option<Vec<String>> {
     let is_union = data[*index] != 0;
     *index += 1;
     if is_union {
         let vec_size = bytes_index::<u32>(data, index);
-        Option::Some(
-            (0..vec_size)
-                .map(|_| StringVar::from_leak(load_std_str(data, index)))
-                .collect(),
-        )
+        Option::Some((0..vec_size).map(|_| load_std_str(data, index)).collect())
     } else {
         Option::None
     }
@@ -352,8 +334,8 @@ pub fn load_class(
             file_no,
             supers,
             variables,
-            merge_maps(operators, methods),
-            merge_maps(static_operators, static_methods),
+            NameMap::from_values(operators, methods),
+            NameMap::from_values(static_operators, static_methods),
             properties,
         ),
         Option::Some(variants) => Type::new_union(

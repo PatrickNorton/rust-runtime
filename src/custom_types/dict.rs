@@ -60,8 +60,8 @@ impl Dict {
         StdMethod::new_native(self.clone(), func).into()
     }
 
-    fn get_attribute(self: &Rc<Self>, s: StringVar) -> Variable {
-        let func = match s.as_str() {
+    fn get_attribute(self: &Rc<Self>, s: &str) -> Variable {
+        let func = match s {
             "clear" => Dict::clear,
             "get" => Dict::get,
             "replace" => Dict::replace,
@@ -560,7 +560,7 @@ impl CustomVar for DictIter {
     fn get_attr(self: Rc<Self>, name: Name) -> Variable {
         let func = match name {
             Name::Operator(_) => unimplemented!(),
-            Name::Attribute(val) => match val.as_str() {
+            Name::Attribute(val) => match val {
                 "next" => Self::next_fn,
                 _ => unimplemented!(),
             },

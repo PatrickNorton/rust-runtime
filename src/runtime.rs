@@ -7,13 +7,14 @@ use crate::function::NativeFunction;
 use crate::jump_table::JumpTable;
 use crate::method::{NativeCopyMethod, NativeMethod};
 use crate::name::Name;
+use crate::name_map::NameMap;
 use crate::operator::Operator;
 use crate::stack_frame::{frame_strings, SFInfo, StackFrame};
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
-use downcast_rs::__std::cmp::{min, Ordering};
 use std::cmp::max;
+use std::cmp::{min, Ordering};
 use std::collections::{HashMap, HashSet};
 use std::mem::take;
 use std::rc::Rc;
@@ -27,7 +28,7 @@ pub struct Runtime {
     exception_stack: Vec<Variable>,
     completed_statics: HashSet<(usize, u16, u32)>,
     static_vars: Vec<Variable>,
-    type_vars: HashMap<Type, HashMap<Name, Variable>>,
+    type_vars: HashMap<Type, NameMap<Variable>>,
     ret_count: usize,
     borrowed_iterators: Vec<Rc<Generator>>,
     thrown_exception: Option<InnerException>,
@@ -141,7 +142,7 @@ impl Runtime {
         var.call_op(o, args, self)
     }
 
-    pub fn call_attr(&mut self, var: Variable, s: StringVar, args: Vec<Variable>) -> FnResult {
+    pub fn call_attr(&mut self, var: Variable, s: &str, args: Vec<Variable>) -> FnResult {
         var.index(Name::Attribute(s), self)?.call((args, self))
     }
 
@@ -516,7 +517,7 @@ impl Runtime {
         self.variables.drain(len - count..).collect()
     }
 
-    pub fn static_attr(&self, cls: &Type, name: &Name) -> Option<Variable> {
+    pub fn static_attr(&self, cls: &Type, name: Name) -> Option<Variable> {
         self.type_vars.get(cls).and_then(|x| x.get(name)).cloned()
     }
 
@@ -526,7 +527,7 @@ impl Runtime {
                 val.insert(name, var);
             }
             Option::None => {
-                self.type_vars.insert(*cls, hash_map!(name => var));
+                self.type_vars.insert(*cls, name_map!(name => var));
             }
         };
     }

@@ -32,8 +32,8 @@ pub fn type_of(i: usize, val: Option<&InnerVar>) -> Type {
         .make_option_n(i)
 }
 
-pub fn get_attr(this: (usize, Option<InnerVar>), attr: StringVar) -> Variable {
-    let func = match attr.as_str() {
+pub fn get_attr(this: (usize, Option<InnerVar>), attr: &str) -> Variable {
+    let func = match attr {
         "map" => map_fn,
         "flatMap" => flat_map,
         _ => unimplemented!(),
