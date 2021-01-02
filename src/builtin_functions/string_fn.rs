@@ -55,6 +55,7 @@ pub fn get_attr(this: StringVar, s: StringVar) -> Variable {
         "split" => split,
         "splitlines" => split_lines,
         "indexOf" => index_of,
+        "lastIndexOf" => last_index_of,
         "chars" => return chars(&this),
         "encode" => encode,
         "asInt" => as_int,
@@ -377,6 +378,26 @@ fn index_of(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) ->
         MaybeAscii::Ascii(a) => a
             .chars()
             .enumerate()
+            .find(|(_, c)| *c == chr)
+            .map(|(i, _)| i),
+    };
+    runtime.return_1(index.map(IntVar::from).map(Variable::from).into())
+}
+
+fn last_index_of(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert_eq!(args.len(), 1);
+    let chr: char = take(&mut args[0]).into();
+    let index = match this.as_maybe_ascii() {
+        MaybeAscii::Standard(s) => s
+            .chars()
+            .rev()
+            .enumerate()
+            .find(|(_, c)| *c == chr)
+            .map(|(i, _)| s.chars().count() - i),
+        MaybeAscii::Ascii(a) => a
+            .chars()
+            .enumerate()
+            .rev()
             .find(|(_, c)| *c == chr)
             .map(|(i, _)| i),
     };
