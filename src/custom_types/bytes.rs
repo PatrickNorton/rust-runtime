@@ -59,6 +59,9 @@ impl LangBytes {
             "get" => Self::get,
             "add" => Self::add,
             "addChar" => Self::add_char,
+            "startsWith" => Self::starts_with,
+            "endsWith" => Self::ends_with,
+            "lastIndexOf" => Self::last_index_of,
             _ => unimplemented!(),
         };
         StdMethod::new_native(self, func).into()
@@ -243,6 +246,22 @@ impl LangBytes {
         runtime.return_0()
     }
 
+    fn starts_with(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        let variable = take(&mut args[0]);
+        let value = downcast_var::<LangBytes>(variable).expect("Expected bytes");
+        let needle = value.value.borrow();
+        runtime.return_1(self.value.borrow().starts_with(&**needle).into())
+    }
+
+    fn ends_with(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        let variable = take(&mut args[0]);
+        let value = downcast_var::<LangBytes>(variable).expect("Expected bytes");
+        let needle = value.value.borrow();
+        runtime.return_1(self.value.borrow().ends_with(&**needle).into())
+    }
+
     fn add_utf8(self: &Rc<Self>, value: char) {
         self.value
             .borrow_mut()
@@ -377,6 +396,24 @@ impl LangBytes {
                 .value
                 .borrow()
                 .iter()
+                .enumerate()
+                .find(|x| *x.1 == i)
+                .map(|x| x.0)
+                .map(IntVar::from)
+                .map(Variable::from),
+            Option::None => Option::None,
+        }))
+    }
+
+    fn last_index_of(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.len() == 1);
+        let search_int = IntVar::from(take(&mut args[0]));
+        runtime.return_1(Variable::from(match search_int.to_u8() {
+            Option::Some(i) => self
+                .value
+                .borrow()
+                .iter()
+                .rev()
                 .enumerate()
                 .find(|x| *x.1 == i)
                 .map(|x| x.0)
