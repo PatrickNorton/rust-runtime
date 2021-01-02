@@ -388,12 +388,15 @@ fn last_index_of(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtim
     debug_assert_eq!(args.len(), 1);
     let chr: char = take(&mut args[0]).into();
     let index = match this.as_maybe_ascii() {
-        MaybeAscii::Standard(s) => s
-            .chars()
-            .rev()
-            .enumerate()
-            .find(|(_, c)| *c == chr)
-            .map(|(i, _)| s.chars().count() - i),
+        MaybeAscii::Standard(s) => {
+            // Needed because str.chars() is not DoubleEnded
+            let mut iter = s.chars().rev().enumerate();
+            let index = iter.find(|(_, c)| *c == chr).map(|(i, _)| i);
+            let length = iter.last().map(|(i, _)| i);
+            // If length is None, then index was the first char, so the result is 0
+            // If index is None, then the char was not found
+            index.map(|x| length.map(|y| y - x - 1).unwrap_or(0))
+        }
         MaybeAscii::Ascii(a) => a
             .chars()
             .enumerate()
