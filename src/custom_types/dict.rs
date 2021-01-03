@@ -55,6 +55,7 @@ impl Dict {
             Operator::In => Dict::contains,
             Operator::Equals => Dict::eq,
             Operator::Iter => Dict::iter,
+            Operator::DelAttr => Dict::del,
             _ => unimplemented!(),
         };
         StdMethod::new_native(self.clone(), func).into()
@@ -65,7 +66,7 @@ impl Dict {
             "clear" => Dict::clear,
             "get" => Dict::get,
             "replace" => Dict::replace,
-            "pop" => Dict::pop,
+            "remove" => Dict::remove,
             "setDefault" => Dict::set_default,
             "length" => return IntVar::from(self.len()).into(),
             _ => unimplemented!(),
@@ -106,6 +107,12 @@ impl Dict {
         runtime.return_1(is_in.into())
     }
 
+    fn del(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        self.value.borrow_mut().del(&args[0], runtime)?;
+        runtime.return_0()
+    }
+
     fn clear(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         self.value.borrow_mut().clear();
@@ -140,13 +147,9 @@ impl Dict {
         }
     }
 
-    fn pop(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn remove(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        let returned = self
-            .value
-            .borrow_mut()
-            .del(&args[0], runtime)?
-            .unwrap_or_else(Default::default);
+        let returned = self.value.borrow_mut().del(&args[0], runtime)?.into();
         runtime.return_1(returned)
     }
 
