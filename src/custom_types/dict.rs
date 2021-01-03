@@ -102,8 +102,11 @@ impl Dict {
 
     fn contains(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        let val = args.remove(0);
-        let is_in = self.value.borrow().get(val, runtime)?.is_some();
+        let is_in = self
+            .value
+            .borrow()
+            .get(take(&mut args[0]), runtime)?
+            .is_some();
         runtime.return_1(is_in.into())
     }
 
@@ -249,8 +252,8 @@ impl InnerDict {
             result += ", ";
             FnResult::Ok(())
         })?;
-        result.remove(result.len() - 1);
-        result.remove(result.len() - 1);
+        result.pop();
+        result.pop();
         result += "}";
         Result::Ok(result.into())
     }
