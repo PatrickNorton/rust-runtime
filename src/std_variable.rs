@@ -2,7 +2,6 @@ use crate::int_var::IntVar;
 use crate::looping;
 use crate::method::{InnerMethod, StdMethod};
 use crate::name::Name;
-use crate::name_map::NameMap;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::{StdType, Type};
@@ -10,8 +9,10 @@ use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use std::cell::RefCell;
 use std::cmp::{Eq, PartialEq};
+use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
+use std::sync::Arc;
 use std::vec::Vec;
 
 pub type StdVarMethod = InnerMethod<StdVariable>;
@@ -24,11 +25,11 @@ pub struct StdVariable {
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct InnerVar {
     pub cls: &'static StdType,
-    pub values: NameMap<Variable>,
+    pub values: HashMap<Arc<str>, Variable>,
 }
 
 impl StdVariable {
-    pub fn new(cls: &'static StdType, values: NameMap<Variable>) -> StdVariable {
+    pub fn new(cls: &'static StdType, values: HashMap<Arc<str>, Variable>) -> StdVariable {
         StdVariable {
             value: Rc::new(RefCell::new(InnerVar::new(cls, values))),
         }
@@ -97,7 +98,10 @@ impl StdVariable {
 
     pub fn index(&self, index: Name, runtime: &mut Runtime) -> Result<Variable, ()> {
         let self_value = self.value.borrow();
-        let val = self_value.values.get(index);
+        let val = match index {
+            Name::Attribute(a) => self_value.values.get(a),
+            Name::Operator(_) => Option::None,
+        };
         match val {
             Option::Some(true_val) => Result::Ok(true_val.clone()),
             Option::None => self.index_harder(index, runtime),
@@ -119,7 +123,7 @@ impl StdVariable {
 
     pub fn set(&self, index: &str, value: Variable, runtime: &mut Runtime) -> FnResult {
         let mut self_val = self.value.borrow_mut();
-        match self_val.values.get_mut(Name::Attribute(index)) {
+        match self_val.values.get_mut(index) {
             Option::Some(val) => *val = value,
             Option::None => {
                 drop(self_val); // Will cause double-mutable borrow otherwise
@@ -155,7 +159,7 @@ impl StdVariable {
 }
 
 impl InnerVar {
-    fn new(cls: &'static StdType, values: NameMap<Variable>) -> InnerVar {
+    fn new(cls: &'static StdType, values: HashMap<Arc<str>, Variable>) -> InnerVar {
         InnerVar { cls, values }
     }
 }

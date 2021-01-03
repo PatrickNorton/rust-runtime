@@ -20,6 +20,7 @@ use std::hash::{Hash, Hasher};
 use std::mem::take;
 use std::ptr;
 use std::string::{String, ToString};
+use std::sync::Arc;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Type {
@@ -59,7 +60,7 @@ pub struct StdType {
     name: StringVar,
     file_no: usize,
     supers: Vec<u32>,
-    variables: HashSet<String>,
+    variables: HashSet<Arc<str>>,
     methods: NameMap<StdVarMethod>,
     static_methods: NameMap<StdVarMethod>,
     properties: HashMap<String, Property>,
@@ -70,7 +71,7 @@ impl Type {
         name: StringVar,
         file_no: usize,
         supers: Vec<u32>,
-        variables: HashSet<String>,
+        variables: HashSet<Arc<str>>,
         methods: NameMap<StdVarMethod>,
         static_methods: NameMap<StdVarMethod>,
         properties: HashMap<String, Property>,
@@ -93,7 +94,7 @@ impl Type {
         file_no: usize,
         supers: Vec<u32>,
         variants: Vec<String>,
-        variables: HashSet<String>,
+        variables: HashSet<Arc<str>>,
         methods: NameMap<UnionMethod>,
         static_methods: NameMap<UnionMethod>,
         properties: HashMap<String, Property>,
@@ -303,7 +304,7 @@ impl StdType {
         name: StringVar,
         file_no: usize,
         supers: Vec<u32>,
-        variables: HashSet<String>,
+        variables: HashSet<Arc<str>>,
         methods: NameMap<StdVarMethod>,
         static_methods: NameMap<StdVarMethod>,
         properties: HashMap<String, Property>,
@@ -352,13 +353,11 @@ impl StdType {
         }
     }
 
-    fn convert_variables(&self) -> NameMap<Variable> {
-        let val = self
-            .variables
+    fn convert_variables(&self) -> HashMap<Arc<str>, Variable> {
+        self.variables
             .iter()
             .map(|x| (x.clone(), Variable::default()))
-            .collect();
-        NameMap::from_values(HashMap::new(), val)
+            .collect()
     }
 
     fn create(&'static self, args: Vec<Variable>, runtime: &mut Runtime) -> Result<Variable, ()> {

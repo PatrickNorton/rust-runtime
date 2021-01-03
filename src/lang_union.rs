@@ -16,6 +16,7 @@ use std::hash::{Hash, Hasher};
 use std::mem::take;
 use std::ptr;
 use std::rc::Rc;
+use std::sync::Arc;
 
 pub type UnionMethod = InnerMethod<LangUnion>;
 
@@ -32,7 +33,7 @@ pub struct UnionType {
     file_no: usize,
     supers: Vec<u32>,
     variants: Vec<String>,
-    variables: HashSet<String>,
+    variables: HashSet<Arc<str>>,
     methods: NameMap<UnionMethod>,
     static_methods: NameMap<UnionMethod>,
     properties: HashMap<String, Property>,
@@ -165,7 +166,7 @@ impl UnionType {
         file_no: usize,
         supers: Vec<u32>,
         variants: Vec<String>,
-        variables: HashSet<String>,
+        variables: HashSet<Arc<str>>,
         methods: NameMap<UnionMethod>,
         static_methods: NameMap<UnionMethod>,
         properties: HashMap<String, Property>,

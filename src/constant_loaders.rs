@@ -22,6 +22,7 @@ use std::char;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 use std::rc::Rc;
+use std::sync::Arc;
 
 pub fn load_std_str(data: &[u8], index: &mut usize) -> String {
     let size = bytes_index::<u32>(data, index);
@@ -154,13 +155,13 @@ fn get_range_index(data: &[u8], index: &mut usize) -> Option<IntVar> {
     }
 }
 
-fn get_variables(data: &[u8], index: &mut usize) -> HashSet<String> {
-    let mut variables = HashSet::new();
+fn get_variables(data: &[u8], index: &mut usize) -> HashSet<Arc<str>> {
     let byte_size = bytes_index::<u32>(data, index);
+    let mut variables = HashSet::with_capacity(byte_size as usize);
     for _ in 0..byte_size {
         let name = load_std_str(data, index);
         bytes_index::<u16>(data, index); // TODO: Get classes properly
-        variables.insert(name);
+        variables.insert(name.into());
     }
     variables
 }
