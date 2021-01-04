@@ -45,7 +45,7 @@ impl Dict {
         }))
     }
 
-    fn get_op(self: &Rc<Self>, o: Operator) -> Variable {
+    fn get_op(self: Rc<Self>, o: Operator) -> Variable {
         let func = match o {
             Operator::GetAttr => Dict::index,
             Operator::Repr => Dict::repr,
@@ -58,10 +58,10 @@ impl Dict {
             Operator::DelAttr => Dict::del,
             _ => unimplemented!(),
         };
-        StdMethod::new_native(self.clone(), func).into()
+        StdMethod::new_native(self, func).into()
     }
 
-    fn get_attribute(self: &Rc<Self>, s: &str) -> Variable {
+    fn get_attribute(self: Rc<Self>, s: &str) -> Variable {
         let func = match s {
             "clear" => Dict::clear,
             "get" => Dict::get,
@@ -71,7 +71,7 @@ impl Dict {
             "length" => return IntVar::from(self.len()).into(),
             _ => unimplemented!(),
         };
-        StdMethod::new_native(self.clone(), func).into()
+        StdMethod::new_native(self, func).into()
     }
 
     fn index(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -480,7 +480,10 @@ impl Entry {
 
 impl CustomVar for Dict {
     fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        name.do_each(|o| self.get_op(o), |s| self.get_attribute(s))
+        match name {
+            Name::Attribute(s) => self.get_attribute(s),
+            Name::Operator(o) => self.get_op(o),
+        }
     }
 
     fn set(self: Rc<Self>, _name: Name, _object: Variable) {
