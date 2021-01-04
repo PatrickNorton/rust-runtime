@@ -82,7 +82,7 @@ pub fn next_power_2(len: usize) -> usize {
     if len == 0 {
         return 0;
     }
-    let leading0s: u32 = len.leading_zeros();
+    let leading0s = len.leading_zeros();
     const TOTAL_ZEROS: u32 = usize::leading_zeros(0);
-    (1 as usize) << (TOTAL_ZEROS - leading0s) as usize
+    1_usize << (TOTAL_ZEROS - leading0s)
 }
