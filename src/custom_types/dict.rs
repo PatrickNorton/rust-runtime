@@ -345,7 +345,7 @@ impl InnerDict {
         match &mut self.entries[index] {
             Option::Some(val) => match val.del(value, runtime)? {
                 Option::Some(result) => {
-                    let boxed_entry = replace(&mut val.next, Option::None);
+                    let boxed_entry = val.next.take();
                     self.entries[index] = boxed_entry.map(|x| *x);
                     Result::Ok(Option::Some(result))
                 }
@@ -367,7 +367,7 @@ impl InnerDict {
     }
 
     fn split_entries(mut e: Entry) -> (Entry, Option<Box<Entry>>) {
-        let next = replace(&mut e.next, Option::None);
+        let next = e.next.take();
         (e, next)
     }
 
@@ -435,7 +435,7 @@ impl Entry {
                 Option::None => Result::Ok(Option::None),
                 Option::Some(e) => match e.del(key, runtime)? {
                     Option::Some(val) => {
-                        self.next = replace(&mut e.next, Option::None);
+                        self.next = e.next.take();
                         Result::Ok(Option::Some(val))
                     }
                     Option::None => Result::Ok(Option::None),

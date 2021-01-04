@@ -266,7 +266,7 @@ impl InnerSet {
         match &mut self.values[index] {
             Option::Some(val) => {
                 if val.del(&arg, runtime)? {
-                    let boxed_entry = replace(&mut val.next, Option::None);
+                    let boxed_entry = val.next.take();
                     self.values[index] = boxed_entry.map(|x| *x);
                     Result::Ok(true)
                 } else {
@@ -371,7 +371,7 @@ impl InnerSet {
     }
 
     fn split_entries(mut e: Entry) -> (Entry, Option<Box<Entry>>) {
-        let next = replace(&mut e.next, Option::None);
+        let next = e.next.take();
         (e, next)
     }
 
@@ -417,7 +417,7 @@ impl Entry {
                 Option::None => Result::Ok(false),
                 Option::Some(e) => {
                     if e.del(key, runtime)? {
-                        self.next = replace(&mut e.next, Option::None);
+                        self.next = e.next.take();
                         Result::Ok(true)
                     } else {
                         Result::Ok(false)
