@@ -305,8 +305,8 @@ impl InnerDict {
         for entry in old_vec {
             if let Option::Some(mut e) = entry {
                 loop {
-                    let (entry, next) = Self::split_entries(e);
-                    self.set(entry.key, entry.value, runtime)?;
+                    let next = e.next.take();
+                    self.set(e.key, e.value, runtime)?;
                     if let Option::Some(x) = next {
                         e = *x;
                     } else {
@@ -364,11 +364,6 @@ impl InnerDict {
             Option::Some(val) => val.equals(entry.value.clone(), runtime),
             Option::None => Result::Ok(false),
         }
-    }
-
-    fn split_entries(mut e: Entry) -> (Entry, Option<Box<Entry>>) {
-        let next = e.next.take();
-        (e, next)
     }
 
     pub fn get_mut_entry(

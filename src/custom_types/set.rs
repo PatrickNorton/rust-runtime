@@ -329,8 +329,8 @@ impl InnerSet {
         for entry in old_vec {
             if let Option::Some(mut e) = entry {
                 loop {
-                    let (entry, next) = Self::split_entries(e);
-                    self.add(entry.val, runtime)?;
+                    let next = e.next.take();
+                    self.add(e.val, runtime)?;
                     if let Option::Some(x) = next {
                         e = *x;
                     } else {
@@ -368,11 +368,6 @@ impl InnerSet {
         for val in &mut self.values {
             val.take();
         }
-    }
-
-    fn split_entries(mut e: Entry) -> (Entry, Option<Box<Entry>>) {
-        let next = e.next.take();
-        (e, next)
     }
 
     pub fn is_empty(&self) -> bool {
