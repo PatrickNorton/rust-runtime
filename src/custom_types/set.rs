@@ -69,6 +69,7 @@ impl Set {
             "add" => Self::add,
             "addAll" => Self::add_all,
             "remove" => Self::del_attr,
+            "clear" => Self::clear,
             "length" => return IntVar::from(self.value.borrow().size()).into(),
             _ => unimplemented!(),
         };
@@ -165,6 +166,12 @@ impl Set {
                 panic!("Bad type for set.addAll")
             }
         }
+        runtime.return_0()
+    }
+
+    fn clear(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        self.value.borrow_mut().clear();
         runtime.return_0()
     }
 
@@ -354,6 +361,13 @@ impl InnerSet {
             }
         }
         Result::Ok(true)
+    }
+
+    pub fn clear(&mut self) {
+        self.size = 0;
+        for val in &mut self.values {
+            val.take();
+        }
     }
 
     fn split_entries(mut e: Entry) -> (Entry, Option<Box<Entry>>) {
