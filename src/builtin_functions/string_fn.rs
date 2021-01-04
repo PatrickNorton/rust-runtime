@@ -262,7 +262,7 @@ fn join(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnR
     let mut is_first = true;
     let mut result = String::new();
     let iter = take(&mut args[0]).iter(runtime)?;
-    while let Option::Some(val) = iter.next(runtime)? {
+    while let Option::Some(val) = iter.next(runtime)?.take_first() {
         if !is_first {
             result += this;
         }
@@ -360,7 +360,7 @@ fn from_chars(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
     let mut result = String::new();
     let chars = take(&mut args[0]).iter(runtime)?;
-    while let Option::Some(val) = chars.next(runtime)? {
+    while let Option::Some(val) = chars.next(runtime)?.take_first() {
         result.push(val.into());
     }
     runtime.return_1(result.into())
@@ -548,6 +548,6 @@ where
     T: StrIter + CustomVar,
 {
     fn next(self: Rc<Self>, _runtime: &mut Runtime) -> IterResult {
-        IterResult::Ok(self.next_fn())
+        IterResult::Ok(self.next_fn().into())
     }
 }

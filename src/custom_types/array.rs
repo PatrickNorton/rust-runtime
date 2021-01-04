@@ -288,6 +288,6 @@ impl CustomVar for ArrayIter {
 
 impl NativeIterator for ArrayIter {
     fn next(self: Rc<Self>, _runtime: &mut Runtime) -> IterResult {
-        IterResult::Ok(self.inner_next())
+        IterResult::Ok(self.inner_next().into())
     }
 }

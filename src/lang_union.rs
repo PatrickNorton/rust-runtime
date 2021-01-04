@@ -314,7 +314,7 @@ mod default_functions {
     fn default_in(this: &LangUnion, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         let checked_var = take(&mut args[0]);
         let this_iter = this.iter(runtime)?;
-        while let Option::Some(val) = this_iter.clone().next(runtime)? {
+        while let Option::Some(val) = this_iter.clone().next(runtime)?.take_first() {
             if checked_var.equals(val, runtime)? {
                 return runtime.return_1(true.into());
             }

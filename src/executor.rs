@@ -653,7 +653,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             let iterable = runtime.pop();
             let iter = iterable.iter(runtime)?;
             let mut i = 0;
-            while let Option::Some(val) = iter.next(runtime)? {
+            while let Option::Some(val) = iter.next(runtime)?.take_first() {
                 runtime.push(val);
                 i += 1;
             }

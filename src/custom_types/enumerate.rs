@@ -7,7 +7,6 @@ use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
-use crate::tuple::LangTuple;
 use crate::variable::{FnResult, Variable};
 use num::traits::Zero;
 use num::BigInt;
@@ -42,7 +41,7 @@ impl Enumerate {
     }
 
     fn inner_next(&self, runtime: &mut Runtime) -> Result<Option<(Variable, Variable)>, ()> {
-        if let Option::Some(val) = self.iterable.next(runtime)? {
+        if let Option::Some(val) = self.iterable.next(runtime)?.take_first() {
             let i = self.i.borrow_mut();
             let index = IntVar::from(i.clone()).into();
             Result::Ok(Option::Some((index, val)))
@@ -76,9 +75,6 @@ impl CustomVar for Enumerate {
 
 impl NativeIterator for Enumerate {
     fn next(self: Rc<Self>, runtime: &mut Runtime) -> IterResult {
-        Result::Ok(
-            self.inner_next(runtime)?
-                .map(|(x, y)| LangTuple::new(Rc::from(vec![x, y])).into()),
-        )
+        Result::Ok(self.inner_next(runtime)?.map(|(x, y)| vec![x, y]).into())
     }
 }

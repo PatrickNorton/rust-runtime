@@ -3,9 +3,16 @@ use crate::name::Name;
 use crate::runtime::Runtime;
 use crate::std_variable::StdVariable;
 use crate::variable::{FnResult, OptionVar, Variable};
+use std::mem::take;
 use std::rc::Rc;
 
-pub type IterResult = Result<Option<Variable>, ()>;
+pub type IterResult = Result<IterOk, ()>;
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum IterOk {
+    Normal(Option<Variable>),
+    Vec(Option<Vec<Variable>>),
+}
 
 #[derive(Debug, Clone)]
 pub enum Iterator {
@@ -42,5 +49,32 @@ impl Iterator {
 impl From<Rc<dyn NativeIterator>> for Iterator {
     fn from(x: Rc<dyn NativeIterator>) -> Self {
         Iterator::Native(x)
+    }
+}
+
+impl From<Option<Variable>> for IterOk {
+    fn from(x: Option<Variable>) -> Self {
+        IterOk::Normal(x)
+    }
+}
+
+impl From<Option<Vec<Variable>>> for IterOk {
+    fn from(x: Option<Vec<Variable>>) -> Self {
+        IterOk::Vec(x)
+    }
+}
+
+impl From<OptionVar> for IterOk {
+    fn from(x: OptionVar) -> Self {
+        IterOk::Normal(x.into())
+    }
+}
+
+impl IterOk {
+    pub fn take_first(self) -> Option<Variable> {
+        match self {
+            IterOk::Normal(v) => v,
+            IterOk::Vec(v) => v.map(|mut x| take(&mut x[0])),
+        }
     }
 }

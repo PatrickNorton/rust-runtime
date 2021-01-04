@@ -81,7 +81,7 @@ impl Set {
         let other = take(&mut args[0]);
         let other_iter = other.iter(runtime)?;
         let mut result_vec = Vec::new();
-        while let Option::Some(val) = other_iter.next(runtime)? {
+        while let Option::Some(val) = other_iter.next(runtime)?.take_first() {
             if self.value.borrow().contains(val.clone(), runtime)? {
                 result_vec.push(val);
             }
@@ -100,7 +100,7 @@ impl Set {
         };
         let other = take(&mut args[0]);
         let other_iter = other.iter(runtime)?;
-        while let Option::Some(val) = other_iter.next(runtime)? {
+        while let Option::Some(val) = other_iter.next(runtime)?.take_first() {
             result.add(val, runtime)?;
         }
         runtime.return_1(Set::from_inner(self.generic, result).into())
@@ -116,7 +116,7 @@ impl Set {
         };
         let other = take(&mut args[0]);
         let other_iter = other.iter(runtime)?;
-        while let Option::Some(val) = other_iter.next(runtime)? {
+        while let Option::Some(val) = other_iter.next(runtime)?.take_first() {
             if result.contains(val.clone(), runtime)? {
                 result.remove(val, runtime)?;
             } else {
@@ -159,7 +159,7 @@ impl Set {
         debug_assert_eq!(args.len(), 1);
         let val = take(&mut args[0]);
         let val_iter = val.iter(runtime)?;
-        while let Option::Some(arg) = val_iter.next(runtime)? {
+        while let Option::Some(arg) = val_iter.next(runtime)?.take_first() {
             if arg.get_type().is_subclass(&self.generic, runtime) {
                 self.value.borrow_mut().add(arg, runtime)?;
             } else {
@@ -510,7 +510,7 @@ impl SetIter {
     fn next_fn(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         let next = self.clone().next(runtime)?;
-        runtime.return_1(next.into())
+        runtime.return_1(next.take_first().into())
     }
 }
 
@@ -540,7 +540,7 @@ impl NativeIterator for SetIter {
         let len = self.parent.len();
         let bucket = self.bucket_no.get();
         if bucket >= len {
-            return Result::Ok(Option::None);
+            return Result::Ok(Option::<Variable>::None.into());
         }
         let parent = self.parent.value.borrow();
         let parent_node = parent.values[bucket].as_ref().unwrap();
@@ -552,6 +552,6 @@ impl NativeIterator for SetIter {
         } else {
             self.point_to_next();
         }
-        Result::Ok(Option::Some(val))
+        Result::Ok(Option::Some(val).into())
     }
 }

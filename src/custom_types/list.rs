@@ -140,7 +140,7 @@ impl List {
         debug_assert_eq!(args.len(), 1);
         let iter = take(&mut args[0]).iter(runtime)?;
         let mut new = Vec::new();
-        while let Option::Some(val) = iter.next(runtime)? {
+        while let Option::Some(val) = iter.next(runtime)?.take_first() {
             if !val.get_type().is_subclass(&self.generic, runtime) {
                 panic!(
                     "Bad type for list[{}].addAll: {}\n{}",
@@ -243,7 +243,7 @@ impl List {
     fn contains_all(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         let checked_var = take(&mut args[0]);
         let this_iter = checked_var.iter(runtime)?;
-        while let Option::Some(val) = this_iter.next(runtime)? {
+        while let Option::Some(val) = this_iter.next(runtime)?.take_first() {
             if !self.value.borrow().contains(&val) {
                 return runtime.return_1(false.into());
             }
@@ -310,7 +310,7 @@ impl List {
         debug_assert_eq!(args.len(), 1);
         let iterator = take(&mut args[0]).iter(runtime)?;
         let mut value = self.value.borrow_mut();
-        while let Option::Some(val) = iterator.next(runtime)? {
+        while let Option::Some(val) = iterator.next(runtime)?.take_first() {
             if !val.get_type().is_subclass(&self.generic, runtime) {
                 panic!(
                     "Bad type for list[{}].addAll: {}\n{}",
@@ -391,7 +391,7 @@ impl List {
                 Option::None => return Self::size_error(runtime, &next_index),
                 Option::Some(val) => val,
             };
-            let next_value = match value_iter.next(runtime)? {
+            let next_value = match value_iter.next(runtime)?.take_first() {
                 Option::Some(v) => v,
                 Option::None => {
                     // If there are extra values left on the range after the iterator has been
@@ -412,7 +412,7 @@ impl List {
             }
         }
         // If there are values left on the iterable after the range has been iterated, put them in
-        while let Option::Some(val) = value_iter.next(runtime)? {
+        while let Option::Some(val) = value_iter.next(runtime)?.take_first() {
             let arr_len = array.len();
             let end = if range_end > arr_len {
                 arr_len
@@ -605,6 +605,6 @@ impl CustomVar for ListIter {
 
 impl NativeIterator for ListIter {
     fn next(self: Rc<Self>, _runtime: &mut Runtime) -> IterResult {
-        IterResult::Ok(self.inner_next())
+        IterResult::Ok(self.inner_next().into())
     }
 }

@@ -378,7 +378,7 @@ impl LangBytes {
         let mut is_first = true;
         let mut result = Vec::new();
         let iter = take(&mut args[0]).iter(runtime)?;
-        while let Option::Some(val) = iter.next(runtime)? {
+        while let Option::Some(val) = iter.next(runtime)?.take_first() {
             if !is_first {
                 result.extend_from_slice(&self.value.borrow());
             }
@@ -426,7 +426,7 @@ impl LangBytes {
     fn create(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         let mut result = Vec::new();
         let iter = take(&mut args[0]).iter(runtime)?;
-        while let Option::Some(val) = iter.next(runtime)? {
+        while let Option::Some(val) = iter.next(runtime)?.take_first() {
             result.push(IntVar::from(val).to_u8().unwrap());
         }
         runtime.return_1(Rc::new(LangBytes::new(result)).into())
@@ -524,6 +524,6 @@ impl CustomVar for BytesIter {
 
 impl NativeIterator for BytesIter {
     fn next(self: Rc<Self>, _runtime: &mut Runtime) -> IterResult {
-        IterResult::Ok(self.inner_next())
+        IterResult::Ok(self.inner_next().into())
     }
 }

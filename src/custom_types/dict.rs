@@ -585,6 +585,6 @@ impl CustomVar for DictIter {
 
 impl NativeIterator for DictIter {
     fn next(self: Rc<Self>, runtime: &mut Runtime) -> IterResult {
-        IterResult::Ok(self.true_next(runtime)?.map(|f| f.0))
+        IterResult::Ok(self.true_next(runtime)?.map(|(a, b)| vec![a, b]).into())
     }
 }

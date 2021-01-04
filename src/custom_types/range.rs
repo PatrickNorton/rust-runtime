@@ -245,7 +245,7 @@ impl CustomVar for RangeIter {
 
 impl NativeIterator for RangeIter {
     fn next(self: Rc<Self>, _runtime: &mut Runtime) -> IterResult {
-        IterResult::Ok(self.true_next().map(Variable::from))
+        IterResult::Ok(self.true_next().map(Variable::from).into())
     }
 }
 
