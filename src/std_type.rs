@@ -142,7 +142,7 @@ impl Type {
     ) -> Result<Variable, ()> {
         Result::Ok(match self {
             Type::Standard(std_t) => std_t.create(args, runtime)?,
-            Type::Null => Variable::default(),
+            Type::Null => Variable::null(),
             Type::Bool => take(&mut args[0]).into_bool(runtime)?.into(),
             Type::Bigint => take(&mut args[0]).int(runtime)?.into(),
             Type::String => take(&mut args[0]).str(runtime)?.into(),
@@ -356,7 +356,7 @@ impl StdType {
     fn convert_variables(&self) -> HashMap<Arc<str>, Variable> {
         self.variables
             .iter()
-            .map(|x| (x.clone(), Variable::default()))
+            .map(|x| (x.clone(), Variable::null()))
             .collect()
     }
 

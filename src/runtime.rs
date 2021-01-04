@@ -386,7 +386,7 @@ impl Runtime {
 
     pub fn store_static(&mut self, index: usize, var: Variable) {
         self.static_vars
-            .resize(max(self.static_vars.len(), index + 1), Variable::default());
+            .resize(max(self.static_vars.len(), index + 1), Variable::null());
         self.static_vars[index] = var;
     }
 

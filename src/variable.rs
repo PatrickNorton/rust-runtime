@@ -57,6 +57,10 @@ pub enum InnerVar {
 }
 
 impl Variable {
+    pub fn null() -> Variable {
+        Variable::default()
+    }
+
     pub fn str(self, runtime: &mut Runtime) -> Result<StringVar, ()> {
         match self {
             Variable::Normal(var) => var.str(runtime),

@@ -509,7 +509,7 @@ impl DictIter {
         let val = DictIter {
             parent,
             bucket_no: Cell::new(0),
-            index: RefCell::new(Default::default()),
+            index: RefCell::new(Variable::null()),
         };
         val.point_to_next();
         val
@@ -550,7 +550,7 @@ impl DictIter {
             .as_ref()
             .expect("Dict iterator expects self.bucket_no to always point at a non-None value");
         let node = parent_node.get_entry(self.index.borrow().clone(), runtime)?;
-        let key = self.index.replace(Variable::default());
+        let key = self.index.replace(Variable::null());
         let val = node.get_value().clone();
         debug_assert!(node.get_key().equals(key.clone(), runtime)?);
         if let Option::Some(next) = node.get_next() {

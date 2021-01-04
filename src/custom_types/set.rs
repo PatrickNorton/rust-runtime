@@ -470,7 +470,7 @@ impl SetIter {
         let val = SetIter {
             parent,
             bucket_no: Cell::new(0),
-            index: RefCell::new(Variable::default()),
+            index: RefCell::new(Variable::null()),
         };
         match val.parent.value.borrow().values[0].as_ref() {
             Option::Some(entry) => {

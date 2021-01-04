@@ -110,7 +110,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
     match b {
         Bytecode::Nop => {}
         Bytecode::LoadNull => {
-            runtime.push(Variable::default());
+            runtime.push(Variable::null());
         }
         Bytecode::LoadConst => {
             let const_val = runtime.load_const(bytes_0 as u16).clone();
@@ -615,9 +615,8 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         Bytecode::UnwrapOption => {
             let tos = runtime.pop();
             if let Variable::Option(i, o) = tos {
-                runtime.push(
-                    Option::<Variable>::from(OptionVar(i, o)).unwrap_or_else(Variable::default),
-                )
+                runtime
+                    .push(Option::<Variable>::from(OptionVar(i, o)).unwrap_or_else(Variable::null))
             } else {
                 panic!(
                     "Called Bytecode::UnwrapOption where TOS not an option\n{}",

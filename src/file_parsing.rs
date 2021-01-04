@@ -35,7 +35,7 @@ enum LoadType {
 fn load_constant(data: &[u8], index: &mut usize, imports: &[Variable]) -> Constant {
     *index += 1;
     match data[*index - 1] {
-        0 => Variable::default().into(),
+        0 => Variable::null().into(),
         1 => load_str(data, index).into(),
         2 => load_int(data, index).into(),
         3 => load_bigint(data, index).into(),
