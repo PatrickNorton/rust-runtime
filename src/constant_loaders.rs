@@ -44,7 +44,8 @@ pub fn load_ascii_str(data: &[u8], index: &mut usize) -> Box<[AsciiChar]> {
     let size = bytes_index::<u32>(data, index);
     let mut value = Vec::with_capacity(size as usize);
     for _ in 0..size {
-        let char = AsciiChar::from_ascii(data[*index]).unwrap_or_else(|x| panic!("{}", x));
+        let char = AsciiChar::from_ascii(data[*index])
+            .unwrap_or_else(|x| panic!("{:?} is invalid ASCII", x));
         *index += 1;
         value.push(char);
     }
