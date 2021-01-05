@@ -41,7 +41,7 @@ pub fn repr(value: char) -> Cow<'static, str> {
         '\r' => "\\r".into(),
         '\t' => "\\t".into(),
         '\x0B' => "\\v".into(),
-        x if (&*PRINTABLE_CLASSES).contains(&GeneralCategory::of(value)) => String::from(x).into(),
+        x if (&*PRINTABLE_CLASSES).contains(&GeneralCategory::of(x)) => String::from(x).into(),
         x => match x as u32 {
             x @ 0..=0xFF => format!("\\x{:02X}", x).into(),
             x @ 0x100..=0xFFFF => format!("\\u{:04X}", x).into(),
