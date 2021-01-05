@@ -1,5 +1,6 @@
 use crate::character;
 use ascii::{AsciiChar, AsciiStr, AsciiString};
+use downcast_rs::__std::borrow::Borrow;
 use std::borrow::Cow;
 use std::fmt::{Debug, Formatter};
 use std::hash::{Hash, Hasher};
@@ -133,6 +134,12 @@ impl Deref for StringVar {
             StringVar::Other(s) => s.as_ref(),
             StringVar::Ascii(s) => s.as_str(),
         }
+    }
+}
+
+impl Borrow<str> for StringVar {
+    fn borrow(&self) -> &str {
+        &*self
     }
 }
 
