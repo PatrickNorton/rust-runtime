@@ -59,7 +59,7 @@ impl Range {
         }
     }
 
-    fn get_op(self: &Rc<Self>, op: Operator) -> Variable {
+    fn get_op(self: Rc<Self>, op: Operator) -> Variable {
         let func = match op {
             Operator::Str => Self::str,
             Operator::Repr => Self::str,
@@ -70,10 +70,10 @@ impl Range {
             Operator::Reversed => Self::reversed,
             _ => unimplemented!(),
         };
-        StdMethod::new_native(self.clone(), func).into()
+        StdMethod::new_native(self, func).into()
     }
 
-    fn get_attribute(self: &Rc<Self>, attr: &str) -> Variable {
+    fn get_attribute(self: Rc<Self>, attr: &str) -> Variable {
         match attr {
             "length" => self.len().into(),
             x => unimplemented!("Range.{}", x),

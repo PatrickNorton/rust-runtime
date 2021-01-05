@@ -47,7 +47,7 @@ impl Set {
         })
     }
 
-    fn get_operator(self: &Rc<Self>, o: Operator) -> Variable {
+    fn get_operator(self: Rc<Self>, o: Operator) -> Variable {
         let func = match o {
             Operator::Bool => Self::bool,
             Operator::Str => Self::repr,
@@ -61,10 +61,10 @@ impl Set {
             Operator::DelAttr => Self::del_attr,
             _ => unimplemented!(),
         };
-        StdMethod::new_native(self.clone(), func).into()
+        StdMethod::new_native(self, func).into()
     }
 
-    fn get_attribute(self: &Rc<Self>, s: &str) -> Variable {
+    fn get_attribute(self: Rc<Self>, s: &str) -> Variable {
         let func = match s {
             "add" => Self::add,
             "addAll" => Self::add_all,
@@ -73,7 +73,7 @@ impl Set {
             "length" => return IntVar::from(self.value.borrow().size()).into(),
             _ => unimplemented!(),
         };
-        StdMethod::new_native(self.clone(), func).into()
+        StdMethod::new_native(self, func).into()
     }
 
     fn intersection(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
