@@ -9,6 +9,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::variable::{FnResult, InnerVar, Variable};
 use num::{One, Signed, Zero};
+use std::borrow::Cow;
 use std::mem::take;
 use std::rc::Rc;
 
@@ -151,9 +152,9 @@ fn unwrapped_to_int(value: Variable) -> Option<IntVar> {
     }
 }
 
-fn stringify(val: &Option<IntVar>) -> String {
+fn stringify(val: &Option<IntVar>) -> Cow<'static, str> {
     match val {
-        Option::Some(x) => format!("Some({})", x),
-        Option::None => "None".to_string(),
+        Option::Some(x) => format!("Some({})", x).into(),
+        Option::None => "None".into(),
     }
 }
