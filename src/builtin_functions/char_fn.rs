@@ -1,3 +1,4 @@
+use crate::character;
 use crate::int_var::IntVar;
 use crate::method::{NativeCopyMethod, StdMethod};
 use crate::operator::Operator;
@@ -38,7 +39,7 @@ fn repr(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     let result: StringVar = match this {
         '\'' => "c\"'\"".into(),
-        x => format!("c{:?}", x).into(),
+        x => character::repr(x).into(),
     };
     runtime.return_1(result.into())
 }

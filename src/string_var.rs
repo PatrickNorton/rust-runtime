@@ -1,4 +1,6 @@
+use crate::character;
 use ascii::{AsciiChar, AsciiStr, AsciiString};
+use std::borrow::Cow;
 use std::fmt::{Debug, Formatter};
 use std::hash::{Hash, Hasher};
 use std::ops::Deref;
@@ -83,11 +85,25 @@ impl StringVar {
             StringVar::Ascii(a) => Result::Ok(AsciiVar::Other(a)),
         }
     }
+
+    pub fn repr(&self) -> StringVar {
+        let x: String = self.chars().map(character::repr).collect();
+        StringVar::from(format!("\"{}\"", x))
+    }
 }
 
 impl From<&'static str> for StringVar {
     fn from(x: &'static str) -> Self {
         StringVar::Literal(x)
+    }
+}
+
+impl From<Cow<'static, str>> for StringVar {
+    fn from(x: Cow<'static, str>) -> Self {
+        match x {
+            Cow::Borrowed(x) => StringVar::Literal(x),
+            Cow::Owned(x) => StringVar::Other(x.into()),
+        }
     }
 }
 
