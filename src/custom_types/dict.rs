@@ -515,13 +515,16 @@ impl DictIter {
 
     fn point_to_next(&self) {
         let parent = self.parent.value.borrow();
-        while self.bucket_no.get() < parent.size {
-            if let Option::Some(val) = parent.entries[self.bucket_no.get()].as_ref() {
+        let mut next = self.bucket_no.get();
+        while next < parent.size {
+            if let Option::Some(val) = parent.entries[next].as_ref() {
+                self.bucket_no.set(next);
                 self.index.replace(val.get_key().clone());
                 return;
             }
-            self.bucket_no.set(self.bucket_no.get() + 1);
+            next += 1;
         }
+        self.bucket_no.set(next);
     }
 
     fn next_fn(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
