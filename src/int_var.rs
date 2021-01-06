@@ -3,7 +3,7 @@ use num::traits::{abs, FromPrimitive, Num, One, Pow, Signed};
 use num::{BigInt, BigUint, ToPrimitive, Zero};
 use std::cmp::Ordering;
 use std::convert::{TryFrom, TryInto};
-use std::fmt::{Display, Formatter};
+use std::fmt::{Binary, Display, Formatter, LowerHex, Octal, UpperHex};
 use std::hash::{Hash, Hasher};
 use std::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,
@@ -579,11 +579,19 @@ impl Not for IntVar {
     }
 }
 
-impl Display for IntVar {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            IntVar::Small(i) => std::fmt::Display::fmt(i, f),
-            IntVar::Big(b) => std::fmt::Display::fmt(b, f),
-        }
-    }
+macro_rules! impl_display {
+    ( $($val:ident),* ) => {
+        $(
+            impl $val for IntVar {
+                fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+                    match self {
+                        IntVar::Small(i) => $val::fmt(i, f),
+                        IntVar::Big(b) => $val::fmt(b.as_ref(), f),
+                    }
+                }
+            }
+        )+
+    };
 }
+
+impl_display! {Binary, Display, LowerHex, Octal, UpperHex}
