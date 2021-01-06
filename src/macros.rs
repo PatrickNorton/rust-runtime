@@ -28,7 +28,7 @@ macro_rules! hash_set {
 macro_rules! name_map {
     { $($key:expr => $value:expr),+ $(,)? } => {
         {
-            let mut m = crate::name_map::NameMap::new();
+            let mut m = $crate::name_map::NameMap::new();
             $(
                 m.insert($key, $value);
             )+
