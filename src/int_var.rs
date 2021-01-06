@@ -21,7 +21,13 @@ pub enum IntVar {
 impl IntVar {
     pub fn to_str_radix(&self, radix: u32) -> String {
         match self {
-            IntVar::Small(_) => unimplemented!(),
+            IntVar::Small(s) => match radix {
+                10 => format!("{}", s),
+                16 => format!("{:x}", s),
+                8 => format!("{:o}", s),
+                2 => format!("{:b}", s),
+                x => BigInt::from(x).to_str_radix(radix),
+            },
             IntVar::Big(b) => b.to_str_radix(radix),
         }
     }
