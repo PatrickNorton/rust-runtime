@@ -38,7 +38,7 @@ pub fn get_attr(this: (usize, Option<InnerVar>), attr: &str) -> Variable {
         "flatMap" => flat_map,
         _ => unimplemented!(),
     };
-    StdMethod::new_native(this, func).into()
+    StdMethod::new_move(this, func).into()
 }
 
 pub fn get_op(this: (usize, Option<InnerVar>), op: Operator) -> Variable {
@@ -47,7 +47,7 @@ pub fn get_op(this: (usize, Option<InnerVar>), op: Operator) -> Variable {
         Operator::Repr => to_repr,
         _ => unimplemented!("Option.{}", op.name()),
     };
-    StdMethod::new_native(this, func).into()
+    StdMethod::new_move(this, func).into()
 }
 
 pub fn index(i: usize, val: Option<InnerVar>, name: Name) -> Variable {
@@ -68,12 +68,12 @@ pub fn call_op(
 }
 
 fn map_fn(
-    this: &(usize, Option<InnerVar>),
+    this: (usize, Option<InnerVar>),
     mut args: Vec<Variable>,
     runtime: &mut Runtime,
 ) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    let result = match OptionVar(this.0, this.1.clone()).into() {
+    let result = match OptionVar(this.0, this.1).into() {
         Option::Some(val) => {
             take(&mut args[0]).call((vec![val], runtime))?;
             Option::Some(runtime.pop_return())
@@ -84,12 +84,12 @@ fn map_fn(
 }
 
 fn flat_map(
-    this: &(usize, Option<InnerVar>),
+    this: (usize, Option<InnerVar>),
     mut args: Vec<Variable>,
     runtime: &mut Runtime,
 ) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    match OptionVar(this.0, this.1.clone()).into() {
+    match OptionVar(this.0, this.1).into() {
         Option::Some(val) => {
             take(&mut args[0]).call((vec![val], runtime))?;
             let val = runtime.pop_return();
@@ -99,22 +99,18 @@ fn flat_map(
     }
 }
 
-fn to_str(
-    this: &(usize, Option<InnerVar>),
-    args: Vec<Variable>,
-    runtime: &mut Runtime,
-) -> FnResult {
+fn to_str(this: (usize, Option<InnerVar>), args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    let val = str(this.0, this.1.clone(), runtime)?;
+    let val = str(this.0, this.1, runtime)?;
     runtime.return_1(val.into())
 }
 
 fn to_repr(
-    this: &(usize, Option<InnerVar>),
+    this: (usize, Option<InnerVar>),
     args: Vec<Variable>,
     runtime: &mut Runtime,
 ) -> FnResult {
     debug_assert!(args.is_empty());
-    let val = repr(this.0, this.1.clone(), runtime)?;
+    let val = repr(this.0, this.1, runtime)?;
     runtime.return_1(val.into())
 }

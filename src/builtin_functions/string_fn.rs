@@ -6,7 +6,7 @@ use crate::custom_var::CustomVar;
 use crate::function::Function;
 use crate::int_var::IntVar;
 use crate::looping::{IterResult, NativeIterator};
-use crate::method::{NativeMethod, StdMethod};
+use crate::method::{NativeCopyMethod, StdMethod};
 use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
@@ -23,7 +23,7 @@ use std::mem::take;
 use std::rc::Rc;
 use std::str::{from_utf8_unchecked, FromStr};
 
-pub fn op_fn(o: Operator) -> NativeMethod<StringVar> {
+pub fn op_fn(o: Operator) -> NativeCopyMethod<StringVar> {
     match o {
         Operator::Add => add,
         Operator::Multiply => multiply,
@@ -40,7 +40,7 @@ pub fn op_fn(o: Operator) -> NativeMethod<StringVar> {
 }
 
 pub fn get_operator(this: StringVar, o: Operator) -> Variable {
-    StdMethod::new_native(this, op_fn(o)).into()
+    StdMethod::new_move(this, op_fn(o)).into()
 }
 
 pub fn get_attr(this: StringVar, s: &str) -> Variable {
@@ -61,7 +61,7 @@ pub fn get_attr(this: StringVar, s: &str) -> Variable {
         "asInt" => as_int,
         x => unimplemented!("str.{}", x),
     };
-    StdMethod::new_native(this, func).into()
+    StdMethod::new_move(this, func).into()
 }
 
 pub fn static_attr(s: &str) -> Variable {
@@ -72,16 +72,16 @@ pub fn static_attr(s: &str) -> Variable {
     Function::Native(func).into()
 }
 
-fn add(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn add(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let result = args.into_iter().fold(this.to_string(), |acc, arg| {
         acc + StringVar::from(arg).as_ref()
     });
     runtime.return_1(StringVar::from(result).into())
 }
 
-fn multiply(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn multiply(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     if this.is_empty() {
-        return runtime.return_1(this.clone().into());
+        return runtime.return_1(this.into());
     }
     let mut result: String = this.to_string();
     for arg in args {
@@ -119,14 +119,14 @@ fn overflow_exc(val: usize, len: usize) -> StringVar {
     .into()
 }
 
-fn bool(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn bool(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     runtime.return_1(this.is_empty().into())
 }
 
-fn int(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn int(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    match IntVar::from_str(this) {
+    match IntVar::from_str(&*this) {
         Ok(val) => runtime.push(val.into()),
         Err(_) => {
             return runtime.throw_quick(
@@ -142,17 +142,17 @@ fn int(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult
     runtime.return_0()
 }
 
-fn str(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn str(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.return_1(this.clone().into())
+    runtime.return_1(this.into())
 }
 
-fn repr(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn repr(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     runtime.return_1(this.repr().into())
 }
 
-fn index(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn index(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
     let big_index = IntVar::from(take(&mut args[0]));
     let proper_index = if big_index.is_negative() {
@@ -172,7 +172,7 @@ fn index(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> Fn
     }
 }
 
-fn slice(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn slice(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
     let range = Range::from_slice(this.char_len(), runtime, take(&mut args[0]))?;
     match this.as_maybe_ascii() {
@@ -234,37 +234,37 @@ pub fn iter(this: StringVar) -> Rc<dyn NativeIterator> {
     }
 }
 
-fn str_iter(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn str_iter(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.return_1(match this.clone().split_ascii() {
+    runtime.return_1(match this.split_ascii() {
         Result::Ok(a) => Rc::new(AsciiIter::new(a)).into(),
         Result::Err(s) => Rc::new(StringIter::new(s)).into(),
     })
 }
 
-fn reversed(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn reversed(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     runtime.return_1(this.chars().rev().collect::<String>().into())
 }
 
-fn upper(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn upper(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     runtime.return_1(this.to_uppercase().into())
 }
 
-fn lower(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn lower(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     runtime.return_1(this.to_lowercase().into())
 }
 
-fn join(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn join(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.len() == 1);
     let mut is_first = true;
     let mut result = String::new();
     let iter = take(&mut args[0]).iter(runtime)?;
     while let Option::Some(val) = iter.next(runtime)?.take_first() {
         if !is_first {
-            result += this;
+            result += &*this;
         }
         is_first = false;
         result += val.str(runtime)?.as_str();
@@ -272,19 +272,19 @@ fn join(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnR
     runtime.return_1(result.into())
 }
 
-fn join_all(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn join_all(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let mut result = String::with_capacity(this.char_len() * args.len());
     let len = args.len();
     for (i, val) in args.into_iter().enumerate() {
         result += val.str(runtime)?.as_str();
         if i + 1 < len {
-            result += this;
+            result += &*this;
         }
     }
     runtime.return_1(result.into())
 }
 
-fn starts_with(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn starts_with(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 2);
     let val = StringVar::from(take(&mut args[0]));
     let index = IntVar::from(take(&mut args[1]));
@@ -304,13 +304,13 @@ fn starts_with(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime)
     }
 }
 
-fn ends_with(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn ends_with(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
     let val = StringVar::from(take(&mut args[0]));
     runtime.return_1(this.ends_with(&*val).into())
 }
 
-fn split(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn split(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 2);
     let pat = StringVar::from(take(&mut args[0]));
     let opt_count = take(&mut args[1]);
@@ -340,7 +340,7 @@ fn split(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> Fn
     }
 }
 
-fn split_lines(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn split_lines(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     let result = List::from_values(
         Type::String,
@@ -366,7 +366,7 @@ fn from_chars(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     runtime.return_1(result.into())
 }
 
-fn index_of(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn index_of(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
     let chr: char = take(&mut args[0]).into();
     let index = match this.as_maybe_ascii() {
@@ -384,7 +384,7 @@ fn index_of(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) ->
     runtime.return_1(index.map(IntVar::from).map(Variable::from).into())
 }
 
-fn last_index_of(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn last_index_of(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
     let chr: char = take(&mut args[0]).into();
     let index = match this.as_maybe_ascii() {
@@ -407,7 +407,7 @@ fn last_index_of(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtim
     runtime.return_1(index.map(IntVar::from).map(Variable::from).into())
 }
 
-fn encode(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn encode(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
     // #![feature(array_value_iter)] will make this so much easier...
     let byte_val = match take(&mut args[0]).str(runtime)?.to_lowercase().as_str() {
@@ -438,9 +438,9 @@ fn encode(this: &StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> F
     runtime.return_1(Rc::new(LangBytes::new(byte_val.to_vec())).into())
 }
 
-fn as_int(this: &StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn as_int(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.return_1(IntVar::from_str(this).ok().map(Variable::from).into())
+    runtime.return_1(IntVar::from_str(&*this).ok().map(Variable::from).into())
 }
 
 pub trait StrIter: Debug + Any + Downcast {

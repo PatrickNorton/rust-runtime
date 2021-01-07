@@ -1,11 +1,11 @@
 use crate::int_var::IntVar;
-use crate::method::{NativeMethod, StdMethod};
+use crate::method::{NativeCopyMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::tuple::LangTuple;
 use crate::variable::{FnResult, InnerVar, Variable};
 
-pub fn op_fn(o: Operator) -> NativeMethod<LangTuple> {
+pub fn op_fn(o: Operator) -> NativeCopyMethod<LangTuple> {
     match o {
         Operator::Equals => equals,
         Operator::Bool => bool,
@@ -17,7 +17,7 @@ pub fn op_fn(o: Operator) -> NativeMethod<LangTuple> {
 }
 
 pub fn get_operator(this: LangTuple, o: Operator) -> Variable {
-    StdMethod::new_native(this, op_fn(o)).into()
+    StdMethod::new_move(this, op_fn(o)).into()
 }
 
 pub fn get_attr(this: LangTuple, s: &str) -> Variable {
@@ -30,7 +30,7 @@ pub fn get_attr(this: LangTuple, s: &str) -> Variable {
     }
 }
 
-pub fn equals(this: &LangTuple, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+pub fn equals(this: LangTuple, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
         match arg {
             Variable::Normal(InnerVar::Tuple(other)) => {
@@ -53,24 +53,24 @@ pub fn equals(this: &LangTuple, args: Vec<Variable>, runtime: &mut Runtime) -> F
     runtime.return_1(true.into())
 }
 
-pub fn bool(this: &LangTuple, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+pub fn bool(this: LangTuple, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     runtime.return_1((!this.is_empty()).into())
 }
 
-pub fn str(this: &LangTuple, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+pub fn str(this: LangTuple, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     let result = this.str(runtime)?.into();
     runtime.return_1(result)
 }
 
-pub fn repr(this: &LangTuple, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+pub fn repr(this: LangTuple, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     let result = this.repr(runtime)?.into();
     runtime.return_1(result)
 }
 
-pub fn hash(this: &LangTuple, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+pub fn hash(this: LangTuple, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     let result = IntVar::from(this.lang_hash(runtime)?).into();
     runtime.return_1(result)
