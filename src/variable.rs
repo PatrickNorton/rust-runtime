@@ -164,12 +164,10 @@ impl Variable {
         }
     }
 
-    pub fn hash(&self, runtime: &mut Runtime) -> Result<usize, ()> {
+    pub fn hash(self, runtime: &mut Runtime) -> Result<usize, ()> {
         match self {
             Variable::Normal(var) => var.hash(runtime),
-            Variable::Option(_, val) => val
-                .as_ref()
-                .map_or_else(|| Result::Ok(0), |x| x.hash(runtime)),
+            Variable::Option(_, val) => val.map_or_else(|| Result::Ok(0), |x| x.hash(runtime)),
         }
     }
 
@@ -415,13 +413,13 @@ impl InnerVar {
         }
     }
 
-    pub fn hash(&self, runtime: &mut Runtime) -> Result<usize, ()> {
+    pub fn hash(self, runtime: &mut Runtime) -> Result<usize, ()> {
         match self {
             InnerVar::Null() => Result::Ok(0),
-            InnerVar::Bool(b) => Result::Ok(if *b { 0 } else { 1 }),
+            InnerVar::Bool(b) => Result::Ok(if b { 0 } else { 1 }),
             InnerVar::Bigint(i) => {
                 let max = IntVar::Big(Rc::new(BigInt::from(usize::MAX) + 1));
-                let hash = i % &max;
+                let hash = i % max;
                 Result::Ok(hash.to_usize().unwrap())
             }
             InnerVar::String(s) => {
@@ -436,7 +434,7 @@ impl InnerVar {
                 let hash: BigInt = d.to_integer() % &max;
                 Result::Ok(hash.to_usize().unwrap())
             }
-            InnerVar::Char(c) => Result::Ok(*c as usize),
+            InnerVar::Char(c) => Result::Ok(c as usize),
             InnerVar::Type(_) => unimplemented!(),
             InnerVar::Standard(v) => {
                 runtime.push_native();
@@ -449,8 +447,7 @@ impl InnerVar {
             InnerVar::Function(_) => unimplemented!(),
             InnerVar::Custom(val) => {
                 runtime.push_native();
-                (**val)
-                    .clone()
+                val.into_inner()
                     .call_op(Operator::Hash, Vec::new(), runtime)?;
                 runtime.pop_native();
                 Result::Ok(IntVar::from(runtime.pop_return()).to_usize().unwrap())

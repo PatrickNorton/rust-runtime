@@ -86,7 +86,7 @@ impl LangUnion {
         runtime: &mut Runtime,
     ) -> FnResult {
         let inner_method = self.cls.get_method(Name::Operator(op));
-        inner_method.call(self, args, runtime)
+        inner_method.call(self.clone(), args, runtime)
     }
 
     pub fn call(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {

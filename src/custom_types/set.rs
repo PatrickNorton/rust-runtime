@@ -241,7 +241,7 @@ impl InnerSet {
     }
 
     pub fn add(&mut self, arg: Variable, runtime: &mut Runtime) -> FnResult {
-        let hash = arg.hash(runtime)?;
+        let hash = arg.clone().hash(runtime)?;
         let len = self.values.len();
         self.resize(next_power_2(self.size + 1), runtime)?;
         match &mut self.values[hash % len] {
@@ -261,7 +261,7 @@ impl InnerSet {
     }
 
     pub fn remove(&mut self, arg: Variable, runtime: &mut Runtime) -> Result<bool, ()> {
-        let hash = arg.hash(runtime)?;
+        let hash = arg.clone().hash(runtime)?;
         let index = hash % self.values.len();
         match &mut self.values[index] {
             Option::Some(val) => {
@@ -298,7 +298,7 @@ impl InnerSet {
         if self.is_empty() {
             return Result::Ok(false);
         }
-        let hash = val.hash(runtime)?;
+        let hash = val.clone().hash(runtime)?;
         let len = self.values.len();
         match &self.values[hash % len] {
             Option::None => Result::Ok(false),
@@ -395,7 +395,7 @@ impl Entry {
         } else {
             match &mut self.next {
                 Option::None => {
-                    let hash = val.hash(runtime)?;
+                    let hash = val.clone().hash(runtime)?;
                     self.next = Option::Some(Box::new(Entry::new(val, hash)));
                     Result::Ok(true)
                 }

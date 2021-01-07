@@ -3,7 +3,7 @@ use crate::builtins::default_methods;
 use crate::custom_types::exceptions::value_error;
 use crate::custom_types::types::{CustomTypeImpl, TypeIdentity};
 use crate::lang_union::{UnionMethod, UnionType};
-use crate::method::{InnerMethod, Method, StdMethod};
+use crate::method::{InnerMethod, StdMethod};
 use crate::name::Name;
 use crate::name_map::NameMap;
 use crate::operator::Operator;

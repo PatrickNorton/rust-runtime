@@ -51,7 +51,7 @@ impl LangTuple {
         let mut x: usize = 0x345678;
         let mul = 1000003;
         for value in &*self.values {
-            let y = value.hash(runtime)?;
+            let y = value.clone().hash(runtime)?;
             x = (x ^ y).wrapping_mul(mul);
         }
         Result::Ok(x)

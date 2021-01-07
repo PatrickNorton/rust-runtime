@@ -228,7 +228,7 @@ impl InnerDict {
     }
 
     pub fn get(&self, key: Variable, runtime: &mut Runtime) -> Result<Option<Variable>, ()> {
-        let hash = key.hash(runtime)?;
+        let hash = key.clone().hash(runtime)?;
         if self.entries.is_empty() {
             Result::Ok(Option::None)
         } else {
@@ -273,7 +273,7 @@ impl InnerDict {
     }
 
     pub fn set(&mut self, key: Variable, val: Variable, runtime: &mut Runtime) -> FnResult {
-        let hash = key.hash(runtime)?;
+        let hash = key.clone().hash(runtime)?;
         self.resize(next_power_2(self.size + 1), runtime)?;
         let len = self.entries.len();
         match &mut self.entries[hash % len] {
@@ -340,7 +340,7 @@ impl InnerDict {
     }
 
     pub fn del(&mut self, value: &Variable, runtime: &mut Runtime) -> Result<Option<Variable>, ()> {
-        let hash = value.hash(runtime)?;
+        let hash = value.clone().hash(runtime)?;
         let index = hash % self.entries.len();
         match &mut self.entries[index] {
             Option::Some(val) => match val.del(value, runtime)? {
@@ -371,7 +371,7 @@ impl InnerDict {
         key: Variable,
         runtime: &mut Runtime,
     ) -> Result<Option<&mut Entry>, ()> {
-        let hash = key.hash(runtime)?;
+        let hash = key.clone().hash(runtime)?;
         let bucket = hash % self.entries.len();
         match &mut self.entries[bucket] {
             Option::Some(val) => val.get_mut_entry(key, runtime),
@@ -408,7 +408,7 @@ impl Entry {
         } else {
             match &mut self.next {
                 Option::None => {
-                    let hash = key.hash(runtime).ok()?;
+                    let hash = key.clone().hash(runtime).ok()?;
                     self.next = Option::Some(Box::new(Entry {
                         key,
                         value: val,

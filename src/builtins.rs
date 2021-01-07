@@ -146,29 +146,29 @@ pub fn default_methods(name: Name) -> Option<StdVarMethod> {
             Operator::In => default_in,
             _ => return Option::None,
         };
-        Option::Some(StdVarMethod::Native(result))
+        Option::Some(StdVarMethod::Move(result))
     } else {
         Option::None
     }
 }
 
-fn default_repr(this: &StdVariable, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn default_repr(this: StdVariable, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     let result = format!("<{}: 0x{:X}>", this.get_type().to_string(), this.var_ptr());
     runtime.return_1(StringVar::from(result).into())
 }
 
-fn default_str(this: &StdVariable, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn default_str(this: StdVariable, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     runtime.call_op(this.clone().into(), Operator::Repr, args)
 }
 
-fn default_bool(_this: &StdVariable, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn default_bool(_this: StdVariable, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     runtime.return_1(true.into())
 }
 
-fn default_eq(this: &StdVariable, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn default_eq(this: StdVariable, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let this_var: Variable = this.clone().into();
     for arg in args {
         if this_var != arg {
@@ -178,7 +178,7 @@ fn default_eq(this: &StdVariable, args: Vec<Variable>, runtime: &mut Runtime) ->
     runtime.return_1(true.into())
 }
 
-fn default_in(this: &StdVariable, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn default_in(this: StdVariable, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let checked_var = take(&mut args[0]);
     let this_iter = this.iter(runtime)?;
     while let Option::Some(val) = this_iter.next(runtime)?.take_first() {

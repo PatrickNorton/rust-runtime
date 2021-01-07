@@ -35,33 +35,33 @@ impl StdVariable {
         }
     }
 
-    pub fn str(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
+    pub fn str(self, runtime: &mut Runtime) -> Result<StringVar, ()> {
         self.call_operator(Operator::Str, vec![], runtime)?;
         runtime.pop_return().str(runtime)
     }
 
-    pub fn repr(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
+    pub fn repr(self, runtime: &mut Runtime) -> Result<StringVar, ()> {
         self.call_operator(Operator::Repr, Vec::new(), runtime)?;
         Result::Ok(runtime.pop_return().into())
     }
 
-    pub fn bool(&self, runtime: &mut Runtime) -> Result<bool, ()> {
+    pub fn bool(self, runtime: &mut Runtime) -> Result<bool, ()> {
         self.call_operator(Operator::Bool, vec![], runtime)?;
         runtime.pop_return().into_bool(runtime)
     }
 
-    pub fn int(&self, runtime: &mut Runtime) -> Result<IntVar, ()> {
+    pub fn int(self, runtime: &mut Runtime) -> Result<IntVar, ()> {
         self.call_operator(Operator::Bool, vec![], runtime)?;
         runtime.pop_return().int(runtime)
     }
 
-    pub fn iter(&self, runtime: &mut Runtime) -> Result<looping::Iterator, ()> {
+    pub fn iter(self, runtime: &mut Runtime) -> Result<looping::Iterator, ()> {
         self.call_operator(Operator::Bool, vec![], runtime)?;
         Result::Ok(runtime.pop_return().into())
     }
 
     pub fn call_operator(
-        &self,
+        self,
         op: Operator,
         args: Vec<Variable>,
         runtime: &mut Runtime,
@@ -71,10 +71,10 @@ impl StdVariable {
             .borrow()
             .cls
             .get_method(Name::Operator(op), runtime);
-        inner_method.call(self, args, runtime)
+        inner_method.call(self.clone(), args, runtime)
     }
 
-    pub fn call(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
+    pub fn call(self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
         self.call_operator(Operator::Call, args.0, args.1)
     }
 

@@ -35,16 +35,16 @@ impl<T> InnerMethod<T>
 where
     T: Clone + Into<Variable>,
 {
-    pub fn call(self, callee: &T, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    pub fn call(self, callee: T, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         match self {
             InnerMethod::Standard(file, index) => {
-                let var: Variable = (*callee).clone().into();
+                let var: Variable = callee.into();
                 args.insert(0, var.get_type().into());
                 args.insert(0, var);
                 runtime.call_now(0, index as u16, args, file)
             }
-            InnerMethod::Native(func) => runtime.call_native_method(func, callee, args),
-            InnerMethod::Move(func) => runtime.call_copy_method(func, callee.clone(), args),
+            InnerMethod::Native(func) => runtime.call_native_method(func, &callee, args),
+            InnerMethod::Move(func) => runtime.call_copy_method(func, callee, args),
         }
     }
 
@@ -73,7 +73,7 @@ pub trait MethodClone {
 }
 
 pub trait Method: MethodClone + Debug {
-    fn call(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult;
+    fn call(self: Box<Self>, args: (Vec<Variable>, &mut Runtime)) -> FnResult;
     fn call_or_goto(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult;
 }
 
@@ -144,14 +144,18 @@ where
             method: InnerMethod::Move(method),
         })
     }
+
+    pub fn call(self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
+        self.method.call(self.value, args.0, args.1)
+    }
 }
 
 impl<T: 'static + Debug> Method for StdMethod<T>
 where
     T: Clone + Into<Variable>,
 {
-    fn call(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
-        self.method.call(&self.value, args.0, args.1)
+    fn call(self: Box<Self>, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
+        self.method.call(self.value, args.0, args.1)
     }
 
     fn call_or_goto(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
