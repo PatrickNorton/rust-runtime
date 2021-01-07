@@ -50,20 +50,20 @@ where
 
     pub fn call_or_goto(
         self,
-        callee: &T,
+        callee: T,
         mut args: Vec<Variable>,
         runtime: &mut Runtime,
     ) -> FnResult {
         match self {
             InnerMethod::Standard(file, index) => {
-                let var = (*callee).clone().into();
+                let var = callee.into();
                 args.insert(0, var.get_type().into());
                 args.insert(0, var);
                 runtime.push_stack(0, index as u16, args, file);
                 FnResult::Ok(())
             }
-            InnerMethod::Native(func) => runtime.call_native_method(func, callee, args),
-            InnerMethod::Move(func) => runtime.call_copy_method(func, callee.clone(), args),
+            InnerMethod::Native(func) => runtime.call_native_method(func, &callee, args),
+            InnerMethod::Move(func) => runtime.call_copy_method(func, callee, args),
         }
     }
 }
@@ -74,7 +74,7 @@ pub trait MethodClone {
 
 pub trait Method: MethodClone + Debug {
     fn call(self: Box<Self>, args: (Vec<Variable>, &mut Runtime)) -> FnResult;
-    fn call_or_goto(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult;
+    fn call_or_goto(self: Box<Self>, args: (Vec<Variable>, &mut Runtime)) -> FnResult;
 }
 
 impl<T> MethodClone for T
@@ -158,8 +158,8 @@ where
         self.method.call(self.value, args.0, args.1)
     }
 
-    fn call_or_goto(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
-        self.method.call_or_goto(&self.value, args.0, args.1)
+    fn call_or_goto(self: Box<Self>, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
+        self.method.call_or_goto(self.value, args.0, args.1)
     }
 }
 

@@ -71,7 +71,7 @@ impl StdVariable {
             .borrow()
             .cls
             .get_method(Name::Operator(op), runtime);
-        inner_method.call(self.clone(), args, runtime)
+        inner_method.call(self, args, runtime)
     }
 
     pub fn call(self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
@@ -79,7 +79,7 @@ impl StdVariable {
     }
 
     pub fn call_op_or_goto(
-        &self,
+        self,
         op: Operator,
         args: Vec<Variable>,
         runtime: &mut Runtime,
@@ -92,7 +92,7 @@ impl StdVariable {
         inner_method.call_or_goto(self, args, runtime)
     }
 
-    pub fn call_or_goto(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
+    pub fn call_or_goto(self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
         self.call_op_or_goto(Operator::Call, args.0, args.1)
     }
 

@@ -54,47 +54,47 @@ impl LangUnion {
         }
     }
 
-    pub fn str(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
+    pub fn str(self, runtime: &mut Runtime) -> Result<StringVar, ()> {
         self.call_operator(Operator::Str, vec![], runtime)?;
         runtime.pop_return().str(runtime)
     }
 
-    pub fn repr(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
+    pub fn repr(self, runtime: &mut Runtime) -> Result<StringVar, ()> {
         self.call_operator(Operator::Repr, Vec::new(), runtime)?;
         Result::Ok(runtime.pop_return().into())
     }
 
-    pub fn bool(&self, runtime: &mut Runtime) -> Result<bool, ()> {
+    pub fn bool(self, runtime: &mut Runtime) -> Result<bool, ()> {
         self.call_operator(Operator::Bool, vec![], runtime)?;
         runtime.pop_return().into_bool(runtime)
     }
 
-    pub fn int(&self, runtime: &mut Runtime) -> Result<IntVar, ()> {
+    pub fn int(self, runtime: &mut Runtime) -> Result<IntVar, ()> {
         self.call_operator(Operator::Bool, vec![], runtime)?;
         runtime.pop_return().int(runtime)
     }
 
-    pub fn iter(&self, runtime: &mut Runtime) -> Result<looping::Iterator, ()> {
+    pub fn iter(self, runtime: &mut Runtime) -> Result<looping::Iterator, ()> {
         self.call_operator(Operator::Bool, vec![], runtime)?;
         Result::Ok(runtime.pop_return().into())
     }
 
     pub fn call_operator(
-        &self,
+        self,
         op: Operator,
         args: Vec<Variable>,
         runtime: &mut Runtime,
     ) -> FnResult {
         let inner_method = self.cls.get_method(Name::Operator(op));
-        inner_method.call(self.clone(), args, runtime)
+        inner_method.call(self, args, runtime)
     }
 
-    pub fn call(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
+    pub fn call(self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
         self.call_operator(Operator::Call, args.0, args.1)
     }
 
     pub fn call_op_or_goto(
-        &self,
+        self,
         op: Operator,
         args: Vec<Variable>,
         runtime: &mut Runtime,
@@ -103,7 +103,7 @@ impl LangUnion {
         inner_method.call_or_goto(self, args, runtime)
     }
 
-    pub fn call_or_goto(&self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
+    pub fn call_or_goto(self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
         self.call_op_or_goto(Operator::Call, args.0, args.1)
     }
 
@@ -186,7 +186,7 @@ impl UnionType {
     pub fn index(&'static self, name: Name) -> Variable {
         match name {
             Name::Operator(_) => unimplemented!(),
-            Name::Attribute(var) => match self.variants.iter().position(|x| &*x == var) {
+            Name::Attribute(var) => match self.variants.iter().position(|x| *x == var) {
                 Option::Some(i) => Rc::new(UnionMaker::new(i, self)).into(),
                 Option::None => self.index_attr(var),
             },
@@ -211,7 +211,7 @@ impl UnionType {
 
     fn variant_pos(&self, index: Name) -> Option<usize> {
         if let Name::Attribute(name) = index {
-            self.variants.iter().position(|x| &*x == name)
+            self.variants.iter().position(|x| *x == name)
         } else {
             Option::None
         }
@@ -274,13 +274,13 @@ mod default_functions {
                 Operator::In => default_in,
                 _ => return Option::None,
             };
-            Option::Some(UnionMethod::Native(result))
+            Option::Some(UnionMethod::Move(result))
         } else {
             Option::None
         }
     }
 
-    fn default_repr(this: &LangUnion, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn default_repr(this: LangUnion, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         let result = format!(
             "{}.{}({})",
@@ -291,18 +291,18 @@ mod default_functions {
         runtime.return_1(StringVar::from(result).into())
     }
 
-    fn default_str(this: &LangUnion, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn default_str(this: LangUnion, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        runtime.call_op(this.clone().into(), Operator::Repr, args)
+        runtime.call_op(this.into(), Operator::Repr, args)
     }
 
-    fn default_bool(_this: &LangUnion, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn default_bool(_this: LangUnion, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         runtime.return_1(true.into())
     }
 
-    fn default_eq(this: &LangUnion, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        let this_var = Variable::from(this.clone());
+    fn default_eq(this: LangUnion, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        let this_var = Variable::from(this);
         for arg in args {
             if this_var != arg {
                 return runtime.return_1(false.into());
@@ -311,7 +311,7 @@ mod default_functions {
         runtime.return_1(true.into())
     }
 
-    fn default_in(this: &LangUnion, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn default_in(this: LangUnion, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         let checked_var = take(&mut args[0]);
         let this_iter = this.iter(runtime)?;
         while let Option::Some(val) = this_iter.clone().next(runtime)?.take_first() {
