@@ -40,7 +40,7 @@ impl FileObj {
         StdMethod::new_native(self, func).into()
     }
 
-    fn open(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn open(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         if self.file.borrow().is_none() {
             match File::open(&self.path) {
@@ -55,16 +55,16 @@ impl FileObj {
                 "File cannot be opened more than once".into(),
             )?
         }
-        runtime.return_1(self.clone().into())
+        runtime.return_1(self.into())
     }
 
-    fn close(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn close(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         self.file.replace(Option::None);
         runtime.return_0()
     }
 
-    fn read_lines(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn read_lines(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         let mut result = String::new();
         if self.file_do(|f| f.read_to_string(&mut result)).is_err() {
@@ -78,7 +78,7 @@ impl FileObj {
         }
     }
 
-    fn read(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn read(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         let mut result = String::new();
         if self.file_do(|f| f.read_to_string(&mut result)).is_err() {

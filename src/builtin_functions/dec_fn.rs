@@ -1,12 +1,12 @@
 use crate::int_var::IntVar;
-use crate::method::{NativeCopyMethod, StdMethod};
+use crate::method::{NativeMethod, StdMethod};
 use crate::operator::Operator;
 use crate::rational_var::RationalVar;
 use crate::runtime::Runtime;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 
-pub fn op_fn(o: Operator) -> NativeCopyMethod<RationalVar> {
+pub fn op_fn(o: Operator) -> NativeMethod<RationalVar> {
     match o {
         Operator::Add => add,
         Operator::Subtract => sub,
@@ -27,7 +27,7 @@ pub fn op_fn(o: Operator) -> NativeCopyMethod<RationalVar> {
 
 pub fn get_operator(this: RationalVar, o: Operator) -> Variable {
     let func = op_fn(o);
-    StdMethod::new_move(this, func).into()
+    StdMethod::new_native(this, func).into()
 }
 
 fn add(this: RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

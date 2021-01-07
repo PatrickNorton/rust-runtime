@@ -1,10 +1,10 @@
-use crate::method::{NativeCopyMethod, StdMethod};
+use crate::method::{NativeMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 
-pub fn op_fn(o: Operator) -> NativeCopyMethod<()> {
+pub fn op_fn(o: Operator) -> NativeMethod<()> {
     match o {
         Operator::Equals => eq,
         Operator::Str => str,
@@ -16,7 +16,7 @@ pub fn op_fn(o: Operator) -> NativeCopyMethod<()> {
 
 pub fn get_operator(o: Operator) -> Variable {
     let func = op_fn(o);
-    StdMethod::new_move((), func).into()
+    StdMethod::new_native((), func).into()
 }
 
 fn eq(_this: (), args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

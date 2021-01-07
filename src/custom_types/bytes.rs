@@ -67,7 +67,7 @@ impl LangBytes {
         StdMethod::new_native(self, func).into()
     }
 
-    fn index(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn index(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
         match normalize(self.value.borrow().len(), take(&mut args[0]).into()) {
             Result::Ok(index) => runtime.return_1(IntVar::from(self.value.borrow()[index]).into()),
@@ -75,7 +75,7 @@ impl LangBytes {
         }
     }
 
-    fn set_index(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn set_index(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
         let len = self.value.borrow().len();
         match normalize(len, take(&mut args[0]).into()) {
@@ -91,12 +91,12 @@ impl LangBytes {
         }
     }
 
-    fn str(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn str(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         self.encode(args, runtime)
     }
 
-    fn repr(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn repr(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         let val = format!(
             "{:?}",
@@ -105,7 +105,7 @@ impl LangBytes {
         runtime.return_1(StringVar::from(val).into())
     }
 
-    fn encode(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn encode(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         let encoding_type = if args.is_empty() {
             "utf-8".into()
         } else {
@@ -199,7 +199,7 @@ impl LangBytes {
             .collect()
     }
 
-    fn get(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn get(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         let value = IntVar::from(take(&mut args[0]))
             .to_usize()
@@ -209,7 +209,7 @@ impl LangBytes {
         runtime.return_1(value)
     }
 
-    fn add(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn add(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         let int_val = IntVar::from(take(&mut args[0]));
         if let Option::Some(value) = int_val.to_u8() {
@@ -227,7 +227,7 @@ impl LangBytes {
         }
     }
 
-    fn add_char(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn add_char(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
         let char_val = take(&mut args[0]).into();
         match take(&mut args[0]).str(runtime)?.as_str() {
@@ -246,7 +246,7 @@ impl LangBytes {
         runtime.return_0()
     }
 
-    fn starts_with(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn starts_with(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         let variable = take(&mut args[0]);
         let value = downcast_var::<LangBytes>(variable).expect("Expected bytes");
@@ -254,7 +254,7 @@ impl LangBytes {
         runtime.return_1(self.value.borrow().starts_with(&**needle).into())
     }
 
-    fn ends_with(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn ends_with(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         let variable = take(&mut args[0]);
         let value = downcast_var::<LangBytes>(variable).expect("Expected bytes");
@@ -262,7 +262,7 @@ impl LangBytes {
         runtime.return_1(self.value.borrow().ends_with(&**needle).into())
     }
 
-    fn add_utf8(self: &Rc<Self>, value: char) {
+    fn add_utf8(self: Rc<Self>, value: char) {
         self.value
             .borrow_mut()
             .extend_from_slice(value.encode_utf8(&mut [0; 4]).as_bytes())
@@ -271,7 +271,7 @@ impl LangBytes {
     // These two can probably be improved with #![feature(array_value_iter)]
     // val.extend(value.encode_utf16(&mut [0; 2]).flat_map(u16::to_le_bytes))
 
-    fn add_utf16(self: &Rc<Self>, value: char) {
+    fn add_utf16(self: Rc<Self>, value: char) {
         let mut val = self.value.borrow_mut();
         value
             .encode_utf16(&mut [0; 2])
@@ -279,7 +279,7 @@ impl LangBytes {
             .for_each(|x| val.extend_from_slice(&x.to_le_bytes()));
     }
 
-    fn add_utf16be(self: &Rc<Self>, value: char) {
+    fn add_utf16be(self: Rc<Self>, value: char) {
         let mut val = self.value.borrow_mut();
         value
             .encode_utf16(&mut [0; 2])
@@ -287,13 +287,13 @@ impl LangBytes {
             .for_each(|x| val.extend_from_slice(&x.to_be_bytes()));
     }
 
-    fn add_utf32(self: &Rc<Self>, value: char) {
+    fn add_utf32(self: Rc<Self>, value: char) {
         self.value
             .borrow_mut()
             .extend(&(value as u32).to_le_bytes())
     }
 
-    fn add_utf32be(self: &Rc<Self>, value: char) {
+    fn add_utf32be(self: Rc<Self>, value: char) {
         self.value
             .borrow_mut()
             .extend(&(value as u32).to_be_bytes())
@@ -331,17 +331,17 @@ impl LangBytes {
         unreachable!()
     }
 
-    fn iter(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn iter(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        runtime.return_1(Rc::new(BytesIter::new(self.clone())).into())
+        runtime.return_1(Rc::new(BytesIter::new(self)).into())
     }
 
-    fn bool(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn bool(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         runtime.return_1((!self.value.borrow().is_empty()).into())
     }
 
-    fn plus(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn plus(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         let mut result = self.value.borrow().clone();
         for value in args {
             let val = downcast_var::<LangBytes>(value).expect("Invalid type to bytes.+");
@@ -350,7 +350,7 @@ impl LangBytes {
         runtime.return_1(Rc::new(LangBytes::new(result)).into())
     }
 
-    fn mul(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn mul(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         if self.value.borrow().is_empty() {
             return runtime.return_1(Rc::new(LangBytes::new(Vec::new())).into());
         }
@@ -373,7 +373,7 @@ impl LangBytes {
         runtime.return_1(Rc::new(LangBytes::new(result)).into())
     }
 
-    fn join(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn join(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
         let mut is_first = true;
         let mut result = Vec::new();
@@ -388,7 +388,7 @@ impl LangBytes {
         runtime.return_1(Rc::new(LangBytes::new(result)).into())
     }
 
-    fn index_of(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn index_of(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
         let search_int = IntVar::from(take(&mut args[0]));
         runtime.return_1(Variable::from(match search_int.to_u8() {
@@ -405,7 +405,7 @@ impl LangBytes {
         }))
     }
 
-    fn last_index_of(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn last_index_of(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
         let search_int = IntVar::from(take(&mut args[0]));
         runtime.return_1(Variable::from(match search_int.to_u8() {
@@ -470,7 +470,7 @@ impl BytesIter {
         StdMethod::new_native(self.clone(), func).into()
     }
 
-    fn next_fn(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn next_fn(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         runtime.return_1(self.inner_next().into())
     }

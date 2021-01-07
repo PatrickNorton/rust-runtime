@@ -274,7 +274,7 @@ mod default_functions {
                 Operator::In => default_in,
                 _ => return Option::None,
             };
-            Option::Some(UnionMethod::Move(result))
+            Option::Some(UnionMethod::Native(result))
         } else {
             Option::None
         }

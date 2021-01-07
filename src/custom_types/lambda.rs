@@ -32,7 +32,7 @@ impl Lambda {
         StdMethod::new_native(self.clone(), func).into()
     }
 
-    fn call_now(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn call_now(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         runtime.call_now_with_frame(0, self.fn_no as u16, args, self.file_no, self.frame.clone())
     }
 

@@ -50,7 +50,7 @@ impl Array {
         StdMethod::new_native(self, func).into()
     }
 
-    fn index(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn index(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         let signed_index = IntVar::from(args[0].clone());
         let index = if signed_index.is_negative() {
             signed_index + self.vars.borrow().len().into()
@@ -72,7 +72,7 @@ impl Array {
         }
     }
 
-    fn set_index(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn set_index(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
         let index = self.normalize_index(IntVar::from(take(&mut args[0])));
         let value = take(&mut args[1]);
@@ -85,12 +85,12 @@ impl Array {
         runtime.return_0()
     }
 
-    fn bool(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn bool(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         runtime.return_1((!self.vars.borrow().is_empty()).into())
     }
 
-    fn str(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn str(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         let mut value = String::new();
         value += "Array[";
@@ -104,7 +104,7 @@ impl Array {
         runtime.return_1(value.into())
     }
 
-    fn eq(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn eq(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         for arg in args {
             if !match downcast_var::<Array>(arg) {
                 Option::None => false,
@@ -121,7 +121,7 @@ impl Array {
         runtime.return_1(true.into())
     }
 
-    fn contains(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn contains(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         let arg = take(&mut args[0]);
         for val in self.vars.borrow().iter() {
@@ -132,7 +132,7 @@ impl Array {
         runtime.return_1(false.into())
     }
 
-    fn get_slice(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn get_slice(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         let range = Range::from_slice(self.vars.borrow().len(), runtime, take(&mut args[0]))?;
         let mut raw_vec = Vec::new();
@@ -143,12 +143,12 @@ impl Array {
         runtime.return_1(Self::new(raw_vec.into_boxed_slice()).into())
     }
 
-    fn iter(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn iter(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        runtime.return_1(Rc::new(ArrayIter::new(self.clone())).into())
+        runtime.return_1(Rc::new(ArrayIter::new(self)).into())
     }
 
-    fn iter_slice(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn iter_slice(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         let range = Range::from_slice(self.vars.borrow().len(), runtime, take(&mut args[0]))?;
         let value = self.vars.borrow();

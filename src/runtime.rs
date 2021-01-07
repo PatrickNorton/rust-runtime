@@ -5,7 +5,7 @@ use crate::executor;
 use crate::file_info::FileInfo;
 use crate::function::NativeFunction;
 use crate::jump_table::JumpTable;
-use crate::method::{NativeCopyMethod, NativeMethod};
+use crate::method::NativeMethod;
 use crate::name::Name;
 use crate::name_map::NameMap;
 use crate::operator::Operator;
@@ -149,27 +149,6 @@ impl Runtime {
     pub fn call_native_method<T>(
         &mut self,
         func: NativeMethod<T>,
-        this: &T,
-        args: Vec<Variable>,
-    ) -> FnResult {
-        let native = self.is_native();
-        if native {
-            self.push_native();
-            let result = func(this, args, self);
-            self.pop_native();
-            if result.is_err() && !self.is_native() {
-                self.resume_throw()
-            } else {
-                result
-            }
-        } else {
-            func(this, args, self)
-        }
-    }
-
-    pub fn call_copy_method<T>(
-        &mut self,
-        func: NativeCopyMethod<T>,
         this: T,
         args: Vec<Variable>,
     ) -> FnResult {

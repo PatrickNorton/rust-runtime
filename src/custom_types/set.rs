@@ -76,7 +76,7 @@ impl Set {
         StdMethod::new_native(self, func).into()
     }
 
-    fn intersection(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn intersection(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         let other = take(&mut args[0]);
         let other_iter = other.iter(runtime)?;
@@ -90,7 +90,7 @@ impl Set {
         runtime.return_1(ret.into())
     }
 
-    fn union(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn union(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         let self_val = self.value.borrow();
         let result_vec = self_val.values.clone();
         let result_size = self_val.size;
@@ -106,7 +106,7 @@ impl Set {
         runtime.return_1(Set::from_inner(self.generic, result).into())
     }
 
-    fn xor(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn xor(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         let self_val = self.value.borrow();
         let result_vec = self_val.values.clone();
         let result_size = self_val.size;
@@ -126,25 +126,25 @@ impl Set {
         runtime.return_1(Set::from_inner(self.generic, result).into())
     }
 
-    fn bool(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn bool(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         runtime.return_1(self.is_empty().into())
     }
 
-    fn repr(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn repr(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         let repr = self.value.borrow().repr(runtime)?;
         runtime.return_1(repr.into())
     }
 
-    fn contains(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn contains(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         let val = args.remove(0);
         let is_contained = self.value.borrow().contains(val, runtime)?;
         runtime.return_1(is_contained.into())
     }
 
-    fn add(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn add(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         let val = args.remove(0);
         if val.get_type().is_subclass(&self.generic, runtime) {
@@ -155,7 +155,7 @@ impl Set {
         runtime.return_0()
     }
 
-    fn add_all(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn add_all(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         let val = take(&mut args[0]);
         let val_iter = val.iter(runtime)?;
@@ -169,26 +169,26 @@ impl Set {
         runtime.return_0()
     }
 
-    fn clear(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn clear(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         self.value.borrow_mut().clear();
         runtime.return_0()
     }
 
-    fn del_attr(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn del_attr(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         self.remove(args, runtime)?;
         runtime.pop_return();
         runtime.return_0()
     }
 
-    fn remove(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn remove(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         let val = take(&mut args[0]);
         let was_removed = self.value.borrow_mut().remove(val, runtime)?;
         runtime.return_1(was_removed.into())
     }
 
-    fn eq(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn eq(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         for arg in args {
             if !match downcast_var::<Set>(arg) {
                 Option::None => false,
@@ -203,9 +203,9 @@ impl Set {
         runtime.return_1(true.into())
     }
 
-    fn iter(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn iter(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        runtime.return_1(Rc::new(SetIter::new(self.clone())).into())
+        runtime.return_1(Rc::new(SetIter::new(self)).into())
     }
 
     fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -502,9 +502,9 @@ impl SetIter {
         }
     }
 
-    fn next_fn(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn next_fn(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        let next = self.clone().next(runtime)?;
+        let next = self.next(runtime)?;
         runtime.return_1(next.take_first().into())
     }
 }

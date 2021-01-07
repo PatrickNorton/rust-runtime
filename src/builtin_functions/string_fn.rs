@@ -6,7 +6,7 @@ use crate::custom_var::CustomVar;
 use crate::function::Function;
 use crate::int_var::IntVar;
 use crate::looping::{IterResult, NativeIterator};
-use crate::method::{NativeCopyMethod, StdMethod};
+use crate::method::{NativeMethod, StdMethod};
 use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
@@ -23,7 +23,7 @@ use std::mem::take;
 use std::rc::Rc;
 use std::str::{from_utf8_unchecked, FromStr};
 
-pub fn op_fn(o: Operator) -> NativeCopyMethod<StringVar> {
+pub fn op_fn(o: Operator) -> NativeMethod<StringVar> {
     match o {
         Operator::Add => add,
         Operator::Multiply => multiply,
@@ -40,7 +40,7 @@ pub fn op_fn(o: Operator) -> NativeCopyMethod<StringVar> {
 }
 
 pub fn get_operator(this: StringVar, o: Operator) -> Variable {
-    StdMethod::new_move(this, op_fn(o)).into()
+    StdMethod::new_native(this, op_fn(o)).into()
 }
 
 pub fn get_attr(this: StringVar, s: &str) -> Variable {
@@ -61,7 +61,7 @@ pub fn get_attr(this: StringVar, s: &str) -> Variable {
         "asInt" => as_int,
         x => unimplemented!("str.{}", x),
     };
-    StdMethod::new_move(this, func).into()
+    StdMethod::new_native(this, func).into()
 }
 
 pub fn static_attr(s: &str) -> Variable {
@@ -446,7 +446,7 @@ fn as_int(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
 pub trait StrIter: Debug + Any + Downcast {
     fn next_fn(&self) -> Option<Variable>;
 
-    fn next_func(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn next_func(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         runtime.return_1(self.next_fn().into())
     }

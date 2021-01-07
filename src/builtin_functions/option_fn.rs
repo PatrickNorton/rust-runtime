@@ -38,7 +38,7 @@ pub fn get_attr(this: (usize, Option<InnerVar>), attr: &str) -> Variable {
         "flatMap" => flat_map,
         _ => unimplemented!(),
     };
-    StdMethod::new_move(this, func).into()
+    StdMethod::new_native(this, func).into()
 }
 
 pub fn get_op(this: (usize, Option<InnerVar>), op: Operator) -> Variable {
@@ -47,7 +47,7 @@ pub fn get_op(this: (usize, Option<InnerVar>), op: Operator) -> Variable {
         Operator::Repr => to_repr,
         _ => unimplemented!("Option.{}", op.name()),
     };
-    StdMethod::new_move(this, func).into()
+    StdMethod::new_native(this, func).into()
 }
 
 pub fn index(i: usize, val: Option<InnerVar>, name: Name) -> Variable {

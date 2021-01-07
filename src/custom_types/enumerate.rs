@@ -29,7 +29,7 @@ impl Enumerate {
 
     iter_no_next!();
 
-    fn next_fn(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn next_fn(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         match self.inner_next(runtime)? {
             Option::Some(value) => runtime.return_n(vec![

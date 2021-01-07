@@ -146,7 +146,7 @@ pub fn default_methods(name: Name) -> Option<StdVarMethod> {
             Operator::In => default_in,
             _ => return Option::None,
         };
-        Option::Some(StdVarMethod::Move(result))
+        Option::Some(StdVarMethod::Native(result))
     } else {
         Option::None
     }

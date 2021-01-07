@@ -17,7 +17,7 @@ macro_rules! iter_internals {
     () => {
         iter_no_next!();
 
-        fn next_fn(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        fn next_fn(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
             debug_assert!(args.is_empty());
             runtime.return_1(self.inner_next().into())
         }
@@ -42,9 +42,9 @@ macro_rules! iter_no_next {
             StdMethod::new_native(self.clone(), func).into()
         }
 
-        fn ret_self(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        fn ret_self(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
             debug_assert!(args.is_empty());
-            runtime.return_1(self.clone().into())
+            runtime.return_1(self.into())
         }
     };
 }

@@ -1,11 +1,11 @@
 use crate::int_var::IntVar;
-use crate::method::{NativeCopyMethod, StdMethod};
+use crate::method::{NativeMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::tuple::LangTuple;
 use crate::variable::{FnResult, InnerVar, Variable};
 
-pub fn op_fn(o: Operator) -> NativeCopyMethod<LangTuple> {
+pub fn op_fn(o: Operator) -> NativeMethod<LangTuple> {
     match o {
         Operator::Equals => equals,
         Operator::Bool => bool,
@@ -17,7 +17,7 @@ pub fn op_fn(o: Operator) -> NativeCopyMethod<LangTuple> {
 }
 
 pub fn get_operator(this: LangTuple, o: Operator) -> Variable {
-    StdMethod::new_move(this, op_fn(o)).into()
+    StdMethod::new_native(this, op_fn(o)).into()
 }
 
 pub fn get_attr(this: LangTuple, s: &str) -> Variable {

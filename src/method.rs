@@ -7,13 +7,11 @@ use std::hash::{Hash, Hasher};
 use std::ptr;
 use std::vec::Vec;
 
-pub type NativeMethod<T> = fn(&T, Vec<Variable>, &mut Runtime) -> FnResult;
-pub type NativeCopyMethod<T> = fn(T, Vec<Variable>, &mut Runtime) -> FnResult;
+pub type NativeMethod<T> = fn(T, Vec<Variable>, &mut Runtime) -> FnResult;
 
 pub enum InnerMethod<T> {
     Standard(usize, u32),
     Native(NativeMethod<T>),
-    Move(NativeCopyMethod<T>),
 }
 
 #[derive(Copy, Clone)]
@@ -43,8 +41,7 @@ where
                 args.insert(0, var);
                 runtime.call_now(0, index as u16, args, file)
             }
-            InnerMethod::Native(func) => runtime.call_native_method(func, &callee, args),
-            InnerMethod::Move(func) => runtime.call_copy_method(func, callee, args),
+            InnerMethod::Native(func) => runtime.call_native_method(func, callee, args),
         }
     }
 
@@ -62,8 +59,7 @@ where
                 runtime.push_stack(0, index as u16, args, file);
                 FnResult::Ok(())
             }
-            InnerMethod::Native(func) => runtime.call_native_method(func, &callee, args),
-            InnerMethod::Move(func) => runtime.call_copy_method(func, callee, args),
+            InnerMethod::Native(func) => runtime.call_native_method(func, callee, args),
         }
     }
 }
@@ -127,21 +123,11 @@ where
 
     pub fn new_native(
         value: T,
-        method: fn(&T, Vec<Variable>, &mut Runtime) -> FnResult,
-    ) -> Box<StdMethod<T>> {
-        Box::new(StdMethod {
-            value,
-            method: InnerMethod::Native(method),
-        })
-    }
-
-    pub fn new_move(
-        value: T,
         method: fn(T, Vec<Variable>, &mut Runtime) -> FnResult,
     ) -> Box<StdMethod<T>> {
         Box::new(StdMethod {
             value,
-            method: InnerMethod::Move(method),
+            method: InnerMethod::Native(method),
         })
     }
 
@@ -168,10 +154,6 @@ impl<T> Debug for InnerMethod<T> {
         match self {
             InnerMethod::Standard(i, j) => f.debug_tuple("Standard").field(i).field(j).finish(),
             InnerMethod::Native(fn_) => f
-                .debug_tuple("Native")
-                .field(&format!("fn@{:#X}", *fn_ as usize))
-                .finish(),
-            InnerMethod::Move(fn_) => f
                 .debug_tuple("Move")
                 .field(&format!("fn@{:#X}", *fn_ as usize))
                 .finish(),

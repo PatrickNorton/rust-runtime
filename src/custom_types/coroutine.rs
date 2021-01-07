@@ -51,18 +51,18 @@ impl Generator {
         custom_class!(Generator, create, "Generator")
     }
 
-    fn next_fn(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn next_fn(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         runtime.push_native();
-        runtime.add_generator(self.clone())?;
+        runtime.add_generator(self)?;
         let result = executor::execute(runtime);
         runtime.pop_native();
         result
     }
 
-    fn ret_self(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn ret_self(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        runtime.return_1(self.clone().into())
+        runtime.return_1(self.into())
     }
 }
 

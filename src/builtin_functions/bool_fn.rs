@@ -1,12 +1,12 @@
 use crate::builtin_functions::int_fn;
 use crate::int_var::IntVar;
-use crate::method::{NativeCopyMethod, StdMethod};
+use crate::method::{NativeMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, FromBool, Variable};
 
-pub fn op_fn(o: Operator) -> Option<NativeCopyMethod<bool>> {
+pub fn op_fn(o: Operator) -> Option<NativeMethod<bool>> {
     Option::Some(match o {
         Operator::Equals => eq,
         Operator::LessThan => less_than,
@@ -25,7 +25,7 @@ pub fn op_fn(o: Operator) -> Option<NativeCopyMethod<bool>> {
 
 pub fn get_operator(this: bool, o: Operator) -> Variable {
     match op_fn(o) {
-        Option::Some(func) => StdMethod::new_move(this, func).into(),
+        Option::Some(func) => StdMethod::new_native(this, func).into(),
         Option::None => int_fn::get_operator(IntVar::from_bool(this), o),
     }
 }

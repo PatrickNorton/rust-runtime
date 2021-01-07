@@ -33,7 +33,7 @@ impl Slice {
         ))
     }
 
-    fn str(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn str(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         let str = format!(
             "slice({}, {}, {})",
@@ -44,7 +44,7 @@ impl Slice {
         runtime.return_1(str.into())
     }
 
-    fn make_range(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn make_range(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         /*
         [::] or [:] -> [0:len:1]

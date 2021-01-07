@@ -80,12 +80,12 @@ impl Range {
         }
     }
 
-    fn str(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn str(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         runtime.return_1(self.to_str().into())
     }
 
-    fn eq(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn eq(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
         let is_eq = match downcast_var::<Range>(take(&mut args[0])) {
             Option::None => false,
@@ -96,12 +96,12 @@ impl Range {
         runtime.return_1(is_eq.into())
     }
 
-    fn iter(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn iter(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        runtime.return_1(Rc::new(RangeIter::new(self.clone())).into())
+        runtime.return_1(Rc::new(RangeIter::new(self)).into())
     }
 
-    fn index(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn index(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
         let index = IntVar::from(take(&mut args[0]));
         let result = &self.start + &(&index * &self.step);
@@ -115,7 +115,7 @@ impl Range {
         }
     }
 
-    fn contains(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn contains(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
         let value = IntVar::from(take(&mut args[0]));
         let result = if self.step.is_positive() {
@@ -126,7 +126,7 @@ impl Range {
         runtime.return_1(result.into())
     }
 
-    fn reversed(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn reversed(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         let new_stop = &self.start - &self.step;
         let new_start = &self.stop - &self.step;
@@ -204,7 +204,7 @@ impl RangeIter {
         StdMethod::new_native(self.clone(), func).into()
     }
 
-    fn next_fn(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn next_fn(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         runtime.return_1(self.true_next().map(Variable::from).into())
     }

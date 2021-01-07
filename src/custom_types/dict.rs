@@ -74,7 +74,7 @@ impl Dict {
         StdMethod::new_native(self, func).into()
     }
 
-    fn index(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn index(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         match self.value.borrow().get(args.remove(0), runtime)? {
             Option::Some(result) => runtime.return_1(result),
@@ -82,25 +82,25 @@ impl Dict {
         }
     }
 
-    fn repr(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn repr(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         let repr = self.value.borrow().true_repr(runtime)?;
         runtime.return_1(repr.into())
     }
 
-    fn bool(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn bool(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         runtime.return_1((!self.is_empty()).into())
     }
 
-    fn set(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn set(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
         let val = args.remove(1); // Reverse order to avoid move
         let key = args.remove(0);
         self.value.borrow_mut().set(key, val, runtime)
     }
 
-    fn contains(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn contains(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         let is_in = self
             .value
@@ -110,19 +110,19 @@ impl Dict {
         runtime.return_1(is_in.into())
     }
 
-    fn del(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn del(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         self.value.borrow_mut().del(&args[0], runtime)?;
         runtime.return_0()
     }
 
-    fn clear(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn clear(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         self.value.borrow_mut().clear();
         runtime.return_0()
     }
 
-    fn get(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn get(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         if args.len() == 1 {
             let val = self.value.borrow().get(take(&mut args[0]), runtime)?.into();
             runtime.return_1(val)
@@ -137,7 +137,7 @@ impl Dict {
         }
     }
 
-    fn replace(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn replace(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
         let key = take(&mut args[0]);
         let val = take(&mut args[1]);
@@ -150,13 +150,13 @@ impl Dict {
         }
     }
 
-    fn remove(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn remove(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         let returned = self.value.borrow_mut().del(&args[0], runtime)?.into();
         runtime.return_1(returned)
     }
 
-    fn set_default(self: &Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn set_default(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
         let mut value = self.value.borrow_mut();
         let arg = take(&mut args[0]);
@@ -170,7 +170,7 @@ impl Dict {
         }
     }
 
-    fn eq(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn eq(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         for arg in args {
             match downcast_var::<Dict>(arg) {
                 Option::None => return runtime.return_1(false.into()),
@@ -185,9 +185,9 @@ impl Dict {
         runtime.return_1(true.into())
     }
 
-    fn iter(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn iter(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        runtime.return_1(Rc::new(DictIter::new(self.clone())).into())
+        runtime.return_1(Rc::new(DictIter::new(self)).into())
     }
 
     fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -527,7 +527,7 @@ impl DictIter {
         self.bucket_no.set(next);
     }
 
-    fn next_fn(self: &Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn next_fn(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         match self.clone().true_next(runtime)? {
             Option::None => runtime.return_n(vec![Option::None.into(), Option::None.into()]),

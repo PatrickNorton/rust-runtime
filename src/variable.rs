@@ -461,22 +461,22 @@ impl InnerVar {
 
     pub fn call_op(self, name: Operator, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         match self {
-            InnerVar::Null() => runtime.call_copy_method(null_fn::op_fn(name), (), args),
+            InnerVar::Null() => runtime.call_native_method(null_fn::op_fn(name), (), args),
             InnerVar::Bool(b) => match bool_fn::op_fn(name) {
-                Option::Some(val) => runtime.call_copy_method(val, b, args),
+                Option::Some(val) => runtime.call_native_method(val, b, args),
                 Option::None => {
-                    runtime.call_copy_method(int_fn::op_fn(name), IntVar::from_bool(b), args)
+                    runtime.call_native_method(int_fn::op_fn(name), IntVar::from_bool(b), args)
                 }
             },
-            InnerVar::Bigint(b) => runtime.call_copy_method(int_fn::op_fn(name), b, args),
-            InnerVar::String(s) => runtime.call_copy_method(string_fn::op_fn(name), s, args),
-            InnerVar::Decimal(d) => runtime.call_copy_method(dec_fn::op_fn(name), d, args),
-            InnerVar::Char(c) => runtime.call_copy_method(char_fn::op_fn(name), c, args),
+            InnerVar::Bigint(b) => runtime.call_native_method(int_fn::op_fn(name), b, args),
+            InnerVar::String(s) => runtime.call_native_method(string_fn::op_fn(name), s, args),
+            InnerVar::Decimal(d) => runtime.call_native_method(dec_fn::op_fn(name), d, args),
+            InnerVar::Char(c) => runtime.call_native_method(char_fn::op_fn(name), c, args),
             InnerVar::Type(_) => self
                 .index(Name::Operator(name), runtime)?
                 .call((args, runtime)),
             InnerVar::Standard(s) => s.call_operator(name, args, runtime),
-            InnerVar::Tuple(t) => runtime.call_copy_method(tuple_fn::op_fn(name), t, args),
+            InnerVar::Tuple(t) => runtime.call_native_method(tuple_fn::op_fn(name), t, args),
             InnerVar::Method(_) => self
                 .index(Name::Operator(name), runtime)?
                 .call((args, runtime)),

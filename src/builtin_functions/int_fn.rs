@@ -1,6 +1,6 @@
 use crate::custom_types::exceptions::{arithmetic_error, value_error};
 use crate::int_var::IntVar;
-use crate::method::{NativeCopyMethod, StdMethod};
+use crate::method::{NativeMethod, StdMethod};
 use crate::operator::Operator;
 use crate::rational_var::RationalVar;
 use crate::runtime::Runtime;
@@ -12,7 +12,7 @@ use std::mem::take;
 use std::ops::Neg;
 use std::vec::Vec;
 
-pub fn op_fn(o: Operator) -> NativeCopyMethod<IntVar> {
+pub fn op_fn(o: Operator) -> NativeMethod<IntVar> {
     match o {
         Operator::Add => add,
         Operator::Subtract => sub,
@@ -43,7 +43,7 @@ pub fn op_fn(o: Operator) -> NativeCopyMethod<IntVar> {
 
 pub fn get_operator(this: IntVar, o: Operator) -> Variable {
     let func = op_fn(o);
-    StdMethod::new_move(this, func).into()
+    StdMethod::new_native(this, func).into()
 }
 
 fn add(this: IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
