@@ -270,7 +270,7 @@ impl ArrayIter {
 
 impl CustomVar for ArrayIter {
     fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        name.do_each(|o| self.get_op(o), |s| self.get_attribute(s))
+        default_attr!(self, name)
     }
 
     fn set(self: Rc<Self>, _name: Name, _object: Variable) {

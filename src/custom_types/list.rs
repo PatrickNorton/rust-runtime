@@ -512,11 +512,7 @@ impl List {
         custom_class!(List, create, "list")
     }
 
-    fn slice_to_range(
-        self: &Rc<Self>,
-        runtime: &mut Runtime,
-        arg: Variable,
-    ) -> Result<Rc<Range>, ()> {
+    fn slice_to_range(&self, runtime: &mut Runtime, arg: Variable) -> Result<Rc<Range>, ()> {
         Range::from_slice(self.len(), runtime, arg)
     }
 
@@ -587,7 +583,7 @@ impl ListIter {
 
 impl CustomVar for ListIter {
     fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        name.do_each(|o| self.get_op(o), |s| self.get_attribute(s))
+        default_attr!(self, name)
     }
 
     fn set(self: Rc<Self>, _name: Name, _object: Variable) {

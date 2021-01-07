@@ -23,15 +23,15 @@ impl StdException {
         StdException { msg, exc_type }
     }
 
-    pub fn get_op(self: &Rc<Self>, o: Operator) -> Variable {
+    pub fn get_op(self: Rc<Self>, o: Operator) -> Variable {
         let func = match o {
             Operator::Str => Self::str,
             _ => unimplemented!(),
         };
-        StdMethod::new_native(self.clone(), func).into()
+        StdMethod::new_native(self, func).into()
     }
 
-    pub fn get_attribute(self: &Rc<Self>, name: &str) -> Variable {
+    pub fn get_attribute(self: Rc<Self>, name: &str) -> Variable {
         match name {
             "message" => self.msg.clone().into(),
             _ => unimplemented!(),
@@ -46,7 +46,7 @@ impl StdException {
 
 impl CustomVar for StdException {
     fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        name.do_each(|o| self.get_op(o), |s| self.get_attribute(s))
+        default_attr!(self, name)
     }
 
     fn set(self: Rc<Self>, _name: Name, _object: Variable) {

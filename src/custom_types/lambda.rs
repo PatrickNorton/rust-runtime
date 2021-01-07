@@ -24,12 +24,12 @@ impl Lambda {
         }
     }
 
-    fn get_op(self: &Rc<Self>, op: Operator) -> Variable {
+    fn get_op(self: Rc<Self>, op: Operator) -> Variable {
         let func = match op {
             Operator::Call => Self::call_now,
             _ => unimplemented!(),
         };
-        StdMethod::new_native(self.clone(), func).into()
+        StdMethod::new_native(self, func).into()
     }
 
     fn call_now(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -47,10 +47,7 @@ impl Lambda {
 
 impl CustomVar for Lambda {
     fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        match name {
-            Name::Operator(o) => self.get_op(o),
-            Name::Attribute(_) => unimplemented!(),
-        }
+        name.do_each(|o| self.get_op(o), |_| unimplemented!())
     }
 
     fn set(self: Rc<Self>, _name: Name, _object: Variable) {

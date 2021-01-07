@@ -439,10 +439,7 @@ impl LangBytes {
 
 impl CustomVar for LangBytes {
     fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        match name {
-            Name::Operator(op) => self.get_op(op),
-            Name::Attribute(val) => self.get_attribute(val),
-        }
+        default_attr!(self, name)
     }
 
     fn set(self: Rc<Self>, _name: Name, _object: Variable) {
@@ -462,12 +459,12 @@ impl BytesIter {
         }
     }
 
-    fn get_attribute(self: &Rc<Self>, val: &str) -> Variable {
+    fn get_attribute(self: Rc<Self>, val: &str) -> Variable {
         let func = match val {
             "next" => Self::next_fn,
             _ => unimplemented!(),
         };
-        StdMethod::new_native(self.clone(), func).into()
+        StdMethod::new_native(self, func).into()
     }
 
     fn next_fn(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

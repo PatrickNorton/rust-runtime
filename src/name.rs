@@ -21,6 +21,18 @@ impl<'a> Name<'a> {
             Name::Operator(o) => op(o),
         }
     }
+
+    pub fn do_each_method<T, U>(
+        self,
+        value: U,
+        op: impl FnOnce(U, Operator) -> T,
+        attr: impl FnOnce(U, &str) -> T,
+    ) -> T {
+        match self {
+            Name::Attribute(s) => attr(value, s),
+            Name::Operator(o) => op(value, o),
+        }
+    }
 }
 
 impl<'a> std::fmt::Display for Name<'a> {
