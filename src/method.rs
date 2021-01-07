@@ -92,7 +92,7 @@ impl PartialEq for Box<dyn Method> {
     fn eq(&self, other: &Box<dyn Method>) -> bool {
         let left: *const dyn Method = self.as_ref();
         let right: *const dyn Method = other.as_ref();
-        left as *const () == right as *const ()
+        ptr::eq(left as *const (), right as *const ())
     }
 }
 
