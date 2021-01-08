@@ -54,30 +54,11 @@ impl LangUnion {
         }
     }
 
-    pub fn str(self, runtime: &mut Runtime) -> Result<StringVar, ()> {
-        self.call_operator(Operator::Str, vec![], runtime)?;
-        runtime.pop_return().str(runtime)
-    }
-
-    pub fn repr(self, runtime: &mut Runtime) -> Result<StringVar, ()> {
-        self.call_operator(Operator::Repr, Vec::new(), runtime)?;
-        Result::Ok(runtime.pop_return().into())
-    }
-
-    pub fn bool(self, runtime: &mut Runtime) -> Result<bool, ()> {
-        self.call_operator(Operator::Bool, vec![], runtime)?;
-        runtime.pop_return().into_bool(runtime)
-    }
-
-    pub fn int(self, runtime: &mut Runtime) -> Result<IntVar, ()> {
-        self.call_operator(Operator::Bool, vec![], runtime)?;
-        runtime.pop_return().int(runtime)
-    }
-
-    pub fn iter(self, runtime: &mut Runtime) -> Result<looping::Iterator, ()> {
-        self.call_operator(Operator::Bool, vec![], runtime)?;
-        Result::Ok(runtime.pop_return().into())
-    }
+    call_op_fn!(str, StringVar, Str);
+    call_op_fn!(repr, StringVar, Repr);
+    call_op_fn!(bool, bool, Bool);
+    call_op_fn!(int, IntVar, Int);
+    call_op_fn!(iter, looping::Iterator, Iter);
 
     pub fn call_operator(
         self,

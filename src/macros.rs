@@ -36,3 +36,13 @@ macro_rules! name_map {
         }
     };
 }
+
+#[macro_export]
+macro_rules! call_op_fn {
+    ($name:ident, $ret:ty, $op:ident) => {
+        pub fn $name(self, runtime: &mut Runtime) -> Result<$ret, ()> {
+            self.call_operator(Operator::$op, vec![], runtime)?;
+            Result::Ok(runtime.pop_return().into())
+        }
+    };
+}
