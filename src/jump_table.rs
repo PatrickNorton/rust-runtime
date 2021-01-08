@@ -124,7 +124,10 @@ impl Index<IntVar> for CompactJumpTbl {
     type Output = usize;
 
     fn index(&self, index: IntVar) -> &Self::Output {
-        index.to_usize().map_or_else(|| &self.default, |i| &self[i])
+        index
+            .to_usize()
+            .and_then(|i| self.values.get(i))
+            .unwrap_or(&self.default)
     }
 }
 
