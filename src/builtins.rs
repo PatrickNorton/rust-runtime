@@ -160,7 +160,7 @@ fn default_repr(this: StdVariable, args: Vec<Variable>, runtime: &mut Runtime) -
 
 fn default_str(this: StdVariable, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.call_op(this.clone().into(), Operator::Repr, args)
+    runtime.call_op(this.into(), Operator::Repr, args)
 }
 
 fn default_bool(_this: StdVariable, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -169,7 +169,7 @@ fn default_bool(_this: StdVariable, args: Vec<Variable>, runtime: &mut Runtime) 
 }
 
 fn default_eq(this: StdVariable, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    let this_var: Variable = this.clone().into();
+    let this_var: Variable = this.into();
     for arg in args {
         if this_var != arg {
             return runtime.return_1(false.into());
