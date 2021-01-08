@@ -389,7 +389,7 @@ fn last_index_of(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime
     let chr: char = take(&mut args[0]).into();
     let index = match this.as_maybe_ascii() {
         MaybeAscii::Standard(s) => {
-            // Needed because str.chars() is not DoubleEnded
+            // Needed because str.chars() is not ExactSize
             let mut iter = s.chars().rev().enumerate();
             let index = iter.find(|(_, c)| *c == chr).map(|(i, _)| i);
             let length = iter.last().map(|(i, _)| i);
