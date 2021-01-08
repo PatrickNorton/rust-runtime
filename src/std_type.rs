@@ -321,10 +321,7 @@ impl StdType {
     }
 
     pub fn get_property(&self, name: Name) -> Option<&Property> {
-        match name {
-            Name::Operator(_) => Option::None,
-            Name::Attribute(s) => self.properties.get(s),
-        }
+        name.do_each(|_| Option::None, |s| self.properties.get(s))
     }
 
     fn is_subclass(&self, other: &Type, runtime: &Runtime) -> bool {

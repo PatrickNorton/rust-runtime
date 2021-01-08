@@ -203,10 +203,7 @@ impl UnionType {
     }
 
     pub fn get_property(&self, name: Name) -> Option<&Property> {
-        match name {
-            Name::Operator(_) => Option::None,
-            Name::Attribute(str) => self.properties.get(str),
-        }
+        name.do_each(|_| Option::None, |str| self.properties.get(str))
     }
 
     pub(self) fn get_method(&self, name: Name) -> UnionMethod {
