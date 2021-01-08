@@ -13,6 +13,7 @@ use crate::stack_frame::{frame_strings, SFInfo, StackFrame};
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
+use downcast_rs::__std::mem::replace;
 use std::cmp::max;
 use std::cmp::{min, Ordering};
 use std::collections::{HashMap, HashSet};
@@ -437,15 +438,14 @@ impl Runtime {
     }
 
     pub fn pop_return(&mut self) -> Variable {
-        match self.ret_count {
+        match replace(&mut self.ret_count, 0) {
             0 => panic!(
                 "Attempted to call pop_return where no values were returned\n{}",
                 self.stack_frames()
             ),
             1 => self.pop(),
-            _ => {
-                let new_len = self.variables.len() - self.ret_count + 1;
-                self.ret_count = 0;
+            x => {
+                let new_len = self.variables.len() - x + 1;
                 self.variables.truncate(new_len);
                 self.pop()
             }
@@ -453,7 +453,7 @@ impl Runtime {
     }
 
     pub fn pop_returns(&mut self, ret_count: usize) -> Vec<Variable> {
-        match self.ret_count {
+        match replace(&mut self.ret_count, 0) {
             0 if ret_count == 0 => vec![],
             0 => panic!(
                 "Attempted to call pop_returns where no values were returned\n{}",
@@ -470,7 +470,6 @@ impl Runtime {
                     .collect(),
                 Ordering::Greater => {
                     let new_len = self.variables.len() - i + ret_count;
-                    self.ret_count = 0;
                     self.variables.truncate(new_len);
                     self.variables.drain(new_len - ret_count..).collect()
                 }
