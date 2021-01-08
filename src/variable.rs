@@ -358,12 +358,20 @@ impl InnerVar {
             InnerVar::Type(t) => t.index(index, runtime),
             InnerVar::Custom(val) => val.into_inner().get_attr(index),
             InnerVar::Union(val) => val.index(index, runtime)?,
-            x => unimplemented!(
-                "{}.{}\n{}",
-                x.get_type().str(),
-                index.as_str(),
-                runtime.stack_frames()
-            ),
+            InnerVar::Method(m) => {
+                if index == Name::Operator(Operator::Call) {
+                    m.into()
+                } else {
+                    unimplemented!("method.{}", index.as_str())
+                }
+            }
+            InnerVar::Function(f) => {
+                if index == Name::Operator(Operator::Call) {
+                    f.into()
+                } else {
+                    unimplemented!("function.{}", index.as_str())
+                }
+            }
         })
     }
 
@@ -477,12 +485,20 @@ impl InnerVar {
                 .call((args, runtime)),
             InnerVar::Standard(s) => s.call_operator(name, args, runtime),
             InnerVar::Tuple(t) => runtime.call_native_method(tuple_fn::op_fn(name), t, args),
-            InnerVar::Method(_) => self
-                .index(Name::Operator(name), runtime)?
-                .call((args, runtime)),
-            InnerVar::Function(_) => self
-                .index(Name::Operator(name), runtime)?
-                .call((args, runtime)),
+            InnerVar::Method(m) => {
+                if name == Operator::Call {
+                    m.call((args, runtime))
+                } else {
+                    unimplemented!("method.{}", name.name())
+                }
+            }
+            InnerVar::Function(f) => {
+                if name == Operator::Call {
+                    f.call((args, runtime))
+                } else {
+                    unimplemented!("function.{}", name.name())
+                }
+            }
             InnerVar::Custom(c) => c.into_inner().call_op(name, args, runtime),
             InnerVar::Union(u) => u.call_operator(name, args, runtime),
         }
@@ -496,12 +512,20 @@ impl InnerVar {
     ) -> FnResult {
         match self {
             InnerVar::Standard(s) => s.call_op_or_goto(name, args, runtime),
-            InnerVar::Method(_) => self
-                .index(Name::Operator(name), runtime)?
-                .call_or_goto((args, runtime)),
-            InnerVar::Function(_) => self
-                .index(Name::Operator(name), runtime)?
-                .call_or_goto((args, runtime)),
+            InnerVar::Method(m) => {
+                if name == Operator::Call {
+                    m.call_or_goto((args, runtime))
+                } else {
+                    unimplemented!("method.{}", name.name())
+                }
+            }
+            InnerVar::Function(f) => {
+                if name == Operator::Call {
+                    f.call_or_goto((args, runtime))
+                } else {
+                    unimplemented!("function.{}", name.name())
+                }
+            }
             InnerVar::Custom(c) => c.into_inner().call_op_or_goto(name, args, runtime),
             _ => self.call_op(name, args, runtime),
         }
