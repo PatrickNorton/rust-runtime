@@ -51,12 +51,12 @@ impl StdVariable {
     }
 
     pub fn int(self, runtime: &mut Runtime) -> Result<IntVar, ()> {
-        self.call_operator(Operator::Bool, vec![], runtime)?;
+        self.call_operator(Operator::Int, vec![], runtime)?;
         runtime.pop_return().int(runtime)
     }
 
     pub fn iter(self, runtime: &mut Runtime) -> Result<looping::Iterator, ()> {
-        self.call_operator(Operator::Bool, vec![], runtime)?;
+        self.call_operator(Operator::Iter, vec![], runtime)?;
         Result::Ok(runtime.pop_return().into())
     }
 
