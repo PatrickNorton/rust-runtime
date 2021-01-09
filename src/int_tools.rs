@@ -74,20 +74,6 @@ where
     result
 }
 
-/// Convert a `Vec<u8>` to a primitive int, beginning at the index specified.
-///
-/// Unlike [`bytes_to`], this will not check the length and will not attempt to
-/// parse the entire Vec.
-pub fn bytes_index_le<T>(bytes: &[u8], index: &mut usize) -> T
-where
-    T: FromBytes,
-{
-    let byte_size = size_of::<T>();
-    let result = T::from_le(&bytes[*index..*index + byte_size]);
-    *index += byte_size;
-    result
-}
-
 /// Return the next power of 2 greater than the number given.
 /// If the number is 0, 0 will be returned.
 pub fn next_power_2(len: usize) -> usize {
