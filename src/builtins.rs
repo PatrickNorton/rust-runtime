@@ -154,7 +154,7 @@ pub fn default_methods(name: Name) -> Option<StdVarMethod> {
 
 fn default_repr(this: StdVariable, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    let result = format!("<{}: 0x{:X}>", this.get_type().to_string(), this.var_ptr());
+    let result = format!("<{}: {:#X}>", this.get_type().to_string(), this.var_ptr());
     runtime.return_1(StringVar::from(result).into())
 }
 
