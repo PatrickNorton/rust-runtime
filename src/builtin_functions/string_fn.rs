@@ -13,7 +13,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::{AsciiVar, MaybeAscii, StrVar, StringVar};
 use crate::variable::{FnResult, Variable};
-use ascii::{AsAsciiStr, AsciiChar, AsciiString};
+use ascii::{AsAsciiStr, AsciiChar, AsciiStr, AsciiString};
 use downcast_rs::Downcast;
 use num::{BigInt, Signed, ToPrimitive};
 use std::any::Any;
@@ -411,6 +411,18 @@ fn encode(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> Fn
     debug_assert_eq!(args.len(), 1);
     // #![feature(array_value_iter)] will make this so much easier...
     let byte_val = match take(&mut args[0]).str(runtime)?.to_lowercase().as_str() {
+        "ascii" => match AsciiStr::from_ascii(this.as_str()) {
+            Result::Ok(s) => s.as_bytes().to_vec(),
+            Result::Err(err) => {
+                return runtime.throw_quick(
+                    value_error(),
+                    format!(
+                        "Cannot convert to ascii: byte at position {} (value {}) is not in the range [0:128]", 
+                        err.valid_up_to(), this.as_str().as_bytes()[err.valid_up_to()]
+                    ).into()
+                )
+            }
+        }
         "utf-8" => this.as_bytes().to_vec(),
         "utf-16" => this
             .encode_utf16()

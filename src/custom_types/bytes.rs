@@ -11,7 +11,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
-use ascii::IntoAsciiString;
+use ascii::{AsciiChar, AsciiString, IntoAsciiString};
 use num::{BigInt, ToPrimitive};
 use std::cell::{Cell, RefCell};
 use std::char;
@@ -113,22 +113,45 @@ impl LangBytes {
         } else {
             StringVar::from(take(&mut args[1]))
         };
-        let result = StringVar::from(match encoding_type.as_str() {
-            "utf-8" => String::from_utf8(self.value.borrow().clone())
-                .or_else(|_| self.utf8_err(runtime))?,
-            "utf-16" => self.convert_utf16(runtime)?,
-            "utf-16be" => self.convert_utf16_be(runtime)?,
-            "utf-32" => self.convert_utf32(runtime)?,
-            "utf-32be" => self.convert_utf32_be(runtime)?,
+        let result = match encoding_type.as_str() {
+            "ascii" => StringVar::from(self.convert_ascii(runtime)?),
+            "utf-8" => StringVar::from(
+                String::from_utf8(self.value.borrow().clone())
+                    .or_else(|_| self.utf8_err(runtime))?,
+            ),
+            "utf-16" => StringVar::from(self.convert_utf16(runtime)?),
+            "utf-16be" => StringVar::from(self.convert_utf16_be(runtime)?),
+            "utf-32" => StringVar::from(self.convert_utf32(runtime)?),
+            "utf-32be" => StringVar::from(self.convert_utf32_be(runtime)?),
             _ => {
                 return runtime.throw_quick(
                     value_error(),
                     format!("{} not a valid encoding", encoding_type).into(),
                 )
             }
-        })
+        }
         .into();
         runtime.return_1(result)
+    }
+
+    fn convert_ascii(&self, runtime: &mut Runtime) -> Result<AsciiString, ()> {
+        let value = self.value.borrow();
+        match AsciiString::from_ascii(&**value) {
+            Result::Ok(x) => Result::Ok(x),
+            Result::Err(x) => {
+                let error = x.ascii_error();
+                // valid_up_to is perfectly fine to use as codepoints, b/c each ASCII character is
+                // exactly one byte, and all the characters up to valid_up_to() are ASCII
+                runtime.throw_quick(
+                    value_error(),
+                    format!(
+                        "Cannot convert to ascii: byte at position {} (value {}) is not in the range [0:128]", 
+                        error.valid_up_to(), value[error.valid_up_to()]
+                    ).into()
+                )?;
+                unreachable!()
+            }
+        }
     }
 
     fn convert_utf16(&self, runtime: &mut Runtime) -> Result<String, ()> {
@@ -233,6 +256,7 @@ impl LangBytes {
         debug_assert_eq!(args.len(), 2);
         let char_val = take(&mut args[0]).into();
         match take(&mut args[0]).str(runtime)?.as_str() {
+            "ascii" => self.add_ascii(char_val, runtime)?,
             "utf-8" => self.add_utf8(char_val),
             "utf-16" => self.add_utf16(char_val),
             "utf-16be" => self.add_utf16be(char_val),
@@ -262,6 +286,21 @@ impl LangBytes {
         let value = downcast_var::<LangBytes>(variable).expect("Expected bytes");
         let needle = value.value.borrow();
         runtime.return_1(self.value.borrow().ends_with(&**needle).into())
+    }
+
+    fn add_ascii(&self, value: char, runtime: &mut Runtime) -> FnResult {
+        match AsciiChar::from_ascii(value) {
+            Result::Ok(ch) => self.value.borrow_mut().push(ch as u8),
+            Result::Err(_) => runtime.throw_quick(
+                value_error(),
+                format!(
+                    "Invalid ASCII character (value {} is not in [0:128])",
+                    value as u32
+                )
+                .into(),
+            )?,
+        }
+        FnResult::Ok(())
     }
 
     fn add_utf8(self: Rc<Self>, value: char) {
