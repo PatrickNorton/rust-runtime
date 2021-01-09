@@ -113,7 +113,7 @@ impl LangBytes {
         } else {
             StringVar::from(take(&mut args[1]))
         };
-        let result = match encoding_type.as_str() {
+        let result = match encoding_type.to_lowercase().as_str() {
             "ascii" => StringVar::from(self.convert_ascii(runtime)?),
             "utf-8" => StringVar::from(
                 String::from_utf8(self.value.borrow().clone())
@@ -255,7 +255,7 @@ impl LangBytes {
     fn add_char(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
         let char_val = take(&mut args[0]).into();
-        match take(&mut args[0]).str(runtime)?.as_str() {
+        match take(&mut args[0]).str(runtime)?.to_lowercase().as_str() {
             "ascii" => self.add_ascii(char_val, runtime)?,
             "utf-8" => self.add_utf8(char_val),
             "utf-16" => self.add_utf16(char_val),
