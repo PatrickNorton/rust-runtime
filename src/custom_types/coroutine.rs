@@ -9,8 +9,7 @@ use crate::stack_frame::StackFrame;
 use crate::std_type::Type;
 use crate::variable::{FnResult, OptionVar, Variable};
 use std::cell::Cell;
-use std::fmt;
-use std::fmt::{Debug, Formatter};
+use std::fmt::{self, Debug, Formatter};
 use std::rc::Rc;
 
 pub struct Generator {

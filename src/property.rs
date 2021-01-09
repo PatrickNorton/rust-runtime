@@ -1,8 +1,7 @@
 use crate::function::NativeFunction;
 use crate::runtime::Runtime;
 use crate::variable::{FnResult, Variable};
-use std::fmt;
-use std::fmt::{Debug, Formatter};
+use std::fmt::{self, Debug, Formatter};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Property {

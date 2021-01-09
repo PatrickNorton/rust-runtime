@@ -2,8 +2,7 @@ use crate::custom_types::exceptions::{arithmetic_error, index_error, value_error
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_tools::FromBytes;
 use crate::int_var::{normalize, IntVar};
-use crate::looping;
-use crate::looping::{IterResult, NativeIterator};
+use crate::looping::{self, IterResult, NativeIterator};
 use crate::method::StdMethod;
 use crate::name::Name;
 use crate::operator::Operator;
