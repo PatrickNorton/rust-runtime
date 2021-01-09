@@ -11,6 +11,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
+use ascii::IntoAsciiString;
 use num::{BigInt, ToPrimitive};
 use std::cell::{Cell, RefCell};
 use std::char;
@@ -62,6 +63,7 @@ impl LangBytes {
             "startsWith" => Self::starts_with,
             "endsWith" => Self::ends_with,
             "lastIndexOf" => Self::last_index_of,
+            "hex" => Self::hex,
             _ => unimplemented!(),
         };
         StdMethod::new_native(self, func).into()
@@ -421,6 +423,17 @@ impl LangBytes {
                 .map(Variable::from),
             Option::None => Option::None,
         }))
+    }
+
+    fn hex(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        let result = self
+            .value
+            .borrow()
+            .iter()
+            .map(|x| format!("{:x}", x).into_ascii_string().unwrap())
+            .collect::<StringVar>();
+        runtime.return_1(result.into())
     }
 
     fn create(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

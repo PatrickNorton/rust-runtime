@@ -1,6 +1,7 @@
 use crate::character;
 use ascii::{AsciiChar, AsciiStr, AsciiString};
 use downcast_rs::__std::borrow::Borrow;
+use downcast_rs::__std::iter::FromIterator;
 use std::borrow::Cow;
 use std::fmt::{Debug, Formatter};
 use std::hash::{Hash, Hasher};
@@ -188,5 +189,29 @@ impl Deref for AsciiVar {
             AsciiVar::Literal(s) => *s,
             AsciiVar::Other(s) => s.as_ref(),
         }
+    }
+}
+
+impl FromIterator<String> for StringVar {
+    fn from_iter<T: IntoIterator<Item = String>>(iter: T) -> Self {
+        iter.into_iter().collect::<String>().into()
+    }
+}
+
+impl<'a> FromIterator<&'a str> for StringVar {
+    fn from_iter<T: IntoIterator<Item = &'a str>>(iter: T) -> Self {
+        iter.into_iter().collect::<String>().into()
+    }
+}
+
+impl FromIterator<AsciiString> for StringVar {
+    fn from_iter<T: IntoIterator<Item = AsciiString>>(iter: T) -> Self {
+        iter.into_iter().collect::<AsciiString>().into()
+    }
+}
+
+impl<'a> FromIterator<&'a AsciiStr> for StringVar {
+    fn from_iter<T: IntoIterator<Item = &'a AsciiStr>>(iter: T) -> Self {
+        iter.into_iter().collect::<AsciiString>().into()
     }
 }
