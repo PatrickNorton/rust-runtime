@@ -13,11 +13,9 @@ use crate::stack_frame::{frame_strings, SFInfo, StackFrame};
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
-use downcast_rs::__std::mem::replace;
-use std::cmp::max;
-use std::cmp::{min, Ordering};
+use std::cmp::{max, min, Ordering};
 use std::collections::{HashMap, HashSet};
-use std::mem::take;
+use std::mem::{replace, take};
 use std::rc::Rc;
 use std::vec::Vec;
 
