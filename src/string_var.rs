@@ -1,10 +1,9 @@
 use crate::character;
 use ascii::{AsciiChar, AsciiStr, AsciiString};
-use downcast_rs::__std::borrow::Borrow;
-use downcast_rs::__std::iter::FromIterator;
-use std::borrow::Cow;
+use std::borrow::{Borrow, Cow};
 use std::fmt::{Debug, Formatter};
 use std::hash::{Hash, Hasher};
+use std::iter::FromIterator;
 use std::ops::Deref;
 use std::sync::Arc;
 
