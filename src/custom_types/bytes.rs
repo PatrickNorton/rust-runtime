@@ -1,6 +1,6 @@
 use crate::custom_types::exceptions::{arithmetic_error, index_error, value_error};
 use crate::custom_var::{downcast_var, CustomVar};
-use crate::int_tools::{bytes_index, bytes_index_le};
+use crate::int_tools::{bytes_index, bytes_index_le, FromBytes};
 use crate::int_var::{normalize, IntVar};
 use crate::looping;
 use crate::looping::{IterResult, NativeIterator};
@@ -160,7 +160,7 @@ impl LangBytes {
                 .value
                 .borrow()
                 .chunks(2)
-                .map(|x| bytes_index_le(x, &mut 0))
+                .map(|x| FromBytes::from_le(x))
                 .collect::<Vec<_>>(),
         )
         .or_else(|_| {
@@ -179,7 +179,7 @@ impl LangBytes {
                 .value
                 .borrow()
                 .chunks(2)
-                .map(|x| bytes_index(x, &mut 0))
+                .map(|x| FromBytes::from_be(x))
                 .collect::<Vec<_>>(),
         )
         .or_else(|_| {
@@ -196,7 +196,7 @@ impl LangBytes {
         self.value
             .borrow()
             .chunks(4)
-            .map(|x| match char::from_u32(bytes_index_le(x, &mut 0)) {
+            .map(|x| match char::from_u32(FromBytes::from_le(x)) {
                 Option::Some(value) => Result::Ok(value),
                 Option::None => runtime
                     .throw_quick(
@@ -212,7 +212,7 @@ impl LangBytes {
         self.value
             .borrow()
             .chunks(4)
-            .map(|x| match char::from_u32(bytes_index(x, &mut 0)) {
+            .map(|x| match char::from_u32(FromBytes::from_be(x)) {
                 Option::Some(value) => Result::Ok(value),
                 Option::None => runtime
                     .throw_quick(

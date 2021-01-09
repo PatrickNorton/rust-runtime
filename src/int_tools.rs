@@ -12,12 +12,24 @@ macro_rules! impl_from_bytes {
         impl FromBytes for $type {
             #[inline]
             fn from_be(bytes: &[u8]) -> Self {
-                <$type>::from_be_bytes(bytes.try_into().unwrap())
+                <$type>::from_be_bytes(bytes.try_into().unwrap_or_else(|_| {
+                    panic!(
+                        "Could not convert byte slice: expected {} bytes, got {}",
+                        std::mem::size_of::<$type>(),
+                        bytes.len()
+                    )
+                }))
             }
 
             #[inline]
             fn from_le(bytes: &[u8]) -> Self {
-                <$type>::from_le_bytes(bytes.try_into().unwrap())
+                <$type>::from_le_bytes(bytes.try_into().unwrap_or_else(|_| {
+                    panic!(
+                        "Could not convert byte slice: expected {} bytes, got {}",
+                        std::mem::size_of::<$type>(),
+                        bytes.len()
+                    )
+                }))
             }
         }
     };
