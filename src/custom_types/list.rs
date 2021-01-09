@@ -487,8 +487,20 @@ impl List {
         } else {
             match normalize(value.len(), index) {
                 Result::Ok(i) => {
-                    value.insert(i, take(&mut args[1]));
-                    runtime.return_0()
+                    if i <= value.len() {
+                        value.insert(i, take(&mut args[1]));
+                        runtime.return_0()
+                    } else {
+                        runtime.throw_quick(
+                            index_error(),
+                            format!(
+                                "Index {} out of bounds for insert on list of length {}",
+                                i,
+                                value.len()
+                            )
+                            .into(),
+                        )
+                    }
                 }
                 Result::Err(i) => runtime.throw_quick(
                     index_error(),
