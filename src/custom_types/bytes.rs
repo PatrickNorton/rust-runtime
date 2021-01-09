@@ -1,6 +1,6 @@
 use crate::custom_types::exceptions::{arithmetic_error, index_error, value_error};
 use crate::custom_var::{downcast_var, CustomVar};
-use crate::int_tools::{bytes_index, bytes_index_le, FromBytes};
+use crate::int_tools::FromBytes;
 use crate::int_var::{normalize, IntVar};
 use crate::looping;
 use crate::looping::{IterResult, NativeIterator};
@@ -243,11 +243,7 @@ impl LangBytes {
         } else {
             runtime.throw_quick(
                 value_error(),
-                format!(
-                    "Value added to bytes must be in [-255:256], not {}",
-                    int_val
-                )
-                .into(),
+                format!("Value added to bytes must be in [0:256], not {}", int_val).into(),
             )
         }
     }
@@ -385,7 +381,7 @@ impl LangBytes {
     fn plus(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         let mut result = self.value.borrow().clone();
         for value in args {
-            let val = downcast_var::<LangBytes>(value).expect("Invalid type to bytes.+");
+            let val = downcast_var::<LangBytes>(value).expect("Invalid type to bytes.operator +");
             result.extend(&*val.value.borrow());
         }
         runtime.return_1(Rc::new(LangBytes::new(result)).into())
