@@ -14,11 +14,6 @@ pub enum InnerMethod<T> {
     Native(NativeMethod<T>),
 }
 
-#[derive(Copy, Clone)]
-pub struct NativeFn<T: Fn(Vec<Variable>, &mut Runtime) -> FnResult + Clone> {
-    value: T,
-}
-
 // Not derived b/c #[derive] only implements Clone/Copy when T is Clone/Copy, which is not a bound
 // here (function pointers are always Copy)
 impl<T> Clone for InnerMethod<T> {
