@@ -248,9 +248,31 @@ fn bitwise_xor(this: IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnRe
     runtime.return_1(sum.into())
 }
 
-fn to_str(this: IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    debug_assert!(args.is_empty());
-    runtime.return_1(StringVar::from(this.to_string()).into())
+fn to_str(this: IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    match args.len() {
+        0 => runtime.return_1(StringVar::from(this.to_string()).into()),
+        1 => {
+            let variable = IntVar::from(take(&mut args[0]));
+            if variable >= 2.into() && variable <= 36.into() {
+                runtime
+                    .return_1(StringVar::from(this.to_str_radix(variable.to_u32().unwrap())).into())
+            } else {
+                runtime.throw_quick(
+                    value_error(),
+                    format!(
+                        "Invalid radix for int.to_str: Expected in [2:37], got {}",
+                        variable
+                    )
+                    .into(),
+                )
+            }
+        }
+        x => panic!(
+            "Expected 1 or 2 arguments for int.operator str, got {}\n{}",
+            x,
+            runtime.stack_frames()
+        ),
+    }
 }
 
 fn to_int(this: IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
