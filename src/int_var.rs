@@ -1,4 +1,4 @@
-use num::bigint::{ToBigInt, ToBigUint, TryFromBigIntError};
+use num::bigint::{Sign, ToBigInt, ToBigUint, TryFromBigIntError};
 use num::traits::{abs, FromPrimitive, Num, One, Pow, Signed};
 use num::{BigInt, BigUint, ToPrimitive, Zero};
 use std::cmp::Ordering;
@@ -164,10 +164,10 @@ impl PartialEq for IntVar {
         match self {
             IntVar::Small(a) => match other {
                 IntVar::Small(b) => *a == *b,
-                IntVar::Big(b) => *b.as_ref() == (*a).into(),
+                IntVar::Big(b) => b.to_isize().map(|x| &x == a).unwrap_or(false),
             },
             IntVar::Big(a) => match other {
-                IntVar::Small(b) => *a.as_ref() == (*b).into(),
+                IntVar::Small(b) => a.to_isize().map(|x| &x == b).unwrap_or(false),
                 IntVar::Big(b) => *a.as_ref() == *b.as_ref(),
             },
         }
@@ -196,10 +196,28 @@ impl Ord for IntVar {
         match self {
             IntVar::Small(a) => match other {
                 IntVar::Small(b) => a.cmp(b),
-                IntVar::Big(b) => BigInt::from(*a).cmp(b.as_ref()),
+                IntVar::Big(b) => match b.to_isize() {
+                    Some(i) => a.cmp(&i),
+                    None => match b.sign() {
+                        Sign::Minus => Ordering::Greater,
+                        Sign::NoSign => {
+                            unreachable!("A BigInt with a sign of 0 should be convertible to isize")
+                        }
+                        Sign::Plus => Ordering::Less,
+                    },
+                },
             },
             IntVar::Big(a) => match other {
-                IntVar::Small(b) => a.as_ref().cmp(&(*b).into()),
+                IntVar::Small(b) => match a.to_isize() {
+                    Some(i) => i.cmp(b),
+                    None => match a.sign() {
+                        Sign::Minus => Ordering::Less,
+                        Sign::NoSign => {
+                            unreachable!("A BigInt with a sign of 0 should be convertible to isize")
+                        }
+                        Sign::Plus => Ordering::Greater,
+                    },
+                },
                 IntVar::Big(b) => a.as_ref().cmp(b.as_ref()),
             },
         }
