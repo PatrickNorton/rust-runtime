@@ -24,6 +24,7 @@ impl LangTuple {
                 result += ", ";
             }
         }
+        result += ")";
         Result::Ok(StringVar::from(result))
     }
 
