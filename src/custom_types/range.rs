@@ -74,10 +74,12 @@ impl Range {
     }
 
     fn get_attribute(self: Rc<Self>, attr: &str) -> Variable {
-        match attr {
-            "length" => self.len().into(),
+        let func = match attr {
+            "length" => return self.len().into(),
+            "get" => Self::get,
             x => unimplemented!("Range.{}", x),
-        }
+        };
+        StdMethod::new_native(self, func).into()
     }
 
     fn str(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -132,6 +134,17 @@ impl Range {
         let new_start = &self.stop - &self.step;
         let new_step = (&self.step).neg(); // Turn into -(&self.step) when IDE stops making it an error
         runtime.return_1(Rc::new(Self::new(new_start, new_stop, new_step)).into())
+    }
+
+    fn get(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        let index = IntVar::from(take(&mut args[0]));
+        let result = &self.start + &(&index * &self.step);
+        if !self.before_end(&result) {
+            runtime.return_1(Option::None.into())
+        } else {
+            runtime.return_1(Option::Some(Variable::from(result)).into())
+        }
     }
 
     fn to_str(&self) -> StringVar {
