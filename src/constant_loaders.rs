@@ -1,6 +1,5 @@
 use crate::base_fn::BaseFunction;
 use crate::builtins::builtin_of;
-use crate::character;
 use crate::custom_types::bytes::LangBytes;
 use crate::custom_types::range::Range;
 use crate::int_tools::bytes_index;
