@@ -99,11 +99,19 @@ impl LangBytes {
 
     fn repr(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        let val = format!(
-            "{:?}",
-            String::from_utf8(self.value.borrow().clone()).or_else(|_| self.utf8_err(runtime))?
-        );
-        runtime.return_1(StringVar::from(val).into())
+        let value = self.value.borrow();
+        let mut result = AsciiString::with_capacity(value.len());
+        for chr in &*value {
+            match AsciiChar::from_ascii(*chr) {
+                Ok(ascii) => result.push(ascii),
+                Err(_) => {
+                    // Not quite confident enough in this to use from_ascii_unchecked here
+                    result += &*AsciiString::from_ascii(format!("{:x}", chr))
+                        .expect("Hex value of a u8 should always be valid ASCII")
+                }
+            }
+        }
+        runtime.return_1(StringVar::from(result).into())
     }
 
     fn encode(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

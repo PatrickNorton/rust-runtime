@@ -132,8 +132,8 @@ fn int(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult 
             return runtime.throw_quick(
                 value_error(),
                 format!(
-                    "Invalid input for int(str): {:?} is not a valid base-10 integer",
-                    this.as_str()
+                    "Invalid input for int(str): {} is not a valid base-10 integer",
+                    this.repr()
                 )
                 .into(),
             )

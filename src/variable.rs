@@ -228,7 +228,7 @@ impl InnerVar {
         match self {
             InnerVar::Null() => Result::Ok("null".into()),
             InnerVar::Bool(val) => Result::Ok((if val { "true" } else { "false" }).into()),
-            InnerVar::String(val) => Result::Ok(format!("{:?}", val.as_str()).into()),
+            InnerVar::String(val) => Result::Ok(val.repr()),
             InnerVar::Bigint(val) => Result::Ok(val.to_string().into()),
             InnerVar::Decimal(val) => Result::Ok(val.to_string().into()),
             InnerVar::Char(val) => Result::Ok(val.to_string().into()),

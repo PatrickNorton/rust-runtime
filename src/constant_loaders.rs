@@ -1,5 +1,6 @@
 use crate::base_fn::BaseFunction;
 use crate::builtins::builtin_of;
+use crate::character;
 use crate::custom_types::bytes::LangBytes;
 use crate::custom_types::range::Range;
 use crate::int_tools::bytes_index;
@@ -45,7 +46,7 @@ pub fn load_ascii_str(data: &[u8], index: &mut usize) -> Box<[AsciiChar]> {
     let mut value = Vec::with_capacity(size as usize);
     for _ in 0..size {
         let char = AsciiChar::from_ascii(data[*index])
-            .unwrap_or_else(|x| panic!("{:?} is invalid ASCII", x));
+            .unwrap_or_else(|_| panic!("Character value {} is invalid ASCII", data[*index]));
         *index += 1;
         value.push(char);
     }
