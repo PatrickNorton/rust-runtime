@@ -1,12 +1,13 @@
 use crate::runtime::Runtime;
 use crate::string_var::StringVar;
 use crate::variable::Variable;
-use std::hash::{Hash, Hasher};
+use std::borrow::Borrow;
+use std::hash::Hash;
 use std::ops::Index;
 use std::rc::Rc;
 use std::slice;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Hash, PartialEq, Eq, Clone)]
 pub struct LangTuple {
     values: Rc<[Variable]>,
 }
@@ -71,6 +72,12 @@ impl LangTuple {
     }
 }
 
+impl Borrow<[Variable]> for LangTuple {
+    fn borrow(&self) -> &[Variable] {
+        self.values.borrow()
+    }
+}
+
 impl<'a> IntoIterator for &'a LangTuple {
     type Item = &'a Variable;
     type IntoIter = slice::Iter<'a, Variable>;
@@ -85,13 +92,5 @@ impl Index<usize> for LangTuple {
 
     fn index(&self, index: usize) -> &Self::Output {
         &self.values[index]
-    }
-}
-
-impl Hash for LangTuple {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        for value in &*self.values {
-            Hash::hash(value, state);
-        }
     }
 }
