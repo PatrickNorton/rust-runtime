@@ -1,6 +1,7 @@
 use crate::name::Name;
 use crate::operator::Operator;
 use std::collections::HashMap;
+use std::ops::Index;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct NameMap<T> {
@@ -52,5 +53,16 @@ impl<T> NameMap<T> {
 impl<T> Default for NameMap<T> {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl<T> Index<Name<'_>> for NameMap<T> {
+    type Output = T;
+
+    fn index(&self, index: Name) -> &Self::Output {
+        match index {
+            Name::Attribute(a) => &self.values[a],
+            Name::Operator(o) => &self.operators[&o],
+        }
     }
 }

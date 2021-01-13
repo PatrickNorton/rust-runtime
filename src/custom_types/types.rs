@@ -51,6 +51,14 @@ impl CustomType {
         }
         false
     }
+
+    pub fn index(&self, name: Name) -> Variable {
+        self.static_methods
+            .get(name)
+            .copied()
+            .unwrap_or_else(|| panic!("{}.{} does not exist", &self.name, name.as_str()))
+            .into()
+    }
 }
 
 #[derive(Debug, Copy, Clone)]

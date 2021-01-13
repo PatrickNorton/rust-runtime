@@ -188,6 +188,7 @@ impl Type {
                 }
             },
             Type::Union(union_t) => union_t.index(index),
+            Type::Custom(custom_t) => custom_t.index(index),
             Type::String => match index {
                 Name::Attribute(s) => string_fn::static_attr(s),
                 _ => unimplemented!(),
