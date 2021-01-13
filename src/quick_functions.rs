@@ -616,7 +616,7 @@ pub fn quick_equals(this: Variable, other: Variable, runtime: &mut Runtime) -> Q
                     return QuickResult::Ok(false.into());
                 }
                 for (x, y) in t.iter().zip(&t2) {
-                    if !x.equals(y.clone(), runtime)? {
+                    if !x.clone().equals(y.clone(), runtime)? {
                         return QuickResult::Ok(false.into());
                     }
                 }

@@ -389,7 +389,7 @@ impl Entry {
     }
 
     pub fn add(&mut self, val: Variable, runtime: &mut Runtime) -> Result<bool, ()> {
-        if self.val.equals(val.clone(), runtime)? {
+        if self.val.clone().equals(val.clone(), runtime)? {
             self.val = val;
             Result::Ok(false)
         } else {
@@ -405,7 +405,7 @@ impl Entry {
     }
 
     pub fn del(&mut self, key: &Variable, runtime: &mut Runtime) -> Result<bool, ()> {
-        if key.equals(self.val.clone(), runtime)? {
+        if key.clone().equals(self.val.clone(), runtime)? {
             Result::Ok(true)
         } else {
             match &mut self.next {
@@ -431,7 +431,7 @@ impl Entry {
     }
 
     pub fn contains(&self, val: Variable, runtime: &mut Runtime) -> Result<bool, ()> {
-        if self.val.equals(val.clone(), runtime)? {
+        if self.val.clone().equals(val.clone(), runtime)? {
             Result::Ok(true)
         } else {
             match &self.next {
@@ -442,7 +442,7 @@ impl Entry {
     }
 
     fn get_entry(&self, key: Variable, runtime: &mut Runtime) -> Result<&Entry, ()> {
-        if self.val.equals(key.clone(), runtime)? {
+        if self.val.clone().equals(key.clone(), runtime)? {
             Result::Ok(self)
         } else {
             self.next.as_ref().unwrap().get_entry(key, runtime)
@@ -541,7 +541,7 @@ impl NativeIterator for SetIter {
         let parent_node = parent.values[bucket].as_ref().unwrap();
         let node = parent_node.get_entry(self.index.borrow().clone(), runtime)?;
         let val = self.index.replace(Variable::default());
-        debug_assert!(node.get_val().equals(val.clone(), runtime)?);
+        debug_assert!(node.get_val().clone().equals(val.clone(), runtime)?);
         if let Option::Some(next) = node.get_next() {
             self.index.replace(next.get_val().clone());
         } else {

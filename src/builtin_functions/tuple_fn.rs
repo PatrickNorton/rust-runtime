@@ -38,7 +38,7 @@ pub fn equals(this: LangTuple, args: Vec<Variable>, runtime: &mut Runtime) -> Fn
                     return runtime.return_1(false.into());
                 }
                 for (x, y) in this.iter().zip(&other) {
-                    if !x.equals(y.clone(), runtime)? {
+                    if !x.clone().equals(y.clone(), runtime)? {
                         return runtime.return_1(false.into());
                     }
                 }

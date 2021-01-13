@@ -124,7 +124,7 @@ impl Array {
         debug_assert_eq!(args.len(), 1);
         let arg = take(&mut args[0]);
         for val in self.vars.borrow().iter() {
-            if arg.equals(val.clone(), runtime)? {
+            if arg.clone().equals(val.clone(), runtime)? {
                 return runtime.return_1(true.into());
             }
         }
@@ -167,7 +167,7 @@ impl Array {
 
     fn arr_eq(first: &[Variable], second: &[Variable], runtime: &mut Runtime) -> Result<bool, ()> {
         for (a, b) in first.iter().zip(second.iter()) {
-            if !a.equals(b.clone(), runtime)? {
+            if !a.clone().equals(b.clone(), runtime)? {
                 return Result::Ok(false);
             }
         }

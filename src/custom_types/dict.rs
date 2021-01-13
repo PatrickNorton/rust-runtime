@@ -396,7 +396,7 @@ impl Entry {
         hash: usize,
         runtime: &mut Runtime,
     ) -> Result<Option<Variable>, ()> {
-        if self.hash == hash && key.equals(self.key.clone(), runtime)? {
+        if self.hash == hash && key.clone().equals(self.key.clone(), runtime)? {
             Result::Ok(Option::Some(self.value.clone()))
         } else {
             match &self.next {
@@ -413,7 +413,7 @@ impl Entry {
         val: Variable,
         runtime: &mut Runtime,
     ) -> Option<bool> {
-        if self.hash == hash && key.equals(self.key.clone(), runtime).ok()? {
+        if self.hash == hash && key.clone().equals(self.key.clone(), runtime).ok()? {
             self.value = val;
             Option::Some(false)
         } else {
@@ -438,7 +438,7 @@ impl Entry {
         hash: usize,
         runtime: &mut Runtime,
     ) -> Result<Option<Variable>, ()> {
-        if self.hash == hash && key.equals(self.value.clone(), runtime)? {
+        if self.hash == hash && key.clone().equals(self.value.clone(), runtime)? {
             Result::Ok(Option::Some(take(&mut self.value)))
         } else {
             match &mut self.next {
@@ -467,7 +467,7 @@ impl Entry {
     }
 
     fn get_entry(&self, key: Variable, runtime: &mut Runtime) -> Result<&Entry, ()> {
-        if self.value.equals(key.clone(), runtime)? {
+        if self.value.clone().equals(key.clone(), runtime)? {
             Result::Ok(self)
         } else {
             self.next
@@ -483,7 +483,7 @@ impl Entry {
         hash: usize,
         runtime: &mut Runtime,
     ) -> Result<Option<&mut Entry>, ()> {
-        if self.hash == hash && self.value.equals(key.clone(), runtime)? {
+        if self.hash == hash && self.value.clone().equals(key.clone(), runtime)? {
             Result::Ok(Option::Some(self))
         } else {
             match self.next.as_mut() {
@@ -569,7 +569,7 @@ impl DictIter {
         let node = parent_node.get_entry(self.index.borrow().clone(), runtime)?;
         let key = self.index.replace(Variable::null());
         let val = node.get_value().clone();
-        debug_assert!(node.get_key().equals(key.clone(), runtime)?);
+        debug_assert!(node.get_key().clone().equals(key.clone(), runtime)?);
         if let Option::Some(next) = node.get_next() {
             self.index.replace(next.get_value().clone());
         } else {

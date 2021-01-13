@@ -152,8 +152,8 @@ impl Variable {
         }
     }
 
-    pub fn equals(&self, other: Variable, runtime: &mut Runtime) -> Result<bool, ()> {
-        quick_equals(self.clone(), other, runtime)?.into_bool(runtime)
+    pub fn equals(self, other: Variable, runtime: &mut Runtime) -> Result<bool, ()> {
+        quick_equals(self, other, runtime)?.into_bool(runtime)
     }
 
     pub fn is_type_of(&self, other: &Variable, runtime: &Runtime) -> bool {

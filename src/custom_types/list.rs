@@ -254,7 +254,7 @@ impl List {
         debug_assert!(args.len() == 1);
         let searcher = take(&mut args[0]);
         for (i, var) in self.value.borrow().iter().enumerate() {
-            if searcher.equals(var.clone(), runtime)? {
+            if searcher.clone().equals(var.clone(), runtime)? {
                 return runtime.return_1(Option::Some(IntVar::from(i).into()).into());
             }
         }
@@ -278,7 +278,7 @@ impl List {
         debug_assert!(args.len() == 1);
         let mut count: usize = 0;
         for x in &*self.value.borrow() {
-            if x.equals(args[0].clone(), runtime)? {
+            if x.clone().equals(args[0].clone(), runtime)? {
                 count += 1;
             }
         }
@@ -343,7 +343,7 @@ impl List {
     fn vec_eq(first: &[Variable], second: &[Variable], runtime: &mut Runtime) -> Result<bool, ()> {
         let mut is_eq = true;
         for (a, b) in first.iter().zip(second.iter()) {
-            if !a.equals(b.clone(), runtime)? {
+            if !a.clone().equals(b.clone(), runtime)? {
                 is_eq = false;
                 break;
             }

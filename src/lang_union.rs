@@ -293,7 +293,7 @@ mod default_functions {
         let checked_var = take(&mut args[0]);
         let this_iter = this.iter(runtime)?;
         while let Option::Some(val) = this_iter.clone().next(runtime)?.take_first() {
-            if checked_var.equals(val, runtime)? {
+            if checked_var.clone().equals(val, runtime)? {
                 return runtime.return_1(true.into());
             }
         }
