@@ -1,7 +1,7 @@
 use crate::builtin_functions::string_fn;
 use crate::builtins::default_methods;
 use crate::custom_types::exceptions::value_error;
-use crate::custom_types::types::{CustomTypeImpl, TypeIdentity};
+use crate::custom_types::types::{CustomType, TypeIdentity};
 use crate::lang_union::{UnionMethod, UnionType};
 use crate::method::{InnerMethod, StdMethod};
 use crate::name::Name;
@@ -34,7 +34,7 @@ pub enum Type {
     Tuple,
     Type,
     Object,
-    Custom(&'static dyn CustomTypeImpl),
+    Custom(&'static CustomType),
     Union(&'static UnionType),
     Option(usize, OptionType),
 }
@@ -51,7 +51,7 @@ pub enum OptionType {
     Tuple,
     Type,
     Object,
-    Custom(&'static dyn CustomTypeImpl),
+    Custom(&'static CustomType),
     Union(&'static UnionType),
 }
 

@@ -1,6 +1,5 @@
 use crate::custom_var::CustomVar;
 use crate::function::Function;
-use crate::method::InnerMethod;
 use crate::name::Name;
 use crate::name_map::NameMap;
 use crate::runtime::Runtime;
@@ -10,29 +9,21 @@ use crate::variable::{FnResult, Variable};
 use std::fmt::Debug;
 use std::rc::Rc;
 
-pub trait CustomTypeImpl: Debug + Sync {
-    fn get_name(&self) -> &StringVar;
-
-    fn create(&self, args: Vec<Variable>, runtime: &mut Runtime) -> Result<Variable, ()>;
-
-    fn is_subclass(&self, other: &Type, runtime: &Runtime) -> bool;
-}
-
 #[derive(Debug)]
-pub struct CustomType<T> {
+pub struct CustomType {
     name: StringVar,
     supers: Vec<Type>,
     constructor: Function,
-    static_methods: NameMap<InnerMethod<T>>,
+    static_methods: NameMap<Function>,
 }
 
-impl<T> CustomType<T> {
+impl CustomType {
     pub fn new(
         name: StringVar,
         supers: Vec<Type>,
         constructor: Function,
-        static_methods: NameMap<InnerMethod<T>>,
-    ) -> CustomType<T> {
+        static_methods: NameMap<Function>,
+    ) -> CustomType {
         CustomType {
             name,
             supers,
@@ -42,20 +33,17 @@ impl<T> CustomType<T> {
     }
 }
 
-impl<T> CustomTypeImpl for CustomType<T>
-where
-    T: Debug,
-{
-    fn get_name(&self) -> &StringVar {
+impl CustomType {
+    pub fn get_name(&self) -> &StringVar {
         &self.name
     }
 
-    fn create(&self, args: Vec<Variable>, runtime: &mut Runtime) -> Result<Variable, ()> {
+    pub fn create(&self, args: Vec<Variable>, runtime: &mut Runtime) -> Result<Variable, ()> {
         self.constructor.call((args, runtime))?;
         Result::Ok(runtime.pop_return())
     }
 
-    fn is_subclass(&self, other: &Type, runtime: &Runtime) -> bool {
+    pub fn is_subclass(&self, other: &Type, runtime: &Runtime) -> bool {
         for s in &self.supers {
             if s.is_subclass(other, runtime) {
                 return true;

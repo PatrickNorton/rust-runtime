@@ -80,7 +80,7 @@ macro_rules! create_exc {
                 runtime.return_1(Rc::new(StdException::new(msg, $fn_name())).into())
             }
             lazy_static! {
-                static ref TYPE: CustomType<StdException> = CustomType::new(
+                static ref TYPE: CustomType = CustomType::new(
                     $type_name.into(),
                     Vec::new(),
                     Function::Native(create),
