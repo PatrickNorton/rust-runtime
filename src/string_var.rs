@@ -1,5 +1,5 @@
 use crate::character;
-use ascii::{AsciiChar, AsciiStr, AsciiString};
+use ascii::{AsAsciiStr, AsciiChar, AsciiStr, AsciiString};
 use std::borrow::{Borrow, Cow};
 use std::fmt::{Debug, Formatter};
 use std::hash::{Hash, Hasher};
@@ -40,6 +40,13 @@ impl StringVar {
             StringVar::AsciiLiteral(a) => a.as_str(),
             StringVar::Other(x) => &x,
             StringVar::Ascii(x) => x.as_str(),
+        }
+    }
+
+    pub fn as_ascii_str(&self) -> Result<&AsciiStr, &str> {
+        match self.as_maybe_ascii() {
+            MaybeAscii::Standard(s) => s.as_ascii_str().map_err(|_| s),
+            MaybeAscii::Ascii(a) => Result::Ok(a),
         }
     }
 

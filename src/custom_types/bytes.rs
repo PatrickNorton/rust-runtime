@@ -10,7 +10,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
-use ascii::{AsciiChar, AsciiString, IntoAsciiString};
+use ascii::{AsciiChar, AsciiStr, AsciiString, IntoAsciiString};
 use num::{BigInt, ToPrimitive};
 use std::cell::{Cell, RefCell};
 use std::char;
@@ -541,8 +541,39 @@ impl BytesIter {
         unimplemented!()
     }
 
+    fn from_hex(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        match StringVar::from(take(&mut args[0])).as_ascii_str() {
+            Result::Ok(a) => {
+                if a.len() % 2 != 0 {
+                    return runtime.throw_quick(arithmetic_error(), from_hex_exc(a.len()));
+                }
+                let mut result = Vec::with_capacity(a.len() / 2);
+                for c in a.as_slice().windows(2) {
+                    let ascii: &AsciiStr = c.into();
+                    match u8::from_str_radix(ascii.as_str(), 16) {
+                        Ok(u) => result.push(u),
+                        Err(_) => {
+                            return runtime.throw_quick(
+                                value_error(),
+                                format!("Cannot parse hex value of {}", ascii).into(),
+                            )
+                        }
+                    }
+                }
+                runtime.return_1(Rc::new(LangBytes::new(result)).into())
+            }
+            // Non-Ascii characters are *probably* not able to be parsed in base-16
+            // This might need updating later, though (IDK how Unicode-safety plays into this)
+            Result::Err(s) => runtime.throw_quick(
+                value_error(),
+                format!("Cannot parse hex value of {}", s).into(),
+            ),
+        }
+    }
+
     fn bytes_iter_type() -> Type {
-        custom_class!(BytesIter, create, "BytesIter")
+        custom_class!(BytesIter, create, "BytesIter", "fromHex" => from_hex)
     }
 }
 
@@ -552,6 +583,14 @@ fn overflow_exc(val: usize, len: usize) -> StringVar {
         but repetition would produce bytes of length {}",
         usize::MAX,
         BigInt::from(val) * len
+    )
+    .into()
+}
+
+fn from_hex_exc(len: usize) -> StringVar {
+    format!(
+        "bytes.fromHex requires a string of even length, not {}",
+        len
     )
     .into()
 }
