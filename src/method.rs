@@ -26,7 +26,7 @@ impl<T> Copy for InnerMethod<T> {}
 
 impl<T> InnerMethod<T>
 where
-    T: Clone + Into<Variable>,
+    T: Into<Variable>,
 {
     pub fn call(self, callee: T, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         match self {
