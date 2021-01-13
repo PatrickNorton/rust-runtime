@@ -9,25 +9,26 @@ use std::mem::take;
 
 pub fn str(i: usize, val: Option<InnerVar>, runtime: &mut Runtime) -> Result<StringVar, ()> {
     Result::Ok(match val {
-        Option::Some(x) => fold_some(i, x.str(runtime)?),
+        Option::Some(x) => fold_some(i, &*x.str(runtime)?),
         Option::None => "null".into(),
     })
 }
 
 pub fn repr(i: usize, val: Option<InnerVar>, runtime: &mut Runtime) -> Result<StringVar, ()> {
     Result::Ok(match val {
-        Option::Some(x) => fold_some(i, x.repr(runtime)?),
+        Option::Some(x) => fold_some(i, &*x.repr(runtime)?),
         Option::None => "null".into(),
     })
 }
 
-fn fold_some(i: usize, x: StringVar) -> StringVar {
-    (0..i).fold(x, |x, _| format!("Some({})", x).into())
+fn fold_some(i: usize, x: &str) -> StringVar {
+    let prefix = "Some(".repeat(i);
+    let suffix = ")".repeat(i);
+    (prefix + x + &*suffix).into()
 }
 
 pub fn type_of(i: usize, val: Option<&InnerVar>) -> Type {
-    val.as_ref()
-        .map(|x| x.get_type())
+    val.map(|x| x.get_type())
         .unwrap_or(Type::Object)
         .make_option_n(i)
 }
