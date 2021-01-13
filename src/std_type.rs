@@ -165,28 +165,7 @@ impl Type {
 
     pub fn index(self, index: Name, runtime: &mut Runtime) -> Variable {
         match self {
-            Type::Standard(std_t) => match std_t.index_method(index) {
-                Option::Some(index_pair) => {
-                    let inner_m = InnerMethod::Standard(index_pair.0, index_pair.1);
-                    let n = StdMethod::new(self, inner_m);
-                    Box::new(n).into()
-                }
-                Option::None => {
-                    if index == Name::Operator(Operator::GetAttr) {
-                        // FIXME: This is used for type generification, but enum indexing won't work
-                        TypeIdentity::new(self).into()
-                    } else {
-                        runtime.static_attr(&self, index).unwrap_or_else(|| {
-                            panic!(
-                                "{}.{} not found\n{}",
-                                self.str(),
-                                index.as_str(),
-                                runtime.stack_frames()
-                            )
-                        })
-                    }
-                }
-            },
+            Type::Standard(std_t) => std_t.index(index, runtime),
             Type::Union(union_t) => union_t.index(index),
             Type::Custom(custom_t) => custom_t.index(index),
             Type::String => match index {
@@ -343,11 +322,38 @@ impl StdType {
         &self.name
     }
 
+    fn index(&'static self, index: Name, runtime: &Runtime) -> Variable {
+        match self.index_method(index) {
+            Option::Some(index_pair) => {
+                let inner_m = InnerMethod::Standard(index_pair.0, index_pair.1);
+                let n = StdMethod::new(Type::Standard(self), inner_m);
+                Box::new(n).into()
+            }
+            Option::None => {
+                if index == Name::Operator(Operator::GetAttr) {
+                    // FIXME: This is used for type generification, but enum indexing won't work
+                    TypeIdentity::new(Type::Standard(self)).into()
+                } else {
+                    runtime
+                        .static_attr(&Type::Standard(self), index)
+                        .unwrap_or_else(|| {
+                            panic!(
+                                "{}.{} not found\n{}",
+                                self.name(),
+                                index.as_str(),
+                                runtime.stack_frames()
+                            )
+                        })
+                }
+            }
+        }
+    }
+
     fn index_method(&self, name: Name) -> Option<(usize, u32)> {
         if let StdVarMethod::Standard(f, a) = self.static_methods.get(name)? {
-            Some((*f, *a))
+            Option::Some((*f, *a))
         } else {
-            panic!();
+            panic!("Invalid method type for standard variable method");
         }
     }
 
