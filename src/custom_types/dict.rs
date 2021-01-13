@@ -234,7 +234,7 @@ impl InnerDict {
         } else {
             match &self.entries[hash % self.entries.len()] {
                 Option::None => Result::Ok(Option::None),
-                Option::Some(e) => e.get(key, runtime),
+                Option::Some(e) => e.get(key, hash, runtime),
             }
         }
     }
@@ -287,7 +287,7 @@ impl InnerDict {
                 runtime.return_0()
             }
             Option::Some(e) => {
-                let val = e.set(key, val, runtime).ok_or(())?;
+                let val = e.set(key, hash, val, runtime).ok_or(())?;
                 if val {
                     self.size += 1;
                 }
@@ -343,7 +343,7 @@ impl InnerDict {
         let hash = value.clone().hash(runtime)?;
         let index = hash % self.entries.len();
         match &mut self.entries[index] {
-            Option::Some(val) => match val.del(value, runtime)? {
+            Option::Some(val) => match val.del(value, hash, runtime)? {
                 Option::Some(result) => {
                     let boxed_entry = val.next.take();
                     self.entries[index] = boxed_entry.map(|x| *x);
@@ -374,7 +374,7 @@ impl InnerDict {
         let hash = key.clone().hash(runtime)?;
         let bucket = hash % self.entries.len();
         match &mut self.entries[bucket] {
-            Option::Some(val) => val.get_mut_entry(key, runtime),
+            Option::Some(val) => val.get_mut_entry(key, hash, runtime),
             Option::None => Result::Ok(Option::None),
         }
     }
@@ -390,25 +390,35 @@ impl InnerDict {
 }
 
 impl Entry {
-    pub fn get(&self, key: Variable, runtime: &mut Runtime) -> Result<Option<Variable>, ()> {
-        if key.equals(self.key.clone(), runtime)? {
+    pub fn get(
+        &self,
+        key: Variable,
+        hash: usize,
+        runtime: &mut Runtime,
+    ) -> Result<Option<Variable>, ()> {
+        if self.hash == hash && key.equals(self.key.clone(), runtime)? {
             Result::Ok(Option::Some(self.value.clone()))
         } else {
             match &self.next {
                 Option::None => Result::Ok(Option::None),
-                Option::Some(e) => e.get(key, runtime),
+                Option::Some(e) => e.get(key, hash, runtime),
             }
         }
     }
 
-    pub fn set(&mut self, key: Variable, val: Variable, runtime: &mut Runtime) -> Option<bool> {
-        if key.equals(self.key.clone(), runtime).ok()? {
+    pub fn set(
+        &mut self,
+        key: Variable,
+        hash: usize,
+        val: Variable,
+        runtime: &mut Runtime,
+    ) -> Option<bool> {
+        if self.hash == hash && key.equals(self.key.clone(), runtime).ok()? {
             self.value = val;
             Option::Some(false)
         } else {
             match &mut self.next {
                 Option::None => {
-                    let hash = key.clone().hash(runtime).ok()?;
                     self.next = Option::Some(Box::new(Entry {
                         key,
                         value: val,
@@ -417,18 +427,23 @@ impl Entry {
                     }));
                     Option::Some(true)
                 }
-                Option::Some(e) => e.set(key, val, runtime),
+                Option::Some(e) => e.set(key, hash, val, runtime),
             }
         }
     }
 
-    pub fn del(&mut self, key: &Variable, runtime: &mut Runtime) -> Result<Option<Variable>, ()> {
-        if key.equals(self.value.clone(), runtime)? {
+    pub fn del(
+        &mut self,
+        key: &Variable,
+        hash: usize,
+        runtime: &mut Runtime,
+    ) -> Result<Option<Variable>, ()> {
+        if self.hash == hash && key.equals(self.value.clone(), runtime)? {
             Result::Ok(Option::Some(take(&mut self.value)))
         } else {
             match &mut self.next {
                 Option::None => Result::Ok(Option::None),
-                Option::Some(e) => match e.del(key, runtime)? {
+                Option::Some(e) => match e.del(key, hash, runtime)? {
                     Option::Some(val) => {
                         self.next = e.next.take();
                         Result::Ok(Option::Some(val))
@@ -465,13 +480,14 @@ impl Entry {
     fn get_mut_entry(
         &mut self,
         key: Variable,
+        hash: usize,
         runtime: &mut Runtime,
     ) -> Result<Option<&mut Entry>, ()> {
-        if self.value.equals(key.clone(), runtime)? {
+        if self.hash == hash && self.value.equals(key.clone(), runtime)? {
             Result::Ok(Option::Some(self))
         } else {
             match self.next.as_mut() {
-                Option::Some(val) => val.get_mut_entry(key, runtime),
+                Option::Some(val) => val.get_mut_entry(key, hash, runtime),
                 Option::None => Result::Ok(Option::None),
             }
         }
