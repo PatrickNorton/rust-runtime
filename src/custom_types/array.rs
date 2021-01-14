@@ -258,6 +258,10 @@ impl CustomVar for Array {
     ) -> FnResult {
         runtime.call_native_method(Array::op_fn(operator), self, args)
     }
+
+    fn iter(self: Rc<Self>, _runtime: &mut Runtime) -> Result<looping::Iterator, ()> {
+        Result::Ok(Rc::new(ArrayIter::new(self)).into())
+    }
 }
 
 impl ArrayIter {

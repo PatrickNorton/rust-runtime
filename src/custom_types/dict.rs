@@ -2,7 +2,7 @@ use crate::custom_types::exceptions::key_error;
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_tools::next_power_2;
 use crate::int_var::IntVar;
-use crate::looping::{IterResult, NativeIterator};
+use crate::looping::{self, IterResult, NativeIterator};
 use crate::method::{NativeMethod, StdMethod};
 use crate::name::Name;
 use crate::operator::Operator;
@@ -530,6 +530,10 @@ impl CustomVar for Dict {
         runtime: &mut Runtime,
     ) -> FnResult {
         runtime.call_native_method(Dict::op_fn(operator), self, args)
+    }
+
+    fn iter(self: Rc<Self>, _runtime: &mut Runtime) -> Result<looping::Iterator, ()> {
+        Result::Ok(Rc::new(DictIter::new(self)).into())
     }
 }
 

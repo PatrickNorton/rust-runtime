@@ -526,6 +526,10 @@ impl CustomVar for LangBytes {
     ) -> FnResult {
         runtime.call_native_method(LangBytes::op_fn(operator), self, args)
     }
+
+    fn iter(self: Rc<Self>, _runtime: &mut Runtime) -> Result<looping::Iterator, ()> {
+        Result::Ok(Rc::new(BytesIter::new(self)).into())
+    }
 }
 
 impl BytesIter {

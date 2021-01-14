@@ -1,7 +1,7 @@
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_tools::next_power_2;
 use crate::int_var::IntVar;
-use crate::looping::{IterResult, NativeIterator};
+use crate::looping::{self, IterResult, NativeIterator};
 use crate::method::{NativeMethod, StdMethod};
 use crate::name::Name;
 use crate::operator::Operator;
@@ -468,6 +468,10 @@ impl CustomVar for Set {
 
     fn get_type(&self) -> Type {
         Set::set_type()
+    }
+
+    fn iter(self: Rc<Self>, _runtime: &mut Runtime) -> Result<looping::Iterator, ()> {
+        Result::Ok(Rc::new(SetIter::new(self)).into())
     }
 }
 

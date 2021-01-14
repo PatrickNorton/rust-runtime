@@ -577,6 +577,10 @@ impl CustomVar for List {
     ) -> FnResult {
         runtime.call_native_method(List::op_fn(operator), self, args)
     }
+
+    fn iter(self: Rc<Self>, _runtime: &mut Runtime) -> Result<looping::Iterator, ()> {
+        Result::Ok(Rc::new(ListIter::new(self)).into())
+    }
 }
 
 #[derive(Debug)]

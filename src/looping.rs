@@ -46,6 +46,15 @@ impl Iterator {
     }
 }
 
+impl<T> From<Rc<T>> for Iterator
+where
+    T: NativeIterator,
+{
+    fn from(x: Rc<T>) -> Self {
+        Iterator::Native(x)
+    }
+}
+
 impl From<Rc<dyn NativeIterator>> for Iterator {
     fn from(x: Rc<dyn NativeIterator>) -> Self {
         Iterator::Native(x)
