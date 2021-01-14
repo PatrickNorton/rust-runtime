@@ -532,6 +532,18 @@ impl CustomVar for Dict {
         runtime.call_native_method(Dict::op_fn(operator), self, args)
     }
 
+    fn str(self: Rc<Self>, runtime: &mut Runtime) -> Result<StringVar, ()> {
+        Result::Ok(self.value.borrow().true_repr(runtime)?)
+    }
+
+    fn repr(self: Rc<Self>, runtime: &mut Runtime) -> Result<StringVar, ()> {
+        Result::Ok(self.value.borrow().true_repr(runtime)?)
+    }
+
+    fn bool(self: Rc<Self>, _runtime: &mut Runtime) -> Result<bool, ()> {
+        Result::Ok(!self.value.borrow().is_empty())
+    }
+
     fn iter(self: Rc<Self>, _runtime: &mut Runtime) -> Result<looping::Iterator, ()> {
         Result::Ok(Rc::new(DictIter::new(self)).into())
     }

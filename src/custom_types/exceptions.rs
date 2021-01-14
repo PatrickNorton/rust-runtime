@@ -56,6 +56,10 @@ impl CustomVar for StdException {
     fn get_type(&self) -> Type {
         self.exc_type
     }
+
+    fn str(self: Rc<Self>, _runtime: &mut Runtime) -> Result<StringVar, ()> {
+        Result::Ok(self.msg.clone())
+    }
 }
 
 macro_rules! create_exc {

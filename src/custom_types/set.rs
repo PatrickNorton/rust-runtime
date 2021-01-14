@@ -488,6 +488,18 @@ impl CustomVar for Set {
         runtime.call_native_method(Set::op_fn(operator), self, args)
     }
 
+    fn str(self: Rc<Self>, runtime: &mut Runtime) -> Result<StringVar, ()> {
+        self.value.borrow().repr(runtime)
+    }
+
+    fn repr(self: Rc<Self>, runtime: &mut Runtime) -> Result<StringVar, ()> {
+        self.value.borrow().repr(runtime)
+    }
+
+    fn bool(self: Rc<Self>, _runtime: &mut Runtime) -> Result<bool, ()> {
+        Result::Ok(!self.value.borrow().is_empty())
+    }
+
     fn iter(self: Rc<Self>, _runtime: &mut Runtime) -> Result<looping::Iterator, ()> {
         Result::Ok(Rc::new(SetIter::new(self)).into())
     }

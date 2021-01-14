@@ -8,6 +8,7 @@ use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
+use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use num::{One, Signed, ToPrimitive, Zero};
 use std::cell::{Cell, RefCell};
@@ -38,6 +39,7 @@ impl List {
         match name {
             Operator::Bool => List::list_bool,
             Operator::Str => List::list_str,
+            Operator::Repr => List::list_repr,
             Operator::GetAttr => List::list_index,
             Operator::SetAttr => List::set_index,
             Operator::Equals => List::eq,
@@ -86,15 +88,13 @@ impl List {
 
     fn list_str(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        let mut value: String = String::new();
-        value += "[";
-        for arg in self.value.borrow().iter().enumerate() {
-            value += arg.1.clone().str(runtime)?.as_str();
-            if arg.0 != self.value.borrow().len() - 1 {
-                value += ", ";
-            }
-        }
-        value += "]";
+        let value = self.str(runtime)?;
+        runtime.return_1(value.into())
+    }
+
+    fn list_repr(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        let value = self.repr(runtime)?;
         runtime.return_1(value.into())
     }
 
@@ -576,6 +576,36 @@ impl CustomVar for List {
         runtime: &mut Runtime,
     ) -> FnResult {
         runtime.call_native_method(List::op_fn(operator), self, args)
+    }
+
+    fn str(self: Rc<Self>, runtime: &mut Runtime) -> Result<StringVar, ()> {
+        let mut value: String = String::new();
+        value += "[";
+        for arg in self.value.borrow().iter().enumerate() {
+            value += arg.1.clone().str(runtime)?.as_str();
+            if arg.0 != self.value.borrow().len() - 1 {
+                value += ", ";
+            }
+        }
+        value += "]";
+        Result::Ok(value.into())
+    }
+
+    fn repr(self: Rc<Self>, runtime: &mut Runtime) -> Result<StringVar, ()> {
+        let mut value: String = String::new();
+        value += "[";
+        for arg in self.value.borrow().iter().enumerate() {
+            value += arg.1.clone().repr(runtime)?.as_str();
+            if arg.0 != self.value.borrow().len() - 1 {
+                value += ", ";
+            }
+        }
+        value += "]";
+        Result::Ok(value.into())
+    }
+
+    fn bool(self: Rc<Self>, _runtime: &mut Runtime) -> Result<bool, ()> {
+        Result::Ok(!self.value.borrow().is_empty())
     }
 
     fn iter(self: Rc<Self>, _runtime: &mut Runtime) -> Result<looping::Iterator, ()> {

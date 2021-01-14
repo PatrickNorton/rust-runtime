@@ -8,6 +8,7 @@ use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
+use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use num::{Signed, ToPrimitive};
 use std::cell::{Cell, RefCell};
@@ -95,6 +96,11 @@ impl Array {
 
     fn str(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
+        let value = self.str_value(runtime)?;
+        runtime.return_1(value.into())
+    }
+
+    fn str_value(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
         let mut value = String::new();
         value += "Array[";
         for arg in self.vars.borrow().iter().enumerate() {
@@ -104,7 +110,26 @@ impl Array {
             }
         }
         value += "]";
+        Result::Ok(value.into())
+    }
+
+    fn repr(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        let value = self.repr_value(runtime)?;
         runtime.return_1(value.into())
+    }
+
+    fn repr_value(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
+        let mut value = String::new();
+        value += "Array[";
+        for arg in self.vars.borrow().iter().enumerate() {
+            value += arg.1.clone().repr(runtime)?.as_str();
+            if arg.0 != self.vars.borrow().len() - 1 {
+                value += ", ";
+            }
+        }
+        value += "]";
+        Result::Ok(value.into())
     }
 
     fn eq(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -257,6 +282,18 @@ impl CustomVar for Array {
         runtime: &mut Runtime,
     ) -> FnResult {
         runtime.call_native_method(Array::op_fn(operator), self, args)
+    }
+
+    fn str(self: Rc<Self>, runtime: &mut Runtime) -> Result<StringVar, ()> {
+        self.str_value(runtime)
+    }
+
+    fn repr(self: Rc<Self>, runtime: &mut Runtime) -> Result<StringVar, ()> {
+        self.repr_value(runtime)
+    }
+
+    fn bool(self: Rc<Self>, _runtime: &mut Runtime) -> Result<bool, ()> {
+        Result::Ok(!self.vars.borrow().is_empty())
     }
 
     fn iter(self: Rc<Self>, _runtime: &mut Runtime) -> Result<looping::Iterator, ()> {

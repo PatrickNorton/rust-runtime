@@ -213,6 +213,14 @@ impl CustomVar for Range {
         runtime.call_native_method(Range::op_fn(operator), self, args)
     }
 
+    fn str(self: Rc<Self>, _runtime: &mut Runtime) -> Result<StringVar, ()> {
+        Result::Ok(self.to_str())
+    }
+
+    fn repr(self: Rc<Self>, _runtime: &mut Runtime) -> Result<StringVar, ()> {
+        Result::Ok(self.to_str())
+    }
+
     fn iter(self: Rc<Self>, _runtime: &mut Runtime) -> Result<looping::Iterator, ()> {
         Result::Ok(Rc::new(RangeIter::new(self)).into())
     }

@@ -103,6 +103,10 @@ impl LangBytes {
 
     fn repr(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
+        runtime.return_1(self.repr_value().into())
+    }
+
+    fn repr_value(&self) -> StringVar {
         let value = self.value.borrow();
         let mut result = AsciiString::with_capacity(value.len());
         for chr in &*value {
@@ -115,7 +119,7 @@ impl LangBytes {
                 }
             }
         }
-        runtime.return_1(StringVar::from(result).into())
+        result.into()
     }
 
     fn encode(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -525,6 +529,20 @@ impl CustomVar for LangBytes {
         runtime: &mut Runtime,
     ) -> FnResult {
         runtime.call_native_method(LangBytes::op_fn(operator), self, args)
+    }
+
+    fn str(self: Rc<Self>, runtime: &mut Runtime) -> Result<StringVar, ()> {
+        let string =
+            String::from_utf8(self.value.borrow().clone()).or_else(|_| self.utf8_err(runtime))?;
+        Result::Ok(StringVar::from(string))
+    }
+
+    fn repr(self: Rc<Self>, _runtime: &mut Runtime) -> Result<StringVar, ()> {
+        Result::Ok(self.repr_value())
+    }
+
+    fn bool(self: Rc<Self>, _runtime: &mut Runtime) -> Result<bool, ()> {
+        Result::Ok(!self.value.borrow().is_empty())
     }
 
     fn iter(self: Rc<Self>, _runtime: &mut Runtime) -> Result<looping::Iterator, ()> {
