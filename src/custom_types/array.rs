@@ -40,6 +40,7 @@ impl Array {
             Operator::SetAttr => Self::set_index,
             Operator::Bool => Self::bool,
             Operator::Str => Self::str,
+            Operator::Repr => Self::repr,
             Operator::Equals => Self::eq,
             Operator::In => Self::contains,
             Operator::GetSlice => Self::get_slice,
