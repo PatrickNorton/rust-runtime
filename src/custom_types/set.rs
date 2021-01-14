@@ -2,7 +2,7 @@ use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_tools::next_power_2;
 use crate::int_var::IntVar;
 use crate::looping::{IterResult, NativeIterator};
-use crate::method::StdMethod;
+use crate::method::{NativeMethod, StdMethod};
 use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
@@ -47,8 +47,8 @@ impl Set {
         })
     }
 
-    fn get_operator(self: Rc<Self>, o: Operator) -> Variable {
-        let func = match o {
+    fn op_fn(o: Operator) -> NativeMethod<Rc<Set>> {
+        match o {
             Operator::Bool => Self::bool,
             Operator::Str => Self::repr,
             Operator::Repr => Self::repr,
@@ -60,7 +60,11 @@ impl Set {
             Operator::BitwiseXor => Self::xor,
             Operator::DelAttr => Self::del_attr,
             _ => unimplemented!(),
-        };
+        }
+    }
+
+    fn get_operator(self: Rc<Self>, o: Operator) -> Variable {
+        let func = Set::op_fn(o);
         StdMethod::new_native(self, func).into()
     }
 

@@ -2,7 +2,7 @@ use crate::custom_types::exceptions::index_error;
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_var::IntVar;
 use crate::looping::{IterResult, NativeIterator};
-use crate::method::StdMethod;
+use crate::method::{NativeMethod, StdMethod};
 use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
@@ -59,8 +59,8 @@ impl Range {
         }
     }
 
-    fn get_op(self: Rc<Self>, op: Operator) -> Variable {
-        let func = match op {
+    fn op_fn(o: Operator) -> NativeMethod<Rc<Range>> {
+        match o {
             Operator::Str => Self::str,
             Operator::Repr => Self::str,
             Operator::Equals => Self::eq,
@@ -69,7 +69,11 @@ impl Range {
             Operator::In => Self::contains,
             Operator::Reversed => Self::reversed,
             _ => unimplemented!(),
-        };
+        }
+    }
+
+    fn get_op(self: Rc<Self>, op: Operator) -> Variable {
+        let func = Range::op_fn(op);
         StdMethod::new_native(self, func).into()
     }
 
@@ -189,6 +193,24 @@ impl CustomVar for Range {
 
     fn get_type(&self) -> Type {
         Self::range_type()
+    }
+
+    fn call_op(
+        self: Rc<Self>,
+        operator: Operator,
+        args: Vec<Variable>,
+        runtime: &mut Runtime,
+    ) -> FnResult {
+        runtime.call_native_method(Range::op_fn(operator), self, args)
+    }
+
+    fn call_op_or_goto(
+        self: Rc<Self>,
+        operator: Operator,
+        args: Vec<Variable>,
+        runtime: &mut Runtime,
+    ) -> FnResult {
+        runtime.call_native_method(Range::op_fn(operator), self, args)
     }
 }
 

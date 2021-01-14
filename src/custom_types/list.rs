@@ -3,7 +3,7 @@ use crate::custom_types::range::Range;
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_var::{normalize, IntVar};
 use crate::looping::{self, IterResult, NativeIterator};
-use crate::method::StdMethod;
+use crate::method::{NativeMethod, StdMethod};
 use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
@@ -34,8 +34,8 @@ impl List {
         self.value.borrow().len()
     }
 
-    fn get_operator(self: Rc<Self>, name: Operator) -> Variable {
-        let value = match name {
+    fn op_fn(name: Operator) -> NativeMethod<Rc<List>> {
+        match name {
             Operator::Bool => List::list_bool,
             Operator::Str => List::list_str,
             Operator::GetAttr => List::list_index,
@@ -51,7 +51,11 @@ impl List {
             Operator::Add => List::plus,
             Operator::Multiply => List::times,
             _ => unimplemented!("List.{}", name.name()),
-        };
+        }
+    }
+
+    fn get_operator(self: Rc<Self>, name: Operator) -> Variable {
+        let value = List::op_fn(name);
         StdMethod::new_native(self, value).into()
     }
 
@@ -554,6 +558,24 @@ impl CustomVar for List {
 
     fn get_type(&self) -> Type {
         List::list_type()
+    }
+
+    fn call_op(
+        self: Rc<Self>,
+        operator: Operator,
+        args: Vec<Variable>,
+        runtime: &mut Runtime,
+    ) -> FnResult {
+        runtime.call_native_method(List::op_fn(operator), self, args)
+    }
+
+    fn call_op_or_goto(
+        self: Rc<Self>,
+        operator: Operator,
+        args: Vec<Variable>,
+        runtime: &mut Runtime,
+    ) -> FnResult {
+        runtime.call_native_method(List::op_fn(operator), self, args)
     }
 }
 

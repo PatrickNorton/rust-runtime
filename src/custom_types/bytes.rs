@@ -3,7 +3,7 @@ use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_tools::FromBytes;
 use crate::int_var::{normalize, IntVar};
 use crate::looping::{self, IterResult, NativeIterator};
-use crate::method::StdMethod;
+use crate::method::{NativeMethod, StdMethod};
 use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
@@ -35,8 +35,8 @@ impl LangBytes {
         }
     }
 
-    fn get_op(self: Rc<Self>, op: Operator) -> Variable {
-        let func = match op {
+    fn op_fn(op: Operator) -> NativeMethod<Rc<LangBytes>> {
+        match op {
             Operator::GetAttr => Self::index,
             Operator::SetAttr => Self::set_index,
             Operator::Str => Self::str,
@@ -46,7 +46,11 @@ impl LangBytes {
             Operator::Add => Self::plus,
             Operator::Multiply => Self::mul,
             _ => unimplemented!("bytes.{}", op.name()),
-        };
+        }
+    }
+
+    fn get_op(self: Rc<Self>, op: Operator) -> Variable {
+        let func = LangBytes::op_fn(op);
         StdMethod::new_native(self, func).into()
     }
 
@@ -503,6 +507,24 @@ impl CustomVar for LangBytes {
 
     fn get_type(&self) -> Type {
         Self::bytes_type()
+    }
+
+    fn call_op(
+        self: Rc<Self>,
+        operator: Operator,
+        args: Vec<Variable>,
+        runtime: &mut Runtime,
+    ) -> FnResult {
+        runtime.call_native_method(LangBytes::op_fn(operator), self, args)
+    }
+
+    fn call_op_or_goto(
+        self: Rc<Self>,
+        operator: Operator,
+        args: Vec<Variable>,
+        runtime: &mut Runtime,
+    ) -> FnResult {
+        runtime.call_native_method(LangBytes::op_fn(operator), self, args)
     }
 }
 

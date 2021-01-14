@@ -3,7 +3,7 @@ use crate::custom_types::range::Range;
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_var::IntVar;
 use crate::looping::{self, IterResult, NativeIterator};
-use crate::method::StdMethod;
+use crate::method::{NativeMethod, StdMethod};
 use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
@@ -33,8 +33,8 @@ impl Array {
         })
     }
 
-    fn get_operator(self: Rc<Self>, name: Operator) -> Variable {
-        let func = match name {
+    fn op_fn(o: Operator) -> NativeMethod<Rc<Array>> {
+        match o {
             Operator::GetAttr => Self::index,
             Operator::SetAttr => Self::set_index,
             Operator::Bool => Self::bool,
@@ -44,8 +44,12 @@ impl Array {
             Operator::GetSlice => Self::get_slice,
             Operator::Iter => Self::iter,
             Operator::IterSlice => Self::iter_slice,
-            _ => unimplemented!("Array.{}", name.name()),
-        };
+            _ => unimplemented!("Array.{}", o.name()),
+        }
+    }
+
+    fn get_operator(self: Rc<Self>, name: Operator) -> Variable {
+        let func = Array::op_fn(name);
         StdMethod::new_native(self, func).into()
     }
 
@@ -235,6 +239,24 @@ impl CustomVar for Array {
 
     fn get_type(&self) -> Type {
         Self::array_type()
+    }
+
+    fn call_op(
+        self: Rc<Self>,
+        operator: Operator,
+        args: Vec<Variable>,
+        runtime: &mut Runtime,
+    ) -> FnResult {
+        runtime.call_native_method(Array::op_fn(operator), self, args)
+    }
+
+    fn call_op_or_goto(
+        self: Rc<Self>,
+        operator: Operator,
+        args: Vec<Variable>,
+        runtime: &mut Runtime,
+    ) -> FnResult {
+        runtime.call_native_method(Array::op_fn(operator), self, args)
     }
 }
 

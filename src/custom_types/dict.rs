@@ -3,7 +3,7 @@ use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_tools::next_power_2;
 use crate::int_var::IntVar;
 use crate::looping::{IterResult, NativeIterator};
-use crate::method::StdMethod;
+use crate::method::{NativeMethod, StdMethod};
 use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
@@ -45,8 +45,8 @@ impl Dict {
         }))
     }
 
-    fn get_op(self: Rc<Self>, o: Operator) -> Variable {
-        let func = match o {
+    fn op_fn(o: Operator) -> NativeMethod<Rc<Dict>> {
+        match o {
             Operator::GetAttr => Dict::index,
             Operator::Repr => Dict::repr,
             Operator::Str => Dict::repr,
@@ -57,7 +57,11 @@ impl Dict {
             Operator::Iter => Dict::iter,
             Operator::DelAttr => Dict::del,
             _ => unimplemented!(),
-        };
+        }
+    }
+
+    fn get_op(self: Rc<Self>, o: Operator) -> Variable {
+        let func = Dict::op_fn(o);
         StdMethod::new_native(self, func).into()
     }
 
@@ -508,6 +512,24 @@ impl CustomVar for Dict {
 
     fn get_type(&self) -> Type {
         Dict::dict_type()
+    }
+
+    fn call_op(
+        self: Rc<Self>,
+        operator: Operator,
+        args: Vec<Variable>,
+        runtime: &mut Runtime,
+    ) -> FnResult {
+        runtime.call_native_method(Dict::op_fn(operator), self, args)
+    }
+
+    fn call_op_or_goto(
+        self: Rc<Self>,
+        operator: Operator,
+        args: Vec<Variable>,
+        runtime: &mut Runtime,
+    ) -> FnResult {
+        runtime.call_native_method(Dict::op_fn(operator), self, args)
     }
 }
 
