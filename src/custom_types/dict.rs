@@ -545,7 +545,7 @@ impl DictIter {
 
     fn next_fn(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        match self.clone().true_next(runtime)? {
+        match self.true_next(runtime)? {
             Option::None => runtime.return_n(vec![Option::None.into(), Option::None.into()]),
             Option::Some(val) => {
                 runtime.return_n(vec![Option::Some(val.0).into(), Option::Some(val.1).into()])
