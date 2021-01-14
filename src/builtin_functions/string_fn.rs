@@ -352,7 +352,7 @@ fn split_lines(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> F
     runtime.return_1(result.into())
 }
 
-fn chars(this: &StringVar) -> Variable {
+fn chars(this: &str) -> Variable {
     List::from_values(Type::Char, this.chars().map(Variable::from).collect()).into()
 }
 
