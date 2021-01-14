@@ -470,6 +470,24 @@ impl CustomVar for Set {
         Set::set_type()
     }
 
+    fn call_op(
+        self: Rc<Self>,
+        operator: Operator,
+        args: Vec<Variable>,
+        runtime: &mut Runtime,
+    ) -> FnResult {
+        runtime.call_native_method(Set::op_fn(operator), self, args)
+    }
+
+    fn call_op_or_goto(
+        self: Rc<Self>,
+        operator: Operator,
+        args: Vec<Variable>,
+        runtime: &mut Runtime,
+    ) -> FnResult {
+        runtime.call_native_method(Set::op_fn(operator), self, args)
+    }
+
     fn iter(self: Rc<Self>, _runtime: &mut Runtime) -> Result<looping::Iterator, ()> {
         Result::Ok(Rc::new(SetIter::new(self)).into())
     }
