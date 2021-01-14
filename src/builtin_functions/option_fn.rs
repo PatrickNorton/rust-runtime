@@ -8,16 +8,30 @@ use crate::variable::{FnResult, InnerVar, OptionVar, Variable};
 use std::mem::take;
 
 pub fn str(i: usize, val: Option<InnerVar>, runtime: &mut Runtime) -> Result<StringVar, ()> {
-    Result::Ok(match val {
-        Option::Some(x) => fold_some(i, &*x.str(runtime)?),
-        Option::None => "null".into(),
+    Result::Ok(if i == 1 {
+        match val {
+            Option::Some(x) => format!("Some({})", x.str(runtime)?).into(),
+            Option::None => "null".into(),
+        }
+    } else {
+        match val {
+            Option::Some(x) => fold_some(i, &*x.str(runtime)?),
+            Option::None => fold_some(i, "null"),
+        }
     })
 }
 
 pub fn repr(i: usize, val: Option<InnerVar>, runtime: &mut Runtime) -> Result<StringVar, ()> {
-    Result::Ok(match val {
-        Option::Some(x) => fold_some(i, &*x.repr(runtime)?),
-        Option::None => "null".into(),
+    Result::Ok(if i == 1 {
+        match val {
+            Option::Some(x) => format!("Some({})", x.repr(runtime)?).into(),
+            Option::None => "null".into(),
+        }
+    } else {
+        match val {
+            Option::Some(x) => fold_some(i, &*x.repr(runtime)?),
+            Option::None => fold_some(i, "null"),
+        }
     })
 }
 
