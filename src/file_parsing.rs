@@ -65,6 +65,7 @@ pub fn parse_file(name: String, files: &mut Vec<FileInfo>) -> usize {
     let mut index: usize = 0;
 
     let magic_number = bytes_index::<u32>(&data, &mut index);
+    #[allow(clippy::unusual_byte_groupings)]
     if magic_number != 0x0A_BAD_E66 {
         panic!("File does not start with the magic number")
     }
