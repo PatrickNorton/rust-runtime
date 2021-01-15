@@ -17,6 +17,7 @@ use crate::std_type::Type;
 use crate::std_variable::StdVariable;
 use crate::string_var::StringVar;
 use crate::tuple::LangTuple;
+use ascii::AsciiChar;
 use num::bigint::BigInt;
 use num::traits::Zero;
 use num::{BigRational, ToPrimitive};
@@ -703,6 +704,12 @@ impl From<bool> for Variable {
 impl From<char> for Variable {
     fn from(x: char) -> Self {
         Variable::Normal(InnerVar::Char(x))
+    }
+}
+
+impl From<AsciiChar> for Variable {
+    fn from(chr: AsciiChar) -> Self {
+        chr.as_char().into()
     }
 }
 

@@ -155,20 +155,60 @@ fn repr(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult
 fn index(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
     let big_index = IntVar::from(take(&mut args[0]));
-    let proper_index = if big_index.is_negative() {
-        &big_index + &this.char_len().into()
-    } else {
-        big_index.clone()
-    };
-    let index = match proper_index.to_usize() {
-        Option::Some(val) => val,
-        Option::None => {
-            return runtime.throw_quick(index_error(), bounds_msg(big_index, this.char_len()))
+    match this.as_maybe_ascii() {
+        MaybeAscii::Standard(s) => index_non_ascii(s, big_index, runtime),
+        MaybeAscii::Ascii(a) => index_ascii(a, big_index, runtime),
+    }
+}
+
+fn index_non_ascii(s: &str, big_index: IntVar, runtime: &mut Runtime) -> FnResult {
+    if big_index.is_negative() {
+        // Instead of getting the character length and then indexing from the start, index from
+        // the back instead, which will only result in iterating through the string once
+        match to_abs_usize(&big_index) {
+            Option::None => {
+                runtime.throw_quick(index_error(), bounds_msg(big_index, s.chars().count()))
+            }
+            Option::Some(b) => get_chr(s, s.chars().nth_back(b - 1), big_index, runtime),
         }
+    } else {
+        match big_index.to_usize() {
+            Option::None => {
+                runtime.throw_quick(index_error(), bounds_msg(big_index, s.chars().count()))
+            }
+            Option::Some(b) => get_chr(s, s.chars().nth(b), big_index, runtime),
+        }
+    }
+}
+
+fn get_chr(s: &str, value: Option<char>, index: IntVar, runtime: &mut Runtime) -> FnResult {
+    match value {
+        Option::None => runtime.throw_quick(index_error(), bounds_msg(index, s.chars().count())),
+        Option::Some(chr) => runtime.return_1(chr.into()),
+    }
+}
+
+fn index_ascii(a: &AsciiStr, big_index: IntVar, runtime: &mut Runtime) -> FnResult {
+    let proper_index = if big_index.is_negative() {
+        (&big_index + &a.len().into()).to_usize()
+    } else {
+        big_index.to_usize()
     };
-    match this.char_at(index) {
-        Option::None => runtime.throw_quick(index_error(), bounds_msg(big_index, this.char_len())),
-        Option::Some(value) => runtime.return_1(value.into()),
+    let index = match proper_index {
+        Option::Some(val) => val,
+        Option::None => return runtime.throw_quick(index_error(), bounds_msg(big_index, a.len())),
+    };
+    match a.get_ascii(index) {
+        Option::Some(chr) => runtime.return_1(chr.into()),
+        Option::None => runtime.throw_quick(index_error(), bounds_msg(big_index, a.len())),
+    }
+}
+
+// Prevents unnecessary clone of `i`
+fn to_abs_usize(i: &IntVar) -> Option<usize> {
+    match i {
+        IntVar::Small(s) => Option::Some(s.abs() as usize), // unsigned_abs() is gated behind #74913
+        IntVar::Big(b) => b.magnitude().to_usize(),
     }
 }
 
