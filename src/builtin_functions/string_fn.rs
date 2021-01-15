@@ -127,19 +127,16 @@ fn bool(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult
 fn int(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     match IntVar::from_str(&*this) {
-        Ok(val) => runtime.push(val.into()),
-        Err(_) => {
-            return runtime.throw_quick(
-                value_error(),
-                format!(
-                    "Invalid input for int(str): {} is not a valid base-10 integer",
-                    this.repr()
-                )
-                .into(),
+        Ok(val) => runtime.return_1(val.into()),
+        Err(_) => runtime.throw_quick(
+            value_error(),
+            format!(
+                "Invalid input for int(str): {} is not a valid base-10 integer",
+                this.repr()
             )
-        }
+            .into(),
+        ),
     }
-    runtime.return_0()
 }
 
 fn str(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
