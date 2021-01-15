@@ -249,31 +249,16 @@ impl InnerDict {
         }
         let mut result = String::new();
         result += "{";
-        self.for_each(|x, y| {
+        for (x, y) in self {
             result += x.clone().str(runtime)?.as_str();
             result += ": ";
             result += y.clone().str(runtime)?.as_str();
             result += ", ";
-            FnResult::Ok(())
-        })?;
+        }
         result.pop();
         result.pop();
         result += "}";
         Result::Ok(result.into())
-    }
-
-    fn for_each(&self, mut func: impl FnMut(&Variable, &Variable) -> FnResult) -> FnResult {
-        for val in &self.entries {
-            if let Option::Some(o) = val {
-                func(o.get_key(), o.get_value())?;
-                let mut p = o.get_next().as_ref();
-                while let Option::Some(q) = p {
-                    func(o.get_key(), o.get_value())?;
-                    p = q.get_next().as_ref()
-                }
-            }
-        }
-        FnResult::Ok(())
     }
 
     pub fn set(&mut self, key: Variable, val: Variable, runtime: &mut Runtime) -> FnResult {
@@ -326,18 +311,12 @@ impl InnerDict {
         if self.size != other.size {
             return Result::Ok(false);
         }
-        for val in &self.entries {
-            if let Option::Some(o) = val {
-                if !Self::contains_and_eq(o, other, runtime)? {
-                    return Result::Ok(false);
-                }
-                let mut p = o.get_next().as_ref();
-                while let Option::Some(q) = p {
-                    if !Self::contains_and_eq(q.as_ref(), other, runtime)? {
-                        return Result::Ok(false);
-                    }
-                    p = q.get_next().as_ref()
-                }
+        for (key, value) in self {
+            if !match other.get(key.clone(), runtime)? {
+                Option::Some(val) => val.equals(value.clone(), runtime)?,
+                Option::None => false,
+            } {
+                return Result::Ok(false);
             }
         }
         Result::Ok(true)
@@ -356,17 +335,6 @@ impl InnerDict {
                 Option::None => Result::Ok(Option::None),
             },
             Option::None => Result::Ok(Option::None),
-        }
-    }
-
-    fn contains_and_eq(
-        entry: &Entry,
-        other: &InnerDict,
-        runtime: &mut Runtime,
-    ) -> Result<bool, ()> {
-        match other.get(entry.key.clone(), runtime)? {
-            Option::Some(val) => val.equals(entry.value.clone(), runtime),
-            Option::None => Result::Ok(false),
         }
     }
 
@@ -549,6 +517,28 @@ impl CustomVar for Dict {
     }
 }
 
+impl<'a> IntoIterator for &'a InnerDict {
+    type Item = (&'a Variable, &'a Variable);
+    type IntoIter = InnerDictIter<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        for (i, value) in self.entries.iter().enumerate() {
+            if let Option::Some(x) = value {
+                return InnerDictIter {
+                    parent: self,
+                    i,
+                    current: Option::Some(x),
+                };
+            }
+        }
+        InnerDictIter {
+            parent: self,
+            i: self.entries.len(),
+            current: Option::None,
+        }
+    }
+}
+
 #[derive(Debug)]
 struct DictIter {
     parent: Rc<Dict>,
@@ -641,5 +631,40 @@ impl CustomVar for DictIter {
 impl NativeIterator for DictIter {
     fn next(self: Rc<Self>, runtime: &mut Runtime) -> IterResult {
         IterResult::Ok(self.true_next(runtime)?.map(|(a, b)| vec![a, b]).into())
+    }
+}
+
+struct InnerDictIter<'a> {
+    parent: &'a InnerDict,
+    i: usize,
+    current: Option<&'a Entry>,
+}
+
+impl<'a> InnerDictIter<'a> {
+    fn adjust_i(&mut self) {
+        self.i += 1;
+        while self.i < self.parent.entries.len() && self.parent.entries[self.i].is_none() {
+            self.i += 1;
+        }
+    }
+}
+
+impl<'a> Iterator for InnerDictIter<'a> {
+    type Item = (&'a Variable, &'a Variable);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match take(&mut self.current) {
+            Option::None => Option::None,
+            Option::Some(entry) => {
+                self.current = match &entry.next {
+                    Option::Some(x) => Option::Some(&**x),
+                    Option::None => {
+                        self.adjust_i();
+                        self.parent.entries[self.i].as_ref()
+                    }
+                };
+                Option::Some((&entry.key, &entry.value))
+            }
+        }
     }
 }

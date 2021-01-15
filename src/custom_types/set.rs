@@ -287,11 +287,10 @@ impl InnerSet {
         }
         let mut result = String::new();
         result += "{";
-        self.for_each(|x| {
+        for x in self {
             result += x.clone().str(runtime)?.as_str();
             result += ", ";
-            FnResult::Ok(())
-        })?;
+        }
         result.remove(result.len() - 1);
         result.remove(result.len() - 1);
         result += "}";
@@ -308,20 +307,6 @@ impl InnerSet {
             Option::None => Result::Ok(false),
             Option::Some(v) => v.contains(val, runtime),
         }
-    }
-
-    fn for_each(&self, mut func: impl FnMut(&Variable) -> FnResult) -> FnResult {
-        for val in &self.values {
-            if let Option::Some(o) = val {
-                func(o.get_val())?;
-                let mut p = o.get_next().as_ref();
-                while let Option::Some(q) = p {
-                    func(o.get_val())?;
-                    p = q.get_next().as_ref()
-                }
-            }
-        }
-        FnResult::Ok(())
     }
 
     fn resize(&mut self, new_size: usize, runtime: &mut Runtime) -> FnResult {
@@ -350,18 +335,9 @@ impl InnerSet {
         if self.size != other.size {
             return Result::Ok(false);
         }
-        for val in &self.values {
-            if let Option::Some(o) = val {
-                if !other.contains(o.val.clone(), runtime)? {
-                    return Result::Ok(false);
-                }
-                let mut p = o.get_next().as_ref();
-                while let Option::Some(q) = p {
-                    if !other.contains(q.val.clone(), runtime)? {
-                        return Result::Ok(false);
-                    }
-                    p = q.get_next().as_ref()
-                }
+        for val in self {
+            if !other.contains(val.clone(), runtime)? {
+                return Result::Ok(false);
             }
         }
         Result::Ok(true)
@@ -505,6 +481,28 @@ impl CustomVar for Set {
     }
 }
 
+impl<'a> IntoIterator for &'a InnerSet {
+    type Item = &'a Variable;
+    type IntoIter = InnerSetIter<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        for (i, value) in self.values.iter().enumerate() {
+            if let Option::Some(x) = value {
+                return InnerSetIter {
+                    parent: self,
+                    i,
+                    current: Option::Some(x),
+                };
+            }
+        }
+        InnerSetIter {
+            parent: self,
+            i: self.values.len(),
+            current: Option::None,
+        }
+    }
+}
+
 #[derive(Debug)]
 struct SetIter {
     parent: Rc<Set>,
@@ -586,5 +584,40 @@ impl NativeIterator for SetIter {
             self.point_to_next();
         }
         Result::Ok(Option::Some(val).into())
+    }
+}
+
+struct InnerSetIter<'a> {
+    parent: &'a InnerSet,
+    i: usize,
+    current: Option<&'a Entry>,
+}
+
+impl<'a> InnerSetIter<'a> {
+    fn adjust_i(&mut self) {
+        self.i += 1;
+        while self.i < self.parent.values.len() && self.parent.values[self.i].is_none() {
+            self.i += 1;
+        }
+    }
+}
+
+impl<'a> Iterator for InnerSetIter<'a> {
+    type Item = &'a Variable;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match take(&mut self.current) {
+            Option::None => Option::None,
+            Option::Some(entry) => {
+                self.current = match &entry.next {
+                    Option::Some(x) => Option::Some(&**x),
+                    Option::None => {
+                        self.adjust_i();
+                        self.parent.values[self.i].as_ref()
+                    }
+                };
+                Option::Some(&entry.val)
+            }
+        }
     }
 }
