@@ -204,6 +204,13 @@ impl Variable {
             Variable::Option(_, val) => val.as_ref().map_or(0, |x| x.id()),
         }
     }
+
+    pub fn as_int(&self) -> Option<&IntVar> {
+        match self {
+            Variable::Normal(InnerVar::Bigint(x)) => Option::Some(x),
+            _ => Option::None,
+        }
+    }
 }
 
 impl InnerVar {

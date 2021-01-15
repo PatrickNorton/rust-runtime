@@ -15,7 +15,7 @@ use crate::string_var::{AsciiVar, MaybeAscii, StrVar, StringVar};
 use crate::variable::{FnResult, Variable};
 use ascii::{AsAsciiStr, AsciiChar, AsciiStr, AsciiString};
 use downcast_rs::Downcast;
-use num::{BigInt, Signed, ToPrimitive};
+use num::{BigInt, One, Signed, ToPrimitive};
 use std::any::Any;
 use std::cell::Cell;
 use std::fmt::Debug;
@@ -83,7 +83,32 @@ fn multiply(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnRe
     if this.is_empty() {
         return runtime.return_1(this.into());
     }
-    let mut result: String = this.to_string();
+    if args.len() == 1 && args[0].as_int().map_or_else(|| false, One::is_one) {
+        return runtime.return_1(this.into());
+    }
+    match this.as_maybe_ascii() {
+        MaybeAscii::Standard(s) => mul_str(s.to_owned(), args, runtime),
+        MaybeAscii::Ascii(a) => mul_ascii(a.to_owned(), args, runtime),
+    }
+}
+
+fn mul_ascii(mut result: AsciiString, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    for arg in args {
+        let big_val = IntVar::from(arg);
+        match big_val.to_usize() {
+            Option::Some(val) => match val.checked_mul(result.len()) {
+                Option::Some(_) => result = result.as_slice().repeat(val).into(),
+                Option::None => {
+                    return runtime.throw_quick(arithmetic_error(), overflow_exc(val, result.len()))
+                }
+            },
+            Option::None => return runtime.throw_quick(arithmetic_error(), mul_exc(big_val)),
+        }
+    }
+    runtime.return_1(StringVar::from(result).into())
+}
+
+fn mul_str(mut result: String, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
         let big_val = IntVar::from(arg);
         match big_val.to_usize() {
