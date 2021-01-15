@@ -159,28 +159,17 @@ fn index(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnR
 }
 
 fn index_non_ascii(s: &str, big_index: IntVar, runtime: &mut Runtime) -> FnResult {
-    if big_index.is_negative() {
+    let value = if big_index.is_negative() {
         // Instead of getting the character length and then indexing from the start, index from
         // the back instead, which will only result in iterating through the string once
-        match to_abs_usize(&big_index) {
-            Option::None => {
-                runtime.throw_quick(index_error(), bounds_msg(big_index, s.chars().count()))
-            }
-            Option::Some(b) => get_chr(s, s.chars().nth_back(b - 1), big_index, runtime),
-        }
+        to_abs_usize(&big_index).and_then(|b| s.chars().nth(b - 1))
     } else {
-        match big_index.to_usize() {
-            Option::None => {
-                runtime.throw_quick(index_error(), bounds_msg(big_index, s.chars().count()))
-            }
-            Option::Some(b) => get_chr(s, s.chars().nth(b), big_index, runtime),
-        }
-    }
-}
-
-fn get_chr(s: &str, value: Option<char>, index: IntVar, runtime: &mut Runtime) -> FnResult {
+        big_index.to_usize().and_then(|b| s.chars().nth(b))
+    };
     match value {
-        Option::None => runtime.throw_quick(index_error(), bounds_msg(index, s.chars().count())),
+        Option::None => {
+            runtime.throw_quick(index_error(), bounds_msg(big_index, s.chars().count()))
+        }
         Option::Some(chr) => runtime.return_1(chr.into()),
     }
 }
@@ -191,11 +180,7 @@ fn index_ascii(a: &AsciiStr, big_index: IntVar, runtime: &mut Runtime) -> FnResu
     } else {
         big_index.to_usize()
     };
-    let index = match proper_index {
-        Option::Some(val) => val,
-        Option::None => return runtime.throw_quick(index_error(), bounds_msg(big_index, a.len())),
-    };
-    match a.get_ascii(index) {
+    match proper_index.and_then(|index| a.get_ascii(index)) {
         Option::Some(chr) => runtime.return_1(chr.into()),
         Option::None => runtime.throw_quick(index_error(), bounds_msg(big_index, a.len())),
     }
