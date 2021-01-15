@@ -336,8 +336,29 @@ impl Signed for IntVar {
         }
     }
 
-    fn abs_sub(&self, _other: &Self) -> Self {
-        unimplemented!()
+    fn abs_sub(&self, other: &Self) -> Self {
+        match self {
+            IntVar::Small(s1) => match other {
+                IntVar::Small(s2) => s1.abs_sub(s2).into(),
+                IntVar::Big(b2) => match b2.to_isize() {
+                    Option::Some(s2) => s1.abs_sub(&s2).into(),
+                    Option::None => BigInt::from(*s1).abs_sub(&*b2).into(),
+                },
+            },
+            IntVar::Big(b1) => match other {
+                IntVar::Small(s2) => match b1.to_isize() {
+                    Option::Some(s1) => s1.abs_sub(&s2).into(),
+                    Option::None => b1.abs_sub(&(*s2).into()).into(),
+                },
+                IntVar::Big(b2) => {
+                    if b1 <= b2 {
+                        IntVar::zero()
+                    } else {
+                        b1.abs_sub(b2).into()
+                    }
+                }
+            },
+        }
     }
 
     fn signum(&self) -> Self {
