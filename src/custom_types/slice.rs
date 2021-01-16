@@ -7,6 +7,7 @@ use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
+use crate::string_var::StringVar;
 use crate::variable::{FnResult, InnerVar, Variable};
 use num::{One, Signed, Zero};
 use std::borrow::Cow;
@@ -35,13 +36,17 @@ impl Slice {
 
     fn str(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        let str = format!(
+        runtime.return_1(self.str_value().into())
+    }
+
+    fn str_value(&self) -> StringVar {
+        format!(
             "slice({}, {}, {})",
             stringify(&self.start),
             stringify(&self.stop),
             stringify(&self.step),
-        );
-        runtime.return_1(str.into())
+        )
+        .into()
     }
 
     fn make_range(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -126,6 +131,14 @@ impl CustomVar for Slice {
 
     fn get_type(&self) -> Type {
         Self::slice_type()
+    }
+
+    fn str(self: Rc<Self>, _runtime: &mut Runtime) -> Result<StringVar, ()> {
+        Result::Ok(self.str_value())
+    }
+
+    fn repr(self: Rc<Self>, _runtime: &mut Runtime) -> Result<StringVar, ()> {
+        Result::Ok(self.str_value())
     }
 }
 
