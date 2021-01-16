@@ -366,7 +366,7 @@ impl StdType {
 
     fn create(&'static self, args: Vec<Variable>, runtime: &mut Runtime) -> Result<Variable, ()> {
         let instance = StdVariable::new(self, self.convert_variables());
-        let method = self.methods.get(Name::Operator(Operator::New)).unwrap();
+        let method = self.methods.get_op(Operator::New).unwrap();
         StdMethod::new(instance.clone(), *method).call((args, runtime))?;
         Result::Ok(instance.into())
     }

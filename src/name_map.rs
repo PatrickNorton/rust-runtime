@@ -35,6 +35,10 @@ impl<T> NameMap<T> {
     impl_method!(get -> Option<&T>);
     impl_method!(contains_key -> bool);
 
+    pub fn get_op(&self, value: Operator) -> Option<&T> {
+        self.operators.get(&value)
+    }
+
     pub fn get_mut(&mut self, value: Name) -> Option<&mut T> {
         match value {
             Name::Operator(o) => self.operators.get_mut(&o),
