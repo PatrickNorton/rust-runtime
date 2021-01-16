@@ -8,7 +8,7 @@ use crate::std_type::Type;
 use crate::std_variable::StdVariable;
 use crate::string_var::StringVar;
 use crate::tuple::LangTuple;
-use crate::variable::{InnerVar, Variable};
+use crate::variable::{InnerVar, OptionVar, Variable};
 use ascii::AsciiChar;
 use num::BigInt;
 
@@ -23,8 +23,6 @@ impl From<(usize, Option<InnerVar>)> for Variable {
         Variable::Option(x.0, x.1)
     }
 }
-
-pub struct OptionVar(pub usize, pub Option<InnerVar>);
 
 impl From<OptionVar> for Option<Variable> {
     fn from(x: OptionVar) -> Self {

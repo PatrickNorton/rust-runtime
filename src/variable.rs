@@ -17,6 +17,7 @@ use crate::std_type::Type;
 use crate::std_variable::StdVariable;
 use crate::string_var::StringVar;
 use crate::tuple::LangTuple;
+use crate::var_impls::FromBool;
 use num::bigint::BigInt;
 use num::traits::Zero;
 use num::{BigRational, ToPrimitive};
@@ -54,6 +55,8 @@ pub enum InnerVar {
     Custom(CustomVarWrapper),
     Union(LangUnion),
 }
+
+pub struct OptionVar(pub usize, pub Option<InnerVar>);
 
 impl Variable {
     pub fn null() -> Variable {

@@ -4,7 +4,8 @@ use crate::operator::Operator;
 use crate::rational_var::RationalVar;
 use crate::runtime::Runtime;
 use crate::string_var::StringVar;
-use crate::variable::{FromBool, InnerVar, OptionVar, Variable};
+use crate::var_impls::FromBool;
+use crate::variable::{InnerVar, OptionVar, Variable};
 use num::traits::Pow;
 use num::{BigRational, One, ToPrimitive, Zero};
 
