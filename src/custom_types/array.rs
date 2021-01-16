@@ -122,10 +122,12 @@ impl Array {
 
     fn repr_value(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
         let mut value = String::new();
+        let vars = self.vars.borrow();
+        let len = vars.len();
         value += "Array[";
-        for arg in self.vars.borrow().iter().enumerate() {
+        for arg in vars.iter().enumerate() {
             value += arg.1.clone().repr(runtime)?.as_str();
-            if arg.0 != self.vars.borrow().len() - 1 {
+            if arg.0 != len - 1 {
                 value += ", ";
             }
         }
