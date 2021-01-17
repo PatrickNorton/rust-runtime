@@ -594,7 +594,7 @@ impl Hash for InnerVar {
     }
 }
 
-impl Hash for &'static FileInfo {
+impl Hash for FileInfo {
     fn hash<H: Hasher>(&self, state: &mut H) {
         ptr::hash(self, state);
     }

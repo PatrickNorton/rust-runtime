@@ -579,7 +579,7 @@ impl CustomVar for List {
     }
 
     fn str(self: Rc<Self>, runtime: &mut Runtime) -> Result<StringVar, ()> {
-        let mut value: String = String::new();
+        let mut value = String::new();
         value += "[";
         for arg in self.value.borrow().iter().enumerate() {
             value += arg.1.clone().str(runtime)?.as_str();
@@ -592,7 +592,7 @@ impl CustomVar for List {
     }
 
     fn repr(self: Rc<Self>, runtime: &mut Runtime) -> Result<StringVar, ()> {
-        let mut value: String = String::new();
+        let mut value = String::new();
         value += "[";
         for arg in self.value.borrow().iter().enumerate() {
             value += arg.1.clone().repr(runtime)?.as_str();

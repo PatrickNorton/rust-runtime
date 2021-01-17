@@ -6,6 +6,7 @@ use num::ToPrimitive;
 use std::borrow::Borrow;
 use std::char;
 use std::collections::HashMap;
+use std::hash::Hash;
 use std::ops::Index;
 
 #[derive(Debug)]
@@ -30,7 +31,7 @@ pub struct BigJumpTbl {
 
 #[derive(Debug)]
 pub struct StrJumpTbl {
-    values: HashMap<&'static str, usize>,
+    values: HashMap<String, usize>,
     default: usize,
 }
 
@@ -87,7 +88,7 @@ impl StrJumpTbl {
         let values = (0..size)
             .map(|_| {
                 (
-                    Box::leak(load_std_str(data, index).into_boxed_str()) as &'static str,
+                    load_std_str(data, index),
                     bytes_index::<u32>(data, index) as usize,
                 )
             })
@@ -148,11 +149,15 @@ impl Index<StringVar> for StrJumpTbl {
     }
 }
 
-impl Index<&str> for StrJumpTbl {
+impl<T> Index<&T> for StrJumpTbl
+where
+    String: Borrow<T>,
+    T: Hash + Eq,
+{
     type Output = usize;
 
-    fn index(&self, index: &str) -> &Self::Output {
-        self.values.get(index).unwrap_or(&self.default)
+    fn index(&self, index: &T) -> &Self::Output {
+        self.values.get(&index).unwrap_or(&self.default)
     }
 }
 
