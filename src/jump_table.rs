@@ -3,6 +3,7 @@ use crate::int_tools::bytes_index;
 use crate::int_var::IntVar;
 use crate::string_var::StringVar;
 use num::ToPrimitive;
+use std::borrow::Borrow;
 use std::char;
 use std::collections::HashMap;
 use std::ops::Index;
@@ -144,6 +145,14 @@ impl Index<StringVar> for StrJumpTbl {
 
     fn index(&self, index: StringVar) -> &Self::Output {
         self.values.get(&*index).unwrap_or(&self.default)
+    }
+}
+
+impl Index<&str> for StrJumpTbl {
+    type Output = usize;
+
+    fn index(&self, index: &str) -> &Self::Output {
+        self.values.get(index).unwrap_or(&self.default)
     }
 }
 
