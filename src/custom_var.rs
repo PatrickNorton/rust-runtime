@@ -127,7 +127,7 @@ impl From<Rc<dyn CustomVar>> for Variable {
 
 impl<T> From<Rc<T>> for Variable
 where
-    T: CustomVar + 'static,
+    T: CustomVar,
 {
     fn from(val: Rc<T>) -> Self {
         Variable::Normal(InnerVar::Custom(CustomVarWrapper::new(val)))
