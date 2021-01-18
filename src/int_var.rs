@@ -363,8 +363,12 @@ impl Signed for IntVar {
 
     fn signum(&self) -> Self {
         match self {
-            IntVar::Small(i) => Signed::signum(i).into(),
-            IntVar::Big(b) => b.signum().into(),
+            IntVar::Small(i) => i.signum().into(),
+            IntVar::Big(b) => match b.sign() {
+                Sign::Minus => -IntVar::one(),
+                Sign::NoSign => IntVar::zero(),
+                Sign::Plus => IntVar::one(),
+            },
         }
     }
 
