@@ -218,7 +218,7 @@ impl Ord for IntVar {
                         Sign::Plus => Ordering::Greater,
                     },
                 },
-                IntVar::Big(b) => a.as_ref().cmp(b.as_ref()),
+                IntVar::Big(b) => a.cmp(b),
             },
         }
     }
