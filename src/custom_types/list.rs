@@ -1,4 +1,5 @@
 use crate::custom_types::exceptions::{index_error, value_error};
+use crate::custom_types::join_values;
 use crate::custom_types::range::Range;
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_var::{normalize, IntVar};
@@ -579,29 +580,13 @@ impl CustomVar for List {
     }
 
     fn str(self: Rc<Self>, runtime: &mut Runtime) -> Result<StringVar, ()> {
-        let mut value = String::new();
-        value += "[";
-        for arg in self.value.borrow().iter().enumerate() {
-            value += arg.1.clone().str(runtime)?.as_str();
-            if arg.0 != self.value.borrow().len() - 1 {
-                value += ", ";
-            }
-        }
-        value += "]";
-        Result::Ok(value.into())
+        let value = join_values(&**self.value.borrow(), |x| x.str(runtime))?;
+        Result::Ok(format!("[{}]", value).into())
     }
 
     fn repr(self: Rc<Self>, runtime: &mut Runtime) -> Result<StringVar, ()> {
-        let mut value = String::new();
-        value += "[";
-        for arg in self.value.borrow().iter().enumerate() {
-            value += arg.1.clone().repr(runtime)?.as_str();
-            if arg.0 != self.value.borrow().len() - 1 {
-                value += ", ";
-            }
-        }
-        value += "]";
-        Result::Ok(value.into())
+        let value = join_values(&**self.value.borrow(), |x| x.repr(runtime))?;
+        Result::Ok(format!("[{}]", value).into())
     }
 
     fn bool(self: Rc<Self>, _runtime: &mut Runtime) -> Result<bool, ()> {

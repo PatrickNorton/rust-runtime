@@ -1,4 +1,5 @@
 use crate::custom_types::exceptions::{index_error, value_error};
+use crate::custom_types::join_values;
 use crate::custom_types::range::Range;
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_var::IntVar;
@@ -102,16 +103,8 @@ impl Array {
     }
 
     fn str_value(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
-        let mut value = String::new();
-        value += "Array[";
-        for arg in self.vars.borrow().iter().enumerate() {
-            value += arg.1.clone().str(runtime)?.as_str();
-            if arg.0 != self.vars.borrow().len() - 1 {
-                value += ", ";
-            }
-        }
-        value += "]";
-        Result::Ok(value.into())
+        let value = join_values(&**self.vars.borrow(), |x| x.str(runtime))?;
+        Result::Ok(format!("Array[{}]", value).into())
     }
 
     fn repr(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -121,18 +114,8 @@ impl Array {
     }
 
     fn repr_value(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
-        let mut value = String::new();
-        let vars = self.vars.borrow();
-        let len = vars.len();
-        value += "Array[";
-        for arg in vars.iter().enumerate() {
-            value += arg.1.clone().repr(runtime)?.as_str();
-            if arg.0 != len - 1 {
-                value += ", ";
-            }
-        }
-        value += "]";
-        Result::Ok(value.into())
+        let value = join_values(&**self.vars.borrow(), |x| x.repr(runtime))?;
+        Result::Ok(format!("Array[{}]", value).into())
     }
 
     fn eq(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

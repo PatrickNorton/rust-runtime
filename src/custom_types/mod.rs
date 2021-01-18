@@ -1,3 +1,5 @@
+use crate::string_var::StringVar;
+use crate::variable::Variable;
 macro_rules! custom_class {
     ($type_value:ty, $create_fn:ident, $str_name:tt) => {{
         custom_class!($type_value, $create_fn, $str_name,)
@@ -80,3 +82,17 @@ pub mod range;
 pub mod set;
 pub mod slice;
 pub mod types;
+
+fn join_values(
+    values: &[Variable],
+    mut func: impl FnMut(Variable) -> Result<StringVar, ()>,
+) -> Result<String, ()> {
+    let mut result = String::new();
+    for (i, value) in values.iter().enumerate() {
+        result += func(value.clone())?.as_str();
+        if i != values.len() - 1 {
+            result += ", ";
+        }
+    }
+    Result::Ok(result)
+}
