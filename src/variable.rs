@@ -560,7 +560,7 @@ impl InnerVar {
             InnerVar::Tuple(t) => t.id(),
             InnerVar::Method(_) => todo!("Unique ids for method"),
             InnerVar::Function(f) => f.id(),
-            InnerVar::Custom(c) => &**c as *const _ as usize,
+            InnerVar::Custom(c) => &**c as *const _ as *const () as usize,
             InnerVar::Union(u) => u.get_value().id(),
         }
     }

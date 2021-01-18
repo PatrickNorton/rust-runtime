@@ -95,10 +95,10 @@ impl CustomVarWrapper {
 }
 
 impl Deref for CustomVarWrapper {
-    type Target = Rc<dyn CustomVar>;
+    type Target = dyn CustomVar;
 
     fn deref(&self) -> &Self::Target {
-        &self.value
+        &*self.value
     }
 }
 
