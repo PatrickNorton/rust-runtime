@@ -334,9 +334,9 @@ impl Runtime {
         self.unwind(exc_type, exc)
     }
 
-    pub fn throw_quick(&mut self, exc_type: Type, message: StringVar) -> FnResult {
+    pub fn throw_quick<T: Into<StringVar>>(&mut self, exc_type: Type, message: T) -> FnResult {
         let frames = self.collect_stack_frames();
-        let exc = InnerException::UnConstructed(exc_type, message, frames);
+        let exc = InnerException::UnConstructed(exc_type, message.into(), frames);
         self.unwind(exc_type, exc)
     }
 
@@ -531,7 +531,7 @@ impl Runtime {
         match gen.take_frame() {
             Option::Some(val) => self.frames.push(val),
             Option::None => {
-                return self.throw_quick(invalid_state(), "Generator already executing".into())
+                return self.throw_quick(invalid_state(), "Generator already executing")
             }
         }
         self.variables.append(&mut gen.take_stack());

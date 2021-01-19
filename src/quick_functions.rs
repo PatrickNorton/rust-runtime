@@ -174,8 +174,7 @@ fn mul_err(big_var: IntVar, runtime: &mut Runtime) -> QuickResult {
                 for a non-empty string is {}, attempted to shift by {}",
             usize::MAX,
             big_var,
-        )
-        .into(),
+        ),
     )?;
     unreachable!()
 }
@@ -317,7 +316,7 @@ pub fn quick_subscript(this: Variable, other: Variable, runtime: &mut Runtime) -
             match val.chars().nth(index) {
                 Option::None => {
                     runtime.push_native();
-                    runtime.throw_quick(index_error(), "Index out of bounds".into())?;
+                    runtime.throw_quick(index_error(), "Index out of bounds")?;
                     unreachable!() // Native frame will always return FnResult::Err
                 }
                 Option::Some(value) => Result::Ok(value.into()),

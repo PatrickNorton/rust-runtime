@@ -114,7 +114,7 @@ impl Range {
         if !self.before_end(&result) {
             runtime.throw_quick(
                 index_error(),
-                format!("Index {} out of bounds for {}", result, self.to_str()).into(),
+                format!("Index {} out of bounds for {}", result, self.to_str()),
             )
         } else {
             runtime.return_1(result.into())

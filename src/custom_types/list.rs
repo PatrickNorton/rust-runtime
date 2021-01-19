@@ -168,8 +168,7 @@ impl List {
                 format!(
                     "Cannot multiply list: Expected non-negative number, got {}",
                     times
-                )
-                .into(),
+                ),
             );
         }
         let values = self.value.borrow();
@@ -183,8 +182,7 @@ impl List {
                     if x.checked_mul(values.len()).is_none() {
                         runtime.throw_quick(
                             value_error(),
-                            format!("List repetition {} times too big to fit in memory", times)
-                                .into(),
+                            format!("List repetition {} times too big to fit in memory", times),
                         )
                     } else {
                         let new = repeat_with(|| values.clone()).take(x).flatten().collect();
@@ -193,7 +191,7 @@ impl List {
                 }
                 Option::None => runtime.throw_quick(
                     value_error(),
-                    format!("List repetition {} too big to fit in memory", times).into(),
+                    format!("List repetition {} too big to fit in memory", times),
                 ),
             }
         }
@@ -235,8 +233,7 @@ impl List {
                 "Index {} out of bounds for list of length {}",
                 index,
                 self.value.borrow().len()
-            )
-            .into(),
+            ),
         )
     }
 
@@ -383,8 +380,7 @@ impl List {
                 format!(
                     "list.operator [:]= is only valid with a slice step of 1, not {}",
                     range.get_step()
-                )
-                .into(),
+                ),
             );
         }
         let range_end = range.get_stop().to_usize().unwrap_or(usize::MAX);
@@ -441,8 +437,7 @@ impl List {
                 format!(
                     "list.operator del[:] is only valid with a slice step of 1, not {}",
                     range.get_step()
-                )
-                .into(),
+                ),
             );
         }
         let range_start = range.get_start().to_usize().unwrap();
@@ -501,8 +496,7 @@ impl List {
                                 "Index {} out of bounds for insert on list of length {}",
                                 i,
                                 value.len()
-                            )
-                            .into(),
+                            ),
                         )
                     }
                 }
@@ -512,8 +506,7 @@ impl List {
                         "Index {} out of bounds for insert on list of length {}",
                         i,
                         value.len()
-                    )
-                    .into(),
+                    ),
                 ),
             }
         }
@@ -539,8 +532,7 @@ impl List {
                 "Index {} too large (must be less than {})",
                 size,
                 usize::MAX
-            )
-            .into(),
+            ),
         )
     }
 }

@@ -70,8 +70,7 @@ impl Array {
                     "index {} out of range for array of length {}",
                     index,
                     self.vars.borrow().len()
-                )
-                .into(),
+                ),
             )
         } else {
             runtime.return_1(self.vars.borrow()[index.to_usize().unwrap()].clone())
@@ -84,9 +83,7 @@ impl Array {
         let value = take(&mut args[1]);
         match index {
             Option::Some(val) => self.vars.borrow_mut()[val] = value,
-            Option::None => {
-                return runtime.throw_quick(index_error(), "Array index out of bounds".into())
-            }
+            Option::None => return runtime.throw_quick(index_error(), "Array index out of bounds"),
         }
         runtime.return_0()
     }
@@ -195,7 +192,7 @@ impl Array {
         let usize_len = match len.to_usize() {
             Option::Some(val) => val,
             Option::None => {
-                return runtime.throw_quick(value_error(), "Array init too large to store".into())
+                return runtime.throw_quick(value_error(), "Array init too large to store")
             }
         };
         let fill = take(&mut args[1]);
@@ -230,8 +227,7 @@ impl Array {
                 "Index {} too large (must be less than {})",
                 size,
                 usize::MAX
-            )
-            .into(),
+            ),
         )
     }
 }

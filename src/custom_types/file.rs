@@ -47,13 +47,10 @@ impl FileObj {
                 Result::Ok(file) => {
                     self.file.replace(Option::Some(file));
                 }
-                Result::Err(err) => runtime.throw_quick(io_error(), format!("{}", err).into())?,
+                Result::Err(err) => runtime.throw_quick(io_error(), format!("{}", err))?,
             }
         } else {
-            runtime.throw_quick(
-                invalid_state(),
-                "File cannot be opened more than once".into(),
-            )?
+            runtime.throw_quick(invalid_state(), "File cannot be opened more than once")?
         }
         runtime.return_1(self.into())
     }
@@ -68,7 +65,7 @@ impl FileObj {
         debug_assert!(args.is_empty());
         let mut result = String::new();
         if self.file_do(|f| f.read_to_string(&mut result)).is_err() {
-            runtime.throw_quick(io_error(), "Could not read from file".into())
+            runtime.throw_quick(io_error(), "Could not read from file")
         } else {
             let list: Vec<Variable> = result
                 .lines()
@@ -82,7 +79,7 @@ impl FileObj {
         debug_assert!(args.is_empty());
         let mut result = String::new();
         if self.file_do(|f| f.read_to_string(&mut result)).is_err() {
-            runtime.throw_quick(io_error(), "Could not read from file".into())
+            runtime.throw_quick(io_error(), "Could not read from file")
         } else {
             runtime.return_1(result.into())
         }

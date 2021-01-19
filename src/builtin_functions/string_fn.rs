@@ -134,14 +134,13 @@ fn mul_exc(big_val: IntVar) -> StringVar {
     .into()
 }
 
-fn overflow_exc(val: usize, len: usize) -> StringVar {
+fn overflow_exc(val: usize, len: usize) -> String {
     format!(
         "Too many string repetitions: maximum string length is {}, \
         but repetition would produce str of length {}",
         usize::MAX,
         BigInt::from(val) * len
     )
-    .into()
 }
 
 fn bool(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -158,8 +157,7 @@ fn int(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult 
             format!(
                 "Invalid input for int(str): {} is not a valid base-10 integer",
                 this.repr()
-            )
-            .into(),
+            ),
         ),
     }
 }
@@ -347,7 +345,7 @@ fn starts_with(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) 
             runtime.return_1(chars.as_str().starts_with(val.as_str()).into())
         }
     } else {
-        runtime.throw_quick(index_error(), "".into())
+        runtime.throw_quick(index_error(), "")
     }
 }
 
@@ -466,7 +464,7 @@ fn encode(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> Fn
                     format!(
                         "Cannot convert to ascii: byte at position {} (value {}) is not in the range [0:128]", 
                         err.valid_up_to(), this.as_str().as_bytes()[err.valid_up_to()]
-                    ).into()
+                    )
                 )
             }
         }
@@ -490,7 +488,7 @@ fn encode(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> Fn
         x => {
             return runtime.throw_quick(
                 value_error(),
-                format!("{} is not a valid encoding", x).into(),
+                format!("{} is not a valid encoding", x),
             )
         }
     };

@@ -141,7 +141,7 @@ impl LangBytes {
             _ => {
                 return runtime.throw_quick(
                     value_error(),
-                    format!("{} not a valid encoding", encoding_type).into(),
+                    format!("{} not a valid encoding", encoding_type),
                 )
             }
         }
@@ -162,7 +162,7 @@ impl LangBytes {
                     format!(
                         "Cannot convert to ascii: byte at position {} (value {}) is not in the range [0:128]", 
                         error.valid_up_to(), value[error.valid_up_to()]
-                    ).into()
+                    )
                 )?;
                 unreachable!()
             }
@@ -182,7 +182,7 @@ impl LangBytes {
             runtime
                 .throw_quick(
                     value_error(),
-                    "Invalid byte literal for little-endian utf-16 conversion".into(),
+                    "Invalid byte literal for little-endian utf-16 conversion",
                 )
                 .and_then(|_| unreachable!())
         })
@@ -201,7 +201,7 @@ impl LangBytes {
             runtime
                 .throw_quick(
                     value_error(),
-                    "Invalid byte literal for big-endian utf-16 conversion".into(),
+                    "Invalid byte literal for big-endian utf-16 conversion",
                 )
                 .and_then(|_| unreachable!())
         })
@@ -214,10 +214,7 @@ impl LangBytes {
             .map(|x| match char::from_u32(FromBytes::from_le(x)) {
                 Option::Some(value) => Result::Ok(value),
                 Option::None => runtime
-                    .throw_quick(
-                        value_error(),
-                        "Invalid byte literal for utf-32 conversion".into(),
-                    )
+                    .throw_quick(value_error(), "Invalid byte literal for utf-32 conversion")
                     .and_then(|_| unreachable!()),
             })
             .collect()
@@ -232,7 +229,7 @@ impl LangBytes {
                 Option::None => runtime
                     .throw_quick(
                         value_error(),
-                        "Invalid byte literal for big-endian utf-32 conversion".into(),
+                        "Invalid byte literal for big-endian utf-32 conversion",
                     )
                     .and_then(|_| unreachable!()),
             })
@@ -258,7 +255,7 @@ impl LangBytes {
         } else {
             runtime.throw_quick(
                 value_error(),
-                format!("Value added to bytes must be in [0:256], not {}", int_val).into(),
+                format!("Value added to bytes must be in [0:256], not {}", int_val),
             )
         }
     }
@@ -274,10 +271,7 @@ impl LangBytes {
             "utf-32" => self.add_utf32(char_val),
             "utf-32be" => self.add_utf32be(char_val),
             x => {
-                return runtime.throw_quick(
-                    value_error(),
-                    format!("{} is not a valid encoding", x).into(),
-                )
+                return runtime.throw_quick(value_error(), format!("{} is not a valid encoding", x))
             }
         };
         runtime.return_0()
@@ -307,8 +301,7 @@ impl LangBytes {
                 format!(
                     "Invalid ASCII character (value {} is not in [0:128])",
                     value as u32
-                )
-                .into(),
+                ),
             )?,
         }
         FnResult::Ok(())
@@ -358,16 +351,12 @@ impl LangBytes {
                 "index {} out of range for list of length {}",
                 index,
                 self.value.borrow().len()
-            )
-            .into(),
+            ),
         )
     }
 
     fn utf8_err<T>(&self, runtime: &mut Runtime) -> Result<T, ()> {
-        runtime.throw_quick(
-            value_error(),
-            "Invalid byte literal for utf-8 conversion".into(),
-        )?;
+        runtime.throw_quick(value_error(), "Invalid byte literal for utf-8 conversion")?;
         unreachable!()
     }
 
@@ -377,8 +366,7 @@ impl LangBytes {
             format!(
                 "{} is too big to fit in a byte (must be in [-255:255])",
                 index
-            )
-            .into(),
+            ),
         )?;
         unreachable!()
     }
@@ -417,9 +405,7 @@ impl LangBytes {
                             .throw_quick(arithmetic_error(), overflow_exc(val, result.len()))
                     }
                 },
-                Option::None => {
-                    return runtime.throw_quick(arithmetic_error(), "Cannot multiply".into())
-                }
+                Option::None => return runtime.throw_quick(arithmetic_error(), "Cannot multiply"),
             }
         }
         runtime.return_1(Rc::new(LangBytes::new(result)).into())
@@ -600,7 +586,7 @@ impl BytesIter {
                         Err(_) => {
                             return runtime.throw_quick(
                                 value_error(),
-                                format!("Cannot parse hex value of {}", ascii).into(),
+                                format!("Cannot parse hex value of {}", ascii),
                             )
                         }
                     }
@@ -609,10 +595,9 @@ impl BytesIter {
             }
             // Non-Ascii characters are *probably* not able to be parsed in base-16
             // This might need updating later, though (IDK how Unicode-safety plays into this)
-            Result::Err(s) => runtime.throw_quick(
-                value_error(),
-                format!("Cannot parse hex value of {}", s).into(),
-            ),
+            Result::Err(s) => {
+                runtime.throw_quick(value_error(), format!("Cannot parse hex value of {}", s))
+            }
         }
     }
 

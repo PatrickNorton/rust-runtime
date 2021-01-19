@@ -82,7 +82,7 @@ impl Dict {
         debug_assert_eq!(args.len(), 1);
         match self.value.borrow().get(args.remove(0), runtime)? {
             Option::Some(result) => runtime.return_1(result),
-            Option::None => runtime.throw_quick(key_error(), "Value not found".into()),
+            Option::None => runtime.throw_quick(key_error(), "Value not found"),
         }
     }
 

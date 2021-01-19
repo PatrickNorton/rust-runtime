@@ -102,7 +102,7 @@ fn floor_div(this: IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> Fn
     if args.len() == 1 {
         let var: IntVar = take(&mut args[0]).into();
         if var.is_zero() {
-            return runtime.throw_quick(value_error(), "Cannot divide by 0".into());
+            return runtime.throw_quick(value_error(), "Cannot divide by 0");
         }
         return runtime.return_1((this / var).into());
     }
@@ -110,7 +110,7 @@ fn floor_div(this: IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> Fn
     for arg in args {
         let var = IntVar::from(arg);
         if var.is_zero() {
-            return runtime.throw_quick(value_error(), "Cannot divide by 0".into());
+            return runtime.throw_quick(value_error(), "Cannot divide by 0");
         }
         ratio /= var;
     }
@@ -122,7 +122,7 @@ fn div(this: IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
         let var = IntVar::from(arg);
         if var.is_zero() {
-            return runtime.throw_quick(value_error(), "Cannot divide by 0".into());
+            return runtime.throw_quick(value_error(), "Cannot divide by 0");
         }
         ratio /= RationalVar::from_integer(var.into())
     }
@@ -140,7 +140,7 @@ fn modulo(this: IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnRes
     debug_assert!(args.len() == 1);
     let arg_int = IntVar::from(take(&mut args[0]));
     if arg_int.is_zero() {
-        runtime.throw_quick(value_error(), "Cannot modulo by 0".into())
+        runtime.throw_quick(value_error(), "Cannot modulo by 0")
     } else {
         runtime.return_1((this % arg_int).into())
     }
@@ -205,7 +205,7 @@ fn left_bs(this: IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult
                     usize::MAX
                 )
             };
-            return runtime.throw_quick(arithmetic_error(), msg.into());
+            return runtime.throw_quick(arithmetic_error(), msg);
         }
         Option::Some(b) => this << b,
     };
@@ -226,7 +226,7 @@ fn right_bs(this: IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResul
                     usize::MAX
                 )
             };
-            return runtime.throw_quick(arithmetic_error(), msg.into());
+            return runtime.throw_quick(arithmetic_error(), msg);
         }
         Option::Some(b) => this >> b,
     };
@@ -276,8 +276,7 @@ fn to_str(this: IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnRes
                     format!(
                         "Invalid radix for int.to_str: Expected in [2:37], got {}",
                         variable
-                    )
-                    .into(),
+                    ),
                 )
             }
         }
@@ -309,8 +308,7 @@ fn str_base(this: IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnR
             format!(
                 "int.strBase requires a radix between 2 and 36, not {}",
                 value
-            )
-            .into(),
+            ),
         ),
     }
 }
@@ -319,7 +317,7 @@ fn div_rem(this: IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnRe
     debug_assert_eq!(args.len(), 1);
     let other = take(&mut args[0]).int(runtime)?;
     if other.is_zero() {
-        return runtime.throw_quick(arithmetic_error(), "Cannot divide by 0".into());
+        return runtime.throw_quick(arithmetic_error(), "Cannot divide by 0");
     }
     let (quotient, rem) = this.div_rem(&other);
     runtime.return_1(LangTuple::from_vec(vec![quotient.into(), rem.into()]).into())

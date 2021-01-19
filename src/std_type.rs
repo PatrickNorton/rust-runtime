@@ -252,7 +252,7 @@ fn create_char(var: Variable, runtime: &mut Runtime) -> Result<Variable, ()> {
         Option::None => runtime
             .throw_quick(
                 value_error(),
-                format!("Cannot convert scalar value {} to a char", int_val).into(),
+                format!("Cannot convert scalar value {} to a char", int_val),
             )
             .and_then(|_| unreachable!("Should be in native function here")),
     }

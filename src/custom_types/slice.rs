@@ -65,7 +65,7 @@ impl Slice {
         let len = IntVar::from(take(&mut args[0]));
         let step = self.step.clone().unwrap_or_else(One::one);
         if step.is_zero() {
-            runtime.throw_quick(value_error(), "Step cannot be 0".into())
+            runtime.throw_quick(value_error(), "Step cannot be 0")
         } else if step.is_positive() {
             let start = self
                 .start

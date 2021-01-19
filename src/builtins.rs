@@ -41,7 +41,7 @@ fn input_impl(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let mut input = String::new();
     match std::io::stdin().read_line(&mut input) {
         Ok(_) => runtime.push(StringVar::from(input).into()),
-        Err(_) => runtime.throw_quick(io_error(), "Could not read from stdin".into())?,
+        Err(_) => runtime.throw_quick(io_error(), "Could not read from stdin")?,
     }
     runtime.return_0()
 }
