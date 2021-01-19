@@ -125,10 +125,6 @@ where
             method: InnerMethod::Native(method),
         })
     }
-
-    pub fn call(self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
-        self.method.call(self.value, args.0, args.1)
-    }
 }
 
 impl<T: 'static + Debug> Method for StdMethod<T>
