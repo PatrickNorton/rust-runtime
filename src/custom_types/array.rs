@@ -2,7 +2,7 @@ use crate::custom_types::exceptions::{index_error, value_error};
 use crate::custom_types::join_values;
 use crate::custom_types::range::Range;
 use crate::custom_var::{downcast_var, CustomVar};
-use crate::int_var::IntVar;
+use crate::int_var::{normalize, IntVar};
 use crate::looping::{self, IterResult, NativeIterator};
 use crate::method::{NativeMethod, StdMethod};
 use crate::name::Name;
@@ -56,24 +56,18 @@ impl Array {
         StdMethod::new_native(self, func).into()
     }
 
-    fn index(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        let signed_index = IntVar::from(args[0].clone());
-        let index = if signed_index.is_negative() {
-            signed_index + self.vars.borrow().len().into()
-        } else {
-            signed_index
-        };
-        if index >= self.vars.borrow().len().into() || index.is_negative() {
-            runtime.throw_quick(
+    fn index(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        let values = self.vars.borrow();
+        match normalize(values.len(), take(&mut args[0]).into()) {
+            Ok(i) => runtime.return_1(values[i].clone()),
+            Err(index) => runtime.throw_quick(
                 index_error(),
                 format!(
                     "index {} out of range for array of length {}",
                     index,
-                    self.vars.borrow().len()
+                    values.len()
                 ),
-            )
-        } else {
-            runtime.return_1(self.vars.borrow()[index.to_usize().unwrap()].clone())
+            ),
         }
     }
 
