@@ -78,7 +78,7 @@ impl Zero for RationalVar {
     }
 
     fn is_zero(&self) -> bool {
-        *self.value == BigRational::zero()
+        self.value.is_zero()
     }
 }
 

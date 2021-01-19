@@ -19,6 +19,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 pub type UnionMethod = InnerMethod<LangUnion>;
+pub type UnionTypeMethod = InnerMethod<Type>;
 
 #[derive(Debug, Clone)]
 pub struct LangUnion {
@@ -35,7 +36,7 @@ pub struct UnionType {
     variants: Vec<String>,
     variables: HashSet<Arc<str>>,
     methods: NameMap<UnionMethod>,
-    static_methods: NameMap<UnionMethod>,
+    static_methods: NameMap<UnionTypeMethod>,
     properties: HashMap<String, Property>,
 }
 
@@ -149,7 +150,7 @@ impl UnionType {
         variants: Vec<String>,
         variables: HashSet<Arc<str>>,
         methods: NameMap<UnionMethod>,
-        static_methods: NameMap<UnionMethod>,
+        static_methods: NameMap<UnionTypeMethod>,
         properties: HashMap<String, Property>,
     ) -> UnionType {
         UnionType {
@@ -176,17 +177,12 @@ impl UnionType {
 
     fn index_attr(&'static self, attr: &str) -> Variable {
         let var_attr = Name::Attribute(attr);
-        if self.static_methods.contains_key(var_attr) {
-            match self.static_methods.get(var_attr).unwrap() {
-                InnerMethod::Standard(a, b) => {
-                    let inner_m = InnerMethod::Standard(*a, *b);
-                    let n = StdMethod::new(Type::Union(self), inner_m);
-                    Box::new(n).into()
-                }
-                _ => unimplemented!(),
+        match self.static_methods.get(var_attr) {
+            Option::Some(inner_m) => {
+                let n = StdMethod::new(Type::Union(self), *inner_m);
+                Box::new(n).into()
             }
-        } else {
-            unimplemented!()
+            _ => unimplemented!("{}.{}", self.name(), attr),
         }
     }
 

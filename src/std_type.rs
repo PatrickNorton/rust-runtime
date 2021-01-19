@@ -2,7 +2,7 @@ use crate::builtin_functions::string_fn;
 use crate::builtins::default_methods;
 use crate::custom_types::exceptions::value_error;
 use crate::custom_types::types::{CustomType, TypeIdentity};
-use crate::lang_union::{UnionMethod, UnionType};
+use crate::lang_union::{UnionMethod, UnionType, UnionTypeMethod};
 use crate::method::{InnerMethod, StdMethod};
 use crate::name::Name;
 use crate::name_map::NameMap;
@@ -96,7 +96,7 @@ impl Type {
         variants: Vec<String>,
         variables: HashSet<Arc<str>>,
         methods: NameMap<UnionMethod>,
-        static_methods: NameMap<UnionMethod>,
+        static_methods: NameMap<UnionTypeMethod>,
         properties: HashMap<String, Property>,
     ) -> Type {
         let t = Box::new(UnionType::new(

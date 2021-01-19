@@ -4,7 +4,7 @@ use crate::custom_types::bytes::LangBytes;
 use crate::custom_types::range::Range;
 use crate::int_tools::bytes_index;
 use crate::int_var::IntVar;
-use crate::lang_union::UnionMethod;
+use crate::method::InnerMethod;
 use crate::name_map::NameMap;
 use crate::operator::Operator;
 use crate::property::{Property, StdProperty};
@@ -275,25 +275,25 @@ fn get_properties(
     properties
 }
 
-fn merge_maps_union(
+fn merge_maps_union<T>(
     ops: HashMap<Operator, StdVarMethod>,
     strings: HashMap<String, StdVarMethod>,
-) -> NameMap<UnionMethod> {
+) -> NameMap<InnerMethod<T>> {
     let new_ops = unionize_map(ops);
     let new_strings = unionize_map(strings);
     NameMap::from_values(new_ops, new_strings)
 }
 
-fn unionize_map<T: Eq + Hash>(value: HashMap<T, StdVarMethod>) -> HashMap<T, UnionMethod> {
+fn unionize_map<T: Eq + Hash, U>(value: HashMap<T, StdVarMethod>) -> HashMap<T, InnerMethod<U>> {
     value
         .into_iter()
         .map(|(k, v)| (k, std_to_union(v)))
         .collect()
 }
 
-fn std_to_union(val: StdVarMethod) -> UnionMethod {
+fn std_to_union<T>(val: StdVarMethod) -> InnerMethod<T> {
     match val {
-        StdVarMethod::Standard(a, b) => UnionMethod::Standard(a, b),
+        StdVarMethod::Standard(a, b) => InnerMethod::Standard(a, b),
         _ => panic!("Cannot convert method"),
     }
 }
