@@ -1,6 +1,6 @@
 use num::bigint::{Sign, ToBigInt, ToBigUint, TryFromBigIntError};
 use num::traits::{abs, FromPrimitive, Num, One, Pow, Signed};
-use num::{BigInt, BigUint, ToPrimitive, Zero};
+use num::{BigInt, BigUint, Integer, ToPrimitive, Zero};
 use std::cmp::Ordering;
 use std::convert::{TryFrom, TryInto};
 use std::fmt::{Binary, Display, Formatter, LowerHex, Octal, UpperHex};
@@ -638,3 +638,66 @@ macro_rules! impl_display {
 }
 
 impl_display! {Binary, Display, LowerHex, Octal, UpperHex}
+
+macro_rules! integer_fn {
+    ($name:ident) => {
+        fn $name(&self, other: &Self) -> Self {
+            match self {
+                IntVar::Small(s1) => match other {
+                    IntVar::Small(s2) => s1.$name(s2).into(),
+                    IntVar::Big(b2) => BigInt::from(*s1).$name(&b2).into(),
+                },
+                IntVar::Big(b1) => match other {
+                    IntVar::Small(s2) => b1.$name(&(*s2).into()).into(),
+                    IntVar::Big(b2) => b1.$name(&b2).into(),
+                },
+            }
+        }
+    };
+}
+
+impl Integer for IntVar {
+    integer_fn!(div_floor);
+    integer_fn!(mod_floor);
+    integer_fn!(gcd);
+    integer_fn!(lcm);
+
+    fn divides(&self, other: &Self) -> bool {
+        self.is_multiple_of(other)
+    }
+
+    fn is_multiple_of(&self, other: &Self) -> bool {
+        (self % other).is_zero()
+    }
+
+    fn is_even(&self) -> bool {
+        match self {
+            IntVar::Small(s) => s.is_even(),
+            IntVar::Big(b) => b.is_even(),
+        }
+    }
+
+    fn is_odd(&self) -> bool {
+        match self {
+            IntVar::Small(s) => s.is_odd(),
+            IntVar::Big(b) => b.is_odd(),
+        }
+    }
+
+    fn div_rem(&self, other: &Self) -> (Self, Self) {
+        match self {
+            IntVar::Small(s1) => match other {
+                IntVar::Small(s2) => map_into(s1.div_rem(s2)),
+                IntVar::Big(b2) => map_into(BigInt::from(*s1).div_rem(&b2)),
+            },
+            IntVar::Big(b1) => match other {
+                IntVar::Small(s2) => map_into(b1.div_rem(&(*s2).into())),
+                IntVar::Big(b2) => map_into(b1.div_rem(&b2)),
+            },
+        }
+    }
+}
+
+fn map_into<X, Y: Into<X>>((a, b): (Y, Y)) -> (X, X) {
+    (a.into(), b.into())
+}
