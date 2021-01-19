@@ -307,6 +307,23 @@ impl UnionMaker {
     fn new(variant_no: usize, cls: &'static UnionType) -> UnionMaker {
         UnionMaker { variant_no, cls }
     }
+
+    fn create(&self, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        match args.len() {
+            0 => runtime.return_1(
+                LangUnion::new(self.variant_no, Box::new(Variable::null()), self.cls).into(),
+            ),
+            1 => {
+                let value = take(&mut args[0]);
+                runtime.return_1(LangUnion::new(self.variant_no, Box::new(value), self.cls).into())
+            }
+            x => panic!(
+                "Expected 1 or 0 args, got {}\n{}",
+                x,
+                runtime.stack_frames()
+            ),
+        }
+    }
 }
 
 impl CustomVar for UnionMaker {
@@ -326,26 +343,11 @@ impl CustomVar for UnionMaker {
         unimplemented!()
     }
 
-    fn call(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        debug_assert_eq!(args.len(), 1);
-        let value = take(&mut args[0]);
-        runtime.return_1(LangUnion::new(self.variant_no, Box::new(value), self.cls).into())
+    fn call(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        self.create(args, runtime)
     }
 
-    fn call_or_goto(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        match args.len() {
-            0 => runtime.return_1(
-                LangUnion::new(self.variant_no, Box::new(Variable::null()), self.cls).into(),
-            ),
-            1 => {
-                let value = take(&mut args[0]);
-                runtime.return_1(LangUnion::new(self.variant_no, Box::new(value), self.cls).into())
-            }
-            x => panic!(
-                "Expected 1 or 0 args, got {}\n{}",
-                x,
-                runtime.stack_frames()
-            ),
-        }
+    fn call_or_goto(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        self.create(args, runtime)
     }
 }
