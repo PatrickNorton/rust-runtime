@@ -336,10 +336,9 @@ impl InnerVar {
                 }
             }
             InnerVar::Bigint(val) => {
-                if let Name::Operator(o) = index {
-                    int_fn::get_operator(val, o)
-                } else {
-                    unimplemented!("int.{}\n{}", index.as_str(), runtime.stack_frames())
+                match index {
+                    Name::Operator(o) => int_fn::get_operator(val, o),
+                    Name::Attribute(s) => int_fn::get_attribute(val, s),
                 }
             }
             InnerVar::String(val) => match index {

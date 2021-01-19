@@ -17,6 +17,10 @@ impl LangTuple {
         LangTuple { values: args }
     }
 
+    pub fn from_vec(args: Vec<Variable>) -> Self {
+        LangTuple::new(args.into_boxed_slice().into())
+    }
+
     pub fn str(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
         let mut result = "(".to_string();
         for (i, value) in self.values.iter().enumerate() {

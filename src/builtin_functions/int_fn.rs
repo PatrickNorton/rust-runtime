@@ -5,9 +5,10 @@ use crate::operator::Operator;
 use crate::rational_var::RationalVar;
 use crate::runtime::Runtime;
 use crate::string_var::StringVar;
+use crate::tuple::LangTuple;
 use crate::variable::{FnResult, Variable};
 use num::traits::Pow;
-use num::{Signed, ToPrimitive, Zero};
+use num::{Integer, Signed, ToPrimitive, Zero};
 use std::mem::take;
 use std::ops::Neg;
 use std::vec::Vec;
@@ -43,6 +44,19 @@ pub fn op_fn(o: Operator) -> NativeMethod<IntVar> {
 
 pub fn get_operator(this: IntVar, o: Operator) -> Variable {
     let func = op_fn(o);
+    StdMethod::new_native(this, func).into()
+}
+
+pub fn str_fn(s: &str) -> NativeMethod<IntVar> {
+    match s {
+        "strBase" => str_base,
+        "divRem" => div_rem,
+        _ => unimplemented!("int.{} unimplemented", s),
+    }
+}
+
+pub fn get_attribute(this: IntVar, s: &str) -> Variable {
+    let func = str_fn(s);
     StdMethod::new_native(this, func).into()
 }
 
@@ -283,4 +297,30 @@ fn to_int(this: IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult 
 fn to_bool(this: IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     runtime.return_1((!this.is_zero()).into())
+}
+
+fn str_base(this: IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert_eq!(args.len(), 1);
+    let value: IntVar = take(&mut args[0]).into();
+    match value.to_u32() {
+        Option::Some(s) if (2..=36).contains(&s) => runtime.return_1(this.to_str_radix(s).into()),
+        _ => runtime.throw_quick(
+            value_error(),
+            format!(
+                "int.strBase requires a radix between 2 and 36, not {}",
+                value
+            )
+            .into(),
+        ),
+    }
+}
+
+fn div_rem(this: IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert_eq!(args.len(), 1);
+    let other = take(&mut args[0]).int(runtime)?;
+    if other.is_zero() {
+        return runtime.throw_quick(arithmetic_error(), "Cannot divide by 0".into());
+    }
+    let (quotient, rem) = this.div_rem(&other);
+    runtime.return_1(LangTuple::from_vec(vec![quotient.into(), rem.into()]).into())
 }
