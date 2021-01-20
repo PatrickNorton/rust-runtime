@@ -329,7 +329,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
                 panic!(
                     "ThrowQuick must be called with a type, not {:?}\n{}",
                     exc_type,
-                    runtime.stack_frames()
+                    runtime.frame_strings()
                 );
             }
         }
@@ -396,7 +396,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
                                     }
                                     _ => panic!(
                                         "Iterators should return an option-wrapped value\n{}",
-                                        runtime.stack_frames()
+                                        runtime.frame_strings()
                                     ),
                                 })
                                 .collect::<Vec<_>>();
@@ -405,7 +405,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
                                     "Not enough values yielded: expected {}, got {}\n{}",
                                     bytes_1,
                                     values.len(),
-                                    runtime.stack_frames()
+                                    runtime.frame_strings()
                                 );
                             }
                             runtime.extend(values);
@@ -416,7 +416,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
                     },
                     _ => panic!(
                         "Iterators should return an option-wrapped value\n{}",
-                        runtime.stack_frames()
+                        runtime.frame_strings()
                     ),
                 }
             }
@@ -620,7 +620,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             } else {
                 panic!(
                     "Called Bytecode::UnwrapOption where TOS not an option\n{}",
-                    runtime.stack_frames()
+                    runtime.frame_strings()
                 )
             }
         }

@@ -42,7 +42,7 @@ impl Generator {
     pub fn create(_args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         panic!(
             "Should not be creating generators\n{}",
-            runtime.stack_frames()
+            runtime.frame_strings()
         )
     }
 

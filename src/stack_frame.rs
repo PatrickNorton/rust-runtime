@@ -187,7 +187,7 @@ pub fn frame_strings(frames: impl Iterator<Item = SFInfo>, runtime: &Runtime) ->
     let mut result = String::new();
     for frame in frames {
         if !frame.is_native() {
-            let file = &runtime.file_no(frame.file_no());
+            let file = runtime.file_no(frame.file_no());
             let fn_no = frame.fn_no();
             let fn_pos = frame.current_pos();
             let func = &file.get_functions()[fn_no as usize];

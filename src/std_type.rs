@@ -341,7 +341,7 @@ impl StdType {
                                 "{}.{} not found\n{}",
                                 self.name(),
                                 index.as_str(),
-                                runtime.stack_frames()
+                                runtime.frame_strings()
                             )
                         })
                 }
@@ -377,7 +377,7 @@ impl StdType {
                 "{}.{} does not exist\n{}",
                 self.name,
                 name.as_str(),
-                runtime.stack_frames()
+                runtime.frame_strings()
             )
         })
     }

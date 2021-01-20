@@ -118,7 +118,7 @@ impl StdVariable {
                         "{}.{}\n{}",
                         self.get_type().str(),
                         index,
-                        runtime.stack_frames()
+                        runtime.frame_strings()
                     ),
                 }
             }

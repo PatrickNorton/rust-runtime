@@ -150,7 +150,7 @@ impl List {
                     "Bad type for list[{}].addAll: {}\n{}",
                     self.generic.str(),
                     val.get_type().str(),
-                    runtime.stack_frames(),
+                    runtime.frame_strings(),
                 )
             } else {
                 new.push(val)
@@ -300,7 +300,7 @@ impl List {
                 "Bad type for list.add: got {}, expected {}\n{}",
                 args[0].get_type().str(),
                 self.generic.str(),
-                runtime.stack_frames()
+                runtime.frame_strings()
             )
         }
         self.value.borrow_mut().push(take(&mut args[0]));
@@ -317,7 +317,7 @@ impl List {
                     "Bad type for list[{}].addAll: {}\n{}",
                     self.generic.str(),
                     val.get_type().str(),
-                    runtime.stack_frames(),
+                    runtime.frame_strings(),
                 )
             }
             value.push(val);

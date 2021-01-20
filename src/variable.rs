@@ -97,7 +97,7 @@ impl Variable {
             Variable::Option(i, val) => unimplemented!(
                 "{}()\n{}",
                 option_fn::type_of(i, val.as_ref()).str(),
-                args.1.stack_frames()
+                args.1.frame_strings()
             ),
         }
     }
@@ -108,7 +108,7 @@ impl Variable {
             Variable::Option(i, val) => unimplemented!(
                 "{}()\n{}",
                 option_fn::type_of(i, val.as_ref()).str(),
-                args.1.stack_frames()
+                args.1.frame_strings()
             ),
         }
     }
@@ -119,7 +119,7 @@ impl Variable {
             Variable::Option(i, val) => unimplemented!(
                 "{}()\n{}",
                 option_fn::type_of(i, val.as_ref()).str(),
-                runtime.stack_frames()
+                runtime.frame_strings()
             ),
         }
     }
@@ -291,7 +291,7 @@ impl InnerVar {
             InnerVar::Type(t) => t.push_create(args),
             InnerVar::Custom(val) => val.into_inner().call(args.0, args.1),
             InnerVar::Union(val) => val.call(args),
-            x => unimplemented!("{}()\n{}", x.get_type().str(), args.1.stack_frames()),
+            x => unimplemented!("{}()\n{}", x.get_type().str(), args.1.frame_strings()),
         }
     }
 
@@ -303,7 +303,7 @@ impl InnerVar {
             InnerVar::Type(t) => t.push_create(args),
             InnerVar::Custom(val) => val.into_inner().call_or_goto(args.0, args.1),
             InnerVar::Union(val) => val.call_or_goto(args),
-            x => unimplemented!("{}()\n{}", x.get_type().str(), args.1.stack_frames()),
+            x => unimplemented!("{}()\n{}", x.get_type().str(), args.1.frame_strings()),
         }
     }
 
@@ -314,7 +314,7 @@ impl InnerVar {
             InnerVar::Standard(val) => val.iter(runtime),
             InnerVar::Custom(val) => val.into_inner().iter(runtime),
             InnerVar::Union(val) => val.iter(runtime),
-            x => unimplemented!("{}.iter()\n{}", x.get_type().str(), runtime.stack_frames()),
+            x => unimplemented!("{}.iter()\n{}", x.get_type().str(), runtime.frame_strings()),
         }
     }
 
@@ -324,7 +324,7 @@ impl InnerVar {
                 if let Name::Operator(o) = index {
                     null_fn::get_operator(o)
                 } else {
-                    unimplemented!("null.{}\n{}", index.as_str(), runtime.stack_frames())
+                    unimplemented!("null.{}\n{}", index.as_str(), runtime.frame_strings())
                 }
             }
             InnerVar::Standard(val) => val.index(index, runtime)?,
@@ -332,7 +332,7 @@ impl InnerVar {
                 if let Name::Operator(o) = index {
                     bool_fn::get_operator(val, o)
                 } else {
-                    unimplemented!("bool.{}\n{}", index.as_str(), runtime.stack_frames())
+                    unimplemented!("bool.{}\n{}", index.as_str(), runtime.frame_strings())
                 }
             }
             InnerVar::Bigint(val) => match index {
@@ -351,7 +351,7 @@ impl InnerVar {
                 if let Name::Operator(o) = index {
                     dec_fn::get_operator(val, o)
                 } else {
-                    unimplemented!("dec.{}\n{}", index.as_str(), runtime.stack_frames())
+                    unimplemented!("dec.{}\n{}", index.as_str(), runtime.frame_strings())
                 }
             }
             InnerVar::Char(val) => match index {

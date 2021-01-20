@@ -283,7 +283,7 @@ fn to_str(this: IntVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnRes
         x => panic!(
             "Expected 1 or 2 arguments for int.operator str, got {}\n{}",
             x,
-            runtime.stack_frames()
+            runtime.frame_strings()
         ),
     }
 }

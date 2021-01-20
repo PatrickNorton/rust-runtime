@@ -102,7 +102,7 @@ impl Runtime {
                 "Index {} out of bounds for len {}\n{}",
                 index,
                 self.last_frame().len(),
-                self.stack_frames()
+                self.frame_strings()
             )
         }
         &self.last_frame()[index as usize]
@@ -306,7 +306,7 @@ impl Runtime {
                     "Attempted to remove a negative number of values ({}..{})\n{}",
                     stack_h,
                     drain_end,
-                    self.stack_frames()
+                    self.frame_strings()
                 )
             }
             self.variables.drain(stack_h..drain_end);
@@ -439,7 +439,7 @@ impl Runtime {
         match replace(&mut self.ret_count, 0) {
             0 => panic!(
                 "Attempted to call pop_return where no values were returned\n{}",
-                self.stack_frames()
+                self.frame_strings()
             ),
             1 => self.pop(),
             x => {
@@ -455,12 +455,12 @@ impl Runtime {
             0 if ret_count == 0 => vec![],
             0 => panic!(
                 "Attempted to call pop_returns where no values were returned\n{}",
-                self.stack_frames()
+                self.frame_strings()
             ),
             i => match i.cmp(&ret_count) {
                 Ordering::Less => panic!(
                     "Runtime::pop_returns called with a count of {}, but only {} values were returned\n{}",
-                    ret_count, i, self.stack_frames()
+                    ret_count, i, self.frame_strings()
                 ),
                 Ordering::Equal => self
                     .variables
@@ -479,7 +479,7 @@ impl Runtime {
         match self.ret_count {
             0 => panic!(
                 "Attempted to return 0 values from generator\n{}",
-                self.stack_frames()
+                self.frame_strings()
             ),
             i => {
                 assert!(ret_count > 0 && i > 0);
@@ -613,7 +613,7 @@ impl Runtime {
         }
     }
 
-    pub fn stack_frames(&self) -> String {
+    pub fn frame_strings(&self) -> String {
         frame_strings(self.frames.iter().rev().map(StackFrame::exc_info), self)
     }
 

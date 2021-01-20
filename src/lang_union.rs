@@ -320,7 +320,7 @@ impl UnionMaker {
             x => panic!(
                 "Expected 1 or 0 args, got {}\n{}",
                 x,
-                runtime.stack_frames()
+                runtime.frame_strings()
             ),
         }
     }
