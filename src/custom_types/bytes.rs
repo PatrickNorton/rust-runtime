@@ -88,7 +88,7 @@ impl LangBytes {
                 let value = IntVar::from(take(&mut args[1]));
                 self.value.borrow_mut()[index] = match value.to_u8() {
                     Option::Some(i) => i,
-                    Option::None => return Self::shrink_err(value, runtime)?,
+                    Option::None => return Self::shrink_err(value, runtime),
                 };
                 runtime.return_0()
             }
@@ -253,10 +253,7 @@ impl LangBytes {
             self.value.borrow_mut().push(value);
             runtime.return_0()
         } else {
-            runtime.throw_quick(
-                value_error(),
-                format!("Value added to bytes must be in [0:256], not {}", int_val),
-            )
+            Self::shrink_err(int_val, runtime)
         }
     }
 
@@ -360,15 +357,11 @@ impl LangBytes {
         unreachable!()
     }
 
-    fn shrink_err<T>(index: IntVar, runtime: &mut Runtime) -> Result<T, ()> {
+    fn shrink_err(index: IntVar, runtime: &mut Runtime) -> FnResult {
         runtime.throw_quick(
             value_error(),
-            format!(
-                "{} is too big to fit in a byte (must be in [-255:255])",
-                index
-            ),
-        )?;
-        unreachable!()
+            format!("{} is too big to fit in a byte (must be in [0:256])", index),
+        )
     }
 
     fn iter(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
