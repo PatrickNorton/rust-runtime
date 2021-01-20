@@ -15,7 +15,7 @@ use crate::string_var::{AsciiVar, MaybeAscii, StrVar, StringVar};
 use crate::variable::{FnResult, Variable};
 use ascii::{AsAsciiStr, AsciiChar, AsciiStr, AsciiString};
 use downcast_rs::Downcast;
-use num::{BigInt, One, Signed, ToPrimitive};
+use num::{BigInt, Num, One, Signed, ToPrimitive};
 use std::any::Any;
 use std::cell::Cell;
 use std::fmt::Debug;
@@ -58,6 +58,7 @@ pub fn get_attr(this: StringVar, s: &str) -> Variable {
         "lastIndexOf" => last_index_of,
         "chars" => return chars(&this),
         "encode" => encode,
+        "intBase" => int_base,
         "asInt" => as_int,
         x => unimplemented!("str.{}", x),
     };
@@ -493,6 +494,26 @@ fn encode(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> Fn
         }
     };
     runtime.return_1(Rc::new(LangBytes::new(byte_val.to_vec())).into())
+}
+
+fn int_base(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert_eq!(args.len(), 1);
+    let base: IntVar = take(&mut args[0]).into();
+    match base.to_u32() {
+        Option::Some(x) if (2..=32).contains(&x) => runtime.return_1(
+            IntVar::from_str_radix(&this, x)
+                .ok()
+                .map(Variable::from)
+                .into(),
+        ),
+        _ => runtime.throw_quick(
+            value_error(),
+            format!(
+                "str.intBase requires a radix between 2 and 36, not {}",
+                base
+            ),
+        ),
+    }
 }
 
 fn as_int(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

@@ -21,6 +21,19 @@ pub fn get_operator(this: char, o: Operator) -> Variable {
     StdMethod::new_native(this, func).into()
 }
 
+pub fn attr_fn(s: &str) -> NativeMethod<char> {
+    match s {
+        "upper" => upper,
+        "lower" => lower,
+        x => unimplemented!("char.{}", x),
+    }
+}
+
+pub fn get_attribute(this: char, s: &str) -> Variable {
+    let func = attr_fn(s);
+    StdMethod::new_native(this, func).into()
+}
+
 fn eq(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     runtime.return_1(args.into_iter().any(|arg| char::from(arg) != this).into())
 }
@@ -42,4 +55,14 @@ fn repr(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         x => character::repr(x).into(),
     };
     runtime.return_1(result.into())
+}
+
+fn upper(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert!(args.is_empty());
+    runtime.return_1(this.to_uppercase().next().unwrap_or(this).into())
+}
+
+fn lower(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert!(args.is_empty());
+    runtime.return_1(this.to_lowercase().next().unwrap_or(this).into())
 }

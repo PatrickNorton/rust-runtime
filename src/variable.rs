@@ -335,12 +335,10 @@ impl InnerVar {
                     unimplemented!("bool.{}\n{}", index.as_str(), runtime.stack_frames())
                 }
             }
-            InnerVar::Bigint(val) => {
-                match index {
-                    Name::Operator(o) => int_fn::get_operator(val, o),
-                    Name::Attribute(s) => int_fn::get_attribute(val, s),
-                }
-            }
+            InnerVar::Bigint(val) => match index {
+                Name::Operator(o) => int_fn::get_operator(val, o),
+                Name::Attribute(s) => int_fn::get_attribute(val, s),
+            },
             InnerVar::String(val) => match index {
                 Name::Operator(o) => string_fn::get_operator(val, o),
                 Name::Attribute(s) => string_fn::get_attr(val, s),
@@ -356,13 +354,10 @@ impl InnerVar {
                     unimplemented!("dec.{}\n{}", index.as_str(), runtime.stack_frames())
                 }
             }
-            InnerVar::Char(val) => {
-                if let Name::Operator(o) = index {
-                    char_fn::get_operator(val, o)
-                } else {
-                    unimplemented!("char.{}\n{}", index.as_str(), runtime.stack_frames())
-                }
-            }
+            InnerVar::Char(val) => match index {
+                Name::Operator(o) => char_fn::get_operator(val, o),
+                Name::Attribute(s) => char_fn::get_attribute(val, s),
+            },
             InnerVar::Type(t) => t.index(index, runtime),
             InnerVar::Custom(val) => val.into_inner().get_attr(index),
             InnerVar::Union(val) => val.index(index, runtime)?,
