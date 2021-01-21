@@ -684,7 +684,12 @@ impl Runtime {
             self.pop_stack();
         }
         self.ret_count = old_ret;
-        panic!("{}", exception.str(self).expect("Panicked inside panic"));
+        panic!(
+            "{}",
+            exception
+                .str(self)
+                .expect("Exception.operator str should not throw an exception")
+        );
     }
 }
 
