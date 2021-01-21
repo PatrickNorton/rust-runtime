@@ -498,14 +498,10 @@ impl Runtime {
     }
 
     pub fn set_static_attr(&mut self, cls: &Type, name: Name, var: Variable) {
-        match self.type_vars.get_mut(cls) {
-            Option::Some(val) => {
-                val.insert(name, var);
-            }
-            Option::None => {
-                self.type_vars.insert(*cls, name_map!(name => var));
-            }
-        };
+        self.type_vars
+            .entry(*cls)
+            .or_insert_with(NameMap::new)
+            .insert(name, var);
     }
 
     pub fn swap_2(&mut self) {
