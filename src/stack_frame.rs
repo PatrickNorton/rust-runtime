@@ -46,7 +46,7 @@ impl StackFrame {
         }
     }
 
-    pub fn native() -> StackFrame {
+    pub fn native(stack_height: usize) -> StackFrame {
         StackFrame {
             exception_handlers: HashSet::new(),
             variables: vec![],
@@ -54,7 +54,7 @@ impl StackFrame {
             file_number: 0,
             location: 0,
             native: true,
-            stack_height: 0,
+            stack_height,
         }
     }
 

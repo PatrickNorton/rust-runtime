@@ -271,7 +271,8 @@ impl Runtime {
     }
 
     pub fn push_native(&mut self) {
-        self.frames.push(StackFrame::native());
+        let stack_height = self.variables.len();
+        self.frames.push(StackFrame::native(stack_height));
     }
 
     pub fn pop_native(&mut self) {
