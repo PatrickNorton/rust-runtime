@@ -279,7 +279,7 @@ impl LangBytes {
         let variable = take(&mut args[0]);
         let value = downcast_var::<LangBytes>(variable).expect("Expected bytes");
         let needle = value.value.borrow();
-        runtime.return_1(self.value.borrow().starts_with(&**needle).into())
+        runtime.return_1(self.value.borrow().starts_with(&needle).into())
     }
 
     fn ends_with(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -287,7 +287,7 @@ impl LangBytes {
         let variable = take(&mut args[0]);
         let value = downcast_var::<LangBytes>(variable).expect("Expected bytes");
         let needle = value.value.borrow();
-        runtime.return_1(self.value.borrow().ends_with(&**needle).into())
+        runtime.return_1(self.value.borrow().ends_with(&needle).into())
     }
 
     fn add_ascii(&self, value: char, runtime: &mut Runtime) -> FnResult {
