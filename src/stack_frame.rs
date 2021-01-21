@@ -82,7 +82,7 @@ impl StackFrame {
     }
 
     pub fn current_pos(&self) -> u32 {
-        self.location // Ignore "cannot move" error here and other similar places
+        self.location
     }
 
     pub fn advance(&mut self, pos: u32) {
