@@ -304,7 +304,7 @@ impl LangBytes {
         FnResult::Ok(())
     }
 
-    fn add_utf8(self: Rc<Self>, value: char) {
+    fn add_utf8(&self, value: char) {
         self.value
             .borrow_mut()
             .extend_from_slice(value.encode_utf8(&mut [0; 4]).as_bytes())
@@ -313,7 +313,7 @@ impl LangBytes {
     // These two can probably be improved with #![feature(array_value_iter)]
     // val.extend(value.encode_utf16(&mut [0; 2]).flat_map(u16::to_le_bytes))
 
-    fn add_utf16(self: Rc<Self>, value: char) {
+    fn add_utf16(&self, value: char) {
         let mut val = self.value.borrow_mut();
         value
             .encode_utf16(&mut [0; 2])
@@ -321,7 +321,7 @@ impl LangBytes {
             .for_each(|x| val.extend_from_slice(&x.to_le_bytes()));
     }
 
-    fn add_utf16be(self: Rc<Self>, value: char) {
+    fn add_utf16be(&self, value: char) {
         let mut val = self.value.borrow_mut();
         value
             .encode_utf16(&mut [0; 2])
@@ -329,13 +329,13 @@ impl LangBytes {
             .for_each(|x| val.extend_from_slice(&x.to_be_bytes()));
     }
 
-    fn add_utf32(self: Rc<Self>, value: char) {
+    fn add_utf32(&self, value: char) {
         self.value
             .borrow_mut()
             .extend(&(value as u32).to_le_bytes())
     }
 
-    fn add_utf32be(self: Rc<Self>, value: char) {
+    fn add_utf32be(&self, value: char) {
         self.value
             .borrow_mut()
             .extend(&(value as u32).to_be_bytes())
