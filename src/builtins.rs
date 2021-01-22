@@ -50,18 +50,18 @@ fn repr() -> Variable {
     Function::Native(repr_impl).into()
 }
 
-fn repr_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn repr_impl(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    runtime.call_op(args[0].clone(), Operator::Repr, Vec::new())
+    runtime.call_op(take(&mut args[0]), Operator::Repr, Vec::new())
 }
 
 fn iter() -> Variable {
     Function::Native(iter_impl).into()
 }
 
-fn iter_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn iter_impl(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    runtime.call_op(args[0].clone(), Operator::Iter, Vec::new())
+    runtime.call_op(take(&mut args[0]), Operator::Iter, Vec::new())
 }
 
 fn reversed() -> Variable {
