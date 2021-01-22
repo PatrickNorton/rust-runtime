@@ -2,7 +2,7 @@ use crate::custom_types::array::Array;
 use crate::custom_types::bytes::LangBytes;
 use crate::custom_types::dict::Dict;
 use crate::custom_types::enumerate::Enumerate;
-use crate::custom_types::exceptions::{io_error, not_implemented, value_error};
+use crate::custom_types::exceptions::{io_error, not_implemented, null_error, value_error};
 use crate::custom_types::file::FileObj;
 use crate::custom_types::interfaces::{Callable, Throwable};
 use crate::custom_types::list::List;
@@ -132,6 +132,7 @@ pub fn builtin_of(index: usize) -> Variable {
         25 => Type::Null.into(),
         26 => hash(),
         27 => value_error().into(),
+        28 => null_error().into(),
         x => unimplemented!("Builtin number {}", x),
     }
 }
