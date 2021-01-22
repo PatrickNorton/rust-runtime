@@ -2,6 +2,7 @@ use crate::builtin_functions::string_fn;
 use crate::builtins::default_methods;
 use crate::custom_types::exceptions::value_error;
 use crate::custom_types::types::{CustomType, TypeIdentity};
+use crate::first;
 use crate::lang_union::{UnionMethod, UnionType, UnionTypeMethod};
 use crate::method::{InnerMethod, StdMethod};
 use crate::name::Name;
@@ -17,7 +18,6 @@ use num::ToPrimitive;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
-use std::mem::take;
 use std::ptr;
 use std::string::{String, ToString};
 use std::sync::Arc;
@@ -135,18 +135,14 @@ impl Type {
         var.get_type().is_subclass(self, runtime)
     }
 
-    pub fn create_inst(
-        &self,
-        mut args: Vec<Variable>,
-        runtime: &mut Runtime,
-    ) -> Result<Variable, ()> {
+    pub fn create_inst(&self, args: Vec<Variable>, runtime: &mut Runtime) -> Result<Variable, ()> {
         Result::Ok(match self {
             Type::Standard(std_t) => std_t.create(args, runtime)?,
             Type::Null => Variable::null(),
-            Type::Bool => take(&mut args[0]).into_bool(runtime)?.into(),
-            Type::Bigint => take(&mut args[0]).int(runtime)?.into(),
-            Type::String => take(&mut args[0]).str(runtime)?.into(),
-            Type::Char => create_char(take(&mut args[0]), runtime)?,
+            Type::Bool => first(args).into_bool(runtime)?.into(),
+            Type::Bigint => first(args).int(runtime)?.into(),
+            Type::String => first(args).str(runtime)?.into(),
+            Type::Char => create_char(first(args), runtime)?,
             Type::Decimal => unimplemented!(),
             Type::Tuple => LangTuple::new(args.into()).into(),
             Type::Type => args[0].get_type().into(),

@@ -1,5 +1,6 @@
 use crate::custom_types::types::CustomType;
 use crate::custom_var::CustomVar;
+use crate::first;
 use crate::function::Function;
 use crate::method::StdMethod;
 use crate::name::Name;
@@ -9,7 +10,6 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
-use std::mem::take;
 use std::rc::Rc;
 
 #[derive(Debug)]
@@ -65,13 +65,13 @@ impl CustomVar for StdException {
 macro_rules! create_exc {
     ($fn_name:ident, $type_name:tt) => {
         pub fn $fn_name() -> Type {
-            fn create(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+            fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
                 let msg = match args.len() {
                     0 => format!("{}\n{}", stringify!($type_name), runtime.frame_strings()),
                     1 => format!(
                         "{}:\n{}\n{}",
                         stringify!($type_name),
-                        StringVar::from(take(&mut args[0])),
+                        StringVar::from(first(args)),
                         runtime.frame_strings()
                     ),
                     x => panic!(

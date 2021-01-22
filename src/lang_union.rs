@@ -1,7 +1,6 @@
 use crate::custom_var::CustomVar;
 use crate::int_var::IntVar;
 use crate::lang_union::default_functions::default_methods;
-use crate::looping;
 use crate::method::{InnerMethod, StdMethod};
 use crate::name::Name;
 use crate::name_map::NameMap;
@@ -11,9 +10,9 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
+use crate::{first, looping};
 use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
-use std::mem::take;
 use std::ptr;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -230,13 +229,13 @@ impl Hash for LangUnion {
 }
 
 mod default_functions {
+    use crate::first;
     use crate::lang_union::{LangUnion, UnionMethod};
     use crate::name::Name;
     use crate::operator::Operator;
     use crate::runtime::Runtime;
     use crate::string_var::StringVar;
     use crate::variable::{FnResult, Variable};
-    use std::mem::take;
 
     pub fn default_methods(name: Name) -> Option<UnionMethod> {
         if let Name::Operator(o) = name {
@@ -285,8 +284,8 @@ mod default_functions {
         runtime.return_1(true.into())
     }
 
-    fn default_in(this: LangUnion, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        let checked_var = take(&mut args[0]);
+    fn default_in(this: LangUnion, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        let checked_var = first(args);
         let this_iter = this.iter(runtime)?;
         while let Option::Some(val) = this_iter.clone().next(runtime)?.take_first() {
             if checked_var.clone().equals(val, runtime)? {
@@ -308,13 +307,13 @@ impl UnionMaker {
         UnionMaker { variant_no, cls }
     }
 
-    fn create(&self, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn create(&self, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         match args.len() {
             0 => runtime.return_1(
                 LangUnion::new(self.variant_no, Box::new(Variable::null()), self.cls).into(),
             ),
             1 => {
-                let value = take(&mut args[0]);
+                let value = first(args);
                 runtime.return_1(LangUnion::new(self.variant_no, Box::new(value), self.cls).into())
             }
             x => panic!(

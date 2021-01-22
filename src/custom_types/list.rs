@@ -11,11 +11,11 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
+use crate::{first, first_two};
 use num::{One, Signed, ToPrimitive, Zero};
 use std::cell::{Cell, RefCell};
 use std::cmp::min;
 use std::iter::repeat_with;
-use std::mem::take;
 use std::rc::Rc;
 
 #[derive(Debug)]
@@ -99,22 +99,23 @@ impl List {
         runtime.return_1(value.into())
     }
 
-    fn list_index(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn list_index(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
         let val = self.value.borrow();
-        match normalize(val.len(), take(&mut args[0]).into()) {
+        match normalize(val.len(), first(args).into()) {
             Result::Ok(index) => runtime.return_1(val[index].clone()),
             Result::Err(index) => self.index_error(index, runtime),
         }
     }
 
-    fn set_index(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn set_index(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
+        let (signed_index, value) = first_two(args);
         let len = self.value.borrow().len(); // Keep out of match to prevent double-borrow error
-        match normalize(len, take(&mut args[0]).into()) {
+        match normalize(len, signed_index.into()) {
             Result::Ok(index) => {
-                if args[1].get_type().is_subclass(&self.generic, runtime) {
-                    self.value.borrow_mut()[index] = take(&mut args[1]);
+                if value.get_type().is_subclass(&self.generic, runtime) {
+                    self.value.borrow_mut()[index] = value;
                 } else {
                     panic!("Bad type for list.operator []=")
                 }
@@ -124,25 +125,26 @@ impl List {
         }
     }
 
-    fn list_get(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn list_get(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         let val = self.value.borrow();
         if args.len() == 1 {
-            runtime.return_1(match normalize(val.len(), take(&mut args[0]).into()) {
+            runtime.return_1(match normalize(val.len(), first(args).into()) {
                 Result::Ok(index) => Option::Some(val[index].clone()).into(),
                 Result::Err(_) => Option::None.into(),
             })
         } else {
             debug_assert_eq!(args.len(), 2);
-            runtime.return_1(match normalize(val.len(), take(&mut args[0]).into()) {
+            let (signed_index, default) = first_two(args);
+            runtime.return_1(match normalize(val.len(), signed_index.into()) {
                 Result::Ok(index) => val[index].clone(),
-                Result::Err(_) => take(&mut args[1]),
+                Result::Err(_) => default,
             })
         }
     }
 
-    fn plus(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn plus(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        let iter = take(&mut args[0]).iter(runtime)?;
+        let iter = first(args).iter(runtime)?;
         let mut new = Vec::new();
         while let Option::Some(val) = iter.next(runtime)?.take_first() {
             if !val.get_type().is_subclass(&self.generic, runtime) {
@@ -159,9 +161,9 @@ impl List {
         runtime.return_1(List::from_values(self.generic, new).into())
     }
 
-    fn times(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn times(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        let times = IntVar::from(take(&mut args[0]));
+        let times = IntVar::from(first(args));
         if times.is_negative() {
             return runtime.throw_quick(
                 value_error(),
@@ -211,11 +213,12 @@ impl List {
         }
     }
 
-    fn swap(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn swap(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
         let len = self.value.borrow().len();
-        match normalize(len, take(&mut args[0]).into()) {
-            Result::Ok(i1) => match normalize(len, take(&mut args[1]).into()) {
+        let (index_1, index_2) = first_two(args);
+        match normalize(len, index_1.into()) {
+            Result::Ok(i1) => match normalize(len, index_2.into()) {
                 Result::Ok(i2) => {
                     self.value.borrow_mut().swap(i1, i2);
                     runtime.return_0()
@@ -241,8 +244,8 @@ impl List {
         runtime.return_1(self.value.borrow().contains(&args[0]).into())
     }
 
-    fn contains_all(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        let checked_var = take(&mut args[0]);
+    fn contains_all(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        let checked_var = first(args);
         let this_iter = checked_var.iter(runtime)?;
         while let Option::Some(val) = this_iter.next(runtime)?.take_first() {
             if !self.value.borrow().contains(&val) {
@@ -252,9 +255,9 @@ impl List {
         runtime.return_1(true.into())
     }
 
-    fn index_of(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn index_of(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
-        let searcher = take(&mut args[0]);
+        let searcher = first(args);
         for (i, var) in self.value.borrow().iter().enumerate() {
             if searcher.clone().equals(var.clone(), runtime)? {
                 return runtime.return_1(Option::Some(IntVar::from(i).into()).into());
@@ -293,7 +296,7 @@ impl List {
         runtime.return_0()
     }
 
-    fn add(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn add(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         if !args[0].get_type().is_subclass(&self.generic, runtime) {
             panic!(
@@ -303,13 +306,13 @@ impl List {
                 runtime.frame_strings()
             )
         }
-        self.value.borrow_mut().push(take(&mut args[0]));
+        self.value.borrow_mut().push(first(args));
         runtime.return_0()
     }
 
-    fn add_all(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn add_all(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        let iterator = take(&mut args[0]).iter(runtime)?;
+        let iterator = first(args).iter(runtime)?;
         let mut value = self.value.borrow_mut();
         while let Option::Some(val) = iterator.next(runtime)?.take_first() {
             if !val.get_type().is_subclass(&self.generic, runtime) {
@@ -353,9 +356,9 @@ impl List {
         Result::Ok(is_eq)
     }
 
-    fn get_slice(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn get_slice(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        let range = self.slice_to_range(runtime, take(&mut args[0]))?;
+        let range = self.slice_to_range(runtime, first(args))?;
         if range.get_step().is_one() {
             let value = self.value.borrow();
             let start = range.get_start().to_usize().unwrap();
@@ -371,9 +374,10 @@ impl List {
         }
     }
 
-    fn set_slice(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        debug_assert_eq!(args.len(), 1);
-        let range = self.slice_to_range(runtime, take(&mut args[0]))?;
+    fn set_slice(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 2);
+        let (range, values) = first_two(args);
+        let range = self.slice_to_range(runtime, range)?;
         if !range.get_step().is_one() {
             return runtime.throw_quick(
                 value_error(),
@@ -384,7 +388,7 @@ impl List {
             );
         }
         let range_end = range.get_stop().to_usize().unwrap_or(usize::MAX);
-        let value_iter = take(&mut args[1]).iter(runtime)?;
+        let value_iter = values.iter(runtime)?;
         let mut array = self.value.borrow_mut();
         for next_index in range.values() {
             let index = match next_index.to_usize() {
@@ -428,9 +432,9 @@ impl List {
         runtime.return_0()
     }
 
-    fn del_slice(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn del_slice(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        let range = self.slice_to_range(runtime, take(&mut args[0]))?;
+        let range = self.slice_to_range(runtime, first(args))?;
         if !range.get_step().is_one() {
             return runtime.throw_quick(
                 value_error(),
@@ -455,9 +459,9 @@ impl List {
         runtime.return_1(Rc::new(ListIter::new(self)).into())
     }
 
-    fn iter_slice(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn iter_slice(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        let range = self.slice_to_range(runtime, take(&mut args[0]))?;
+        let range = self.slice_to_range(runtime, first(args))?;
         let value = self.value.borrow();
         let len = value.len();
         let start = match range.get_start().to_usize() {
@@ -476,18 +480,19 @@ impl List {
         runtime.return_1(Rc::new(ListIter::new(new_vec)).into())
     }
 
-    pub fn insert(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    pub fn insert(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
-        let index = take(&mut args[0]).int(runtime)?;
+        let (index, param) = first_two(args);
+        let index = index.int(runtime)?;
         let mut value = self.value.borrow_mut();
         if index == value.len().into() {
-            value.push(take(&mut args[1]));
+            value.push(param);
             runtime.return_0()
         } else {
             match normalize(value.len(), index) {
                 Result::Ok(i) => {
                     if i <= value.len() {
-                        value.insert(i, take(&mut args[1]));
+                        value.insert(i, param);
                         runtime.return_0()
                     } else {
                         runtime.throw_quick(

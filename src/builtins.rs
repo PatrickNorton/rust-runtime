@@ -9,6 +9,7 @@ use crate::custom_types::list::List;
 use crate::custom_types::range::Range;
 use crate::custom_types::set::Set;
 use crate::custom_types::slice::Slice;
+use crate::first;
 use crate::function::Function;
 use crate::int_var::IntVar;
 use crate::name::Name;
@@ -18,7 +19,6 @@ use crate::std_type::Type;
 use crate::std_variable::{StdVarMethod, StdVariable};
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
-use std::mem::take;
 
 fn print() -> Variable {
     Function::Native(print_impl).into()
@@ -35,9 +35,9 @@ fn input() -> Variable {
     Function::Native(input_impl).into()
 }
 
-fn input_impl(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn input_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    print!("{}", take(&mut args[0]).str(runtime)?);
+    print!("{}", first(args).str(runtime)?);
     let mut input = String::new();
     match std::io::stdin().read_line(&mut input) {
         Ok(_) => runtime.push(StringVar::from(input).into()),
@@ -50,27 +50,27 @@ fn repr() -> Variable {
     Function::Native(repr_impl).into()
 }
 
-fn repr_impl(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn repr_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    runtime.call_op(take(&mut args[0]), Operator::Repr, Vec::new())
+    runtime.call_op(first(args), Operator::Repr, Vec::new())
 }
 
 fn iter() -> Variable {
     Function::Native(iter_impl).into()
 }
 
-fn iter_impl(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn iter_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    runtime.call_op(take(&mut args[0]), Operator::Iter, Vec::new())
+    runtime.call_op(first(args), Operator::Iter, Vec::new())
 }
 
 fn reversed() -> Variable {
     Function::Native(reversed_impl).into()
 }
 
-fn reversed_impl(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn reversed_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    runtime.call_op(take(&mut args[0]), Operator::Reversed, Vec::new())
+    runtime.call_op(first(args), Operator::Reversed, Vec::new())
 }
 
 fn id() -> Variable {
@@ -86,9 +86,9 @@ fn enumerate() -> Variable {
     Function::Native(enumerate_impl).into()
 }
 
-fn enumerate_impl(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn enumerate_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    let iterable = take(&mut args[0]).iter(runtime)?;
+    let iterable = first(args).iter(runtime)?;
     runtime.return_1(Enumerate::new(iterable).into())
 }
 
@@ -96,9 +96,9 @@ fn hash() -> Variable {
     Function::Native(hash_impl).into()
 }
 
-fn hash_impl(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn hash_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    let hash = take(&mut args[0]).hash(runtime)?;
+    let hash = first(args).hash(runtime)?;
     runtime.return_1(IntVar::from(hash).into())
 }
 
@@ -179,8 +179,8 @@ fn default_eq(this: StdVariable, args: Vec<Variable>, runtime: &mut Runtime) -> 
     runtime.return_1(true.into())
 }
 
-fn default_in(this: StdVariable, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    let checked_var = take(&mut args[0]);
+fn default_in(this: StdVariable, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    let checked_var = first(args);
     let this_iter = this.iter(runtime)?;
     while let Option::Some(val) = this_iter.next(runtime)?.take_first() {
         if checked_var.clone().equals(val, runtime)? {

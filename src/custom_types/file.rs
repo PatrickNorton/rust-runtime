@@ -1,6 +1,7 @@
 use crate::custom_types::exceptions::{invalid_state, io_error};
 use crate::custom_types::list::List;
 use crate::custom_var::CustomVar;
+use crate::first;
 use crate::method::StdMethod;
 use crate::name::Name;
 use crate::operator::Operator;
@@ -11,7 +12,6 @@ use crate::variable::{FnResult, Variable};
 use std::cell::RefCell;
 use std::fs::File;
 use std::io::Read;
-use std::mem::take;
 use std::path::PathBuf;
 use std::rc::Rc;
 
@@ -85,9 +85,9 @@ impl FileObj {
         }
     }
 
-    fn create(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
-        let path = StringVar::from(take(&mut args[0]));
+        let path = StringVar::from(first(args));
         runtime.return_1(
             Rc::new(FileObj {
                 path: (*path).into(),

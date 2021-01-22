@@ -1,3 +1,4 @@
+use crate::first;
 use crate::method::StdMethod;
 use crate::name::Name;
 use crate::operator::Operator;
@@ -5,7 +6,6 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, InnerVar, OptionVar, Variable};
-use std::mem::take;
 
 pub fn str(i: usize, val: Option<InnerVar>, runtime: &mut Runtime) -> Result<StringVar, ()> {
     Result::Ok(if i == 1 {
@@ -82,15 +82,11 @@ pub fn call_op(
     get_op((i, val), op).call((args, runtime))
 }
 
-fn map_fn(
-    this: (usize, Option<InnerVar>),
-    mut args: Vec<Variable>,
-    runtime: &mut Runtime,
-) -> FnResult {
+fn map_fn(this: (usize, Option<InnerVar>), args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
     let result = match OptionVar(this.0, this.1).into() {
         Option::Some(val) => {
-            take(&mut args[0]).call((vec![val], runtime))?;
+            first(args).call((vec![val], runtime))?;
             Option::Some(runtime.pop_return())
         }
         Option::None => Option::None,
@@ -100,13 +96,13 @@ fn map_fn(
 
 fn flat_map(
     this: (usize, Option<InnerVar>),
-    mut args: Vec<Variable>,
+    args: Vec<Variable>,
     runtime: &mut Runtime,
 ) -> FnResult {
     debug_assert_eq!(args.len(), 1);
     match OptionVar(this.0, this.1).into() {
         Option::Some(val) => {
-            take(&mut args[0]).call((vec![val], runtime))?;
+            first(args).call((vec![val], runtime))?;
             let val = runtime.pop_return();
             runtime.return_1(val)
         }

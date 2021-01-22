@@ -11,10 +11,10 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
+use crate::{first, first_two};
 use num::{Signed, ToPrimitive};
 use std::cell::{Cell, RefCell};
 use std::cmp::min;
-use std::mem::take;
 use std::rc::Rc;
 
 #[derive(Debug)]
@@ -56,9 +56,9 @@ impl Array {
         StdMethod::new_native(self, func).into()
     }
 
-    fn index(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn index(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         let values = self.vars.borrow();
-        match normalize(values.len(), take(&mut args[0]).into()) {
+        match normalize(values.len(), first(args).into()) {
             Ok(i) => runtime.return_1(values[i].clone()),
             Err(index) => runtime.throw_quick(
                 index_error(),
@@ -71,10 +71,10 @@ impl Array {
         }
     }
 
-    fn set_index(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn set_index(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
-        let index = self.normalize_index(IntVar::from(take(&mut args[0])));
-        let value = take(&mut args[1]);
+        let (index, value) = first_two(args);
+        let index = self.normalize_index(IntVar::from(index));
         match index {
             Option::Some(val) => self.vars.borrow_mut()[val] = value,
             Option::None => return runtime.throw_quick(index_error(), "Array index out of bounds"),
@@ -126,9 +126,9 @@ impl Array {
         runtime.return_1(true.into())
     }
 
-    fn contains(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn contains(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        let arg = take(&mut args[0]);
+        let arg = first(args);
         for val in self.vars.borrow().iter() {
             if arg.clone().equals(val.clone(), runtime)? {
                 return runtime.return_1(true.into());
@@ -137,9 +137,9 @@ impl Array {
         runtime.return_1(false.into())
     }
 
-    fn get_slice(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn get_slice(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        let range = Range::from_slice(self.vars.borrow().len(), runtime, take(&mut args[0]))?;
+        let range = Range::from_slice(self.vars.borrow().len(), runtime, first(args))?;
         let mut raw_vec = Vec::new();
         let self_val = self.vars.borrow();
         for i in range.values() {
@@ -153,9 +153,9 @@ impl Array {
         runtime.return_1(Rc::new(ArrayIter::new(self)).into())
     }
 
-    fn iter_slice(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn iter_slice(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        let range = Range::from_slice(self.vars.borrow().len(), runtime, take(&mut args[0]))?;
+        let range = Range::from_slice(self.vars.borrow().len(), runtime, first(args))?;
         let value = self.vars.borrow();
         let len = value.len();
         let start = match range.get_start().to_usize() {
@@ -180,16 +180,16 @@ impl Array {
         Result::Ok(true)
     }
 
-    fn create(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
-        let len = IntVar::from(take(&mut args[0]));
+        let (len, fill) = first_two(args);
+        let len = IntVar::from(len);
         let usize_len = match len.to_usize() {
             Option::Some(val) => val,
             Option::None => {
                 return runtime.throw_quick(value_error(), "Array init too large to store")
             }
         };
-        let fill = take(&mut args[1]);
         let vars = RefCell::new(vec![fill; usize_len].into_boxed_slice());
         runtime.return_1(Rc::new(Array { vars }).into())
     }

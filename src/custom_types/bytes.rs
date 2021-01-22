@@ -10,11 +10,11 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
+use crate::{first, first_two};
 use ascii::{AsciiChar, AsciiStr, AsciiString, IntoAsciiString};
 use num::{BigInt, ToPrimitive};
 use std::cell::{Cell, RefCell};
 use std::char;
-use std::mem::take;
 use std::rc::Rc;
 
 #[derive(Debug)]
@@ -72,20 +72,21 @@ impl LangBytes {
         StdMethod::new_native(self, func).into()
     }
 
-    fn index(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn index(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
-        match normalize(self.value.borrow().len(), take(&mut args[0]).into()) {
+        match normalize(self.value.borrow().len(), first(args).into()) {
             Result::Ok(index) => runtime.return_1(IntVar::from(self.value.borrow()[index]).into()),
             Result::Err(index) => self.index_err(index, runtime),
         }
     }
 
-    fn set_index(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn set_index(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
         let len = self.value.borrow().len();
-        match normalize(len, take(&mut args[0]).into()) {
+        let (signed_index, value) = first_two(args);
+        match normalize(len, signed_index.into()) {
             Result::Ok(index) => {
-                let value = IntVar::from(take(&mut args[1]));
+                let value = IntVar::from(value);
                 self.value.borrow_mut()[index] = match value.to_u8() {
                     Option::Some(i) => i,
                     Option::None => return Self::shrink_err(value, runtime),
@@ -122,11 +123,11 @@ impl LangBytes {
         result.into()
     }
 
-    fn encode(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn encode(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         let encoding_type = if args.is_empty() {
             "utf-8".into()
         } else {
-            StringVar::from(take(&mut args[1]))
+            StringVar::from(first(args))
         };
         let result = match encoding_type.to_lowercase().as_str() {
             "ascii" => StringVar::from(self.convert_ascii(runtime)?),
@@ -236,9 +237,9 @@ impl LangBytes {
             .collect()
     }
 
-    fn get(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn get(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        let value = IntVar::from(take(&mut args[0]))
+        let value = IntVar::from(first(args))
             .to_usize()
             .and_then(|x| self.value.borrow().get(x).copied())
             .map(|x| IntVar::Small(x as isize).into())
@@ -246,9 +247,9 @@ impl LangBytes {
         runtime.return_1(value)
     }
 
-    fn add(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn add(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        let int_val = IntVar::from(take(&mut args[0]));
+        let int_val = IntVar::from(first(args));
         if let Option::Some(value) = int_val.to_u8() {
             self.value.borrow_mut().push(value);
             runtime.return_0()
@@ -257,10 +258,11 @@ impl LangBytes {
         }
     }
 
-    fn add_char(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn add_char(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
-        let char_val = take(&mut args[0]).into();
-        match take(&mut args[0]).str(runtime)?.to_lowercase().as_str() {
+        let (char_val, encoding) = first_two(args);
+        let char_val = char_val.into();
+        match encoding.str(runtime)?.to_lowercase().as_str() {
             "ascii" => self.add_ascii(char_val, runtime)?,
             "utf-8" => self.add_utf8(char_val),
             "utf-16" => self.add_utf16(char_val),
@@ -274,17 +276,17 @@ impl LangBytes {
         runtime.return_0()
     }
 
-    fn starts_with(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn starts_with(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        let variable = take(&mut args[0]);
+        let variable = first(args);
         let value = downcast_var::<LangBytes>(variable).expect("Expected bytes");
         let needle = value.value.borrow();
         runtime.return_1(self.value.borrow().starts_with(&needle).into())
     }
 
-    fn ends_with(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn ends_with(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        let variable = take(&mut args[0]);
+        let variable = first(args);
         let value = downcast_var::<LangBytes>(variable).expect("Expected bytes");
         let needle = value.value.borrow();
         runtime.return_1(self.value.borrow().ends_with(&needle).into())
@@ -404,11 +406,11 @@ impl LangBytes {
         runtime.return_1(Rc::new(LangBytes::new(result)).into())
     }
 
-    fn join(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn join(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
         let mut is_first = true;
         let mut result = Vec::new();
-        let iter = take(&mut args[0]).iter(runtime)?;
+        let iter = first(args).iter(runtime)?;
         while let Option::Some(val) = iter.next(runtime)?.take_first() {
             if !is_first {
                 result.extend_from_slice(&self.value.borrow());
@@ -419,9 +421,9 @@ impl LangBytes {
         runtime.return_1(Rc::new(LangBytes::new(result)).into())
     }
 
-    fn index_of(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn index_of(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
-        let search_int = IntVar::from(take(&mut args[0]));
+        let search_int = IntVar::from(first(args));
         runtime.return_1(Variable::from(match search_int.to_u8() {
             Option::Some(i) => self
                 .value
@@ -436,9 +438,9 @@ impl LangBytes {
         }))
     }
 
-    fn last_index_of(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn last_index_of(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
-        let search_int = IntVar::from(take(&mut args[0]));
+        let search_int = IntVar::from(first(args));
         runtime.return_1(Variable::from(match search_int.to_u8() {
             Option::Some(i) => self
                 .value
@@ -465,9 +467,9 @@ impl LangBytes {
         runtime.return_1(result.into())
     }
 
-    fn create(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         let mut result = Vec::new();
-        let iter = take(&mut args[0]).iter(runtime)?;
+        let iter = first(args).iter(runtime)?;
         while let Option::Some(val) = iter.next(runtime)?.take_first() {
             result.push(IntVar::from(val).to_u8().unwrap());
         }
@@ -564,9 +566,9 @@ impl BytesIter {
         unimplemented!()
     }
 
-    fn from_hex(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn from_hex(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        match StringVar::from(take(&mut args[0])).as_ascii_str() {
+        match StringVar::from(first(args)).as_ascii_str() {
             Result::Ok(a) => {
                 if a.len() % 2 != 0 {
                     return runtime.throw_quick(arithmetic_error(), from_hex_exc(a.len()));

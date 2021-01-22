@@ -13,13 +13,13 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::{AsciiVar, MaybeAscii, StrVar, StringVar};
 use crate::variable::{FnResult, Variable};
+use crate::{first, first_two};
 use ascii::{AsAsciiStr, AsciiChar, AsciiStr, AsciiString};
 use downcast_rs::Downcast;
 use num::{BigInt, Num, One, Signed, ToPrimitive};
 use std::any::Any;
 use std::cell::Cell;
 use std::fmt::Debug;
-use std::mem::take;
 use std::rc::Rc;
 use std::str::{from_utf8_unchecked, FromStr};
 
@@ -173,9 +173,9 @@ fn repr(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult
     runtime.return_1(this.repr().into())
 }
 
-fn index(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn index(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    let big_index = IntVar::from(take(&mut args[0]));
+    let big_index = IntVar::from(first(args));
     match this.as_maybe_ascii() {
         MaybeAscii::Standard(s) => index_non_ascii(s, big_index, runtime),
         MaybeAscii::Ascii(a) => index_ascii(a, big_index, runtime),
@@ -218,9 +218,9 @@ fn to_abs_usize(i: &IntVar) -> Option<usize> {
     }
 }
 
-fn slice(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn slice(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    let range = Range::from_slice(this.char_len(), runtime, take(&mut args[0]))?;
+    let range = Range::from_slice(this.char_len(), runtime, first(args))?;
     match this.as_maybe_ascii() {
         MaybeAscii::Ascii(s) => {
             let mut result = AsciiString::new();
@@ -303,11 +303,11 @@ fn lower(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResul
     runtime.return_1(this.to_lowercase().into())
 }
 
-fn join(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn join(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.len() == 1);
     let mut is_first = true;
     let mut result = String::new();
-    let iter = take(&mut args[0]).iter(runtime)?;
+    let iter = first(args).iter(runtime)?;
     while let Option::Some(val) = iter.next(runtime)?.take_first() {
         if !is_first {
             result += &*this;
@@ -330,10 +330,11 @@ fn join_all(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnRe
     runtime.return_1(result.into())
 }
 
-fn starts_with(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn starts_with(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 2);
-    let val = StringVar::from(take(&mut args[0]));
-    let index = IntVar::from(take(&mut args[1]));
+    let (a, b) = first_two(args);
+    let val = StringVar::from(a);
+    let index = IntVar::from(b);
     if index < this.char_len().into() {
         let usize_index = index
             .to_usize()
@@ -350,16 +351,16 @@ fn starts_with(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) 
     }
 }
 
-fn ends_with(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn ends_with(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    let val = StringVar::from(take(&mut args[0]));
+    let val = StringVar::from(first(args));
     runtime.return_1(this.ends_with(&*val).into())
 }
 
-fn split(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn split(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 2);
-    let pat = StringVar::from(take(&mut args[0]));
-    let opt_count = take(&mut args[1]);
+    let (a, opt_count) = first_two(args);
+    let pat = StringVar::from(a);
     if opt_count.is_null() {
         let result = List::from_values(
             Type::String,
@@ -402,19 +403,19 @@ fn chars(this: &str) -> Variable {
     List::from_values(Type::Char, this.chars().map(Variable::from).collect()).into()
 }
 
-fn from_chars(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn from_chars(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
     let mut result = String::new();
-    let chars = take(&mut args[0]).iter(runtime)?;
+    let chars = first(args).iter(runtime)?;
     while let Option::Some(val) = chars.next(runtime)?.take_first() {
         result.push(val.into());
     }
     runtime.return_1(result.into())
 }
 
-fn index_of(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn index_of(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    let chr: char = take(&mut args[0]).into();
+    let chr: char = first(args).into();
     let index = match this.as_maybe_ascii() {
         MaybeAscii::Standard(s) => s
             .chars()
@@ -430,9 +431,9 @@ fn index_of(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> 
     runtime.return_1(index.map(IntVar::from).map(Variable::from).into())
 }
 
-fn last_index_of(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn last_index_of(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    let chr: char = take(&mut args[0]).into();
+    let chr: char = first(args).into();
     let index = match this.as_maybe_ascii() {
         MaybeAscii::Standard(s) => {
             // Needed because str.chars() is not ExactSize
@@ -453,10 +454,10 @@ fn last_index_of(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime
     runtime.return_1(index.map(IntVar::from).map(Variable::from).into())
 }
 
-fn encode(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn encode(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
     // #![feature(array_value_iter)] will make this so much easier...
-    let byte_val = match take(&mut args[0]).str(runtime)?.to_lowercase().as_str() {
+    let byte_val = match first(args).str(runtime)?.to_lowercase().as_str() {
         "ascii" => match AsciiStr::from_ascii(this.as_str()) {
             Result::Ok(s) => s.as_bytes().to_vec(),
             Result::Err(err) => {
@@ -496,9 +497,9 @@ fn encode(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> Fn
     runtime.return_1(Rc::new(LangBytes::new(byte_val.to_vec())).into())
 }
 
-fn int_base(this: StringVar, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn int_base(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    let base: IntVar = take(&mut args[0]).into();
+    let base: IntVar = first(args).into();
     match base.to_u32() {
         Option::Some(x) if (2..=32).contains(&x) => runtime.return_1(
             IntVar::from_str_radix(&this, x)

@@ -1,9 +1,9 @@
 use crate::custom_var::CustomVar;
+use crate::first;
 use crate::name::Name;
 use crate::runtime::Runtime;
 use crate::std_variable::StdVariable;
 use crate::variable::{FnResult, OptionVar, Variable};
-use std::mem::take;
 use std::rc::Rc;
 
 pub type IterResult = Result<IterOk, ()>;
@@ -83,7 +83,7 @@ impl IterOk {
     pub fn take_first(self) -> Option<Variable> {
         match self {
             IterOk::Normal(v) => v,
-            IterOk::Vec(v) => v.map(|mut x| take(&mut x[0])),
+            IterOk::Vec(v) => v.map(first),
         }
     }
 }

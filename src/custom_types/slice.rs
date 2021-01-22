@@ -9,9 +9,9 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, InnerVar, Variable};
+use crate::{first, first_three};
 use num::{One, Signed, Zero};
 use std::borrow::Cow;
-use std::mem::take;
 use std::rc::Rc;
 
 #[derive(Debug)]
@@ -49,7 +49,7 @@ impl Slice {
         .into()
     }
 
-    fn make_range(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn make_range(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         /*
         [::] or [:] -> [0:len:1]
@@ -62,7 +62,7 @@ impl Slice {
         [x::-y] -> [x:-1:-y]
         [:x:-y] -> [len-1:x:-y]
         */
-        let len = IntVar::from(take(&mut args[0]));
+        let len = IntVar::from(first(args));
         let step = self.step.clone().unwrap_or_else(One::one);
         if step.is_zero() {
             runtime.throw_quick(value_error(), "Step cannot be 0")
@@ -94,12 +94,10 @@ impl Slice {
         }
     }
 
-    fn create(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 3);
-        let start = var_to_int(take(&mut args[0]));
-        let stop = var_to_int(take(&mut args[1]));
-        let step = var_to_int(take(&mut args[2]));
-        let val = Slice::new(start, stop, step);
+        let (start, stop, step) = first_three(args);
+        let val = Slice::new(var_to_int(start), var_to_int(stop), var_to_int(step));
         runtime.return_1(Rc::new(val).into())
     }
 

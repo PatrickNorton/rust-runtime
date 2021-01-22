@@ -57,3 +57,25 @@ fn main() {
         panic!("Too many errors!")
     }
 }
+
+// Once #[feature(box_patterns)] is stabilized, we can remove the iterator
+// let box [a, ..] = args.into_boxed_slice();
+// How I wish there were a better way to do this
+
+fn first<T>(args: Vec<T>) -> T {
+    args.into_iter().next().unwrap()
+}
+
+fn first_two<T>(args: Vec<T>) -> (T, T) {
+    let mut iter = args.into_iter();
+    (iter.next().unwrap(), iter.next().unwrap())
+}
+
+fn first_three<T>(args: Vec<T>) -> (T, T, T) {
+    let mut iter = args.into_iter();
+    (
+        iter.next().unwrap(),
+        iter.next().unwrap(),
+        iter.next().unwrap(),
+    )
+}
