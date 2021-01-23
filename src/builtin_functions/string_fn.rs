@@ -16,6 +16,7 @@ use crate::variable::{FnResult, Variable};
 use crate::{first, first_two};
 use ascii::{AsAsciiStr, AsciiChar, AsciiStr, AsciiString};
 use downcast_rs::Downcast;
+use downcast_rs::__std::panic::resume_unwind;
 use num::{BigInt, Num, One, Signed, ToPrimitive};
 use std::any::Any;
 use std::cell::Cell;
@@ -225,28 +226,31 @@ fn slice(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResul
         let start = range.get_start();
         let stop = range.get_stop();
         let len = this.char_len();
-        match (
-            start.to_usize().filter(|x| *x < len),
-            stop.to_usize().filter(|x| *x < len),
-        ) {
-            (Option::Some(x), Option::Some(y)) => {
-                runtime.return_1(slice_single(&this, x, y).into())
-            }
-            (Option::Some(_), Option::None) => {
-                let msg = bounds_msg(stop, len);
-                runtime.throw_quick(index_error(), msg)
-            }
-            (Option::None, Option::Some(_)) => {
-                let msg = bounds_msg(start, len);
-                runtime.throw_quick(index_error(), msg)
-            }
-            (Option::None, Option::None) => {
-                let msg = bounds_msg(start, len);
+        match to_pair(start, stop, len) {
+            Result::Ok((x, y)) => runtime.return_1(slice_single(&this, x, y).into()),
+            Result::Err(i) => {
+                let msg = bounds_msg(i, len);
                 runtime.throw_quick(index_error(), msg)
             }
         }
     } else {
         slice_normal(this.as_maybe_ascii(), &range, runtime)
+    }
+}
+
+fn to_pair<'a>(
+    start: &'a IntVar,
+    stop: &'a IntVar,
+    len: usize,
+) -> Result<(usize, usize), &'a IntVar> {
+    match (
+        start.to_usize().filter(|x| *x < len),
+        stop.to_usize().filter(|x| *x < len),
+    ) {
+        (Option::Some(x), Option::Some(y)) => Result::Ok((x, y)),
+        (Option::Some(_), Option::None) => Result::Err(stop),
+        (Option::None, Option::Some(_)) => Result::Err(start),
+        (Option::None, Option::None) => Result::Err(start),
     }
 }
 

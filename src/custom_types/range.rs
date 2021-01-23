@@ -1,3 +1,4 @@
+use crate::bytecode::Bytecode::PackIterable;
 use crate::custom_types::exceptions::index_error;
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_var::IntVar;
