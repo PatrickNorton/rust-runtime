@@ -335,19 +335,17 @@ fn starts_with(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> F
     let (a, b) = first_two(args);
     let val = StringVar::from(a);
     let index = IntVar::from(b);
-    if index < this.char_len().into() {
-        let usize_index = index
-            .to_usize()
-            .expect("String index believed to be less than a usize, but to_usize failed");
-        if usize_index == 0 {
-            runtime.return_1(this.starts_with(val.as_str()).into())
-        } else {
-            let mut chars = this.chars();
-            chars.nth(usize_index - 1);
-            runtime.return_1(chars.as_str().starts_with(val.as_str()).into())
+    match index.to_usize().filter(|x| *x < this.char_len()) {
+        Option::Some(usize_index) => {
+            if usize_index == 0 {
+                runtime.return_1(this.starts_with(val.as_str()).into())
+            } else {
+                let mut chars = this.chars();
+                chars.nth(usize_index - 1);
+                runtime.return_1(chars.as_str().starts_with(val.as_str()).into())
+            }
         }
-    } else {
-        runtime.throw_quick(index_error(), "")
+        Option::None => runtime.throw_quick(index_error(), ""),
     }
 }
 
@@ -500,14 +498,14 @@ fn encode(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
 fn int_base(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
     let base: IntVar = first(args).into();
-    match base.to_u32() {
-        Option::Some(x) if (2..=32).contains(&x) => runtime.return_1(
+    match base.to_u32().filter(|x| (2..=32).contains(x)) {
+        Option::Some(x) => runtime.return_1(
             IntVar::from_str_radix(&this, x)
                 .ok()
                 .map(Variable::from)
                 .into(),
         ),
-        _ => runtime.throw_quick(
+        Option::None => runtime.throw_quick(
             value_error(),
             format!(
                 "str.intBase requires a radix between 2 and 36, not {}",

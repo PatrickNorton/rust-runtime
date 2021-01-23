@@ -301,9 +301,9 @@ fn to_bool(this: IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult
 fn str_base(this: IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
     let value: IntVar = first(args).into();
-    match value.to_u32() {
-        Option::Some(s) if (2..=36).contains(&s) => runtime.return_1(this.to_str_radix(s).into()),
-        _ => runtime.throw_quick(
+    match value.to_u32().filter(|x| (2..=36).contains(x)) {
+        Option::Some(s) => runtime.return_1(this.to_str_radix(s).into()),
+        Option::None => runtime.throw_quick(
             value_error(),
             format!(
                 "int.strBase requires a radix between 2 and 36, not {}",
