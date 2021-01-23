@@ -305,17 +305,17 @@ fn lower(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResul
 
 fn join(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.len() == 1);
-    let mut is_first = true;
-    let mut result = String::new();
     let iter = first(args).iter(runtime)?;
-    while let Option::Some(val) = iter.next(runtime)?.take_first() {
-        if !is_first {
-            result += &*this;
+    if let Option::Some(val) = iter.next(runtime)?.take_first() {
+        let mut result = val.str(runtime)?.to_string();
+        while let Option::Some(val) = iter.next(runtime)?.take_first() {
+            result += &this;
+            result += val.str(runtime)?.as_str();
         }
-        is_first = false;
-        result += val.str(runtime)?.as_str();
+        runtime.return_1(result.into())
+    } else {
+        runtime.return_1(StringVar::default().into())
     }
-    runtime.return_1(result.into())
 }
 
 fn join_all(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -323,7 +323,7 @@ fn join_all(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnRe
     let len = args.len();
     for (i, val) in args.into_iter().enumerate() {
         result += val.str(runtime)?.as_str();
-        if i + 1 < len {
+        if i < len - 1 {
             result += &*this;
         }
     }
