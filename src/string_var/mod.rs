@@ -47,6 +47,18 @@ impl StringVar {
         StringVar::AsciiLiteral(Box::leak(var.into()))
     }
 
+    pub fn from_str_ref(var: &str) -> StringVar {
+        StringVar::Other(var.into())
+    }
+
+    pub fn from_ascii_ref(var: &AsciiStr) -> StringVar {
+        let arc = Arc::<[AsciiChar]>::from(var.as_slice());
+        // SAFETY: The internal representation of AsciiStr is the same as [AsciiChar]
+        // This is the same as Arc::from()
+        let arc = unsafe { Arc::from_raw(Arc::into_raw(arc) as *const AsciiStr) };
+        StringVar::Ascii(arc)
+    }
+
     pub fn char_at(&self, i: usize) -> Option<char> {
         match self {
             StringVar::Literal(l) => l.chars().nth(i),

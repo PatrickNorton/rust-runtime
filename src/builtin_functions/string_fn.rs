@@ -221,7 +221,46 @@ fn to_abs_usize(i: &IntVar) -> Option<usize> {
 fn slice(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
     let range = Range::from_slice(this.char_len(), runtime, first(args))?;
-    match this.as_maybe_ascii() {
+    if range.get_step().is_one() {
+        let start = range.get_start();
+        let stop = range.get_stop();
+        let len = this.char_len();
+        match (
+            start.to_usize().filter(|x| *x < len),
+            stop.to_usize().filter(|x| *x < len),
+        ) {
+            (Option::Some(x), Option::Some(y)) => {
+                runtime.return_1(slice_single(&this, x, y).into())
+            }
+            _ => todo!(),
+        }
+    } else {
+        slice_normal(this.as_maybe_ascii(), &range, runtime)
+    }
+}
+
+fn slice_single(this: &StringVar, start: usize, stop: usize) -> StringVar {
+    match this {
+        // This can be made into a literal, but it can't be done safely and thus not worth it here
+        StringVar::Literal(l) => l
+            .chars()
+            .skip(start)
+            .take(stop - start)
+            .collect::<String>()
+            .into(),
+        StringVar::AsciiLiteral(a) => a[start..stop].into(),
+        StringVar::Other(o) => o
+            .chars()
+            .skip(start)
+            .take(stop - start)
+            .collect::<String>()
+            .into(),
+        StringVar::Ascii(a) => a[start..stop].to_owned().into(),
+    }
+}
+
+fn slice_normal(this: MaybeAscii, range: &Range, runtime: &mut Runtime) -> FnResult {
+    match this {
         MaybeAscii::Ascii(s) => {
             let mut result = AsciiString::new();
             for i in range.values() {
