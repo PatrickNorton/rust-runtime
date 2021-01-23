@@ -192,7 +192,7 @@ fn index_non_ascii(s: &str, big_index: IntVar, runtime: &mut Runtime) -> FnResul
     };
     match value {
         Option::None => {
-            runtime.throw_quick(index_error(), bounds_msg(big_index, s.chars().count()))
+            runtime.throw_quick(index_error(), bounds_msg(&big_index, s.chars().count()))
         }
         Option::Some(chr) => runtime.return_1(chr.into()),
     }
@@ -206,7 +206,7 @@ fn index_ascii(a: &AsciiStr, big_index: IntVar, runtime: &mut Runtime) -> FnResu
     };
     match proper_index.and_then(|index| a.get_ascii(index)) {
         Option::Some(chr) => runtime.return_1(chr.into()),
-        Option::None => runtime.throw_quick(index_error(), bounds_msg(big_index, a.len())),
+        Option::None => runtime.throw_quick(index_error(), bounds_msg(&big_index, a.len())),
     }
 }
 
@@ -232,7 +232,18 @@ fn slice(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResul
             (Option::Some(x), Option::Some(y)) => {
                 runtime.return_1(slice_single(&this, x, y).into())
             }
-            _ => todo!(),
+            (Option::Some(_), Option::None) => {
+                let msg = bounds_msg(stop, len);
+                runtime.throw_quick(index_error(), msg)
+            }
+            (Option::None, Option::Some(_)) => {
+                let msg = bounds_msg(start, len);
+                runtime.throw_quick(index_error(), msg)
+            }
+            (Option::None, Option::None) => {
+                let msg = bounds_msg(start, len);
+                runtime.throw_quick(index_error(), msg)
+            }
         }
     } else {
         slice_normal(this.as_maybe_ascii(), &range, runtime)
@@ -267,13 +278,13 @@ fn slice_normal(this: MaybeAscii, range: &Range, runtime: &mut Runtime) -> FnRes
                 let index = match i.to_usize() {
                     Option::Some(val) => val,
                     Option::None => {
-                        let msg = bounds_msg(i, s.len());
+                        let msg = bounds_msg(&i, s.len());
                         return runtime.throw_quick(index_error(), msg);
                     }
                 };
                 match s.get_ascii(index) {
                     Option::None => {
-                        let msg = bounds_msg(i, s.len());
+                        let msg = bounds_msg(&i, s.len());
                         return runtime.throw_quick(index_error(), msg);
                     }
                     Option::Some(value) => result.push(value),
@@ -287,13 +298,13 @@ fn slice_normal(this: MaybeAscii, range: &Range, runtime: &mut Runtime) -> FnRes
                 let index = match i.to_usize() {
                     Option::Some(val) => val,
                     Option::None => {
-                        let msg = bounds_msg(i, s.chars().count());
+                        let msg = bounds_msg(&i, s.chars().count());
                         return runtime.throw_quick(index_error(), msg);
                     }
                 };
                 match s.chars().nth(index) {
                     Option::None => {
-                        let msg = bounds_msg(i, s.chars().count());
+                        let msg = bounds_msg(&i, s.chars().count());
                         return runtime.throw_quick(index_error(), msg);
                     }
                     Option::Some(value) => result.push(value),
@@ -304,7 +315,7 @@ fn slice_normal(this: MaybeAscii, range: &Range, runtime: &mut Runtime) -> FnRes
     }
 }
 
-fn bounds_msg(big_index: IntVar, char_len: usize) -> StringVar {
+fn bounds_msg(big_index: &IntVar, char_len: usize) -> StringVar {
     format!(
         "Index {} out of bounds for str of length {}",
         big_index, char_len
