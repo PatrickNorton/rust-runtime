@@ -1,3 +1,4 @@
+mod impls;
 mod maybe;
 mod vars;
 
@@ -107,6 +108,12 @@ impl From<Cow<'static, str>> for StringVar {
             Cow::Borrowed(x) => StringVar::Literal(x),
             Cow::Owned(x) => StringVar::Other(x.into()),
         }
+    }
+}
+
+impl From<&'static AsciiStr> for StringVar {
+    fn from(x: &'static AsciiStr) -> Self {
+        StringVar::AsciiLiteral(x)
     }
 }
 
