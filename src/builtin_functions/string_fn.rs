@@ -307,12 +307,12 @@ fn join(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult
     debug_assert!(args.len() == 1);
     let iter = first(args).iter(runtime)?;
     if let Option::Some(val) = iter.next(runtime)?.take_first() {
-        let mut result = val.str(runtime)?.to_string();
+        let mut result = val.str(runtime)?.as_owned();
         while let Option::Some(val) = iter.next(runtime)?.take_first() {
             result += &this;
-            result += val.str(runtime)?.as_str();
+            result += &val.str(runtime)?;
         }
-        runtime.return_1(result.into())
+        runtime.return_1(StringVar::from(result).into())
     } else {
         runtime.return_1(StringVar::default().into())
     }

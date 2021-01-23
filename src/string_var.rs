@@ -4,7 +4,8 @@ use std::borrow::{Borrow, Cow};
 use std::fmt::{Debug, Formatter};
 use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
-use std::ops::Deref;
+use std::mem::take;
+use std::ops::{AddAssign, Deref};
 use std::sync::Arc;
 
 #[derive(Debug, Clone)]
@@ -19,6 +20,12 @@ pub enum StringVar {
 pub enum MaybeAscii<'a> {
     Standard(&'a str),
     Ascii(&'a AsciiStr),
+}
+
+#[derive(Debug)]
+pub enum MaybeString {
+    Standard(String),
+    Ascii(AsciiString),
 }
 
 #[derive(Debug, Clone)]
@@ -94,9 +101,31 @@ impl StringVar {
         }
     }
 
+    pub fn as_owned(&self) -> MaybeString {
+        match self.as_maybe_ascii() {
+            MaybeAscii::Standard(s) => MaybeString::Standard(s.to_owned()),
+            MaybeAscii::Ascii(a) => MaybeString::Ascii(a.to_owned()),
+        }
+    }
+
     pub fn repr(&self) -> StringVar {
         let x: String = self.chars().map(character::repr).collect();
         StringVar::from(format!("\"{}\"", x))
+    }
+}
+
+impl<'a> MaybeAscii<'a> {
+    pub fn as_str(&self) -> &str {
+        match self {
+            MaybeAscii::Standard(s) => *s,
+            MaybeAscii::Ascii(a) => a.as_str(),
+        }
+    }
+}
+
+impl MaybeString {
+    pub fn new() -> MaybeString {
+        Default::default()
     }
 }
 
@@ -123,11 +152,21 @@ impl From<String> for StringVar {
 
 impl From<AsciiString> for StringVar {
     fn from(x: AsciiString) -> Self {
-        let arc = Arc::<[u8]>::from(x.as_bytes());
+        let values: Vec<u8> = x.into();
+        let arc = Arc::<[u8]>::from(values.into_boxed_slice());
         // SAFETY: The internal representation of AsciiStr is the same as [u8]
         // This is the same as Arc::from(
         let arc = unsafe { Arc::from_raw(Arc::into_raw(arc) as *const AsciiStr) };
         StringVar::Ascii(arc)
+    }
+}
+
+impl From<MaybeString> for StringVar {
+    fn from(s: MaybeString) -> Self {
+        match s {
+            MaybeString::Standard(s) => StringVar::Other(s.into()),
+            MaybeString::Ascii(a) => a.into(),
+        }
     }
 }
 
@@ -219,5 +258,42 @@ impl FromIterator<AsciiString> for StringVar {
 impl<'a> FromIterator<&'a AsciiStr> for StringVar {
     fn from_iter<T: IntoIterator<Item = &'a AsciiStr>>(iter: T) -> Self {
         iter.into_iter().collect::<AsciiString>().into()
+    }
+}
+
+impl AddAssign<MaybeAscii<'_>> for MaybeString {
+    fn add_assign(&mut self, rhs: MaybeAscii<'_>) {
+        match self {
+            MaybeString::Standard(s) => *s += rhs.as_str(),
+            MaybeString::Ascii(a) => match rhs {
+                MaybeAscii::Standard(s) => {
+                    let mut val: String = take(a).into();
+                    val += s;
+                    *self = MaybeString::Standard(val)
+                }
+                MaybeAscii::Ascii(s) => *a += s,
+            },
+        }
+    }
+}
+
+impl AddAssign<&'_ AsciiStr> for MaybeString {
+    fn add_assign(&mut self, rhs: &AsciiStr) {
+        match self {
+            MaybeString::Standard(s) => *s += rhs.as_str(),
+            MaybeString::Ascii(a) => *a += rhs,
+        }
+    }
+}
+
+impl AddAssign<&'_ StringVar> for MaybeString {
+    fn add_assign(&mut self, rhs: &StringVar) {
+        *self += rhs.as_maybe_ascii()
+    }
+}
+
+impl Default for MaybeString {
+    fn default() -> Self {
+        MaybeString::Ascii(AsciiString::default())
     }
 }
