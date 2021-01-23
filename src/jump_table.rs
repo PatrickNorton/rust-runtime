@@ -157,7 +157,7 @@ where
     type Output = usize;
 
     fn index(&self, index: &T) -> &Self::Output {
-        self.values.get(&index).unwrap_or(&self.default)
+        self.values.get(index).unwrap_or(&self.default)
     }
 }
 
