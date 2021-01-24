@@ -39,7 +39,7 @@ impl Range {
         &self.step
     }
 
-    pub fn values(&self) -> RangeValueIter<'_> {
+    pub fn values(&self) -> impl Iterator<Item = IntVar> + '_ {
         RangeValueIter {
             current: self.start.clone(),
             value: self,
@@ -294,7 +294,7 @@ impl NativeIterator for RangeIter {
 }
 
 #[derive(Debug, Clone)]
-pub struct RangeValueIter<'a> {
+struct RangeValueIter<'a> {
     current: IntVar,
     value: &'a Range,
 }
