@@ -140,7 +140,7 @@ impl From<AsciiString> for StringVar {
         let values: Vec<u8> = x.into();
         let arc = Arc::<[u8]>::from(values.into_boxed_slice());
         // SAFETY: The internal representation of AsciiStr is the same as [u8]
-        // This is the same as Arc::from(
+        // This is the same as Arc::from()
         let arc = unsafe { Arc::from_raw(Arc::into_raw(arc) as *const AsciiStr) };
         StringVar::Ascii(arc)
     }
