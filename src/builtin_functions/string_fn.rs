@@ -16,7 +16,6 @@ use crate::variable::{FnResult, Variable};
 use crate::{first, first_two};
 use ascii::{AsAsciiStr, AsciiChar, AsciiStr, AsciiString};
 use downcast_rs::Downcast;
-use downcast_rs::__std::panic::resume_unwind;
 use num::{BigInt, Num, One, Signed, ToPrimitive};
 use std::any::Any;
 use std::cell::Cell;

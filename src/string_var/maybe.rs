@@ -1,5 +1,6 @@
 use crate::string_var::StringVar;
 use ascii::{AsciiStr, AsciiString};
+use std::mem::take;
 use std::ops::AddAssign;
 
 #[derive(Debug, Copy, Clone)]

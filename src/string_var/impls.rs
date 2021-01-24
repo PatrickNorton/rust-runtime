@@ -1,5 +1,5 @@
 use crate::string_var::{MaybeAscii, StringVar};
-use ascii::{AsciiStr, AsciiString};
+use ascii::AsciiStr;
 
 pub enum MixedIter<'a, T, U>
 where
