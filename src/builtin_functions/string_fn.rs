@@ -243,8 +243,8 @@ fn to_pair<'a>(
     len: usize,
 ) -> Result<(usize, usize), &'a IntVar> {
     match (
-        start.to_usize().filter(|x| *x < len),
-        stop.to_usize().filter(|x| *x < len),
+        start.to_usize().filter(|x| *x <= len),
+        stop.to_usize().filter(|x| *x <= len),
     ) {
         (Option::Some(x), Option::Some(y)) => Result::Ok((x, y)),
         (Option::Some(_), Option::None) => Result::Err(stop),
