@@ -440,13 +440,7 @@ fn split(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResul
 
 fn split_lines(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    let result = List::from_values(
-        Type::String,
-        this.lines()
-            .map(|a| StringVar::from(a.to_owned()))
-            .map(Variable::from)
-            .collect(),
-    );
+    let result = List::from_values(Type::String, this.owned_lines().map(From::from).collect());
     runtime.return_1(result.into())
 }
 

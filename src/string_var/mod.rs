@@ -6,6 +6,7 @@ pub use maybe::{MaybeAscii, MaybeString};
 pub use vars::{AsciiVar, StrVar};
 
 use crate::character;
+use crate::string_var::impls::{MixedIter, OwnedIter};
 use ascii::{AsAsciiStr, AsciiChar, AsciiStr, AsciiString};
 use std::borrow::{Borrow, Cow};
 use std::fmt::{Debug, Formatter};
@@ -99,6 +100,22 @@ impl StringVar {
         match self.as_maybe_ascii() {
             MaybeAscii::Standard(s) => MaybeString::Standard(s.to_owned()),
             MaybeAscii::Ascii(a) => MaybeString::Ascii(a.to_owned()),
+        }
+    }
+
+    pub fn lines(&self) -> impl Iterator<Item = MaybeAscii<'_>> {
+        match self.as_maybe_ascii() {
+            MaybeAscii::Standard(s) => MixedIter::Normal(s.lines()),
+            MaybeAscii::Ascii(a) => MixedIter::Ascii(a.lines()),
+        }
+    }
+
+    pub fn owned_lines(&self) -> impl Iterator<Item = StringVar> + '_ {
+        match self {
+            StringVar::Literal(s) => OwnedIter::Literal(s.lines()),
+            StringVar::AsciiLiteral(a) => OwnedIter::AsciiLiteral(a.lines()),
+            StringVar::Other(s) => OwnedIter::Normal(s.lines()),
+            StringVar::Ascii(a) => OwnedIter::Ascii(a.lines()),
         }
     }
 
