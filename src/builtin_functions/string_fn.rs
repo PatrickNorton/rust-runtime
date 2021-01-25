@@ -462,16 +462,8 @@ fn index_of(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnRe
     debug_assert_eq!(args.len(), 1);
     let chr: char = first(args).into();
     let index = match this.as_maybe_ascii() {
-        MaybeAscii::Standard(s) => s
-            .chars()
-            .enumerate()
-            .find(|(_, c)| *c == chr)
-            .map(|(i, _)| i),
-        MaybeAscii::Ascii(a) => a
-            .chars()
-            .enumerate()
-            .find(|(_, c)| *c == chr)
-            .map(|(i, _)| i),
+        MaybeAscii::Standard(s) => s.chars().position(|c| c == chr),
+        MaybeAscii::Ascii(a) => a.chars().position(|val| val == chr),
     };
     runtime.return_1(index.map(IntVar::from).map(Variable::from).into())
 }
@@ -485,16 +477,12 @@ fn last_index_of(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) ->
             let mut iter = s.chars().rev().enumerate();
             let index = iter.find(|(_, c)| *c == chr).map(|(i, _)| i);
             let length = iter.last().map(|(i, _)| i);
-            // If length is None, then index was the first char, so the result is 0
+            // If length is None, then index was the first char [last in the iterator], so the
+            // result is 0
             // If index is None, then the char was not found
             index.map(|x| length.map(|y| y - x - 1).unwrap_or(0))
         }
-        MaybeAscii::Ascii(a) => a
-            .chars()
-            .enumerate()
-            .rev()
-            .find(|(_, c)| *c == chr)
-            .map(|(i, _)| i),
+        MaybeAscii::Ascii(a) => a.chars().rposition(|val| val == chr),
     };
     runtime.return_1(index.map(IntVar::from).map(Variable::from).into())
 }
