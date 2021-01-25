@@ -186,7 +186,7 @@ fn index_non_ascii(s: &str, big_index: IntVar, runtime: &mut Runtime) -> FnResul
     let value = if big_index.is_negative() {
         // Instead of getting the character length and then indexing from the start, index from
         // the back instead, which will only result in iterating through the string once
-        to_abs_usize(&big_index).and_then(|b| s.chars().nth(b - 1))
+        to_abs_usize(&big_index).and_then(|b| s.chars().rev().nth(b - 1))
     } else {
         big_index.to_usize().and_then(|b| s.chars().nth(b))
     };
@@ -372,7 +372,7 @@ fn join(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult
 }
 
 fn join_all(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    let mut result = String::with_capacity(this.char_len() * args.len());
+    let mut result = String::with_capacity(this.len() * args.len());
     let len = args.len();
     for (i, val) in args.into_iter().enumerate() {
         result += val.str(runtime)?.as_str();
