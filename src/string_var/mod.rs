@@ -1,3 +1,4 @@
+mod chunks;
 mod impls;
 mod maybe;
 mod vars;
@@ -6,6 +7,7 @@ pub use maybe::{MaybeAscii, MaybeString};
 pub use vars::{AsciiVar, StrVar};
 
 use crate::character;
+use crate::string_var::chunks::{AsciiChunks, StrChunks};
 use crate::string_var::impls::{MixedIter, OwnedIter};
 use ascii::{AsAsciiStr, AsAsciiStrError, AsciiChar, AsciiStr, AsciiString};
 use std::borrow::{Borrow, Cow};
@@ -116,6 +118,13 @@ impl StringVar {
             StringVar::AsciiLiteral(a) => OwnedIter::AsciiLiteral(a.lines()),
             StringVar::Other(s) => OwnedIter::Normal(s.lines()),
             StringVar::Ascii(a) => OwnedIter::Ascii(a.lines()),
+        }
+    }
+
+    pub fn chunks(&self, count: usize) -> impl Iterator<Item = MaybeAscii<'_>> {
+        match self.as_maybe_ascii() {
+            MaybeAscii::Standard(s) => MixedIter::Normal(StrChunks::new(s, count)),
+            MaybeAscii::Ascii(a) => MixedIter::Ascii(AsciiChunks::new(a, count)),
         }
     }
 

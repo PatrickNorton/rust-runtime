@@ -1,5 +1,6 @@
 use crate::string_var::StringVar;
 use ascii::{AsciiStr, AsciiString};
+use std::fmt::{self, Display, Formatter};
 use std::mem::take;
 use std::ops::AddAssign;
 
@@ -20,6 +21,22 @@ impl<'a> MaybeAscii<'a> {
         match self {
             MaybeAscii::Standard(s) => *s,
             MaybeAscii::Ascii(a) => a.as_str(),
+        }
+    }
+
+    pub fn char_len(&self) -> usize {
+        match self {
+            MaybeAscii::Standard(s) => s.chars().count(),
+            MaybeAscii::Ascii(a) => a.len(),
+        }
+    }
+}
+
+impl<'a> Display for MaybeAscii<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            MaybeAscii::Standard(s) => f.write_str(s),
+            MaybeAscii::Ascii(a) => f.write_str(a.as_str()),
         }
     }
 }

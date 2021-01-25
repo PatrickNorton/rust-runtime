@@ -8,14 +8,11 @@ use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
-use crate::std_type::Type::Bigint;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use crate::{first, first_two};
-use ascii::{AsciiChar, AsciiStr, AsciiString, IntoAsciiString};
-use downcast_rs::__std::num::ParseIntError;
-use downcast_rs::__std::panic::resume_unwind;
-use num::{BigInt, BigUint, Num, ToPrimitive, Zero};
+use ascii::{AsciiChar, AsciiString, IntoAsciiString};
+use num::{BigInt, ToPrimitive};
 use std::cell::{Cell, RefCell};
 use std::char;
 use std::rc::Rc;
@@ -572,32 +569,23 @@ impl BytesIter {
     fn from_hex(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         let str = StringVar::from(first(args));
-        match str.as_ascii_str() {
-            Result::Ok(a) => {
-                let mut result = Vec::with_capacity(a.len() / 2);
-                for c in a.as_slice().chunks(2) {
-                    if c.len() != 2 {
-                        return runtime.throw_quick(value_error(), from_hex_exc(a.len()));
-                    }
-                    let ascii: &AsciiStr = c.into();
-                    match u8::from_str_radix(ascii.as_str(), 16) {
-                        Ok(u) => result.push(u),
-                        Err(_) => {
-                            return runtime.throw_quick(
-                                value_error(),
-                                format!("Cannot parse hex value of {}", ascii),
-                            )
-                        }
+        let mut result = Vec::with_capacity(str.len() / 2);
+        for slice in str.chunks(2) {
+            if slice.char_len() == 2 {
+                match u8::from_str_radix(slice.as_str(), 16) {
+                    Result::Ok(u) => result.push(u),
+                    Result::Err(_) => {
+                        return runtime.throw_quick(
+                            value_error(),
+                            format!("Cannot parse hex value of {}", slice),
+                        )
                     }
                 }
-                runtime.return_1(Rc::new(LangBytes::new(result)).into())
-            }
-            // Non-Ascii characters are *probably* not able to be parsed in base-16
-            // This might need updating later, though (IDK how Unicode-safety plays into this)
-            Result::Err(_) => {
-                runtime.throw_quick(value_error(), format!("Cannot parse hex value of {}", str))
+            } else {
+                return runtime.throw_quick(value_error(), from_hex_exc(str.char_len()));
             }
         }
+        runtime.return_1(Rc::new(LangBytes::new(result)).into())
     }
 
     fn bytes_iter_type() -> Type {
