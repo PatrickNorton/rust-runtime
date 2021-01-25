@@ -491,7 +491,7 @@ fn encode(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
     debug_assert_eq!(args.len(), 1);
     // #![feature(array_value_iter)] will make this so much easier...
     let byte_val = match first(args).str(runtime)?.to_lowercase().as_str() {
-        "ascii" => match AsciiStr::from_ascii(this.as_str()) {
+        "ascii" => match this.as_ascii_str() {
             Result::Ok(s) => s.as_bytes().to_vec(),
             Result::Err(err) => {
                 return runtime.throw_quick(

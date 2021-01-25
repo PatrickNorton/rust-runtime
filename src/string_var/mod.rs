@@ -7,7 +7,7 @@ pub use vars::{AsciiVar, StrVar};
 
 use crate::character;
 use crate::string_var::impls::{MixedIter, OwnedIter};
-use ascii::{AsAsciiStr, AsciiChar, AsciiStr, AsciiString};
+use ascii::{AsAsciiStr, AsAsciiStrError, AsciiChar, AsciiStr, AsciiString};
 use std::borrow::{Borrow, Cow};
 use std::fmt::{Debug, Formatter};
 use std::hash::{Hash, Hasher};
@@ -33,9 +33,9 @@ impl StringVar {
         }
     }
 
-    pub fn as_ascii_str(&self) -> Result<&AsciiStr, &str> {
+    pub fn as_ascii_str(&self) -> Result<&AsciiStr, AsAsciiStrError> {
         match self.as_maybe_ascii() {
-            MaybeAscii::Standard(s) => s.as_ascii_str().map_err(|_| s),
+            MaybeAscii::Standard(s) => s.as_ascii_str(),
             MaybeAscii::Ascii(a) => Result::Ok(a),
         }
     }
