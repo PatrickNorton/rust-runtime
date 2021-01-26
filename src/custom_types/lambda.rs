@@ -24,6 +24,14 @@ impl Lambda {
         }
     }
 
+    fn take_frame(self: Rc<Self>) -> StackFrame {
+        // Most of the time, the lambda will only have one referrer, so don't waste a clone
+        match Rc::try_unwrap(self) {
+            Result::Ok(lambda) => lambda.frame,
+            Result::Err(lambda) => lambda.frame.clone(),
+        }
+    }
+
     fn get_op(self: Rc<Self>, op: Operator) -> Variable {
         let func = match op {
             Operator::Call => Self::call_now,
@@ -33,7 +41,7 @@ impl Lambda {
     }
 
     fn call_now(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        runtime.call_now_with_frame(0, self.fn_no as u16, args, self.file_no, self.frame.clone())
+        runtime.call_now_with_frame(0, self.fn_no as u16, args, self.file_no, self.take_frame())
     }
 
     fn create(_args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
@@ -63,7 +71,7 @@ impl CustomVar for Lambda {
     }
 
     fn call_or_goto(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        runtime.push_stack_with_frame(0, self.fn_no as u16, args, self.file_no, self.frame.clone());
+        runtime.push_stack_with_frame(0, self.fn_no as u16, args, self.file_no, self.take_frame());
         FnResult::Ok(())
     }
 }
