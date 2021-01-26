@@ -97,10 +97,6 @@ impl StackFrame {
         self.function_number
     }
 
-    pub fn load_args(&mut self, args: &mut Vec<Variable>) {
-        self.variables.append(args)
-    }
-
     pub fn add_exception_handler(&mut self, var: Variable) {
         self.exception_handlers.insert(var);
     }
