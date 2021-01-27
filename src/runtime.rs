@@ -526,7 +526,10 @@ impl Runtime {
 
     pub fn add_generator(&mut self, gen: Rc<Generator>) -> FnResult {
         match gen.take_frame() {
-            Option::Some(val) => self.frames.push(val),
+            Option::Some(mut val) => {
+                val.set_stack_height(self.variables.len());
+                self.frames.push(val)
+            }
             Option::None => {
                 return self.throw_quick(invalid_state(), "Generator already executing")
             }

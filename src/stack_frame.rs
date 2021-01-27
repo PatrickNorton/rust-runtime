@@ -121,6 +121,10 @@ impl StackFrame {
         self.stack_height
     }
 
+    pub fn set_stack_height(&mut self, new_height: usize) {
+        self.stack_height = new_height;
+    }
+
     pub fn exc_info(&self) -> SFInfo {
         SFInfo::new(
             self.function_number,
