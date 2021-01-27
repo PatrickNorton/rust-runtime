@@ -538,10 +538,11 @@ impl Runtime {
 
     pub fn generator_end(&mut self) {
         debug_assert!(self.is_generator());
+        let frame = self.frames.pop().unwrap();
+        let old_height = frame.original_stack_height();
+        let vec = self.variables.drain(old_height..).collect();
         self.variables.push(Option::None.into());
         self.set_ret(1);
-        let frame = self.frames.pop().unwrap();
-        let vec = Vec::new(); // FIXME: Clear stack
         let gen = self
             .borrowed_iterators
             .pop()
@@ -558,7 +559,8 @@ impl Runtime {
         }
         self.set_ret(ret_count);
         let frame = self.frames.pop().unwrap();
-        let vec = Vec::new(); // FIXME: Clear stack
+        let old_height = frame.original_stack_height();
+        let vec = self.variables.drain(old_height..replace_start).collect();
         let gen = self
             .borrowed_iterators
             .pop()
