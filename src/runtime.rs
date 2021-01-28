@@ -126,13 +126,19 @@ impl Runtime {
             .frames
             .last_mut()
             .expect("Frame stack should never be empty");
-        let height = frame.original_stack_height();
-        let args = self
-            .variables
-            .drain(height..)
-            .skip(len - argc as usize - height)
-            .collect();
-        *frame = StackFrame::new(0, fn_no, file_no, args, height);
+        if frame.get_exceptions().is_empty() {
+            let height = frame.original_stack_height();
+            let args = self
+                .variables
+                .drain(height..)
+                .skip(len - argc as usize - height)
+                .collect();
+            *frame = StackFrame::new(0, fn_no, file_no, args, height);
+        } else {
+            // Non-empty exception handler may require variables existing on the stack,
+            // so tail-call isn't valid
+            self.call_quick(fn_no, argc)
+        }
     }
 
     pub fn call_tos_or_goto(&mut self, argc: u16) -> FnResult {
@@ -143,10 +149,17 @@ impl Runtime {
 
     pub fn tail_tos_or_goto(&mut self, argc: u16) -> FnResult {
         let frame = self.frames.pop().unwrap();
-        let len = self.variables.len();
-        let height = frame.original_stack_height();
-        self.variables.drain(height..len - argc as usize - 1);
-        self.call_tos_or_goto(argc)
+        if frame.get_exceptions().is_empty() {
+            let len = self.variables.len();
+            let height = frame.original_stack_height();
+            self.variables.drain(height..len - argc as usize - 1);
+            self.call_tos_or_goto(argc)
+        } else {
+            // Non-empty exception handler may require variables existing on the stack,
+            // so tail-call isn't valid
+            self.frames.push(frame);
+            self.call_tos_or_goto(argc)
+        }
     }
 
     pub fn call_op(&mut self, var: Variable, o: Operator, args: Vec<Variable>) -> FnResult {
