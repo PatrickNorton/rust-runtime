@@ -400,11 +400,7 @@ impl List {
                 Option::None => {
                     // If there are extra values left on the range after the iterator has been
                     // iterated, drain the rest of the array
-                    let end = if range_end > array.len() {
-                        array.len()
-                    } else {
-                        range_end
-                    };
+                    let end = min(range_end, array.len());
                     array.drain(index..end);
                     return runtime.return_0();
                 }
@@ -418,11 +414,7 @@ impl List {
         // If there are values left on the iterable after the range has been iterated, put them in
         while let Option::Some(val) = value_iter.next(runtime)?.take_first() {
             let arr_len = array.len();
-            let end = if range_end > arr_len {
-                arr_len
-            } else {
-                range_end
-            };
+            let end = min(range_end, arr_len);
             if end >= arr_len {
                 array.push(val);
             } else {
