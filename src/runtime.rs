@@ -119,11 +119,20 @@ impl Runtime {
         self.push_stack(0, fn_no, vars, file_no);
     }
 
-    pub fn tail_quick(&mut self, fn_no: u16) {
-        let stack_height = self.variables.len();
+    pub fn tail_quick(&mut self, fn_no: u16, argc: u16) {
+        let len = self.variables.len();
         let file_no = self.current_file_no();
-        let frame = self.last_mut_frame();
-        *frame = StackFrame::new(0, fn_no, file_no, Vec::new(), stack_height);
+        let frame = self // Can't use last_mut_frame here b/c of borrow-checker
+            .frames
+            .last_mut()
+            .expect("Frame stack should never be empty");
+        let height = frame.original_stack_height();
+        let args = self
+            .variables
+            .drain(height..)
+            .skip(len - argc as usize - height)
+            .collect();
+        *frame = StackFrame::new(0, fn_no, file_no, args, height);
     }
 
     pub fn call_tos_or_goto(&mut self, argc: u16) -> FnResult {
