@@ -142,7 +142,10 @@ impl Runtime {
     }
 
     pub fn tail_tos_or_goto(&mut self, argc: u16) -> FnResult {
-        self.frames.pop();
+        let frame = self.frames.pop().unwrap();
+        let len = self.variables.len();
+        let height = frame.original_stack_height();
+        self.variables.drain(height..len - argc as usize - 1);
         self.call_tos_or_goto(argc)
     }
 
