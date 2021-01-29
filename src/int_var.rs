@@ -261,9 +261,9 @@ impl FromStr for IntVar {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match isize::from_str(s) {
             Result::Ok(i) => Result::Ok(IntVar::Small(i)),
-            Result::Err(_) => Result::Ok(IntVar::Big(Rc::new(
-                BigInt::from_str(s).or(Result::Err(()))?,
-            ))),
+            Result::Err(_) => {
+                Result::Ok(IntVar::Big(Rc::new(BigInt::from_str(s).map_err(|_| ())?)))
+            }
         }
     }
 }
