@@ -35,6 +35,7 @@ pub fn op_fn(o: Operator) -> NativeMethod<StringVar> {
         Operator::GetSlice => slice,
         Operator::Iter => str_iter,
         Operator::Reversed => reversed,
+        Operator::In => contains,
         _ => unimplemented!("str.{}", o.name()),
     }
 }
@@ -344,6 +345,12 @@ fn str_iter(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnRe
 fn reversed(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     runtime.return_1(this.chars().rev().collect::<String>().into())
+}
+
+fn contains(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert_eq!(args.len(), 1);
+    let value = char::from(first(args));
+    runtime.return_1(this.as_str().contains(value).into())
 }
 
 fn upper(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

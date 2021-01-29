@@ -128,11 +128,8 @@ impl Runtime {
             .expect("Frame stack should never be empty");
         if frame.get_exceptions().is_empty() {
             let height = frame.original_stack_height();
-            let args = self
-                .variables
-                .drain(height..)
-                .skip(len - argc as usize - height)
-                .collect();
+            let args = self.variables.drain(len - argc as usize..).collect();
+            self.variables.truncate(height);
             *frame = StackFrame::new(0, fn_no, file_no, args, height);
         } else {
             // Non-empty exception handler may require variables existing on the stack,
@@ -150,10 +147,11 @@ impl Runtime {
     pub fn tail_tos_or_goto(&mut self, argc: u16) -> FnResult {
         let frame = self.frames.pop().unwrap();
         if frame.get_exceptions().is_empty() {
-            let len = self.variables.len();
             let height = frame.original_stack_height();
-            self.variables.drain(height..len - argc as usize - 1);
-            self.call_tos_or_goto(argc)
+            let args = self.load_args(argc as usize);
+            let callee = self.pop();
+            self.variables.truncate(height);
+            callee.call_or_goto((args, self))
         } else {
             // Non-empty exception handler may require variables existing on the stack,
             // so tail-call isn't valid
