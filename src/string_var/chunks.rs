@@ -23,9 +23,8 @@ impl<'a> StrChunks<'a> {
     }
 
     fn skip_count(&mut self) -> Option<usize> {
-        for _ in 0..self.count - 1 {
-            self.iterator.next()?;
-        }
+        // n-2 because n-1 will give out n values, and one is already used to get start
+        self.iterator.nth(self.count - 2)?;
         self.iterator.peek().map(|x| x.0)
     }
 }
