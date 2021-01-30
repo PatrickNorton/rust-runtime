@@ -32,8 +32,8 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         match self {
-            MixedIter::Ascii(x) => x.next().map(|x| MaybeAscii::Ascii(x)),
-            MixedIter::Normal(x) => x.next().map(|x| MaybeAscii::Standard(x)),
+            MixedIter::Ascii(x) => x.next().map(MaybeAscii::Ascii),
+            MixedIter::Normal(x) => x.next().map(MaybeAscii::Standard),
         }
     }
 
