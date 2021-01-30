@@ -2,7 +2,7 @@ use crate::string_var::StringVar;
 use ascii::{AsciiStr, AsciiString};
 use std::fmt::{self, Display, Formatter};
 use std::mem::take;
-use std::ops::AddAssign;
+use std::ops::{Add, AddAssign};
 
 #[derive(Debug, Copy, Clone)]
 pub enum MaybeAscii<'a> {
@@ -44,6 +44,23 @@ impl<'a> Display for MaybeAscii<'a> {
 impl MaybeString {
     pub fn new() -> MaybeString {
         Default::default()
+    }
+}
+
+impl Add<MaybeAscii<'_>> for MaybeString {
+    type Output = Self;
+
+    fn add(mut self, rhs: MaybeAscii<'_>) -> Self::Output {
+        self += rhs;
+        self
+    }
+}
+
+impl Add<&'_ StringVar> for MaybeString {
+    type Output = Self;
+
+    fn add(self, rhs: &StringVar) -> Self::Output {
+        self + rhs.as_maybe_ascii()
     }
 }
 

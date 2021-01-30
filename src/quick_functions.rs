@@ -19,7 +19,7 @@ pub fn quick_add(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
         }
         Variable::Normal(InnerVar::Bigint(i)) => Result::Ok((i + IntVar::from(other)).into()),
         Variable::Normal(InnerVar::String(s)) => {
-            let result = format!("{}{}", s, other.str(runtime)?);
+            let result = s.as_owned() + &other.str(runtime)?;
             QuickResult::Ok(StringVar::from(result).into())
         }
         Variable::Normal(InnerVar::Decimal(d1)) => {

@@ -1,5 +1,6 @@
 use crate::string_var::{MaybeAscii, StringVar};
 use ascii::AsciiStr;
+use downcast_rs::__std::ops::Add;
 
 pub enum MixedIter<'a, T, U>
 where
@@ -70,5 +71,13 @@ where
             OwnedIter::Normal(s) => s.size_hint(),
             OwnedIter::Literal(s) => s.size_hint(),
         }
+    }
+}
+
+impl Add for &StringVar {
+    type Output = StringVar;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        (self.as_owned() + rhs).into()
     }
 }

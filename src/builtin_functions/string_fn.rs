@@ -75,9 +75,9 @@ pub fn static_attr(s: &str) -> Variable {
 }
 
 fn add(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    let result = args.into_iter().fold(this.to_string(), |acc, arg| {
-        acc + StringVar::from(arg).as_ref()
-    });
+    let result = args
+        .into_iter()
+        .fold(this.as_owned(), |acc, arg| acc + &StringVar::from(arg));
     runtime.return_1(StringVar::from(result).into())
 }
 
