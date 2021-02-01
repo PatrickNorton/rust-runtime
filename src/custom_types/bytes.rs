@@ -467,6 +467,28 @@ impl LangBytes {
         runtime.return_1(result.into())
     }
 
+    fn from_hex(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        let str = StringVar::from(first(args));
+        let mut result = Vec::with_capacity(str.len() / 2);
+        for slice in str.chunks(2) {
+            if slice.char_len() == 2 {
+                match u8::from_str_radix(slice.as_str(), 16) {
+                    Result::Ok(u) => result.push(u),
+                    Result::Err(_) => {
+                        return runtime.throw_quick(
+                            value_error(),
+                            format!("Cannot parse hex value of {}", slice),
+                        )
+                    }
+                }
+            } else {
+                return runtime.throw_quick(value_error(), from_hex_exc(str.char_len()));
+            }
+        }
+        runtime.return_1(Rc::new(LangBytes::new(result)).into())
+    }
+
     fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         let mut result = Vec::new();
         let iter = first(args).iter(runtime)?;
@@ -477,7 +499,7 @@ impl LangBytes {
     }
 
     pub fn bytes_type() -> Type {
-        custom_class!(LangBytes, create, "bytes")
+        custom_class!(LangBytes, create, "bytes", "fromHex" => from_hex)
     }
 }
 
@@ -566,30 +588,8 @@ impl BytesIter {
         unimplemented!()
     }
 
-    fn from_hex(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        debug_assert_eq!(args.len(), 1);
-        let str = StringVar::from(first(args));
-        let mut result = Vec::with_capacity(str.len() / 2);
-        for slice in str.chunks(2) {
-            if slice.char_len() == 2 {
-                match u8::from_str_radix(slice.as_str(), 16) {
-                    Result::Ok(u) => result.push(u),
-                    Result::Err(_) => {
-                        return runtime.throw_quick(
-                            value_error(),
-                            format!("Cannot parse hex value of {}", slice),
-                        )
-                    }
-                }
-            } else {
-                return runtime.throw_quick(value_error(), from_hex_exc(str.char_len()));
-            }
-        }
-        runtime.return_1(Rc::new(LangBytes::new(result)).into())
-    }
-
     fn bytes_iter_type() -> Type {
-        custom_class!(BytesIter, create, "BytesIter", "fromHex" => from_hex)
+        custom_class!(BytesIter, create, "BytesIter")
     }
 }
 
