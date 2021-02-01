@@ -6,14 +6,14 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::variable::{FnResult, Variable};
 use num::traits::Zero;
-use num::BigInt;
+use num::One;
 use std::cell::RefCell;
 use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 pub struct Enumerate {
     iterable: looping::Iterator,
-    i: RefCell<BigInt>,
+    i: RefCell<IntVar>,
 }
 
 impl Enumerate {
@@ -26,8 +26,8 @@ impl Enumerate {
 
     fn inner_next(&self, runtime: &mut Runtime) -> Result<Option<(Variable, Variable)>, ()> {
         if let Option::Some(val) = self.iterable.next(runtime)?.take_first() {
-            let i = self.i.borrow_mut();
-            let index = IntVar::from(i.clone()).into();
+            let i = self.i.replace_with(|x| &*x + &IntVar::one());
+            let index = i.into();
             Result::Ok(Option::Some((index, val)))
         } else {
             Result::Ok(Option::None)
