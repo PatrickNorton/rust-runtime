@@ -2,22 +2,18 @@ use crate::custom_types::bytes::LangBytes;
 use crate::custom_types::exceptions::{arithmetic_error, index_error, value_error};
 use crate::custom_types::list::List;
 use crate::custom_types::range::Range;
-use crate::custom_var::CustomVar;
 use crate::function::Function;
 use crate::int_var::IntVar;
-use crate::looping::{IterResult, NativeIterator};
+use crate::looping::{NativeIterator, TypicalIterator};
 use crate::method::{NativeMethod, StdMethod};
-use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::{AsciiVar, MaybeAscii, StrVar, StringVar};
 use crate::variable::{FnResult, Variable};
 use crate::{first, first_two};
-use ascii::{AsAsciiStr, AsciiChar, AsciiStr, AsciiString};
-use downcast_rs::Downcast;
+use ascii::{AsAsciiStr, AsciiStr, AsciiString};
 use num::{BigInt, Num, One, Signed, ToPrimitive};
-use std::any::Any;
 use std::cell::Cell;
 use std::fmt::Debug;
 use std::rc::Rc;
@@ -565,15 +561,6 @@ fn as_int(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
     runtime.return_1(IntVar::from_str(&*this).ok().map(Variable::from).into())
 }
 
-pub trait StrIter: Debug + Any + Downcast {
-    fn next_fn(&self) -> Option<Variable>;
-
-    fn next_func(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        debug_assert!(args.is_empty());
-        runtime.return_1(self.next_fn().into())
-    }
-}
-
 #[derive(Debug)]
 pub struct StringIter {
     index: Cell<usize>,
@@ -607,8 +594,8 @@ impl StringIter {
     }
 }
 
-impl StrIter for StringIter {
-    fn next_fn(&self) -> Option<Variable> {
+impl TypicalIterator for StringIter {
+    fn inner_next(&self) -> Option<Variable> {
         let len = self.val.len();
         if self.index.get() < len {
             let mut indices = unsafe {
@@ -632,6 +619,10 @@ impl StrIter for StringIter {
             Option::None
         }
     }
+
+    fn get_type() -> Type {
+        unimplemented!()
+    }
 }
 
 impl StringRevIter {
@@ -643,8 +634,8 @@ impl StringRevIter {
     }
 }
 
-impl StrIter for StringRevIter {
-    fn next_fn(&self) -> Option<Variable> {
+impl TypicalIterator for StringRevIter {
+    fn inner_next(&self) -> Option<Variable> {
         if self.index.get() > 0 {
             let mut indices = unsafe {
                 // SAFETY: self.index is always from self.val.char_indices (or self.val.len at the
@@ -660,6 +651,10 @@ impl StrIter for StringRevIter {
             Option::None
         }
     }
+
+    fn get_type() -> Type {
+        unimplemented!()
+    }
 }
 
 impl AsciiIter {
@@ -671,8 +666,8 @@ impl AsciiIter {
     }
 }
 
-impl StrIter for AsciiIter {
-    fn next_fn(&self) -> Option<Variable> {
+impl TypicalIterator for AsciiIter {
+    fn inner_next(&self) -> Option<Variable> {
         if self.index.get() > self.val.len() {
             Option::Some(
                 self.val[self.index.replace(self.index.get() + 1)]
@@ -682,6 +677,10 @@ impl StrIter for AsciiIter {
         } else {
             Option::None
         }
+    }
+
+    fn get_type() -> Type {
+        unimplemented!()
     }
 }
 
@@ -694,8 +693,8 @@ impl AsciiRevIter {
     }
 }
 
-impl StrIter for AsciiRevIter {
-    fn next_fn(&self) -> Option<Variable> {
+impl TypicalIterator for AsciiRevIter {
+    fn inner_next(&self) -> Option<Variable> {
         if self.index.get() > 0 {
             self.index.set(self.index.get() - 1);
             Option::Some(self.val[self.index.get()].as_char().into())
@@ -703,38 +702,8 @@ impl StrIter for AsciiRevIter {
             Option::None
         }
     }
-}
 
-impl<T> CustomVar for T
-where
-    T: StrIter,
-{
-    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        if let Name::Attribute(n) = name {
-            if n == "next" {
-                StdMethod::new_native(self, Self::next_func).into()
-            } else {
-                unimplemented!()
-            }
-        } else {
-            unimplemented!()
-        }
-    }
-
-    fn set(self: Rc<Self>, _name: Name, _object: Variable) {
+    fn get_type() -> Type {
         unimplemented!()
-    }
-
-    fn get_type(&self) -> Type {
-        unimplemented!()
-    }
-}
-
-impl<T> NativeIterator for T
-where
-    T: StrIter + CustomVar,
-{
-    fn next(self: Rc<Self>, _runtime: &mut Runtime) -> IterResult {
-        IterResult::Ok(self.next_fn().into())
     }
 }

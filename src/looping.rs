@@ -1,7 +1,10 @@
 use crate::custom_var::CustomVar;
 use crate::first;
+use crate::method::StdMethod;
 use crate::name::Name;
+use crate::operator::Operator;
 use crate::runtime::Runtime;
+use crate::std_type::Type;
 use crate::std_variable::StdVariable;
 use crate::variable::{FnResult, OptionVar, Variable};
 use std::rc::Rc;
@@ -22,6 +25,36 @@ pub enum Iterator {
 
 pub trait NativeIterator: CustomVar {
     fn next(self: Rc<Self>, runtime: &mut Runtime) -> IterResult;
+}
+
+pub trait IterAttrs: NativeIterator + Sized {
+    fn next_fn(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult;
+
+    fn get_attribute(self: Rc<Self>, val: &str) -> Variable {
+        let func = match val {
+            "next" => Self::next_fn,
+            _ => unimplemented!("{}", val),
+        };
+        StdMethod::new_native(self, func).into()
+    }
+
+    fn get_op(self: Rc<Self>, val: Operator) -> Variable {
+        let func = match val {
+            Operator::Iter => Self::ret_self,
+            _ => unimplemented!("{}", val.name()),
+        };
+        StdMethod::new_native(self, func).into()
+    }
+
+    fn ret_self(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        runtime.return_1(self.into())
+    }
+}
+
+pub trait TypicalIterator: IterAttrs + NativeIterator + Sized {
+    fn inner_next(&self) -> Option<Variable>;
+    fn get_type() -> Type;
 }
 
 impl Iterator {
@@ -85,5 +118,44 @@ impl IterOk {
             IterOk::Normal(v) => v,
             IterOk::Vec(v) => v.map(first),
         }
+    }
+}
+
+impl<T> NativeIterator for T
+where
+    T: TypicalIterator,
+{
+    fn next(self: Rc<Self>, _runtime: &mut Runtime) -> IterResult {
+        IterResult::Ok(self.inner_next().into())
+    }
+}
+
+impl<T> CustomVar for T
+where
+    T: TypicalIterator,
+{
+    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
+        match name {
+            Name::Attribute(a) => self.get_attribute(a),
+            Name::Operator(o) => self.get_op(o),
+        }
+    }
+
+    fn set(self: Rc<Self>, _name: Name, _object: Variable) {
+        unimplemented!()
+    }
+
+    fn get_type(&self) -> Type {
+        <Self as TypicalIterator>::get_type()
+    }
+}
+
+impl<T> IterAttrs for T
+where
+    T: TypicalIterator,
+{
+    fn next_fn(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        runtime.return_1(self.inner_next().into())
     }
 }

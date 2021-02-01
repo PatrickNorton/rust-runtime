@@ -3,7 +3,7 @@ use crate::custom_types::join_values;
 use crate::custom_types::range::Range;
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_var::{normalize, IntVar};
-use crate::looping::{self, IterResult, NativeIterator};
+use crate::looping::{self, TypicalIterator};
 use crate::method::{NativeMethod, StdMethod};
 use crate::name::Name;
 use crate::operator::Operator;
@@ -285,8 +285,12 @@ impl ArrayIter {
         }
     }
 
-    iter_internals!();
+    fn create(_args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
+        unimplemented!()
+    }
+}
 
+impl TypicalIterator for ArrayIter {
     fn inner_next(&self) -> Option<Variable> {
         if self.current.get() != self.value.vars.borrow().len() {
             let result = self.value.vars.borrow()[self.current.get()].clone();
@@ -297,35 +301,7 @@ impl ArrayIter {
         }
     }
 
-    fn create(_args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
-        unimplemented!()
-    }
-
-    fn range_iter_type() -> Type {
+    fn get_type() -> Type {
         custom_class!(ArrayIter, create, "ArrayIter")
-    }
-}
-
-impl CustomVar for ArrayIter {
-    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        default_attr!(self, name)
-    }
-
-    fn set(self: Rc<Self>, _name: Name, _object: Variable) {
-        unimplemented!()
-    }
-
-    fn get_type(&self) -> Type {
-        Self::range_iter_type()
-    }
-
-    fn into_iter(self: Rc<Self>) -> looping::Iterator {
-        looping::Iterator::Native(self)
-    }
-}
-
-impl NativeIterator for ArrayIter {
-    fn next(self: Rc<Self>, _runtime: &mut Runtime) -> IterResult {
-        IterResult::Ok(self.inner_next().into())
     }
 }

@@ -2,7 +2,7 @@ use crate::custom_types::exceptions::{arithmetic_error, index_error, value_error
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_tools::FromBytes;
 use crate::int_var::{normalize, IntVar};
-use crate::looping::{self, IterResult, NativeIterator};
+use crate::looping::{self, TypicalIterator};
 use crate::method::{NativeMethod, StdMethod};
 use crate::name::Name;
 use crate::operator::Operator;
@@ -567,19 +567,12 @@ impl BytesIter {
         }
     }
 
-    fn get_attribute(self: Rc<Self>, val: &str) -> Variable {
-        let func = match val {
-            "next" => Self::next_fn,
-            _ => unimplemented!(),
-        };
-        StdMethod::new_native(self, func).into()
+    fn create(_args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
+        unimplemented!()
     }
+}
 
-    fn next_fn(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        debug_assert!(args.is_empty());
-        runtime.return_1(self.inner_next().into())
-    }
-
+impl TypicalIterator for BytesIter {
     fn inner_next(&self) -> Option<Variable> {
         if self.current.get() != self.value.value.borrow().len() {
             let result = self.value.value.borrow()[self.current.get()];
@@ -590,18 +583,18 @@ impl BytesIter {
         }
     }
 
-    fn create(_args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
-        unimplemented!()
-    }
-
-    fn bytes_iter_type() -> Type {
+    fn get_type() -> Type {
         custom_class!(BytesIter, create, "BytesIter")
     }
 }
 
 impl BytesRevIter {
-    iter_internals!();
+    fn create(_args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
+        unimplemented!()
+    }
+}
 
+impl TypicalIterator for BytesRevIter {
     fn inner_next(&self) -> Option<Variable> {
         if self.current.get() != 0 {
             let result = self.value.value.borrow()[self.current.replace(self.current.get() - 1)];
@@ -611,11 +604,7 @@ impl BytesRevIter {
         }
     }
 
-    fn create(_args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
-        unimplemented!()
-    }
-
-    fn bytes_iter_type() -> Type {
+    fn get_type() -> Type {
         custom_class!(BytesRevIter, create, "BytesRevIter")
     }
 }
@@ -636,55 +625,4 @@ fn from_hex_exc(len: usize) -> StringVar {
         len
     )
     .into()
-}
-
-impl CustomVar for BytesIter {
-    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        name.do_each(|_| unimplemented!(), |s| self.get_attribute(s))
-    }
-
-    fn set(self: Rc<Self>, _name: Name, _object: Variable) {
-        unimplemented!()
-    }
-
-    fn get_type(&self) -> Type {
-        Self::bytes_iter_type()
-    }
-
-    fn into_iter(self: Rc<Self>) -> looping::Iterator {
-        looping::Iterator::Native(self)
-    }
-}
-
-impl NativeIterator for BytesIter {
-    fn next(self: Rc<Self>, _runtime: &mut Runtime) -> IterResult {
-        IterResult::Ok(self.inner_next().into())
-    }
-}
-
-impl CustomVar for BytesRevIter {
-    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        match name {
-            Name::Attribute(s) => self.get_attribute(s),
-            Name::Operator(o) => self.get_op(o),
-        }
-    }
-
-    fn set(self: Rc<Self>, _name: Name, _object: Variable) {
-        unimplemented!()
-    }
-
-    fn get_type(&self) -> Type {
-        Self::bytes_iter_type()
-    }
-
-    fn into_iter(self: Rc<Self>) -> looping::Iterator {
-        looping::Iterator::Native(self)
-    }
-}
-
-impl NativeIterator for BytesRevIter {
-    fn next(self: Rc<Self>, _runtime: &mut Runtime) -> IterResult {
-        IterResult::Ok(self.inner_next().into())
-    }
 }

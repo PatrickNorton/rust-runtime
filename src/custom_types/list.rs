@@ -3,7 +3,7 @@ use crate::custom_types::join_values;
 use crate::custom_types::range::Range;
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_var::{normalize, IntVar};
-use crate::looping::{self, IterResult, NativeIterator};
+use crate::looping::{self, TypicalIterator};
 use crate::method::{NativeMethod, StdMethod};
 use crate::name::Name;
 use crate::operator::Operator;
@@ -605,8 +605,12 @@ impl ListIter {
         }
     }
 
-    iter_internals!();
+    fn create(_args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
+        unimplemented!()
+    }
+}
 
+impl TypicalIterator for ListIter {
     fn inner_next(&self) -> Option<Variable> {
         if self.current.get() != self.value.value.borrow().len() {
             let result = self.value.value.borrow()[self.current.get()].clone();
@@ -617,11 +621,7 @@ impl ListIter {
         }
     }
 
-    fn create(_args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
-        unimplemented!()
-    }
-
-    fn range_iter_type() -> Type {
+    fn get_type() -> Type {
         custom_class!(ListIter, create, "ListIter")
     }
 }
@@ -634,8 +634,12 @@ impl ListRevIter {
         }
     }
 
-    iter_internals!();
+    fn create(_args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
+        unimplemented!()
+    }
+}
 
+impl TypicalIterator for ListRevIter {
     fn inner_next(&self) -> Option<Variable> {
         if self.current.get() != 0 {
             self.current.set(self.current.get() + 1);
@@ -646,59 +650,7 @@ impl ListRevIter {
         }
     }
 
-    fn create(_args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
-        unimplemented!()
-    }
-
-    fn range_iter_type() -> Type {
+    fn get_type() -> Type {
         custom_class!(ListRevIter, create, "ListRevIter")
-    }
-}
-
-impl CustomVar for ListIter {
-    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        default_attr!(self, name)
-    }
-
-    fn set(self: Rc<Self>, _name: Name, _object: Variable) {
-        unimplemented!()
-    }
-
-    fn get_type(&self) -> Type {
-        Self::range_iter_type()
-    }
-
-    fn into_iter(self: Rc<Self>) -> looping::Iterator {
-        looping::Iterator::Native(self)
-    }
-}
-
-impl NativeIterator for ListIter {
-    fn next(self: Rc<Self>, _runtime: &mut Runtime) -> IterResult {
-        IterResult::Ok(self.inner_next().into())
-    }
-}
-
-impl CustomVar for ListRevIter {
-    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        default_attr!(self, name)
-    }
-
-    fn set(self: Rc<Self>, _name: Name, _object: Variable) {
-        unimplemented!()
-    }
-
-    fn get_type(&self) -> Type {
-        Self::range_iter_type()
-    }
-
-    fn into_iter(self: Rc<Self>) -> looping::Iterator {
-        looping::Iterator::Native(self)
-    }
-}
-
-impl NativeIterator for ListRevIter {
-    fn next(self: Rc<Self>, _runtime: &mut Runtime) -> IterResult {
-        IterResult::Ok(self.inner_next().into())
     }
 }

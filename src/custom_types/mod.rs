@@ -23,42 +23,6 @@ macro_rules! custom_class {
     }};
 }
 
-macro_rules! iter_internals {
-    () => {
-        iter_no_next!();
-
-        fn next_fn(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-            debug_assert!(args.is_empty());
-            runtime.return_1(self.inner_next().into())
-        }
-    };
-}
-
-macro_rules! iter_no_next {
-    () => {
-        fn get_attribute(self: Rc<Self>, val: &str) -> Variable {
-            let func = match val {
-                "next" => Self::next_fn,
-                _ => unimplemented!("{}", val),
-            };
-            StdMethod::new_native(self, func).into()
-        }
-
-        fn get_op(self: Rc<Self>, val: Operator) -> Variable {
-            let func = match val {
-                Operator::Iter => Self::ret_self,
-                _ => unimplemented!("{}", val.name()),
-            };
-            StdMethod::new_native(self, func).into()
-        }
-
-        fn ret_self(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-            debug_assert!(args.is_empty());
-            runtime.return_1(self.into())
-        }
-    };
-}
-
 macro_rules! default_attr {
     ($self:expr, $name:expr) => {
         match $name {

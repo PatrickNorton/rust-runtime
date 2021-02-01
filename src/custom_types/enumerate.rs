@@ -1,9 +1,7 @@
 use crate::custom_var::CustomVar;
 use crate::int_var::IntVar;
-use crate::looping::{self, IterResult, NativeIterator};
-use crate::method::StdMethod;
+use crate::looping::{self, IterAttrs, IterResult, NativeIterator};
 use crate::name::Name;
-use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::variable::{FnResult, Variable};
@@ -26,19 +24,6 @@ impl Enumerate {
         })
     }
 
-    iter_no_next!();
-
-    fn next_fn(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        debug_assert!(args.is_empty());
-        match self.inner_next(runtime)? {
-            Option::Some(value) => runtime.return_n(vec![
-                Option::Some(value.0).into(),
-                Option::Some(value.1).into(),
-            ]),
-            Option::None => runtime.return_1(Option::None.into()),
-        }
-    }
-
     fn inner_next(&self, runtime: &mut Runtime) -> Result<Option<(Variable, Variable)>, ()> {
         if let Option::Some(val) = self.iterable.next(runtime)?.take_first() {
             let i = self.i.borrow_mut();
@@ -55,6 +40,19 @@ impl Enumerate {
 
     fn enumerate_type() -> Type {
         custom_class!(Enumerate, create, "Enumerate")
+    }
+}
+
+impl IterAttrs for Enumerate {
+    fn next_fn(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        match self.inner_next(runtime)? {
+            Option::Some(value) => runtime.return_n(vec![
+                Option::Some(value.0).into(),
+                Option::Some(value.1).into(),
+            ]),
+            Option::None => runtime.return_1(Option::None.into()),
+        }
     }
 }
 
