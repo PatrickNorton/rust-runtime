@@ -344,7 +344,10 @@ fn str_iter(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnRe
 
 fn reversed(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.return_1(this.chars().rev().collect::<String>().into())
+    runtime.return_1(match this.split_ascii() {
+        Result::Ok(a) => Rc::new(AsciiRevIter::new(a)).into(),
+        Result::Err(s) => Rc::new(StringRevIter::new(s)).into(),
+    })
 }
 
 fn contains(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -578,7 +581,19 @@ pub struct StringIter {
 }
 
 #[derive(Debug)]
+pub struct StringRevIter {
+    index: Cell<usize>,
+    val: StrVar,
+}
+
+#[derive(Debug)]
 pub struct AsciiIter {
+    index: Cell<usize>,
+    val: AsciiVar,
+}
+
+#[derive(Debug)]
+pub struct AsciiRevIter {
     index: Cell<usize>,
     val: AsciiVar,
 }
@@ -594,7 +609,7 @@ impl StringIter {
 
 impl StrIter for StringIter {
     fn next_fn(&self) -> Option<Variable> {
-        let len = self.val.chars().count();
+        let len = self.val.len();
         if self.index.get() < len {
             let mut indices = unsafe {
                 // We know this is safe b/c:
@@ -619,6 +634,34 @@ impl StrIter for StringIter {
     }
 }
 
+impl StringRevIter {
+    fn new(val: StrVar) -> StringRevIter {
+        StringRevIter {
+            index: Cell::new(val.len()),
+            val,
+        }
+    }
+}
+
+impl StrIter for StringRevIter {
+    fn next_fn(&self) -> Option<Variable> {
+        if self.index.get() > 0 {
+            let mut indices = unsafe {
+                // SAFETY: self.index is always from self.val.char_indices (or self.val.len at the
+                // beginning), which is guaranteed to lie on a valid UTF-8 char boundary
+                from_utf8_unchecked(&self.val.as_bytes()[..self.index.get()])
+            }
+            .char_indices();
+            indices.next_back().map(|(i, c)| {
+                self.index.set(i);
+                c.into()
+            })
+        } else {
+            Option::None
+        }
+    }
+}
+
 impl AsciiIter {
     fn new(val: AsciiVar) -> AsciiIter {
         AsciiIter {
@@ -630,10 +673,35 @@ impl AsciiIter {
 
 impl StrIter for AsciiIter {
     fn next_fn(&self) -> Option<Variable> {
-        self.val
-            .get_ascii(self.index.replace(self.index.get() + 1))
-            .map(AsciiChar::as_char)
-            .map(Into::into)
+        if self.index.get() > self.val.len() {
+            Option::Some(
+                self.val[self.index.replace(self.index.get() + 1)]
+                    .as_char()
+                    .into(),
+            )
+        } else {
+            Option::None
+        }
+    }
+}
+
+impl AsciiRevIter {
+    fn new(val: AsciiVar) -> AsciiRevIter {
+        AsciiRevIter {
+            index: Cell::new(val.len()),
+            val,
+        }
+    }
+}
+
+impl StrIter for AsciiRevIter {
+    fn next_fn(&self) -> Option<Variable> {
+        if self.index.get() > 0 {
+            self.index.set(self.index.get() - 1);
+            Option::Some(self.val[self.index.get()].as_char().into())
+        } else {
+            Option::None
+        }
     }
 }
 
