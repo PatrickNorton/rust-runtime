@@ -28,6 +28,12 @@ struct BytesIter {
     value: Rc<LangBytes>,
 }
 
+#[derive(Debug)]
+struct BytesRevIter {
+    current: Cell<usize>,
+    value: Rc<LangBytes>,
+}
+
 impl LangBytes {
     pub fn new(val: Vec<u8>) -> LangBytes {
         LangBytes {
@@ -593,6 +599,27 @@ impl BytesIter {
     }
 }
 
+impl BytesRevIter {
+    iter_internals!();
+
+    fn inner_next(&self) -> Option<Variable> {
+        if self.current.get() != 0 {
+            let result = self.value.value.borrow()[self.current.replace(self.current.get() - 1)];
+            Option::Some(IntVar::from(result).into())
+        } else {
+            Option::None
+        }
+    }
+
+    fn create(_args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
+        unimplemented!()
+    }
+
+    fn bytes_iter_type() -> Type {
+        custom_class!(BytesRevIter, create, "BytesRevIter")
+    }
+}
+
 fn overflow_exc(val: usize, len: usize) -> StringVar {
     format!(
         "Too many string repetitions: maximum bytes length is {}, \
@@ -630,6 +657,33 @@ impl CustomVar for BytesIter {
 }
 
 impl NativeIterator for BytesIter {
+    fn next(self: Rc<Self>, _runtime: &mut Runtime) -> IterResult {
+        IterResult::Ok(self.inner_next().into())
+    }
+}
+
+impl CustomVar for BytesRevIter {
+    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
+        match name {
+            Name::Attribute(s) => self.get_attribute(s),
+            Name::Operator(o) => self.get_op(o),
+        }
+    }
+
+    fn set(self: Rc<Self>, _name: Name, _object: Variable) {
+        unimplemented!()
+    }
+
+    fn get_type(&self) -> Type {
+        Self::bytes_iter_type()
+    }
+
+    fn into_iter(self: Rc<Self>) -> looping::Iterator {
+        looping::Iterator::Native(self)
+    }
+}
+
+impl NativeIterator for BytesRevIter {
     fn next(self: Rc<Self>, _runtime: &mut Runtime) -> IterResult {
         IterResult::Ok(self.inner_next().into())
     }
