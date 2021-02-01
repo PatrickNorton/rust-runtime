@@ -1,5 +1,6 @@
-use crate::string_var::StringVar;
+use crate::string_var::{MaybeString, StringVar};
 use crate::variable::Variable;
+use ascii::AsciiStr;
 macro_rules! custom_class {
     ($type_value:ty, $create_fn:ident, $str_name:tt) => {{
         custom_class!($type_value, $create_fn, $str_name,)
@@ -50,12 +51,13 @@ pub mod types;
 fn join_values(
     values: &[Variable],
     mut func: impl FnMut(Variable) -> Result<StringVar, ()>,
-) -> Result<String, ()> {
-    let mut result = String::new();
+) -> Result<MaybeString, ()> {
+    let mut result = MaybeString::new();
+    let comma = AsciiStr::from_ascii(", ").unwrap();
     for (i, value) in values.iter().enumerate() {
-        result += func(value.clone())?.as_str();
+        result += &func(value.clone())?;
         if i != values.len() - 1 {
-            result += ", ";
+            result += comma;
         }
     }
     Result::Ok(result)

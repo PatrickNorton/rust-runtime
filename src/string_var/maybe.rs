@@ -47,6 +47,15 @@ impl MaybeString {
     }
 }
 
+impl Display for MaybeString {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            MaybeString::Standard(s) => f.write_str(s),
+            MaybeString::Ascii(a) => f.write_str(a.as_str()),
+        }
+    }
+}
+
 impl Add<MaybeAscii<'_>> for MaybeString {
     type Output = Self;
 
