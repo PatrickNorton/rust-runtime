@@ -268,9 +268,7 @@ impl List {
 
     fn reversed(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        let mut val = self.value.borrow().clone();
-        val.reverse();
-        runtime.return_1(List::from_values(self.generic, val).into())
+        runtime.return_1(Rc::new(ListRevIter::new(self)).into())
     }
 
     fn reverse(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -593,6 +591,12 @@ struct ListIter {
     value: Rc<List>,
 }
 
+#[derive(Debug)]
+struct ListRevIter {
+    current: Cell<usize>,
+    value: Rc<List>,
+}
+
 impl ListIter {
     pub fn new(value: Rc<List>) -> ListIter {
         ListIter {
@@ -622,6 +626,35 @@ impl ListIter {
     }
 }
 
+impl ListRevIter {
+    pub fn new(value: Rc<List>) -> ListRevIter {
+        ListRevIter {
+            current: Cell::new(value.len()),
+            value,
+        }
+    }
+
+    iter_internals!();
+
+    fn inner_next(&self) -> Option<Variable> {
+        if self.current.get() != 0 {
+            self.current.set(self.current.get() + 1);
+            let result = self.value.value.borrow()[self.current.get()].clone();
+            Option::Some(result)
+        } else {
+            Option::None
+        }
+    }
+
+    fn create(_args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
+        unimplemented!()
+    }
+
+    fn range_iter_type() -> Type {
+        custom_class!(ListRevIter, create, "ListRevIter")
+    }
+}
+
 impl CustomVar for ListIter {
     fn get_attr(self: Rc<Self>, name: Name) -> Variable {
         default_attr!(self, name)
@@ -641,6 +674,30 @@ impl CustomVar for ListIter {
 }
 
 impl NativeIterator for ListIter {
+    fn next(self: Rc<Self>, _runtime: &mut Runtime) -> IterResult {
+        IterResult::Ok(self.inner_next().into())
+    }
+}
+
+impl CustomVar for ListRevIter {
+    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
+        default_attr!(self, name)
+    }
+
+    fn set(self: Rc<Self>, _name: Name, _object: Variable) {
+        unimplemented!()
+    }
+
+    fn get_type(&self) -> Type {
+        Self::range_iter_type()
+    }
+
+    fn into_iter(self: Rc<Self>) -> looping::Iterator {
+        looping::Iterator::Native(self)
+    }
+}
+
+impl NativeIterator for ListRevIter {
     fn next(self: Rc<Self>, _runtime: &mut Runtime) -> IterResult {
         IterResult::Ok(self.inner_next().into())
     }
