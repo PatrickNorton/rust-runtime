@@ -12,7 +12,7 @@ use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use crate::{first, first_two};
-use num::{Signed, ToPrimitive};
+use num::ToPrimitive;
 use std::cell::{Cell, RefCell};
 use std::cmp::min;
 use std::rc::Rc;
@@ -59,25 +59,18 @@ impl Array {
     fn index(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         let values = self.vars.borrow();
         match normalize(values.len(), first(args).into()) {
-            Ok(i) => runtime.return_1(values[i].clone()),
-            Err(index) => runtime.throw_quick(
-                index_error(),
-                format!(
-                    "index {} out of range for array of length {}",
-                    index,
-                    values.len()
-                ),
-            ),
+            Result::Ok(i) => runtime.return_1(values[i].clone()),
+            Result::Err(index) => Self::index_err(runtime, values.len(), &index),
         }
     }
 
     fn set_index(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
         let (index, value) = first_two(args);
-        let index = self.normalize_index(IntVar::from(index));
-        match index {
-            Option::Some(val) => self.vars.borrow_mut()[val] = value,
-            Option::None => return runtime.throw_quick(index_error(), "Array index out of bounds"),
+        let mut vars = self.vars.borrow_mut();
+        match normalize(vars.len(), IntVar::from(index)) {
+            Result::Ok(val) => vars[val] = value,
+            Result::Err(val) => return Self::index_err(runtime, vars.len(), &val),
         }
         runtime.return_0()
     }
@@ -190,28 +183,18 @@ impl Array {
                 return runtime.throw_quick(value_error(), "Array init too large to store")
             }
         };
-        let vars = RefCell::new(vec![fill; usize_len].into_boxed_slice());
-        runtime.return_1(Rc::new(Array { vars }).into())
-    }
-
-    fn normalize_index(&self, signed_index: IntVar) -> Option<usize> {
-        let len = self.vars.borrow().len();
-        let index = if signed_index.is_negative() {
-            signed_index + len.into()
-        } else {
-            signed_index
-        };
-        index.to_usize().and_then(|a| {
-            if a < len {
-                Option::Some(a)
-            } else {
-                Option::None
-            }
-        })
+        runtime.return_1(Array::new(vec![fill; usize_len].into_boxed_slice()).into())
     }
 
     pub fn array_type() -> Type {
         custom_class!(Array, create, "Array")
+    }
+
+    fn index_err(runtime: &mut Runtime, len: usize, size: &IntVar) -> FnResult {
+        runtime.throw_quick(
+            index_error(),
+            format!("index {} out of range for array of length {}", size, len),
+        )
     }
 
     fn size_error(runtime: &mut Runtime, size: &IntVar) -> FnResult {
