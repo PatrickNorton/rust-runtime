@@ -11,7 +11,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::{AsciiVar, MaybeAscii, StrVar, StringVar};
 use crate::variable::{FnResult, Variable};
-use crate::{first, first_two};
+use crate::{first, first_two, looping};
 use ascii::{AsAsciiStr, AsciiStr, AsciiString};
 use num::{BigInt, Num, One, Signed, ToPrimitive};
 use std::cell::Cell;
@@ -456,11 +456,7 @@ fn chars(this: &str) -> Variable {
 
 fn from_chars(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    let mut result = String::new();
-    let chars = first(args).iter(runtime)?;
-    while let Option::Some(val) = chars.next(runtime)?.take_first() {
-        result.push(val.into());
-    }
+    let result = looping::collect::<String, char>(first(args), runtime)?;
     runtime.return_1(result.into())
 }
 

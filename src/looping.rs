@@ -1,4 +1,3 @@
-use crate::bytecode::Bytecode::VariantNo;
 use crate::custom_var::CustomVar;
 use crate::first;
 use crate::method::StdMethod;
@@ -9,7 +8,7 @@ use crate::std_type::Type;
 use crate::std_variable::StdVariable;
 use crate::variable::{FnResult, OptionVar, Variable};
 use downcast_rs::__std::iter::FromIterator;
-use num::range;
+use std::iter::Iterator as stdIterator;
 use std::rc::Rc;
 
 pub type IterResult = Result<IterOk, ()>;
@@ -82,13 +81,17 @@ impl Iterator {
     }
 }
 
-pub fn collect(value: Variable, runtime: &mut Runtime) -> Result<Vec<Variable>, ()> {
-    let mut result = Vec::new();
-    let iter = value.iter(runtime)?;
-    while let Option::Some(val) = iter.next(runtime)?.take_first() {
-        result.push(val);
+pub fn collect<T, U>(value: Variable, runtime: &mut Runtime) -> Result<T, ()>
+where
+    T: FromIterator<U>,
+    U: From<Variable>,
+{
+    IterAdaptor {
+        value: Result::Ok(value.iter(runtime)?),
+        runtime,
     }
-    Result::Ok(result)
+    .map(|x| x.map(U::from))
+    .collect()
 }
 
 impl<T> From<Rc<T>> for Iterator
@@ -169,5 +172,33 @@ where
     fn next_fn(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         runtime.return_1(self.inner_next().into())
+    }
+}
+
+struct IterAdaptor<'a> {
+    value: Result<Iterator, bool>,
+    runtime: &'a mut Runtime,
+}
+
+impl std::iter::Iterator for IterAdaptor<'_> {
+    type Item = Result<Variable, ()>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match &self.value {
+            Result::Ok(value) => match value.next(self.runtime).map(IterOk::take_first) {
+                Result::Ok(Option::Some(val)) => Option::Some(Result::Ok(val)),
+                Result::Ok(Option::None) => {
+                    self.value = Result::Err(false);
+                    Option::None
+                }
+                Result::Err(e) => {
+                    self.value = Result::Err(true);
+                    Option::Some(Result::Err(e))
+                }
+            },
+            // Safeguard against multiple calls to completed iterator
+            Result::Err(true) => Option::Some(Result::Err(())),
+            Result::Err(false) => Option::None,
+        }
     }
 }
