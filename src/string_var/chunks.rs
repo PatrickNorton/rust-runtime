@@ -1,6 +1,6 @@
 use ascii::{AsciiChar, AsciiStr};
-use downcast_rs::__std::slice::Chunks;
 use std::iter::Peekable;
+use std::slice::Chunks;
 use std::str::{from_utf8_unchecked, CharIndices};
 
 pub struct StrChunks<'a> {

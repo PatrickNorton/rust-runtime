@@ -1,6 +1,6 @@
 use crate::string_var::{MaybeAscii, StringVar};
 use ascii::AsciiStr;
-use downcast_rs::__std::ops::Add;
+use std::ops::Add;
 
 pub enum MixedIter<'a, T, U>
 where
