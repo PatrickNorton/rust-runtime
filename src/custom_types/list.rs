@@ -508,8 +508,16 @@ impl List {
     }
 
     pub fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        debug_assert!(args.is_empty()); // TODO: List of a value
-        runtime.return_1(List::from_values(Type::Object, vec![]).into())
+        let result = match args.len() {
+            0 => vec![],
+            1 => looping::collect(first(args), runtime)?,
+            x => panic!(
+                "Expected 0 or 1 args to list::create, got {}\n{}",
+                x,
+                runtime.frame_strings()
+            ),
+        };
+        runtime.return_1(List::from_values(Type::Object, result).into())
     }
 
     pub fn list_type() -> Type {

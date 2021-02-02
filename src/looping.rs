@@ -1,3 +1,4 @@
+use crate::bytecode::Bytecode::VariantNo;
 use crate::custom_var::CustomVar;
 use crate::first;
 use crate::method::StdMethod;
@@ -7,6 +8,8 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::std_variable::StdVariable;
 use crate::variable::{FnResult, OptionVar, Variable};
+use downcast_rs::__std::iter::FromIterator;
+use num::range;
 use std::rc::Rc;
 
 pub type IterResult = Result<IterOk, ()>;
@@ -77,6 +80,15 @@ impl Iterator {
             FnResult::Err(_) => IterResult::Err(()),
         }
     }
+}
+
+pub fn collect(value: Variable, runtime: &mut Runtime) -> Result<Vec<Variable>, ()> {
+    let mut result = Vec::new();
+    let iter = value.iter(runtime)?;
+    while let Option::Some(val) = iter.next(runtime)?.take_first() {
+        result.push(val);
+    }
+    Result::Ok(result)
 }
 
 impl<T> From<Rc<T>> for Iterator
