@@ -7,7 +7,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::std_variable::StdVariable;
 use crate::variable::{FnResult, OptionVar, Variable};
-use downcast_rs::__std::iter::FromIterator;
+use std::iter::FromIterator;
 use std::iter::Iterator as stdIterator;
 use std::rc::Rc;
 
