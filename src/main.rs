@@ -63,15 +63,27 @@ fn main() {
 // How I wish there were a better way to do this
 
 fn first<T>(args: Vec<T>) -> T {
+    debug_assert!(
+        !args.is_empty(),
+        "Value passed to first must have at least 1 element"
+    );
     args.into_iter().next().unwrap()
 }
 
 fn first_two<T>(args: Vec<T>) -> (T, T) {
+    debug_assert!(
+        args.len() >= 2,
+        "Value passed to first_two must have at least 2 elements"
+    );
     let mut iter = args.into_iter();
     (iter.next().unwrap(), iter.next().unwrap())
 }
 
 fn first_three<T>(args: Vec<T>) -> (T, T, T) {
+    debug_assert!(
+        args.len() >= 3,
+        "Value passed to first_three must have at least 3 elements"
+    );
     let mut iter = args.into_iter();
     (
         iter.next().unwrap(),
