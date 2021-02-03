@@ -1,4 +1,5 @@
 use crate::custom_var::{downcast_var, CustomVar};
+use crate::first;
 use crate::int_tools::next_power_2;
 use crate::int_var::IntVar;
 use crate::looping::{self, IterResult, NativeIterator};
@@ -80,9 +81,9 @@ impl Set {
         StdMethod::new_native(self, func).into()
     }
 
-    fn intersection(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        debug_assert!(args.is_empty());
-        let other = take(&mut args[0]);
+    fn intersection(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        let other = first(args);
         let other_iter = other.iter(runtime)?;
         let mut result_vec = Vec::new();
         while let Option::Some(val) = other_iter.next(runtime)?.take_first() {
@@ -94,7 +95,7 @@ impl Set {
         runtime.return_1(ret.into())
     }
 
-    fn union(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn union(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         let self_val = self.value.borrow();
         let result_vec = self_val.values.clone();
         let result_size = self_val.size;
@@ -102,7 +103,7 @@ impl Set {
             values: result_vec,
             size: result_size,
         };
-        let other = take(&mut args[0]);
+        let other = first(args);
         let other_iter = other.iter(runtime)?;
         while let Option::Some(val) = other_iter.next(runtime)?.take_first() {
             result.add(val, runtime)?;
@@ -110,7 +111,7 @@ impl Set {
         runtime.return_1(Set::from_inner(self.generic, result).into())
     }
 
-    fn xor(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn xor(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         let self_val = self.value.borrow();
         let result_vec = self_val.values.clone();
         let result_size = self_val.size;
@@ -118,7 +119,7 @@ impl Set {
             values: result_vec,
             size: result_size,
         };
-        let other = take(&mut args[0]);
+        let other = first(args);
         let other_iter = other.iter(runtime)?;
         while let Option::Some(val) = other_iter.next(runtime)?.take_first() {
             if result.contains(val.clone(), runtime)? {
@@ -141,16 +142,16 @@ impl Set {
         runtime.return_1(repr.into())
     }
 
-    fn contains(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn contains(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        let val = args.remove(0);
+        let val = first(args);
         let is_contained = self.value.borrow().contains(val, runtime)?;
         runtime.return_1(is_contained.into())
     }
 
-    fn add(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn add(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        let val = args.remove(0);
+        let val = first(args);
         if val.get_type().is_subclass(&self.generic, runtime) {
             self.value.borrow_mut().add(val, runtime)?;
         } else {
@@ -163,9 +164,9 @@ impl Set {
         runtime.return_0()
     }
 
-    fn add_all(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn add_all(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        let val = take(&mut args[0]);
+        let val = first(args);
         let val_iter = val.iter(runtime)?;
         while let Option::Some(arg) = val_iter.next(runtime)?.take_first() {
             if arg.get_type().is_subclass(&self.generic, runtime) {
@@ -193,9 +194,9 @@ impl Set {
         runtime.return_0()
     }
 
-    fn remove(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn remove(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        let val = take(&mut args[0]);
+        let val = first(args);
         let was_removed = self.value.borrow_mut().remove(val, runtime)?;
         runtime.return_1(was_removed.into())
     }

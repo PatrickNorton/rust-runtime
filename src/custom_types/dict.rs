@@ -10,6 +10,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
+use crate::{first, first_two};
 use std::cell::{Cell, RefCell};
 use std::iter::Iterator;
 use std::mem::{replace, take};
@@ -78,9 +79,9 @@ impl Dict {
         StdMethod::new_native(self, func).into()
     }
 
-    fn index(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn index(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        match self.value.borrow().get(args.remove(0), runtime)? {
+        match self.value.borrow().get(first(args), runtime)? {
             Option::Some(result) => runtime.return_1(result),
             Option::None => runtime.throw_quick(key_error(), "Value not found"),
         }
@@ -97,20 +98,15 @@ impl Dict {
         runtime.return_1((!self.is_empty()).into())
     }
 
-    fn set(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn set(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
-        let val = args.remove(1); // Reverse order to avoid move
-        let key = args.remove(0);
+        let (key, val) = first_two(args);
         self.value.borrow_mut().set(key, val, runtime)
     }
 
-    fn contains(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn contains(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        let is_in = self
-            .value
-            .borrow()
-            .get(take(&mut args[0]), runtime)?
-            .is_some();
+        let is_in = self.value.borrow().get(first(args), runtime)?.is_some();
         runtime.return_1(is_in.into())
     }
 
@@ -126,25 +122,21 @@ impl Dict {
         runtime.return_0()
     }
 
-    fn get(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn get(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         if args.len() == 1 {
-            let val = self.value.borrow().get(take(&mut args[0]), runtime)?.into();
+            let val = self.value.borrow().get(first(args), runtime)?.into();
             runtime.return_1(val)
         } else {
             debug_assert_eq!(args.len(), 2);
-            let val = self
-                .value
-                .borrow()
-                .get(take(&mut args[0]), runtime)?
-                .unwrap_or_else(|| take(&mut args[1]));
+            let (key, default) = first_two(args);
+            let val = self.value.borrow().get(key, runtime)?.unwrap_or(default);
             runtime.return_1(val)
         }
     }
 
-    fn replace(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn replace(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
-        let key = take(&mut args[0]);
-        let val = take(&mut args[1]);
+        let (key, val) = first_two(args);
         match self.value.borrow_mut().get_mut_entry(key, runtime)? {
             Option::Some(entry) => {
                 let old = replace(&mut entry.value, val);
@@ -160,16 +152,15 @@ impl Dict {
         runtime.return_1(returned)
     }
 
-    fn set_default(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn set_default(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
         let mut value = self.value.borrow_mut();
-        let arg = take(&mut args[0]);
+        let (arg, default) = first_two(args);
         match value.get(arg.clone(), runtime)? {
             Option::Some(x) => runtime.return_1(x),
             Option::None => {
-                let val = take(&mut args[1]);
-                value.set(arg, val.clone(), runtime)?;
-                runtime.return_1(val)
+                value.set(arg, default.clone(), runtime)?;
+                runtime.return_1(default)
             }
         }
     }

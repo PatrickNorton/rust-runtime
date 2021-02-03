@@ -9,6 +9,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
+use crate::{first, first_three};
 use num::{One, Signed, Zero};
 use std::cell::RefCell;
 use std::mem::{replace, take};
@@ -91,9 +92,9 @@ impl Range {
         runtime.return_1(self.to_str().into())
     }
 
-    fn eq(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn eq(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
-        let is_eq = match downcast_var::<Range>(take(&mut args[0])) {
+        let is_eq = match downcast_var::<Range>(first(args)) {
             Option::None => false,
             Option::Some(other) => {
                 self.start == other.start && self.stop == other.stop && self.step == other.step
@@ -107,9 +108,9 @@ impl Range {
         runtime.return_1(Rc::new(RangeIter::new(self)).into())
     }
 
-    fn index(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn index(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
-        let index = IntVar::from(take(&mut args[0]));
+        let index = IntVar::from(first(args));
         let result = &self.start + &(&index * &self.step);
         if !self.before_end(&result) {
             runtime.throw_quick(
@@ -121,9 +122,9 @@ impl Range {
         }
     }
 
-    fn contains(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn contains(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
-        let value = IntVar::from(take(&mut args[0]));
+        let value = IntVar::from(first(args));
         let result = if self.step.is_positive() {
             value >= self.start && value < self.stop
         } else {
@@ -140,9 +141,9 @@ impl Range {
         runtime.return_1(Rc::new(Self::new(new_start, new_stop, new_step)).into())
     }
 
-    fn get(self: Rc<Self>, mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn get(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        let index = IntVar::from(take(&mut args[0]));
+        let index = IntVar::from(first(args));
         let result = &self.start + &(&index * &self.step);
         if !self.before_end(&result) {
             runtime.return_1(Option::None.into())
@@ -168,11 +169,9 @@ impl Range {
         (stop - start) / self.step.abs()
     }
 
-    fn create(mut args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 3);
-        let step = args.remove(2);
-        let stop = args.remove(1);
-        let start = args.remove(0);
+        let (start, stop, step) = first_three(args);
         let range = Range::new(start.into(), stop.into(), step.into());
         runtime.return_1(Rc::new(range).into())
     }
