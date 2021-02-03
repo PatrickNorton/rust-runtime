@@ -12,7 +12,7 @@ use crate::variable::{FnResult, Variable};
 use crate::{first, first_three};
 use num::{One, Signed, Zero};
 use std::cell::RefCell;
-use std::mem::{replace, take};
+use std::mem::replace;
 use std::ops::Neg;
 use std::rc::Rc;
 
