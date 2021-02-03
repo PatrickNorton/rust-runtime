@@ -41,15 +41,15 @@ impl FileInfo {
         }
     }
 
-    pub fn get_name(&self) -> &String {
+    pub fn get_name(&self) -> &str {
         &self.name
     }
 
-    pub fn get_constants(&self) -> &Vec<Variable> {
+    pub fn get_constants(&self) -> &[Variable] {
         &self.constants
     }
 
-    pub fn get_functions(&self) -> &Vec<BaseFunction> {
+    pub fn get_functions(&self) -> &[BaseFunction] {
         &self.functions
     }
 

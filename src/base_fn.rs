@@ -45,7 +45,7 @@ impl BaseFunction {
         }
     }
 
-    pub fn get_name(&self) -> &String {
+    pub fn get_name(&self) -> &str {
         &self.name
     }
 

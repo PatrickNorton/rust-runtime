@@ -348,7 +348,7 @@ impl Runtime {
     pub fn get_fn_name(&self, file_no: usize, fn_no: u32) -> StringVar {
         self.files[file_no].get_functions()[fn_no as usize]
             .get_name()
-            .clone()
+            .to_string()
             .into()
     }
 
