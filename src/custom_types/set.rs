@@ -154,7 +154,11 @@ impl Set {
         if val.get_type().is_subclass(&self.generic, runtime) {
             self.value.borrow_mut().add(val, runtime)?;
         } else {
-            panic!("Bad type for set.add")
+            panic!(
+                "Bad type for set.add: {} is not a superclass of {}",
+                val.get_type().str(),
+                &self.generic.str()
+            )
         }
         runtime.return_0()
     }
@@ -167,7 +171,11 @@ impl Set {
             if arg.get_type().is_subclass(&self.generic, runtime) {
                 self.value.borrow_mut().add(arg, runtime)?;
             } else {
-                panic!("Bad type for set.addAll")
+                panic!(
+                    "Bad type for set.addAll: {} is not a superclass of {}",
+                    arg.get_type().str(),
+                    &self.generic.str()
+                )
             }
         }
         runtime.return_0()
