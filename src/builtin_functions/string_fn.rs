@@ -394,17 +394,23 @@ fn starts_with(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> F
     let (a, b) = first_two(args);
     let val = StringVar::from(a);
     let index = IntVar::from(b);
-    match index.to_usize().filter(|x| *x < this.char_len()) {
-        Option::Some(usize_index) => {
-            if usize_index == 0 {
-                runtime.return_1(this.starts_with(val.as_str()).into())
-            } else {
-                let mut chars = this.chars();
-                chars.nth(usize_index - 1);
-                runtime.return_1(chars.as_str().starts_with(val.as_str()).into())
-            }
-        }
-        Option::None => runtime.throw_quick(index_error(), ""),
+    let len = this.char_len();
+    match index.to_usize().and_then(|x| starts(this, val.as_str(), x)) {
+        Option::Some(starts_with) => runtime.return_1(starts_with.into()),
+        Option::None => runtime.throw_quick(
+            index_error(),
+            format!("Index {} out of bounds for string of length {}", index, len),
+        ),
+    }
+}
+
+fn starts(this: StringVar, val: &str, index: usize) -> Option<bool> {
+    if index == 0 {
+        Option::Some(this.starts_with(val))
+    } else {
+        let mut chars = this.chars();
+        chars.nth(index - 1)?;
+        Option::Some(chars.as_str().starts_with(val))
     }
 }
 
