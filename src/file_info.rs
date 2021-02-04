@@ -33,7 +33,7 @@ impl FileInfo {
 
     pub fn temp() -> FileInfo {
         FileInfo {
-            name: "".to_string(),
+            name: String::new(),
             constants: vec![],
             functions: vec![],
             exports: HashMap::new(),

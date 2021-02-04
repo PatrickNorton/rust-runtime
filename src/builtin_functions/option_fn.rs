@@ -42,7 +42,7 @@ fn fold_some(i: usize, x: &str) -> StringVar {
 }
 
 pub fn type_of(i: usize, val: Option<&InnerVar>) -> Type {
-    val.map(|x| x.get_type())
+    val.map(InnerVar::get_type)
         .unwrap_or(Type::Object)
         .make_option_n(i)
 }

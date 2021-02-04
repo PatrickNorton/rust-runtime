@@ -182,7 +182,7 @@ impl LangBytes {
                 .value
                 .borrow()
                 .chunks(2)
-                .map(|x| FromBytes::from_le(x))
+                .map(FromBytes::from_le)
                 .collect::<Vec<_>>(),
         )
         .or_else(|_| {
@@ -201,7 +201,7 @@ impl LangBytes {
                 .value
                 .borrow()
                 .chunks(2)
-                .map(|x| FromBytes::from_be(x))
+                .map(FromBytes::from_le)
                 .collect::<Vec<_>>(),
         )
         .or_else(|_| {
