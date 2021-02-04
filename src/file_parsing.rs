@@ -81,7 +81,7 @@ pub fn parse_file(name: String, files: &mut Vec<FileInfo>) -> usize {
         let file_name = parent_folder.to_owned() + "/" + names[0] + FILE_EXTENSION;
         let file_index = files
             .iter()
-            .position(|a| a.get_name() == &file_name)
+            .position(|a| a.get_name() == file_name)
             .unwrap_or_else(|| parse_file(file_name, files));
         // FIXME: Recursion fails
         let other_file = &files[file_index];
