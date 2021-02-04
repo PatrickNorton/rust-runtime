@@ -408,9 +408,20 @@ fn starts(this: StringVar, val: &str, index: usize) -> Option<bool> {
     if index == 0 {
         Option::Some(this.starts_with(val))
     } else {
-        let mut chars = this.chars();
-        chars.nth(index - 1)?;
-        Option::Some(chars.as_str().starts_with(val))
+        match this.as_maybe_ascii() {
+            MaybeAscii::Standard(s) => {
+                let mut chars = s.chars();
+                chars.nth(index - 1)?;
+                Option::Some(chars.as_str().starts_with(val))
+            }
+            MaybeAscii::Ascii(a) => {
+                if index <= a.len() {
+                    Option::Some(a[index..].as_str().starts_with(val))
+                } else {
+                    Option::None
+                }
+            }
+        }
     }
 }
 
