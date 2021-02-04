@@ -139,7 +139,7 @@ pub fn parse_file(name: String, files: &mut Vec<FileInfo>) -> usize {
                 .into(),
                 LoadType::OptionType(d) => {
                     let t = match new_constants[d as usize] {
-                        Variable::Normal(InnerVar::Type(t)) => Box::leak(Box::new(t)),
+                        Variable::Normal(InnerVar::Type(t)) => t,
                         _ => panic!(),
                     };
                     t.make_option().into()
