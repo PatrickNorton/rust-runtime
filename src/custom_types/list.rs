@@ -77,6 +77,7 @@ impl List {
             "pop" => Self::pop,
             "popFirst" => Self::pop_first,
             "swap" => Self::swap,
+            "remove" => Self::remove,
             x => unimplemented!("List.{}", x),
         };
         StdMethod::new_native(self, value).into()
@@ -226,6 +227,15 @@ impl List {
                 Result::Err(i2) => self.index_error(i2, runtime),
             },
             Result::Err(i1) => self.index_error(i1, runtime),
+        }
+    }
+
+    fn remove(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        let mut value = self.value.borrow_mut();
+        match normalize(value.len(), first(args).into()) {
+            Result::Ok(i) => runtime.return_1(value.remove(i)),
+            Result::Err(i) => self.index_error(i, runtime),
         }
     }
 
