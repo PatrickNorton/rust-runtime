@@ -4,7 +4,7 @@ use crate::custom_types::dict::Dict;
 use crate::custom_types::enumerate::Enumerate;
 use crate::custom_types::exceptions::{io_error, not_implemented, null_error, value_error};
 use crate::custom_types::file::FileObj;
-use crate::custom_types::interfaces::{Callable, Throwable};
+use crate::custom_types::interfaces::{Callable, Iterable, Throwable};
 use crate::custom_types::list::List;
 use crate::custom_types::range::Range;
 use crate::custom_types::set::Set;
@@ -133,6 +133,7 @@ pub fn builtin_of(index: usize) -> Variable {
         26 => hash(),
         27 => value_error().into(),
         28 => null_error().into(),
+        29 => Iterable::cls().into(),
         x => unimplemented!("Builtin number {}", x),
     }
 }
