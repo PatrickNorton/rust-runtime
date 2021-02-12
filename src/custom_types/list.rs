@@ -105,7 +105,7 @@ impl List {
         let val = self.value.borrow();
         match normalize(val.len(), first(args).into()) {
             Result::Ok(index) => runtime.return_1(val[index].clone()),
-            Result::Err(index) => self.index_error(index, runtime),
+            Result::Err(index) => Self::index_error(val.len(), index, runtime),
         }
     }
 
@@ -122,7 +122,7 @@ impl List {
                 }
                 runtime.return_0()
             }
-            Result::Err(index) => self.index_error(index, runtime),
+            Result::Err(index) => Self::index_error(len, index, runtime),
         }
     }
 
@@ -224,9 +224,9 @@ impl List {
                     self.value.borrow_mut().swap(i1, i2);
                     runtime.return_0()
                 }
-                Result::Err(i2) => self.index_error(i2, runtime),
+                Result::Err(i2) => Self::index_error(len, i2, runtime),
             },
-            Result::Err(i1) => self.index_error(i1, runtime),
+            Result::Err(i1) => Self::index_error(len, i1, runtime),
         }
     }
 
@@ -235,18 +235,14 @@ impl List {
         let mut value = self.value.borrow_mut();
         match normalize(value.len(), first(args).into()) {
             Result::Ok(i) => runtime.return_1(value.remove(i)),
-            Result::Err(i) => self.index_error(i, runtime),
+            Result::Err(i) => Self::index_error(value.len(), i, runtime),
         }
     }
 
-    fn index_error(&self, index: IntVar, runtime: &mut Runtime) -> FnResult {
+    fn index_error(len: usize, index: IntVar, runtime: &mut Runtime) -> FnResult {
         runtime.throw_quick(
             index_error(),
-            format!(
-                "Index {} out of bounds for list of length {}",
-                index,
-                self.value.borrow().len()
-            ),
+            format!("Index {} out of bounds for list of length {}", index, len),
         )
     }
 
