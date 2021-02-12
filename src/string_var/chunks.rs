@@ -13,7 +13,7 @@ pub struct AsciiChunks<'a> {
     value: Chunks<'a, AsciiChar>,
 }
 
-impl<'a> StrChunks<'a> {
+impl StrChunks<'_> {
     pub fn new(value: &str, count: usize) -> StrChunks {
         StrChunks {
             iterator: value.char_indices().peekable(),
@@ -29,7 +29,7 @@ impl<'a> StrChunks<'a> {
     }
 }
 
-impl<'a> AsciiChunks<'a> {
+impl AsciiChunks<'_> {
     pub fn new(value: &AsciiStr, count: usize) -> AsciiChunks {
         AsciiChunks {
             value: value.as_slice().chunks(count),

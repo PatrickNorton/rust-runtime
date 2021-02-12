@@ -602,7 +602,7 @@ struct InnerSetIter<'a> {
     current: Option<&'a Entry>,
 }
 
-impl<'a> InnerSetIter<'a> {
+impl InnerSetIter<'_> {
     fn adjust_i(&mut self) {
         self.i += 1;
         while self.i < self.parent.values.len() && self.parent.values[self.i].is_none() {

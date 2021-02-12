@@ -298,7 +298,7 @@ struct RangeValueIter<'a> {
     value: &'a Range,
 }
 
-impl<'a> Iterator for RangeValueIter<'a> {
+impl Iterator for RangeValueIter<'_> {
     type Item = IntVar;
 
     fn next(&mut self) -> Option<Self::Item> {

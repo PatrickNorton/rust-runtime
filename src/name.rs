@@ -7,7 +7,7 @@ pub enum Name<'a> {
     Operator(Operator),
 }
 
-impl<'a> Name<'a> {
+impl Name<'_> {
     pub fn as_str(&self) -> &str {
         match self {
             Name::Attribute(s) => *s,
@@ -23,7 +23,7 @@ impl<'a> Name<'a> {
     }
 }
 
-impl<'a> std::fmt::Display for Name<'a> {
+impl std::fmt::Display for Name<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Name::Attribute(s) => s.fmt(f),
@@ -32,7 +32,7 @@ impl<'a> std::fmt::Display for Name<'a> {
     }
 }
 
-impl<'a> From<Operator> for Name<'a> {
+impl From<Operator> for Name<'_> {
     fn from(x: Operator) -> Self {
         Name::Operator(x)
     }

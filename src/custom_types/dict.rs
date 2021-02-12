@@ -631,7 +631,7 @@ struct InnerDictIter<'a> {
     current: Option<&'a Entry>,
 }
 
-impl<'a> InnerDictIter<'a> {
+impl InnerDictIter<'_> {
     fn adjust_i(&mut self) {
         self.i += 1;
         while self.i < self.parent.entries.len() && self.parent.entries[self.i].is_none() {

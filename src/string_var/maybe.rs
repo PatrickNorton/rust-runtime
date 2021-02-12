@@ -16,7 +16,7 @@ pub enum MaybeString {
     Ascii(AsciiString),
 }
 
-impl<'a> MaybeAscii<'a> {
+impl MaybeAscii<'_> {
     pub fn as_str(&self) -> &str {
         match self {
             MaybeAscii::Standard(s) => *s,
@@ -32,7 +32,7 @@ impl<'a> MaybeAscii<'a> {
     }
 }
 
-impl<'a> Display for MaybeAscii<'a> {
+impl Display for MaybeAscii<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             MaybeAscii::Standard(s) => f.write_str(s),
