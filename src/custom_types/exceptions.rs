@@ -63,25 +63,28 @@ impl CustomVar for StdException {
     }
 }
 
+fn get_message(type_name: &str, args: Vec<Variable>, runtime: &mut Runtime) -> String {
+    match args.len() {
+        0 => format!("{}\n{}", type_name, runtime.frame_strings()),
+        1 => format!(
+            "{}:\n{}\n{}",
+            type_name,
+            StringVar::from(first(args)),
+            runtime.frame_strings()
+        ),
+        x => panic!(
+            "Expected 0 or 1 args, got {}\n{}",
+            x,
+            runtime.frame_strings()
+        ),
+    }
+}
+
 macro_rules! create_exc {
     ($fn_name:ident, $type_name:tt) => {
         pub fn $fn_name() -> Type {
             fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-                let msg = match args.len() {
-                    0 => format!("{}\n{}", stringify!($type_name), runtime.frame_strings()),
-                    1 => format!(
-                        "{}:\n{}\n{}",
-                        stringify!($type_name),
-                        StringVar::from(first(args)),
-                        runtime.frame_strings()
-                    ),
-                    x => panic!(
-                        "Expected 0 or 1 args, got {}\n{}",
-                        x,
-                        runtime.frame_strings()
-                    ),
-                }
-                .into();
+                let msg = get_message(stringify!($type_name), args, runtime).into();
                 runtime.return_1(Rc::new(StdException::new(msg, $fn_name())).into())
             }
             static TYPE: Lazy<CustomType> = Lazy::new(|| {
