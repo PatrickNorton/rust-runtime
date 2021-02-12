@@ -9,14 +9,16 @@ macro_rules! custom_class {
 
     ($type_value:ty, $create_fn:ident, $str_name:tt, $($name:expr => $value:ident),* $(,)?) => {{
         use ::once_cell::sync::Lazy;
-        static TYPE: Lazy<$crate::custom_types::types::CustomType> = Lazy::new(
-            || $crate::custom_types::types::CustomType::new(
+        use $crate::custom_types::types::CustomType;
+        use $crate::function::Function;
+        static TYPE: Lazy<CustomType> = Lazy::new(
+            || CustomType::new(
                 $str_name.into(),
                 ::std::vec::Vec::new(),
-                $crate::function::Function::Native(<$type_value>::$create_fn),
+                Function::Native(<$type_value>::$create_fn),
                 name_map!(
                     $(
-                        $name.into() => $crate::function::Function::Native(<$type_value>::$value),
+                        $name.into() => Function::Native(<$type_value>::$value),
                     ),*
                 )
             )
