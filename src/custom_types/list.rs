@@ -216,12 +216,13 @@ impl List {
 
     fn swap(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
-        let len = self.value.borrow().len();
+        let mut value = self.value.borrow_mut();
+        let len = value.len();
         let (index_1, index_2) = first_two(args);
         match normalize(len, index_1.into()) {
             Result::Ok(i1) => match normalize(len, index_2.into()) {
                 Result::Ok(i2) => {
-                    self.value.borrow_mut().swap(i1, i2);
+                    value.swap(i1, i2);
                     runtime.return_0()
                 }
                 Result::Err(i2) => Self::index_error(len, i2, runtime),
