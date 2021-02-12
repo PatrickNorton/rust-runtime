@@ -52,7 +52,7 @@ pub mod types;
 /// A static reference to prevent multiple-checking of ascii
 static ASCII_COMMA: Lazy<&AsciiStr> = Lazy::new(|| AsciiStr::from_ascii(", ").unwrap());
 
-fn join_values(
+pub fn join_values(
     values: &[Variable],
     mut func: impl FnMut(Variable) -> Result<StringVar, ()>,
 ) -> Result<MaybeString, ()> {

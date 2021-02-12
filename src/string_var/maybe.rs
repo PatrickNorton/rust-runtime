@@ -45,6 +45,13 @@ impl MaybeString {
     pub fn new() -> MaybeString {
         Default::default()
     }
+
+    pub fn borrow(&self) -> MaybeAscii<'_> {
+        match self {
+            MaybeString::Standard(s) => MaybeAscii::Standard(&s),
+            MaybeString::Ascii(a) => MaybeAscii::Ascii(&a),
+        }
+    }
 }
 
 impl Display for MaybeString {
@@ -86,6 +93,12 @@ impl AddAssign<MaybeAscii<'_>> for MaybeString {
                 MaybeAscii::Ascii(s) => *a += s,
             },
         }
+    }
+}
+
+impl AddAssign<&MaybeString> for MaybeString {
+    fn add_assign(&mut self, rhs: &MaybeString) {
+        *self += rhs.borrow();
     }
 }
 

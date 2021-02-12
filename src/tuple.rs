@@ -1,6 +1,9 @@
+use crate::custom_types::join_values;
 use crate::runtime::Runtime;
-use crate::string_var::StringVar;
+use crate::string_var::{MaybeString, StringVar};
 use crate::variable::Variable;
+use ascii::AsciiStr;
+use once_cell::sync::Lazy;
 use std::borrow::Borrow;
 use std::hash::Hash;
 use std::ops::Index;
@@ -22,14 +25,11 @@ impl LangTuple {
     }
 
     pub fn str(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
-        let mut result = "(".to_string();
-        for (i, value) in self.values.iter().enumerate() {
-            result += value.clone().str(runtime)?.as_str();
-            if i < self.values.len() - 1 {
-                result += ", ";
-            }
-        }
-        result += ")";
+        static OPEN_PAREN: Lazy<&AsciiStr> = Lazy::new(|| AsciiStr::from_ascii("(").unwrap());
+        static CLOSE_PAREN: Lazy<&AsciiStr> = Lazy::new(|| AsciiStr::from_ascii(")").unwrap());
+        let mut result = MaybeString::Ascii(OPEN_PAREN.to_owned());
+        result += &join_values(&self.values, |x| x.str(runtime))?;
+        result += *CLOSE_PAREN;
         Result::Ok(StringVar::from(result))
     }
 
