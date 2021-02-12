@@ -1,10 +1,11 @@
+use once_cell::sync::Lazy;
 use std::borrow::Cow;
 use std::collections::HashSet;
 use unic_ucd_category::GeneralCategory;
 
 pub fn repr(value: char) -> Cow<'static, str> {
-    lazy_static! {
-        static ref PRINTABLE_CLASSES: HashSet<GeneralCategory> = hash_set!(
+    static PRINTABLE_CLASSES: Lazy<HashSet<GeneralCategory>> = Lazy::new(|| {
+        hash_set!(
             GeneralCategory::UppercaseLetter,
             GeneralCategory::LowercaseLetter,
             GeneralCategory::TitlecaseLetter,
@@ -27,8 +28,8 @@ pub fn repr(value: char) -> Cow<'static, str> {
             GeneralCategory::OtherSymbol,
             GeneralCategory::InitialPunctuation,
             GeneralCategory::FinalPunctuation,
-        );
-    }
+        )
+    });
 
     match value {
         '\\' => "\\\\".into(),

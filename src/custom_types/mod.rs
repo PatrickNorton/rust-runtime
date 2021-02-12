@@ -7,19 +7,18 @@ macro_rules! custom_class {
     }};
 
     ($type_value:ty, $create_fn:ident, $str_name:tt, $($name:expr => $value:ident),* $(,)?) => {{
-        lazy_static! {
-            static ref TYPE: $crate::custom_types::types::CustomType =
-                $crate::custom_types::types::CustomType::new(
-                    $str_name.into(),
-                    ::std::vec::Vec::new(),
-                    $crate::function::Function::Native(<$type_value>::$create_fn),
-                    name_map!(
-                        $(
-                            $name.into() => $crate::function::Function::Native(<$type_value>::$value),
-                        ),*
-                    )
-                );
-        }
+        static TYPE: ::once_cell::sync::Lazy<$crate::custom_types::types::CustomType> = ::once_cell::sync::Lazy::new(
+            || $crate::custom_types::types::CustomType::new(
+                $str_name.into(),
+                ::std::vec::Vec::new(),
+                $crate::function::Function::Native(<$type_value>::$create_fn),
+                name_map!(
+                    $(
+                        $name.into() => $crate::function::Function::Native(<$type_value>::$value),
+                    ),*
+                )
+            )
+        );
         Type::Custom(&*TYPE)
     }};
 }
