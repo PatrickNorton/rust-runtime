@@ -183,7 +183,7 @@ impl SFInfo {
     }
 }
 
-pub fn frame_strings(frames: impl Iterator<Item = SFInfo>, runtime: &Runtime) -> String {
+pub fn frame_strings(frames: impl IntoIterator<Item = SFInfo>, runtime: &Runtime) -> String {
     let mut result = String::new();
     for frame in frames {
         if !frame.is_native() {

@@ -37,7 +37,7 @@ pub struct Runtime {
 
 #[derive(Debug)]
 enum InnerException {
-    Std(Variable),
+    Std(Variable, Vec<SFInfo>),
     UnConstructed(Type, StringVar, Vec<SFInfo>),
 }
 
@@ -354,7 +354,8 @@ impl Runtime {
 
     pub fn throw(&mut self, exception: Variable) -> FnResult {
         let exc_type = exception.get_type();
-        let exc = InnerException::Std(exception);
+        let frames = self.collect_stack_frames();
+        let exc = InnerException::Std(exception, frames);
         self.unwind(exc_type, exc)
     }
 
@@ -616,7 +617,7 @@ impl Runtime {
             .as_mut()
             .expect("pop_err called with no thrown exception")
         {
-            InnerException::Std(val) => {
+            InnerException::Std(val, _) => {
                 if val.get_type() == t {
                     let result = Result::Ok(Option::Some(take(val)));
                     self.thrown_exception = Option::None;
@@ -725,34 +726,40 @@ impl Runtime {
 impl InnerException {
     fn get_type(&self) -> Type {
         match self {
-            InnerException::Std(v) => v.get_type(),
+            InnerException::Std(v, _) => v.get_type(),
             InnerException::UnConstructed(t, ..) => *t,
         }
     }
 
     fn str(self, runtime: &mut Runtime) -> Result<StringVar, ()> {
+        let (cls, msg, frames) = self.deconstruct(runtime)?;
+        Result::Ok(
+            format!(
+                "{}:\n{}\n{}",
+                cls.str(),
+                msg,
+                frame_strings(frames.into_iter().rev(), runtime)
+            )
+            .into(),
+        )
+    }
+
+    fn deconstruct(self, runtime: &mut Runtime) -> Result<(Type, StringVar, Vec<SFInfo>), ()> {
         match self {
-            InnerException::Std(var) => {
-                runtime.push_native();
-                let result = var.str(runtime);
-                runtime.pop_native();
-                result
+            InnerException::Std(var, frames) => {
+                let cls = var.get_type();
+                var.index(Name::Attribute("msg"), runtime)?
+                    .call((Vec::new(), runtime))?;
+                let result = StringVar::from(runtime.pop_return());
+                Result::Ok((cls, result, frames))
             }
-            InnerException::UnConstructed(cls, msg, frames) => Result::Ok(
-                format!(
-                    "{}:\n{}\n{}",
-                    cls.str(),
-                    msg,
-                    frame_strings(frames.into_iter().rev(), runtime)
-                )
-                .into(),
-            ),
+            InnerException::UnConstructed(cls, msg, frames) => Result::Ok((cls, msg, frames)),
         }
     }
 
     fn create(self, runtime: &mut Runtime) -> Result<Variable, ()> {
         Result::Ok(match self {
-            InnerException::Std(e) => e,
+            InnerException::Std(e, _) => e,
             // FIXME: Won't collect stack frames properly
             InnerException::UnConstructed(t, s, _) => t.create_inst(vec![s.into()], runtime)?,
         })

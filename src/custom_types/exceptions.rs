@@ -35,11 +35,17 @@ impl StdException {
     pub fn get_attribute(self: Rc<Self>, name: &str) -> Variable {
         match name {
             "message" => self.msg.clone().into(),
+            "msg" => StdMethod::new_native(self, Self::msg).into(),
             _ => unimplemented!(),
         }
     }
 
     fn str(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        runtime.return_1(self.msg.clone().into())
+    }
+
+    fn msg(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         runtime.return_1(self.msg.clone().into())
     }
