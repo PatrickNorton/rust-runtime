@@ -191,9 +191,9 @@ impl std::iter::Iterator for IterAdaptor<'_> {
                     self.value = Result::Err(false);
                     Option::None
                 }
-                Result::Err(e) => {
+                Result::Err(_) => {
                     self.value = Result::Err(true);
-                    Option::Some(Result::Err(e))
+                    Option::Some(Result::Err(()))
                 }
             },
             // Safeguard against multiple calls to completed iterator
