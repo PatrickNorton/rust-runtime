@@ -612,31 +612,11 @@ impl Runtime {
     }
 
     pub fn pop_err_if(&mut self, t: Type) -> Result<Option<Variable>, ()> {
-        match self
-            .thrown_exception
-            .as_mut()
-            .expect("pop_err called with no thrown exception")
-        {
-            InnerException::Std(val, _) => {
-                if val.get_type() == t {
-                    let result = Result::Ok(Option::Some(take(val)));
-                    self.thrown_exception = Option::None;
-                    result
-                } else {
-                    Result::Ok(Option::None)
-                }
-            }
-            InnerException::UnConstructed(ty, s, _) => {
-                if *ty == t {
-                    let result =
-                        Result::Ok(Option::Some(t.create_inst(vec![take(s).into()], self)?));
-                    self.thrown_exception = Option::None;
-                    result
-                } else {
-                    Result::Ok(Option::None)
-                }
-            }
-        }
+        Result::Ok(match &mut self.thrown_exception {
+            Option::Some(exc) if exc.get_type() != t => Option::None,
+            err @ Option::Some(_) => Option::Some(err.take().unwrap().create(self)?),
+            Option::None => panic!("pop_err called with no thrown exception"),
+        })
     }
 
     pub fn frame_strings(&self) -> String {
