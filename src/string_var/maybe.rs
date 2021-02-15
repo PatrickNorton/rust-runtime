@@ -65,9 +65,19 @@ impl MaybeString {
             MaybeString::Standard(s) => s.insert_str(idx, str.as_str()),
             MaybeString::Ascii(a) => {
                 // FIXME: Get insert_str added to AsciiString
-                let mut new = str.to_owned();
-                new.push_str(&a);
-                *a = new;
+                if idx == 0 {
+                    let mut new = str.to_owned();
+                    new.push_str(&a);
+                    *a = new;
+                } else if idx == a.len() {
+                    a.push_str(str);
+                } else {
+                    assert!(idx < a.len());
+                    let mut result = a[..idx].to_owned();
+                    result.push_str(str);
+                    result.push_str(&a[idx..]);
+                    *a = result;
+                }
             }
         }
     }
