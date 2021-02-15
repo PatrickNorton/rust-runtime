@@ -9,10 +9,12 @@ use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
-use crate::string_var::StringVar;
+use crate::string_var::{MaybeString, StringVar};
 use crate::variable::{FnResult, Variable};
 use crate::{first, first_two};
+use ascii::{AsciiChar, AsciiStr, AsciiString};
 use num::ToPrimitive;
+use once_cell::sync::Lazy;
 use std::cell::{Cell, RefCell};
 use std::cmp::min;
 use std::rc::Rc;
@@ -88,7 +90,7 @@ impl Array {
 
     fn str_value(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
         let value = join_values(&**self.vars.borrow(), |x| x.str(runtime))?;
-        Result::Ok(format!("Array[{}]", value).into())
+        Result::Ok(Self::surround(value).into())
     }
 
     fn repr(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -99,7 +101,14 @@ impl Array {
 
     fn repr_value(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
         let value = join_values(&**self.vars.borrow(), |x| x.repr(runtime))?;
-        Result::Ok(format!("Array[{}]", value).into())
+        Result::Ok(Self::surround(value).into())
+    }
+
+    fn surround(mut str: MaybeString) -> MaybeString {
+        static ARRAY: Lazy<&AsciiStr> = Lazy::new(|| AsciiStr::from_ascii("Array[").unwrap());
+        str.insert_ascii_str(0, *ARRAY);
+        str.push_ascii(AsciiChar::BracketClose);
+        str
     }
 
     fn eq(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

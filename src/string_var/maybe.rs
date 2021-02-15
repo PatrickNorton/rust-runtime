@@ -1,5 +1,5 @@
 use crate::string_var::StringVar;
-use ascii::{AsciiStr, AsciiString};
+use ascii::{AsciiChar, AsciiStr, AsciiString};
 use std::fmt::{self, Display, Formatter};
 use std::mem::take;
 use std::ops::{Add, AddAssign};
@@ -50,6 +50,32 @@ impl MaybeString {
         match self {
             MaybeString::Standard(s) => MaybeAscii::Standard(&s),
             MaybeString::Ascii(a) => MaybeAscii::Ascii(&a),
+        }
+    }
+
+    pub fn insert_ascii(&mut self, idx: usize, ch: AsciiChar) {
+        match self {
+            MaybeString::Standard(s) => s.insert(idx, ch.as_char()),
+            MaybeString::Ascii(a) => a.insert(idx, ch),
+        }
+    }
+
+    pub fn insert_ascii_str(&mut self, idx: usize, str: &AsciiStr) {
+        match self {
+            MaybeString::Standard(s) => s.insert_str(idx, str.as_str()),
+            MaybeString::Ascii(a) => {
+                // FIXME: Get insert_str added to AsciiString
+                let mut new = str.to_owned();
+                new.push_str(&a);
+                *a = new;
+            }
+        }
+    }
+
+    pub fn push_ascii(&mut self, ch: AsciiChar) {
+        match self {
+            MaybeString::Standard(s) => s.push(ch.as_char()),
+            MaybeString::Ascii(a) => a.push(ch),
         }
     }
 }

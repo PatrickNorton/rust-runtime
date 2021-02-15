@@ -9,9 +9,10 @@ use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
-use crate::string_var::StringVar;
+use crate::string_var::{MaybeString, StringVar};
 use crate::variable::{FnResult, Variable};
 use crate::{first, first_two};
+use ascii::AsciiChar;
 use num::{One, Signed, ToPrimitive, Zero};
 use std::cell::{Cell, RefCell};
 use std::cmp::min;
@@ -564,6 +565,12 @@ impl List {
             ),
         )
     }
+
+    fn surround(mut str: MaybeString) -> MaybeString {
+        str.insert_ascii(0, AsciiChar::BracketOpen);
+        str.push_ascii(AsciiChar::BracketClose);
+        str
+    }
 }
 
 impl CustomVar for List {
@@ -602,12 +609,12 @@ impl CustomVar for List {
 
     fn str(self: Rc<Self>, runtime: &mut Runtime) -> Result<StringVar, ()> {
         let value = join_values(&**self.value.borrow(), |x| x.str(runtime))?;
-        Result::Ok(format!("[{}]", value).into())
+        Result::Ok(Self::surround(value).into())
     }
 
     fn repr(self: Rc<Self>, runtime: &mut Runtime) -> Result<StringVar, ()> {
         let value = join_values(&**self.value.borrow(), |x| x.repr(runtime))?;
-        Result::Ok(format!("[{}]", value).into())
+        Result::Ok(Self::surround(value).into())
     }
 
     fn bool(self: Rc<Self>, _runtime: &mut Runtime) -> Result<bool, ()> {

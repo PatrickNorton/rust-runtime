@@ -2,7 +2,7 @@ use crate::custom_types::join_values;
 use crate::runtime::Runtime;
 use crate::string_var::{MaybeString, StringVar};
 use crate::variable::Variable;
-use ascii::AsciiStr;
+use ascii::{AsciiChar, AsciiStr};
 use once_cell::sync::Lazy;
 use std::borrow::Borrow;
 use std::hash::Hash;
@@ -15,9 +15,6 @@ pub struct LangTuple {
     values: Rc<[Variable]>,
 }
 
-static OPEN_PAREN: Lazy<&AsciiStr> = Lazy::new(|| AsciiStr::from_ascii("(").unwrap());
-static CLOSE_PAREN: Lazy<&AsciiStr> = Lazy::new(|| AsciiStr::from_ascii(")").unwrap());
-
 impl LangTuple {
     pub fn new(args: Rc<[Variable]>) -> Self {
         LangTuple { values: args }
@@ -28,16 +25,14 @@ impl LangTuple {
     }
 
     pub fn str(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
-        let mut result = MaybeString::Ascii(OPEN_PAREN.to_owned());
-        result += &join_values(&self.values, |x| x.str(runtime))?;
-        result += *CLOSE_PAREN;
+        let mut result = join_values(&self.values, |x| x.str(runtime))?;
+        surround_paren(&mut result);
         Result::Ok(StringVar::from(result))
     }
 
     pub fn repr(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
-        let mut result = MaybeString::Ascii(OPEN_PAREN.to_owned());
-        result += &join_values(&self.values, |x| x.repr(runtime))?;
-        result += *CLOSE_PAREN;
+        let mut result = join_values(&self.values, |x| x.repr(runtime))?;
+        surround_paren(&mut result);
         Result::Ok(StringVar::from(result))
     }
 
@@ -94,4 +89,9 @@ impl Index<usize> for LangTuple {
     fn index(&self, index: usize) -> &Self::Output {
         &self.values[index]
     }
+}
+
+fn surround_paren(str: &mut MaybeString) {
+    str.insert_ascii(0, AsciiChar::ParenOpen);
+    str.push_ascii(AsciiChar::ParenClose);
 }
