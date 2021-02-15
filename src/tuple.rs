@@ -15,6 +15,9 @@ pub struct LangTuple {
     values: Rc<[Variable]>,
 }
 
+static OPEN_PAREN: Lazy<&AsciiStr> = Lazy::new(|| AsciiStr::from_ascii("(").unwrap());
+static CLOSE_PAREN: Lazy<&AsciiStr> = Lazy::new(|| AsciiStr::from_ascii(")").unwrap());
+
 impl LangTuple {
     pub fn new(args: Rc<[Variable]>) -> Self {
         LangTuple { values: args }
@@ -25,8 +28,6 @@ impl LangTuple {
     }
 
     pub fn str(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
-        static OPEN_PAREN: Lazy<&AsciiStr> = Lazy::new(|| AsciiStr::from_ascii("(").unwrap());
-        static CLOSE_PAREN: Lazy<&AsciiStr> = Lazy::new(|| AsciiStr::from_ascii(")").unwrap());
         let mut result = MaybeString::Ascii(OPEN_PAREN.to_owned());
         result += &join_values(&self.values, |x| x.str(runtime))?;
         result += *CLOSE_PAREN;
@@ -34,13 +35,9 @@ impl LangTuple {
     }
 
     pub fn repr(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
-        let mut result = "(".to_string();
-        for (i, value) in self.values.iter().enumerate() {
-            result += value.clone().repr(runtime)?.as_str();
-            if i < self.values.len() - 1 {
-                result += ", ";
-            }
-        }
+        let mut result = MaybeString::Ascii(OPEN_PAREN.to_owned());
+        result += &join_values(&self.values, |x| x.repr(runtime))?;
+        result += *CLOSE_PAREN;
         Result::Ok(StringVar::from(result))
     }
 
