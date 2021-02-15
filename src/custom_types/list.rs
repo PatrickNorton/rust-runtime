@@ -78,6 +78,8 @@ impl List {
             "popFirst" => Self::pop_first,
             "swap" => Self::swap,
             "remove" => Self::remove,
+            "fill" => Self::fill,
+            "fillWith" => Self::fill_with,
             x => unimplemented!("List.{}", x),
         };
         StdMethod::new_native(self, value).into()
@@ -238,6 +240,23 @@ impl List {
             Result::Ok(i) => runtime.return_1(value.remove(i)),
             Result::Err(i) => Self::index_error(value.len(), i, runtime),
         }
+    }
+
+    fn fill(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        let value = first(args);
+        self.value.borrow_mut().fill(value);
+        runtime.return_0()
+    }
+
+    fn fill_with(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        let value = first(args);
+        for val in &mut *self.value.borrow_mut() {
+            value.clone().call((Vec::new(), runtime))?;
+            *val = runtime.pop_return();
+        }
+        runtime.return_0()
     }
 
     fn index_error(len: usize, index: IntVar, runtime: &mut Runtime) -> FnResult {

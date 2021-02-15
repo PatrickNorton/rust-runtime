@@ -2,6 +2,7 @@ use crate::string_var::{MaybeString, StringVar};
 use crate::variable::Variable;
 use ascii::AsciiStr;
 use once_cell::sync::Lazy;
+
 macro_rules! custom_class {
     ($type_value:ty, $create_fn:ident, $str_name:tt) => {{
         custom_class!($type_value, $create_fn, $str_name,)
@@ -58,12 +59,15 @@ pub fn join_values(
     values: &[Variable],
     mut func: impl FnMut(Variable) -> Result<StringVar, ()>,
 ) -> Result<MaybeString, ()> {
-    let mut result = MaybeString::new();
-    for (i, value) in values.iter().enumerate() {
-        result += &func(value.clone())?;
-        if i != values.len() - 1 {
+    if let Option::Some((last, rest)) = values.split_last() {
+        let mut result = MaybeString::new();
+        for value in rest {
+            result += &func(value.clone())?;
             result += *ASCII_COMMA;
         }
+        result += &func(last.clone())?;
+        Result::Ok(result)
+    } else {
+        Result::Ok(MaybeString::new())
     }
-    Result::Ok(result)
 }
