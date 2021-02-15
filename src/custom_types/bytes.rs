@@ -13,7 +13,7 @@ use crate::variable::{FnResult, Variable};
 use crate::{first, first_two};
 use ascii::{AsciiChar, AsciiString, IntoAsciiString};
 use num::{BigInt, ToPrimitive};
-use std::cell::{Cell, RefCell};
+use std::cell::{Cell, Ref, RefCell};
 use std::char;
 use std::rc::Rc;
 
@@ -39,6 +39,10 @@ impl LangBytes {
         LangBytes {
             value: RefCell::new(val),
         }
+    }
+
+    pub fn get_value(&self) -> Ref<'_, Vec<u8>> {
+        self.value.borrow()
     }
 
     fn op_fn(op: Operator) -> NativeMethod<Rc<LangBytes>> {
