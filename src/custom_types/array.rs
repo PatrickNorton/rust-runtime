@@ -12,7 +12,7 @@ use crate::std_type::Type;
 use crate::string_var::{MaybeString, StringVar};
 use crate::variable::{FnResult, Variable};
 use crate::{first, first_two};
-use ascii::{AsciiChar, AsciiStr, AsciiString};
+use ascii::{AsciiChar, AsciiStr};
 use num::ToPrimitive;
 use once_cell::sync::Lazy;
 use std::cell::{Cell, RefCell};
