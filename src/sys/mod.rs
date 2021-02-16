@@ -1,12 +1,15 @@
-use crate::custom_types::list::List;
-use crate::std_type::Type;
+use crate::function::Function;
+use crate::sys::files::{chdir, getcwd, mkdir};
 use crate::variable::Variable;
-use std::env::args;
 
 mod files;
 
 pub fn get_value(x: &str) -> Variable {
-    match x {
+    let func = match x {
+        "mkdir" => mkdir,
+        "chdir" => chdir,
+        "getcwd" => getcwd,
         _ => unimplemented!("sys.{}", x),
-    }
+    };
+    Function::Native(func).into()
 }
