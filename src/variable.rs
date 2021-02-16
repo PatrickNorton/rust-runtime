@@ -3,6 +3,7 @@ use crate::builtin_functions::{
 };
 use crate::custom_var::CustomVarWrapper;
 use crate::file_info::FileInfo;
+use crate::from_bool::FromBool;
 use crate::function::Function;
 use crate::int_var::IntVar;
 use crate::lang_union::LangUnion;
@@ -17,7 +18,6 @@ use crate::std_type::Type;
 use crate::std_variable::StdVariable;
 use crate::string_var::StringVar;
 use crate::tuple::LangTuple;
-use crate::var_impls::FromBool;
 use num::bigint::BigInt;
 use num::traits::Zero;
 use num::{BigRational, ToPrimitive};

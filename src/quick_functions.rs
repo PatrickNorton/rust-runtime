@@ -1,10 +1,10 @@
 use crate::custom_types::exceptions::{arithmetic_error, index_error};
+use crate::from_bool::FromBool;
 use crate::int_var::IntVar;
 use crate::operator::Operator;
 use crate::rational_var::RationalVar;
 use crate::runtime::Runtime;
 use crate::string_var::StringVar;
-use crate::var_impls::FromBool;
 use crate::variable::{InnerVar, OptionVar, Variable};
 use num::traits::Pow;
 use num::{BigRational, One, ToPrimitive, Zero};

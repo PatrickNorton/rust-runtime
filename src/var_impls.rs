@@ -10,7 +10,6 @@ use crate::string_var::StringVar;
 use crate::tuple::LangTuple;
 use crate::variable::{InnerVar, OptionVar, Variable};
 use ascii::AsciiChar;
-use num::BigInt;
 
 impl From<InnerVar> for Variable {
     fn from(x: InnerVar) -> Self {
@@ -241,21 +240,5 @@ impl From<Variable> for looping::Iterator {
 impl Default for Variable {
     fn default() -> Self {
         Variable::Normal(InnerVar::Null())
-    }
-}
-
-pub(crate) trait FromBool {
-    fn from_bool(x: bool) -> Self;
-}
-
-impl FromBool for BigInt {
-    fn from_bool(x: bool) -> Self {
-        if x { 1u8 } else { 0u8 }.into()
-    }
-}
-
-impl FromBool for IntVar {
-    fn from_bool(x: bool) -> Self {
-        if x { 1u8 } else { 0u8 }.into()
     }
 }

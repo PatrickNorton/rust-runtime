@@ -1,10 +1,10 @@
 use crate::builtin_functions::int_fn;
+use crate::from_bool::FromBool;
 use crate::int_var::IntVar;
 use crate::method::{NativeMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::string_var::StringVar;
-use crate::var_impls::FromBool;
 use crate::variable::{FnResult, Variable};
 
 pub fn op_fn(o: Operator) -> Option<NativeMethod<bool>> {
