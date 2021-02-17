@@ -16,11 +16,10 @@ pub fn sys_name(x: usize) -> &'static str {
 }
 
 pub fn get_value(x: &str) -> Variable {
-    let func = match x {
-        "FILE_SEPARATOR" => return MAIN_SEPARATOR.into(),
-        _ => get_syscall(x),
-    };
-    Function::Native(func).into()
+    match x {
+        "FILE_SEPARATOR" => MAIN_SEPARATOR.into(),
+        _ => Function::Native(get_syscall(x)).into(),
+    }
 }
 
 #[inline]
