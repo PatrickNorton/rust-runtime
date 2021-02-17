@@ -18,6 +18,7 @@ use crate::quick_functions::{
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
+use crate::sys::{self, get_syscall, sys_name};
 use crate::tuple::LangTuple;
 use crate::variable::{FnResult, InnerVar, OptionVar, Variable};
 use num::traits::FromPrimitive;
@@ -631,6 +632,16 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         Bytecode::GetType => {
             let value = runtime.pop();
             runtime.push(value.get_type().into());
+        }
+        Bytecode::GetSys => {
+            let sys_index = bytes_0 as usize;
+            runtime.push(sys::get_value(sys_name(sys_index)));
+        }
+        Bytecode::Syscall => {
+            let sys_index = bytes_0 as usize;
+            let argc = bytes_1 as usize;
+            let args = runtime.load_args(argc);
+            runtime.call_native(get_syscall(sys_name(sys_index)), args)?;
         }
         Bytecode::DupTop2 => {
             let val1 = runtime.pop();

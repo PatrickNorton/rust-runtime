@@ -103,6 +103,8 @@ pub enum Bytecode {
     // Misc.
     LoadFunction = 0x70,
     GetType = 0x71,
+    GetSys = 0x72,
+    Syscall = 0x73,
     // Dups, part 2
     DupTop2 = 0x78,
     DupTopN = 0x79,
@@ -192,6 +194,8 @@ pub fn bytecode_size(b: Bytecode) -> (usize, usize) {
         }
         Bytecode::LoadFunction => (2, 0),
         Bytecode::GetType => (0, 0),
+        Bytecode::GetSys => (2, 0),
+        Bytecode::Syscall => (2, 2),
         Bytecode::DupTop2 => (0, 0),
         Bytecode::DupTopN => (2, 0),
         Bytecode::UnpackIterable | Bytecode::PackIterable | Bytecode::SwapDyn => (0, 0),
