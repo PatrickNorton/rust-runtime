@@ -31,6 +31,7 @@ pub trait NativeIterator: CustomVar {
 
 pub trait IterAttrs: NativeIterator + Sized {
     fn next_fn(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult;
+    fn get_type() -> Type;
 
     fn get_attribute(self: Rc<Self>, val: &str) -> Variable {
         let func = match val {
@@ -147,7 +148,7 @@ where
 
 impl<T> CustomVar for T
 where
-    T: TypicalIterator,
+    T: IterAttrs,
 {
     fn get_attr(self: Rc<Self>, name: Name) -> Variable {
         match name {
@@ -161,7 +162,7 @@ where
     }
 
     fn get_type(&self) -> Type {
-        <Self as TypicalIterator>::get_type()
+        <Self as IterAttrs>::get_type()
     }
 }
 
@@ -172,6 +173,10 @@ where
     fn next_fn(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         runtime.return_1(self.inner_next().into())
+    }
+
+    fn get_type() -> Type {
+        <Self as TypicalIterator>::get_type()
     }
 }
 

@@ -1,7 +1,5 @@
-use crate::custom_var::CustomVar;
 use crate::int_var::IntVar;
 use crate::looping::{self, IterAttrs, IterResult, NativeIterator};
-use crate::name::Name;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::variable::{FnResult, Variable};
@@ -37,10 +35,6 @@ impl Enumerate {
     fn create(_args: Vec<Variable>, _runtime: &mut Runtime) -> FnResult {
         unimplemented!()
     }
-
-    fn enumerate_type() -> Type {
-        custom_class!(Enumerate, create, "Enumerate")
-    }
 }
 
 impl IterAttrs for Enumerate {
@@ -54,19 +48,9 @@ impl IterAttrs for Enumerate {
             Option::None => runtime.return_1(Option::None.into()),
         }
     }
-}
 
-impl CustomVar for Enumerate {
-    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        default_attr!(self, name)
-    }
-
-    fn set(self: Rc<Self>, _name: Name, _object: Variable) {
-        unimplemented!()
-    }
-
-    fn get_type(&self) -> Type {
-        Self::enumerate_type()
+    fn get_type() -> Type {
+        custom_class!(Enumerate, create, "Enumerate")
     }
 }
 
