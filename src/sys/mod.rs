@@ -1,5 +1,5 @@
 use crate::function::{Function, NativeFunction};
-use crate::sys::files::{chdir, getcwd, mkdir};
+use crate::sys::files::{chdir, getcwd, list_dir, mkdir};
 use crate::variable::Variable;
 use std::path::MAIN_SEPARATOR;
 
@@ -28,6 +28,7 @@ pub fn get_syscall(x: &str) -> NativeFunction {
         "mkdir" => mkdir,
         "chdir" => chdir,
         "getcwd" => getcwd,
+        "listdir" => list_dir,
         _ => unimplemented!("sys.{}", x),
     }
 }
