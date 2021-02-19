@@ -107,28 +107,29 @@ impl Slice {
 }
 
 impl CustomVar for Slice {
-    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        match name {
-            Name::Attribute(s) => match s {
-                "start" => int_to_var(self.start.clone()),
-                "stop" => int_to_var(self.stop.clone()),
-                "step" => int_to_var(self.step.clone()),
-                "toRange" => StdMethod::new_native(self, Self::make_range).into(),
-                _ => unimplemented!(),
-            },
-            Name::Operator(o) => match o {
-                Operator::Str | Operator::Repr => StdMethod::new_native(self, Self::str).into(),
-                _ => unimplemented!(),
-            },
-        }
-    }
-
     fn set(self: Rc<Self>, _name: Name, _object: Variable) {
         unimplemented!()
     }
 
     fn get_type(&self) -> Type {
         Self::slice_type()
+    }
+
+    fn get_operator(self: Rc<Self>, op: Operator) -> Variable {
+        match op {
+            Operator::Str | Operator::Repr => StdMethod::new_native(self, Self::str).into(),
+            _ => unimplemented!(),
+        }
+    }
+
+    fn get_attribute(self: Rc<Self>, name: &str) -> Variable {
+        match name {
+            "start" => int_to_var(self.start.clone()),
+            "stop" => int_to_var(self.stop.clone()),
+            "step" => int_to_var(self.step.clone()),
+            "toRange" => StdMethod::new_native(self, Self::make_range).into(),
+            _ => unimplemented!(),
+        }
     }
 
     fn str(self: Rc<Self>, _runtime: &mut Runtime) -> Result<StringVar, ()> {

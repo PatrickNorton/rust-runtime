@@ -1,5 +1,6 @@
 use crate::custom_var::CustomVar;
 use crate::name::Name;
+use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::variable::{FnResult, Variable};
@@ -21,16 +22,20 @@ macro_rules! std_interface {
         }
 
         impl CustomVar for $name {
-            fn get_attr(self: Rc<Self>, _name: Name) -> Variable {
-                unimplemented!()
-            }
-
             fn set(self: Rc<Self>, _name: Name, _object: Variable) {
                 unimplemented!()
             }
 
             fn get_type(&self) -> Type {
                 Self::cls()
+            }
+
+            fn get_operator(self: Rc<Self>, _op: Operator) -> Variable {
+                unimplemented!()
+            }
+
+            fn get_attribute(self: Rc<Self>, _name: &str) -> Variable {
+                unimplemented!()
             }
         }
     };

@@ -22,24 +22,6 @@ pub struct FileObj {
 }
 
 impl FileObj {
-    fn get_operator(self: Rc<Self>, op: Operator) -> Variable {
-        let func = match op {
-            Operator::Enter => Self::open,
-            Operator::Exit => Self::close,
-            _ => unimplemented!(),
-        };
-        StdMethod::new_native(self, func).into()
-    }
-
-    fn get_attribute(self: Rc<Self>, attr: &str) -> Variable {
-        let func = match attr {
-            "readLines" => Self::read_lines,
-            "read" => Self::read,
-            _ => unimplemented!(),
-        };
-        StdMethod::new_native(self, func).into()
-    }
-
     fn open(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         if self.file.borrow().is_none() {
@@ -110,18 +92,29 @@ impl FileObj {
 }
 
 impl CustomVar for FileObj {
-    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        match name {
-            Name::Attribute(a) => self.get_attribute(a),
-            Name::Operator(op) => self.get_operator(op),
-        }
-    }
-
     fn set(self: Rc<Self>, _name: Name, _object: Variable) {
         unimplemented!()
     }
 
     fn get_type(&self) -> Type {
         Self::open_type()
+    }
+
+    fn get_operator(self: Rc<Self>, op: Operator) -> Variable {
+        let func = match op {
+            Operator::Enter => Self::open,
+            Operator::Exit => Self::close,
+            _ => unimplemented!(),
+        };
+        StdMethod::new_native(self, func).into()
+    }
+
+    fn get_attribute(self: Rc<Self>, attr: &str) -> Variable {
+        let func = match attr {
+            "readLines" => Self::read_lines,
+            "read" => Self::read,
+            _ => unimplemented!(),
+        };
+        StdMethod::new_native(self, func).into()
     }
 }

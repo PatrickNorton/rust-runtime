@@ -64,21 +64,14 @@ impl Set {
         }
     }
 
-    fn get_operator(self: Rc<Self>, o: Operator) -> Variable {
-        let func = Set::op_fn(o);
-        StdMethod::new_native(self, func).into()
-    }
-
-    fn get_attribute(self: Rc<Self>, s: &str) -> Variable {
-        let func = match s {
+    fn attr_fn(s: &str) -> NativeMethod<Rc<Set>> {
+        match s {
             "add" => Self::add,
             "addAll" => Self::add_all,
             "remove" => Self::del_attr,
             "clear" => Self::clear,
-            "length" => return IntVar::from(self.value.borrow().size()).into(),
             _ => unimplemented!(),
-        };
-        StdMethod::new_native(self, func).into()
+        }
     }
 
     fn intersection(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -362,10 +355,6 @@ impl InnerSet {
     pub fn is_empty(&self) -> bool {
         self.size == 0
     }
-
-    pub fn size(&self) -> usize {
-        self.size
-    }
 }
 
 impl Entry {
@@ -440,19 +429,24 @@ impl Entry {
 }
 
 impl CustomVar for Set {
-    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        match name {
-            Name::Attribute(s) => self.get_attribute(s),
-            Name::Operator(o) => self.get_operator(o),
-        }
-    }
-
     fn set(self: Rc<Self>, _name: Name, _object: Variable) {
         unimplemented!()
     }
 
     fn get_type(&self) -> Type {
         Set::set_type()
+    }
+
+    fn get_operator(self: Rc<Self>, o: Operator) -> Variable {
+        let func = Set::op_fn(o);
+        StdMethod::new_native(self, func).into()
+    }
+
+    fn get_attribute(self: Rc<Self>, name: &str) -> Variable {
+        match name {
+            "length" => IntVar::from(self.len()).into(),
+            _ => StdMethod::new_native(self, Self::attr_fn(name)).into(),
+        }
     }
 
     fn call_op(

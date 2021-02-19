@@ -53,11 +53,6 @@ impl Array {
         }
     }
 
-    fn get_operator(self: Rc<Self>, name: Operator) -> Variable {
-        let func = Array::op_fn(name);
-        StdMethod::new_native(self, func).into()
-    }
-
     fn index(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         let values = self.vars.borrow();
         match normalize(values.len(), first(args).into()) {
@@ -219,19 +214,21 @@ impl Array {
 }
 
 impl CustomVar for Array {
-    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        match name {
-            Name::Operator(o) => self.get_operator(o),
-            _ => unimplemented!(),
-        }
-    }
-
     fn set(self: Rc<Self>, _name: Name, _object: Variable) {
         unimplemented!()
     }
 
     fn get_type(&self) -> Type {
         Self::array_type()
+    }
+
+    fn get_operator(self: Rc<Self>, op: Operator) -> Variable {
+        let func = Array::op_fn(op);
+        StdMethod::new_native(self, func).into()
+    }
+
+    fn get_attribute(self: Rc<Self>, _name: &str) -> Variable {
+        unimplemented!()
     }
 
     fn call_op(

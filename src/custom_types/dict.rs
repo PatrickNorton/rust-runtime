@@ -61,22 +61,15 @@ impl Dict {
         }
     }
 
-    fn get_op(self: Rc<Self>, o: Operator) -> Variable {
-        let func = Dict::op_fn(o);
-        StdMethod::new_native(self, func).into()
-    }
-
-    fn get_attribute(self: Rc<Self>, s: &str) -> Variable {
-        let func = match s {
+    fn attr_fn(s: &str) -> NativeMethod<Rc<Dict>> {
+        match s {
             "clear" => Dict::clear,
             "get" => Dict::get,
             "replace" => Dict::replace,
             "remove" => Dict::remove,
             "setDefault" => Dict::set_default,
-            "length" => return IntVar::from(self.len()).into(),
             _ => unimplemented!(),
-        };
-        StdMethod::new_native(self, func).into()
+        }
     }
 
     fn index(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -458,19 +451,25 @@ impl Entry {
 }
 
 impl CustomVar for Dict {
-    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        match name {
-            Name::Attribute(s) => self.get_attribute(s),
-            Name::Operator(o) => self.get_op(o),
-        }
-    }
-
     fn set(self: Rc<Self>, _name: Name, _object: Variable) {
         unimplemented!()
     }
 
     fn get_type(&self) -> Type {
         Dict::dict_type()
+    }
+
+    fn get_operator(self: Rc<Self>, o: Operator) -> Variable {
+        let func = Dict::op_fn(o);
+        StdMethod::new_native(self, func).into()
+    }
+
+    fn get_attribute(self: Rc<Self>, s: &str) -> Variable {
+        let func = match s {
+            "length" => return IntVar::from(self.len()).into(),
+            _ => Self::attr_fn(s),
+        };
+        StdMethod::new_native(self, func).into()
     }
 
     fn call_op(

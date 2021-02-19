@@ -15,9 +15,18 @@ use std::ptr;
 use std::rc::Rc;
 
 pub trait CustomVar: Debug + Any + Downcast {
-    fn get_attr(self: Rc<Self>, name: Name) -> Variable;
     fn set(self: Rc<Self>, name: Name, object: Variable);
     fn get_type(&self) -> Type;
+
+    fn get_operator(self: Rc<Self>, op: Operator) -> Variable;
+    fn get_attribute(self: Rc<Self>, name: &str) -> Variable;
+
+    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
+        match name {
+            Name::Attribute(a) => self.get_attribute(a),
+            Name::Operator(o) => self.get_operator(o),
+        }
+    }
 
     fn call(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         self.call_op(Operator::Call, args, runtime)

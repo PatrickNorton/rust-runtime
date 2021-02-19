@@ -28,15 +28,6 @@ macro_rules! custom_class {
     }};
 }
 
-macro_rules! default_attr {
-    ($self:expr, $name:expr) => {
-        match $name {
-            Name::Operator(o) => $self.get_op(o),
-            Name::Attribute(s) => $self.get_attribute(s),
-        }
-    };
-}
-
 pub mod array;
 pub mod bytes;
 pub mod coroutine;

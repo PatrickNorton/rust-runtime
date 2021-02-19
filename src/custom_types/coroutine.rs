@@ -66,25 +66,26 @@ impl Generator {
 }
 
 impl CustomVar for Generator {
-    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        match name {
-            Name::Operator(op) => match op {
-                Operator::Iter => StdMethod::new_native(self, Self::ret_self).into(),
-                _ => unimplemented!("Generator.{}", op.name()),
-            },
-            Name::Attribute(attr) => match attr {
-                "next" => StdMethod::new_native(self, Self::next_fn).into(),
-                _ => unimplemented!("Generator.{}", attr),
-            },
-        }
-    }
-
     fn set(self: Rc<Self>, _name: Name, _object: Variable) {
         unimplemented!()
     }
 
     fn get_type(&self) -> Type {
         Self::gen_type()
+    }
+
+    fn get_operator(self: Rc<Self>, op: Operator) -> Variable {
+        match op {
+            Operator::Iter => StdMethod::new_native(self, Self::ret_self).into(),
+            _ => unimplemented!("Generator.{}", op.name()),
+        }
+    }
+
+    fn get_attribute(self: Rc<Self>, name: &str) -> Variable {
+        match name {
+            "next" => StdMethod::new_native(self, Self::next_fn).into(),
+            _ => unimplemented!("Generator.{}", name),
+        }
     }
 }
 

@@ -326,19 +326,23 @@ impl UnionMaker {
 }
 
 impl CustomVar for UnionMaker {
-    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        if name == Name::Operator(Operator::Call) {
+    fn set(self: Rc<Self>, _name: Name, _object: Variable) {
+        unimplemented!()
+    }
+
+    fn get_type(&self) -> Type {
+        unimplemented!()
+    }
+
+    fn get_operator(self: Rc<Self>, op: Operator) -> Variable {
+        if op == Operator::Call {
             self.into()
         } else {
             unimplemented!()
         }
     }
 
-    fn set(self: Rc<Self>, _name: Name, _object: Variable) {
-        unimplemented!()
-    }
-
-    fn get_type(&self) -> Type {
+    fn get_attribute(self: Rc<Self>, _name: &str) -> Variable {
         unimplemented!()
     }
 

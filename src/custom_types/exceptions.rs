@@ -24,22 +24,6 @@ impl StdException {
         StdException { msg, exc_type }
     }
 
-    pub fn get_op(self: Rc<Self>, o: Operator) -> Variable {
-        let func = match o {
-            Operator::Str => Self::str,
-            _ => unimplemented!(),
-        };
-        StdMethod::new_native(self, func).into()
-    }
-
-    pub fn get_attribute(self: Rc<Self>, name: &str) -> Variable {
-        match name {
-            "message" => self.msg.clone().into(),
-            "msg" => StdMethod::new_native(self, Self::msg).into(),
-            _ => unimplemented!(),
-        }
-    }
-
     fn str(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         runtime.return_1(self.msg.clone().into())
@@ -52,16 +36,28 @@ impl StdException {
 }
 
 impl CustomVar for StdException {
-    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        default_attr!(self, name)
-    }
-
     fn set(self: Rc<Self>, _name: Name, _object: Variable) {
         unimplemented!()
     }
 
     fn get_type(&self) -> Type {
         self.exc_type
+    }
+
+    fn get_operator(self: Rc<Self>, o: Operator) -> Variable {
+        let func = match o {
+            Operator::Str => Self::str,
+            _ => unimplemented!(),
+        };
+        StdMethod::new_native(self, func).into()
+    }
+
+    fn get_attribute(self: Rc<Self>, name: &str) -> Variable {
+        match name {
+            "message" => self.msg.clone().into(),
+            "msg" => StdMethod::new_native(self, Self::msg).into(),
+            _ => unimplemented!(),
+        }
     }
 
     fn str(self: Rc<Self>, _runtime: &mut Runtime) -> Result<StringVar, ()> {

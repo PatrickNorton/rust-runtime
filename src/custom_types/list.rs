@@ -58,14 +58,8 @@ impl List {
         }
     }
 
-    fn get_operator(self: Rc<Self>, name: Operator) -> Variable {
-        let value = List::op_fn(name);
-        StdMethod::new_native(self, value).into()
-    }
-
-    fn get_attribute(self: Rc<Self>, name: &str) -> Variable {
-        let value = match name {
-            "length" => return IntVar::from(self.len()).into(),
+    fn attr_fn(name: &str) -> NativeMethod<Rc<List>> {
+        match name {
             "containsAll" => Self::contains_all,
             "get" => Self::list_get,
             "reverse" => Self::reverse,
@@ -82,8 +76,7 @@ impl List {
             "fill" => Self::fill,
             "fillWith" => Self::fill_with,
             x => unimplemented!("List.{}", x),
-        };
-        StdMethod::new_native(self, value).into()
+        }
     }
 
     fn list_bool(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -574,19 +567,24 @@ impl List {
 }
 
 impl CustomVar for List {
-    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        match name {
-            Name::Operator(o) => self.get_operator(o),
-            Name::Attribute(s) => self.get_attribute(s),
-        }
-    }
-
     fn set(self: Rc<Self>, _name: Name, _object: Variable) {
         unimplemented!()
     }
 
     fn get_type(&self) -> Type {
         List::list_type()
+    }
+
+    fn get_operator(self: Rc<Self>, name: Operator) -> Variable {
+        let value = List::op_fn(name);
+        StdMethod::new_native(self, value).into()
+    }
+
+    fn get_attribute(self: Rc<Self>, name: &str) -> Variable {
+        match name {
+            "length" => IntVar::from(self.len()).into(),
+            x => StdMethod::new_native(self, Self::attr_fn(x)).into(),
+        }
     }
 
     fn call_op(

@@ -1,7 +1,7 @@
 use crate::custom_types::exceptions::index_error;
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_var::IntVar;
-use crate::looping::{self, IterResult, NativeIterator};
+use crate::looping::{self, IterAttrs, IterResult, NativeIterator};
 use crate::method::{NativeMethod, StdMethod};
 use crate::name::Name;
 use crate::operator::Operator;
@@ -71,20 +71,6 @@ impl Range {
             Operator::Reversed => Self::reversed,
             _ => unimplemented!(),
         }
-    }
-
-    fn get_op(self: Rc<Self>, op: Operator) -> Variable {
-        let func = Range::op_fn(op);
-        StdMethod::new_native(self, func).into()
-    }
-
-    fn get_attribute(self: Rc<Self>, attr: &str) -> Variable {
-        let func = match attr {
-            "length" => return self.len().into(),
-            "get" => Self::get,
-            x => unimplemented!("Range.{}", x),
-        };
-        StdMethod::new_native(self, func).into()
     }
 
     fn str(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -182,16 +168,26 @@ impl Range {
 }
 
 impl CustomVar for Range {
-    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        default_attr!(self, name)
-    }
-
     fn set(self: Rc<Self>, _name: Name, _object: Variable) {
         unimplemented!()
     }
 
     fn get_type(&self) -> Type {
         Self::range_type()
+    }
+
+    fn get_operator(self: Rc<Self>, op: Operator) -> Variable {
+        let func = Range::op_fn(op);
+        StdMethod::new_native(self, func).into()
+    }
+
+    fn get_attribute(self: Rc<Self>, attr: &str) -> Variable {
+        let func = match attr {
+            "length" => return self.len().into(),
+            "get" => Self::get,
+            x => unimplemented!("Range.{}", x),
+        };
+        StdMethod::new_native(self, func).into()
     }
 
     fn call_op(
@@ -239,19 +235,6 @@ impl RangeIter {
         }
     }
 
-    fn get_attribute(self: Rc<Self>, val: &str) -> Variable {
-        let func = match val {
-            "next" => Self::next_fn,
-            _ => unimplemented!(),
-        };
-        StdMethod::new_native(self, func).into()
-    }
-
-    fn next_fn(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        debug_assert!(args.is_empty());
-        runtime.return_1(self.true_next().map(Variable::from).into())
-    }
-
     fn true_next(&self) -> Option<IntVar> {
         if self.value.before_end(&*self.current.borrow()) {
             Option::Some(self.current.replace_with(|x| self.value.get_step() + x))
@@ -269,19 +252,13 @@ impl RangeIter {
     }
 }
 
-impl CustomVar for RangeIter {
-    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        match name {
-            Name::Operator(_) => unimplemented!(),
-            Name::Attribute(s) => self.get_attribute(s),
-        }
+impl IterAttrs for RangeIter {
+    fn next_fn(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        runtime.return_1(self.true_next().map(Variable::from).into())
     }
 
-    fn set(self: Rc<Self>, _name: Name, _object: Variable) {
-        unimplemented!()
-    }
-
-    fn get_type(&self) -> Type {
+    fn get_type() -> Type {
         Self::range_iter_type()
     }
 }

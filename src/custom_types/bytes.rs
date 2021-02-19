@@ -59,14 +59,8 @@ impl LangBytes {
         }
     }
 
-    fn get_op(self: Rc<Self>, op: Operator) -> Variable {
-        let func = LangBytes::op_fn(op);
-        StdMethod::new_native(self, func).into()
-    }
-
-    fn get_attribute(self: Rc<Self>, attr: &str) -> Variable {
-        let func = match attr {
-            "length" => return IntVar::from(self.value.borrow().len()).into(),
+    fn attr_fn(attr: &str) -> NativeMethod<Rc<LangBytes>> {
+        match attr {
             "encode" => Self::encode,
             "join" => Self::join,
             "indexOf" => Self::index_of,
@@ -78,8 +72,7 @@ impl LangBytes {
             "lastIndexOf" => Self::last_index_of,
             "hex" => Self::hex,
             _ => unimplemented!(),
-        };
-        StdMethod::new_native(self, func).into()
+        }
     }
 
     fn index(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -514,16 +507,25 @@ impl LangBytes {
 }
 
 impl CustomVar for LangBytes {
-    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        default_attr!(self, name)
-    }
-
     fn set(self: Rc<Self>, _name: Name, _object: Variable) {
         unimplemented!()
     }
 
     fn get_type(&self) -> Type {
         Self::bytes_type()
+    }
+
+    fn get_operator(self: Rc<Self>, op: Operator) -> Variable {
+        let func = LangBytes::op_fn(op);
+        StdMethod::new_native(self, func).into()
+    }
+
+    fn get_attribute(self: Rc<Self>, attr: &str) -> Variable {
+        let func = match attr {
+            "length" => return IntVar::from(self.value.borrow().len()).into(),
+            _ => Self::attr_fn(attr),
+        };
+        StdMethod::new_native(self, func).into()
     }
 
     fn call_op(
