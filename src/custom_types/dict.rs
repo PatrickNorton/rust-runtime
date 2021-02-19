@@ -2,7 +2,7 @@ use crate::custom_types::exceptions::key_error;
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_tools::next_power_2;
 use crate::int_var::IntVar;
-use crate::looping::{self, IterResult, NativeIterator};
+use crate::looping::{self, IterAttrs, IterResult, NativeIterator};
 use crate::method::{NativeMethod, StdMethod};
 use crate::name::Name;
 use crate::operator::Operator;
@@ -562,16 +562,6 @@ impl DictIter {
         self.bucket_no.set(next);
     }
 
-    fn next_fn(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        debug_assert!(args.is_empty());
-        match self.true_next(runtime)? {
-            Option::None => runtime.return_n(vec![Option::None.into(), Option::None.into()]),
-            Option::Some(val) => {
-                runtime.return_n(vec![Option::Some(val.0).into(), Option::Some(val.1).into()])
-            }
-        }
-    }
-
     fn true_next(
         self: Rc<Self>,
         runtime: &mut Runtime,
@@ -598,23 +588,18 @@ impl DictIter {
     }
 }
 
-impl CustomVar for DictIter {
-    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        let func = match name {
-            Name::Operator(_) => unimplemented!(),
-            Name::Attribute(val) => match val {
-                "next" => Self::next_fn,
-                _ => unimplemented!(),
-            },
-        };
-        StdMethod::new_native(self, func).into()
+impl IterAttrs for DictIter {
+    fn next_fn(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        match self.true_next(runtime)? {
+            Option::None => runtime.return_n(vec![Option::None.into(), Option::None.into()]),
+            Option::Some(val) => {
+                runtime.return_n(vec![Option::Some(val.0).into(), Option::Some(val.1).into()])
+            }
+        }
     }
 
-    fn set(self: Rc<Self>, _name: Name, _object: Variable) {
-        unimplemented!()
-    }
-
-    fn get_type(&self) -> Type {
+    fn get_type() -> Type {
         unimplemented!()
     }
 }

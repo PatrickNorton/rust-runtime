@@ -2,7 +2,7 @@ use crate::custom_var::{downcast_var, CustomVar};
 use crate::first;
 use crate::int_tools::next_power_2;
 use crate::int_var::IntVar;
-use crate::looping::{self, IterResult, NativeIterator};
+use crate::looping::{self, IterAttrs, IterResult, NativeIterator};
 use crate::method::{NativeMethod, StdMethod};
 use crate::name::Name;
 use crate::operator::Operator;
@@ -546,31 +546,16 @@ impl SetIter {
             self.bucket_no.set(self.bucket_no.get() + 1);
         }
     }
+}
 
+impl IterAttrs for SetIter {
     fn next_fn(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         let next = self.next(runtime)?;
         runtime.return_1(next.take_first().into())
     }
-}
 
-impl CustomVar for SetIter {
-    fn get_attr(self: Rc<Self>, name: Name) -> Variable {
-        let func = match name {
-            Name::Operator(_) => unimplemented!(),
-            Name::Attribute(val) => match val {
-                "next" => Self::next_fn,
-                _ => unimplemented!(),
-            },
-        };
-        StdMethod::new_native(self, func).into()
-    }
-
-    fn set(self: Rc<Self>, _name: Name, _object: Variable) {
-        unimplemented!()
-    }
-
-    fn get_type(&self) -> Type {
+    fn get_type() -> Type {
         unimplemented!()
     }
 }
