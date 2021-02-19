@@ -150,7 +150,10 @@ fn var_to_int(value: Variable) -> Option<IntVar> {
         if i == 1 {
             val.map(InnerVar::into).map(Variable::into)
         } else {
-            Option::None
+            panic!(
+                "var_to_int expected a one-deep option, not {:?}",
+                Variable::Option(i, val)
+            )
         }
     } else {
         panic!("var_to_int expected an option, not {:?}", value)
