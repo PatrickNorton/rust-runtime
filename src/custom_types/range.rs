@@ -1,4 +1,4 @@
-use crate::custom_types::exceptions::index_error;
+use crate::custom_types::exceptions::{index_error, value_error};
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_var::IntVar;
 use crate::looping::{self, IterAttrs, IterResult, NativeIterator};
@@ -159,7 +159,11 @@ impl Range {
         debug_assert!(args.len() == 3);
         let (start, stop, step) = first_three(args);
         let range = Range::new(start.into(), stop.into(), step.into());
-        runtime.return_1(Rc::new(range).into())
+        if range.step.is_zero() {
+            runtime.throw_quick(value_error(), "Step cannot be 0")
+        } else {
+            runtime.return_1(Rc::new(range).into())
+        }
     }
 
     pub fn range_type() -> Type {
