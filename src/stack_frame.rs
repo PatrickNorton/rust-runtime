@@ -1,6 +1,7 @@
 use crate::runtime::Runtime;
 use crate::variable::Variable;
 use std::collections::HashSet;
+use std::fmt::Write;
 use std::ops::{Index, IndexMut};
 use std::option::Option;
 use std::vec::Vec;
@@ -192,12 +193,14 @@ pub fn frame_strings(frames: impl IntoIterator<Item = SFInfo>, runtime: &Runtime
             let fn_pos = frame.current_pos();
             let func = &file.get_functions()[fn_no as usize];
             let fn_name = func.get_name();
-            result.push_str(&*format!(
-                "    at {}:{} ({})\n",
+            writeln!(
+                result,
+                "    at {}:{} ({})",
                 fn_name,
                 fn_pos,
                 file.get_name()
-            ))
+            )
+            .unwrap();
         } else {
             result.push_str("    at [unknown native function]\n")
         }
