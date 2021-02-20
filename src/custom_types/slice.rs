@@ -98,7 +98,11 @@ impl Slice {
         debug_assert_eq!(args.len(), 3);
         let (start, stop, step) = first_three(args);
         let val = Slice::new(var_to_int(start), var_to_int(stop), var_to_int(step));
-        runtime.return_1(Rc::new(val).into())
+        if val.step.as_ref().map_or_else(|| false, Zero::is_zero) {
+            runtime.throw_quick(value_error(), "Step cannot be 0")
+        } else {
+            runtime.return_1(Rc::new(val).into())
+        }
     }
 
     pub fn slice_type() -> Type {
