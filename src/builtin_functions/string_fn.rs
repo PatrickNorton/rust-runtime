@@ -9,7 +9,7 @@ use crate::method::{NativeMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
-use crate::string_var::{AsciiVar, MaybeAscii, StrVar, StringVar};
+use crate::string_var::{AsciiVar, MaybeAscii, MaybeString, StrVar, StringVar};
 use crate::variable::{FnResult, Variable};
 use crate::{first, first_two, looping};
 use ascii::{AsAsciiStr, AsciiStr, AsciiString};
@@ -378,15 +378,17 @@ fn join(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult
 }
 
 fn join_all(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    let mut result = String::with_capacity(this.len() * args.len());
-    let len = args.len();
-    for (i, val) in args.into_iter().enumerate() {
-        result += val.str(runtime)?.as_str();
-        if i < len - 1 {
-            result += &*this;
+    let mut iter = args.into_iter();
+    if let Option::Some(val) = iter.next() {
+        let mut result = val.str(runtime)?.as_owned();
+        for val in iter {
+            result += &this;
+            result += val.str(runtime)?;
         }
+        runtime.return_1(StringVar::from(result).into())
+    } else {
+        runtime.return_1(StringVar::default().into())
     }
-    runtime.return_1(result.into())
 }
 
 fn starts_with(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
