@@ -681,7 +681,7 @@ impl ListRevIter {
 impl TypicalIterator for ListRevIter {
     fn inner_next(&self) -> Option<Variable> {
         if self.current.get() != 0 {
-            self.current.set(self.current.get() + 1);
+            self.current.set(self.current.get() - 1);
             let result = self.value.value.borrow()[self.current.get()].clone();
             Option::Some(result)
         } else {
