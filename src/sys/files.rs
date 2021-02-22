@@ -81,6 +81,6 @@ impl IterAttrs for ListDir {
 
 impl NativeIterator for ListDir {
     fn next(self: Rc<Self>, runtime: &mut Runtime) -> IterResult {
-        self.inner_next(runtime).map(IterOk::Normal)
+        self.inner_next(runtime).map(From::from)
     }
 }

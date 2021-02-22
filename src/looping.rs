@@ -15,8 +15,9 @@ pub type IterResult = Result<IterOk, ()>;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum IterOk {
-    Normal(Option<Variable>),
-    Vec(Option<Vec<Variable>>),
+    None,
+    One(Variable),
+    Many(Vec<Variable>),
 }
 
 #[derive(Debug, Clone)]
@@ -112,27 +113,37 @@ impl From<Rc<dyn NativeIterator>> for Iterator {
 
 impl From<Option<Variable>> for IterOk {
     fn from(x: Option<Variable>) -> Self {
-        IterOk::Normal(x)
+        match x {
+            Option::None => IterOk::None,
+            Option::Some(x) => IterOk::One(x),
+        }
     }
 }
 
 impl From<Option<Vec<Variable>>> for IterOk {
     fn from(x: Option<Vec<Variable>>) -> Self {
-        IterOk::Vec(x)
+        match x {
+            Option::None => IterOk::None,
+            Option::Some(x) => IterOk::Many(x),
+        }
     }
 }
 
 impl From<OptionVar> for IterOk {
     fn from(x: OptionVar) -> Self {
-        IterOk::Normal(x.into())
+        match x.into() {
+            Option::Some(x) => IterOk::One(x),
+            Option::None => IterOk::None,
+        }
     }
 }
 
 impl IterOk {
     pub fn take_first(self) -> Option<Variable> {
         match self {
-            IterOk::Normal(v) => v,
-            IterOk::Vec(v) => v.map(first),
+            IterOk::None => Option::None,
+            IterOk::One(v) => Option::Some(v),
+            IterOk::Many(v) => Option::Some(first(v)),
         }
     }
 }
