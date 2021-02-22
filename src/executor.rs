@@ -85,7 +85,7 @@ fn bool_op(b: Bytecode, runtime: &mut Runtime) -> Result<bool, ()> {
         Bytecode::BoolAnd => x && y,
         Bytecode::BoolOr => x || y,
         Bytecode::BoolXor => x ^ y,
-        _ => unreachable!(),
+        _ => unreachable!("Boolean operator got bytecode {:?}", b),
     })
 }
 

@@ -71,7 +71,7 @@ impl LangBytes {
             "endsWith" => Self::ends_with,
             "lastIndexOf" => Self::last_index_of,
             "hex" => Self::hex,
-            _ => unimplemented!(),
+            _ => unimplemented!("bytes.{}", attr),
         }
     }
 

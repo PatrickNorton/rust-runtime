@@ -57,7 +57,7 @@ impl Dict {
             Operator::Equals => Dict::eq,
             Operator::Iter => Dict::iter,
             Operator::DelAttr => Dict::del,
-            _ => unimplemented!(),
+            _ => unimplemented!("dict.{}", o.name()),
         }
     }
 
@@ -68,7 +68,7 @@ impl Dict {
             "replace" => Dict::replace,
             "remove" => Dict::remove,
             "setDefault" => Dict::set_default,
-            _ => unimplemented!(),
+            _ => unimplemented!("dict.{}", s),
         }
     }
 

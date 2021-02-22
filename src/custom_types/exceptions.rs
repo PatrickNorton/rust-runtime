@@ -47,7 +47,7 @@ impl CustomVar for StdException {
     fn get_operator(self: Rc<Self>, o: Operator) -> Variable {
         let func = match o {
             Operator::Str => Self::str,
-            _ => unimplemented!(),
+            _ => unimplemented!("{}{}", self.exc_type.str(), o.name()),
         };
         StdMethod::new_native(self, func).into()
     }
@@ -56,7 +56,7 @@ impl CustomVar for StdException {
         match name {
             "message" => self.msg.clone().into(),
             "msg" => StdMethod::new_native(self, Self::msg).into(),
-            _ => unimplemented!(),
+            _ => unimplemented!("{}{}", self.exc_type.str(), name),
         }
     }
 

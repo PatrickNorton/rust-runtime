@@ -69,7 +69,7 @@ impl Range {
             Operator::GetAttr => Self::index,
             Operator::In => Self::contains,
             Operator::Reversed => Self::reversed,
-            _ => unimplemented!(),
+            _ => unimplemented!("range.{}", o.name()),
         }
     }
 
