@@ -173,6 +173,8 @@ impl LangBytes {
         }
     }
 
+    // #![feature(array_chunks)] will make this much nicer (#74985)
+
     fn convert_utf16(&self, runtime: &mut Runtime) -> Result<String, ()> {
         String::from_utf16(
             &*self
