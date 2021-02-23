@@ -11,10 +11,15 @@ use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use crate::{first, first_two};
-use std::cell::{Cell, RefCell};
+use std::cell::{Cell, Ref, RefCell};
+use std::fmt::Debug;
 use std::iter::Iterator;
 use std::mem::{replace, take};
 use std::rc::Rc;
+
+pub(super) trait DictLike: Debug {
+    fn borrow(&self) -> Ref<'_, InnerDict>;
+}
 
 #[derive(Debug, Clone)]
 enum Entry {
@@ -35,8 +40,8 @@ pub struct Dict {
     value: RefCell<InnerDict>,
 }
 
-#[derive(Debug)]
-struct InnerDict {
+#[derive(Debug, Clone)]
+pub(super) struct InnerDict {
     size: usize,
     entries: Vec<Entry>,
 }
@@ -235,6 +240,10 @@ impl InnerDict {
         Result::Ok(value)
     }
 
+    pub fn size(&self) -> usize {
+        self.size
+    }
+
     pub fn get(&self, key: Variable, runtime: &mut Runtime) -> Result<Option<Variable>, ()> {
         if self.entries.is_empty() {
             Result::Ok(Option::None)
@@ -309,7 +318,7 @@ impl InnerDict {
         self.size == 0
     }
 
-    fn true_repr(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
+    pub fn true_repr(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
         if self.is_empty() {
             return Result::Ok("{:}".into());
         }
@@ -319,6 +328,24 @@ impl InnerDict {
             if let Entry::Some(e) = entry {
                 result += e.key.clone().str(runtime)?.as_str();
                 result += ": ";
+                result += e.key.clone().str(runtime)?.as_str();
+                result += ", ";
+            }
+        }
+        result.pop();
+        result.pop();
+        result += "}";
+        Result::Ok(result.into())
+    }
+    
+    pub fn key_repr(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
+        if self.is_empty() {
+            return Result::Ok("{}".into());
+        }
+        let mut result = String::new();
+        result += "{";
+        for entry in &self.entries {
+            if let Entry::Some(e) = entry {
                 result += e.key.clone().str(runtime)?.as_str();
                 result += ", ";
             }
@@ -510,6 +537,12 @@ impl CustomVar for Dict {
     }
 }
 
+impl DictLike for Dict {
+    fn borrow(&self) -> Ref<'_, InnerDict> {
+        unimplemented!()
+    }
+}
+
 impl<'a> IntoIterator for &'a InnerDict {
     type Item = (&'a Variable, &'a Variable);
     type IntoIter = InnerDictIter<'a>;
@@ -520,13 +553,13 @@ impl<'a> IntoIterator for &'a InnerDict {
 }
 
 #[derive(Debug)]
-struct DictIter {
-    parent: Rc<Dict>,
+pub(super) struct DictIter<T: DictLike> {
+    parent: Rc<T>,
     bucket_no: Cell<usize>,
 }
 
-impl DictIter {
-    fn new(parent: Rc<Dict>) -> DictIter {
+impl<T: DictLike> DictIter<T> {
+    pub fn new(parent: Rc<T>) -> DictIter<T> {
         DictIter {
             parent,
             bucket_no: Cell::new(0),
@@ -534,12 +567,12 @@ impl DictIter {
     }
 
     fn true_next(self: Rc<Self>) -> Option<(Variable, Variable)> {
-        let len = self.parent.len();
+        let parent = self.parent.borrow();
+        let len = parent.size;
         let mut bucket = self.bucket_no.get();
         if bucket >= len {
             return Option::None;
         }
-        let parent = self.parent.value.borrow();
         loop {
             if bucket >= len {
                 self.bucket_no.set(bucket);
@@ -555,7 +588,7 @@ impl DictIter {
     }
 }
 
-impl IterAttrs for DictIter {
+impl<T: DictLike + 'static> IterAttrs for DictIter<T> {
     fn next_fn(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         match self.true_next() {
@@ -571,13 +604,13 @@ impl IterAttrs for DictIter {
     }
 }
 
-impl NativeIterator for DictIter {
+impl<T: DictLike + 'static> NativeIterator for DictIter<T> {
     fn next(self: Rc<Self>, _runtime: &mut Runtime) -> IterResult {
         IterResult::Ok(self.true_next().map(|(a, b)| vec![a, b]).into())
     }
 }
 
-struct InnerDictIter<'a> {
+pub(super) struct InnerDictIter<'a> {
     parent: &'a InnerDict,
     i: usize,
 }
