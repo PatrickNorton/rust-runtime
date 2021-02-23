@@ -260,7 +260,7 @@ impl InnerDict {
                 runtime.return_0()
             }
             Option::Some(e) => {
-                let val = e.set(key, hash, val, runtime).ok_or(())?;
+                let val = e.set(key, hash, val, runtime)?;
                 if val {
                     self.size += 1;
                 }
@@ -368,10 +368,10 @@ impl Entry {
         hash: usize,
         val: Variable,
         runtime: &mut Runtime,
-    ) -> Option<bool> {
-        if self.hash == hash && key.clone().equals(self.key.clone(), runtime).ok()? {
+    ) -> Result<bool, ()> {
+        if self.hash == hash && key.clone().equals(self.key.clone(), runtime)? {
             self.value = val;
-            Option::Some(false)
+            Result::Ok(false)
         } else {
             match &mut self.next {
                 Option::None => {
@@ -381,7 +381,7 @@ impl Entry {
                         hash,
                         next: Option::None,
                     }));
-                    Option::Some(true)
+                    Result::Ok(true)
                 }
                 Option::Some(e) => e.set(key, hash, val, runtime),
             }
