@@ -1,4 +1,5 @@
 use crate::custom_types::exceptions::key_error;
+use crate::custom_types::ASCII_COMMA;
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_tools::next_power_2;
 use crate::int_var::IntVar;
@@ -8,9 +9,11 @@ use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
-use crate::string_var::StringVar;
+use crate::string_var::{MaybeString, StringVar};
 use crate::variable::{FnResult, Variable};
 use crate::{first, first_two};
+use ascii::{AsciiChar, AsciiStr};
+use once_cell::sync::Lazy;
 use std::cell::{Cell, Ref, RefCell};
 use std::fmt::Debug;
 use std::iter::Iterator;
@@ -319,40 +322,47 @@ impl InnerDict {
     }
 
     pub fn true_repr(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
+        static ASCII_COLON: Lazy<&AsciiStr> = Lazy::new(|| AsciiStr::from_ascii(": ").unwrap());
         if self.is_empty() {
-            return Result::Ok("{:}".into());
+            static EMPTY_DICT: Lazy<&AsciiStr> = Lazy::new(|| AsciiStr::from_ascii("{:}").unwrap());
+            return Result::Ok((*EMPTY_DICT).into());
         }
-        let mut result = String::new();
-        result += "{";
+        let mut result = MaybeString::new();
+        result.push_ascii(AsciiChar::CurlyBraceOpen);
+        let mut first = true;
         for entry in &self.entries {
             if let Entry::Some(e) = entry {
-                result += e.key.clone().str(runtime)?.as_str();
-                result += ": ";
-                result += e.key.clone().str(runtime)?.as_str();
-                result += ", ";
+                if !first {
+                    result += *ASCII_COMMA;
+                }
+                first = false;
+                result += e.key.clone().str(runtime)?;
+                result += *ASCII_COLON;
+                result += e.value.clone().str(runtime)?;
             }
         }
-        result.pop();
-        result.pop();
-        result += "}";
+        result.push_ascii(AsciiChar::CurlyBraceClose);
         Result::Ok(result.into())
     }
-    
+
     pub fn key_repr(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
         if self.is_empty() {
-            return Result::Ok("{}".into());
+            static EMPTY_SET: Lazy<&AsciiStr> = Lazy::new(|| AsciiStr::from_ascii("{}").unwrap());
+            return Result::Ok((*EMPTY_SET).into());
         }
-        let mut result = String::new();
-        result += "{";
+        let mut result = MaybeString::new();
+        result.push_ascii(AsciiChar::CurlyBraceOpen);
+        let mut first = true;
         for entry in &self.entries {
             if let Entry::Some(e) = entry {
-                result += e.key.clone().str(runtime)?.as_str();
-                result += ", ";
+                if !first {
+                    result += *ASCII_COMMA;
+                }
+                first = false;
+                result += e.key.clone().str(runtime)?;
             }
         }
-        result.pop();
-        result.pop();
-        result += "}";
+        result.push_ascii(AsciiChar::CurlyBraceClose);
         Result::Ok(result.into())
     }
 
