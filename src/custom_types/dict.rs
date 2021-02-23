@@ -17,11 +17,17 @@ use std::mem::{replace, take};
 use std::rc::Rc;
 
 #[derive(Debug, Clone)]
-struct Entry {
+enum Entry {
+    None,
+    Removed,
+    Some(InnerEntry),
+}
+
+#[derive(Debug, Clone)]
+struct InnerEntry {
     key: Variable,
     value: Variable,
     hash: usize,
-    next: Option<Box<Entry>>,
 }
 
 #[derive(Debug)]
@@ -32,7 +38,7 @@ pub struct Dict {
 #[derive(Debug)]
 struct InnerDict {
     size: usize,
-    entries: Vec<Option<Entry>>,
+    entries: Vec<Entry>,
 }
 
 impl Dict {
@@ -94,7 +100,8 @@ impl Dict {
     fn set(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
         let (key, val) = first_two(args);
-        self.value.borrow_mut().set(key, val, runtime)
+        self.value.borrow_mut().set(key, val, runtime)?;
+        runtime.return_0()
     }
 
     fn contains(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -105,7 +112,7 @@ impl Dict {
 
     fn del(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        self.value.borrow_mut().del(&args[0], runtime)?;
+        self.value.borrow_mut().del(first(args), runtime)?;
         runtime.return_0()
     }
 
@@ -130,18 +137,16 @@ impl Dict {
     fn replace(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
         let (key, val) = first_two(args);
-        match self.value.borrow_mut().get_mut_entry(key, runtime)? {
-            Option::Some(entry) => {
-                let old = replace(&mut entry.value, val);
-                runtime.return_1(Option::Some(old).into())
-            }
-            Option::None => runtime.return_1(Option::None.into()),
+        if let Option::Some(Entry::Some(e)) = self.value.borrow_mut().entry_mut(key, runtime)? {
+            runtime.return_1(Option::Some(replace(&mut e.value, val)).into())
+        } else {
+            runtime.return_1(Option::None.into())
         }
     }
 
     fn remove(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
-        let returned = self.value.borrow_mut().del(&args[0], runtime)?.into();
+        let returned = self.value.borrow_mut().del(first(args), runtime)?.into();
         runtime.return_1(returned)
     }
 
@@ -207,7 +212,7 @@ impl InnerDict {
         let vec_capacity = next_power_2(keys.len());
         let mut value = InnerDict {
             size: 0,
-            entries: vec![Option::None; vec_capacity],
+            entries: vec![Entry::None; vec_capacity],
         };
         for (x, y) in keys.into_iter().zip(values) {
             value.set(x, y, runtime)?;
@@ -216,79 +221,39 @@ impl InnerDict {
     }
 
     pub fn get(&self, key: Variable, runtime: &mut Runtime) -> Result<Option<Variable>, ()> {
-        let hash = key.clone().hash(runtime)?;
         if self.entries.is_empty() {
             Result::Ok(Option::None)
+        } else if let Option::Some(Entry::Some(e)) = self.entry(key, runtime)? {
+            Result::Ok(Option::Some(e.value.clone()))
         } else {
-            match &self.entries[hash % self.entries.len()] {
-                Option::None => Result::Ok(Option::None),
-                Option::Some(e) => e.get(key, hash, runtime),
-            }
+            Result::Ok(Option::None)
         }
     }
 
-    fn true_repr(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
-        if self.is_empty() {
-            return Result::Ok("{:}".into());
-        }
-        let mut result = String::new();
-        result += "{";
-        for (x, y) in self {
-            result += x.clone().str(runtime)?.as_str();
-            result += ": ";
-            result += y.clone().str(runtime)?.as_str();
-            result += ", ";
-        }
-        result.pop();
-        result.pop();
-        result += "}";
-        Result::Ok(result.into())
-    }
-
-    pub fn set(&mut self, key: Variable, val: Variable, runtime: &mut Runtime) -> FnResult {
+    pub fn set(
+        &mut self,
+        key: Variable,
+        val: Variable,
+        runtime: &mut Runtime,
+    ) -> Result<Option<Variable>, ()> {
         let hash = key.clone().hash(runtime)?;
-        self.resize(next_power_2(self.size + 1), runtime)?;
-        let len = self.entries.len();
-        match &mut self.entries[hash % len] {
-            e @ Option::None => {
-                e.replace(Entry {
-                    key,
-                    value: val,
-                    hash,
-                    next: None,
-                });
-                runtime.return_0()
-            }
-            Option::Some(e) => {
-                let val = e.set(key, hash, val, runtime)?;
-                if val {
+        self.resize(self.size + 1, runtime)?;
+        assert!(!self.entries.is_empty());
+        match self.entry_mut(key.clone(), runtime)? {
+            Option::Some(entry) => match entry {
+                e @ Entry::None | e @ Entry::Removed => {
+                    *e = Entry::Some(InnerEntry {
+                        key,
+                        hash,
+                        value: val,
+                    });
                     self.size += 1;
+                    Result::Ok(Option::None)
                 }
-                runtime.return_0()
-            }
+                Entry::Some(e) => Result::Ok(Option::Some(replace(&mut e.value, val))),
+            },
+            Option::None => panic!("No suitable entry found, {:?}", self),
         }
-    }
-
-    fn resize(&mut self, new_size: usize, runtime: &mut Runtime) -> FnResult {
-        let current_size = self.entries.len();
-        if current_size >= new_size {
-            return FnResult::Ok(());
-        }
-        let old_vec = replace(&mut self.entries, vec![Option::None; new_size]);
-        for entry in old_vec {
-            if let Option::Some(mut e) = entry {
-                loop {
-                    let next = e.next.take();
-                    self.set(e.key, e.value, runtime)?;
-                    if let Option::Some(x) = next {
-                        e = *x;
-                    } else {
-                        break;
-                    }
-                }
-            }
-        }
-        FnResult::Ok(())
     }
 
     pub fn equals(&self, other: &InnerDict, runtime: &mut Runtime) -> Result<bool, ()> {
@@ -306,147 +271,170 @@ impl InnerDict {
         Result::Ok(true)
     }
 
-    pub fn del(&mut self, value: &Variable, runtime: &mut Runtime) -> Result<Option<Variable>, ()> {
-        let hash = value.clone().hash(runtime)?;
-        let index = hash % self.entries.len();
-        match &mut self.entries[index] {
-            Option::Some(val) => match val.del(value, hash, runtime)? {
-                Option::Some(result) => {
-                    let boxed_entry = val.next.take();
-                    self.entries[index] = boxed_entry.map(|x| *x);
-                    Result::Ok(Option::Some(result))
-                }
-                Option::None => Result::Ok(Option::None),
-            },
+    pub fn del(&mut self, value: Variable, runtime: &mut Runtime) -> Result<Option<Variable>, ()> {
+        match self.entry_mut(value, runtime)? {
             Option::None => Result::Ok(Option::None),
-        }
-    }
-
-    pub fn get_mut_entry(
-        &mut self,
-        key: Variable,
-        runtime: &mut Runtime,
-    ) -> Result<Option<&mut Entry>, ()> {
-        let hash = key.clone().hash(runtime)?;
-        let bucket = hash % self.entries.len();
-        match &mut self.entries[bucket] {
-            Option::Some(val) => val.get_mut_entry(key, hash, runtime),
-            Option::None => Result::Ok(Option::None),
+            Option::Some(Entry::None) => Result::Ok(Option::None),
+            Option::Some(Entry::Removed) => Result::Ok(Option::None),
+            Option::Some(e @ Entry::Some(_)) => {
+                let entry = e.remove().unwrap();
+                Result::Ok(Option::Some(entry.value))
+            }
         }
     }
 
     pub fn clear(&mut self) {
         self.size = 0;
-        self.entries.clear();
+        for entry in &mut self.entries {
+            entry.take();
+        }
     }
 
     pub fn is_empty(&self) -> bool {
         self.size == 0
     }
+
+    fn true_repr(&self, runtime: &mut Runtime) -> Result<StringVar, ()> {
+        if self.is_empty() {
+            return Result::Ok("{:}".into());
+        }
+        let mut result = String::new();
+        result += "{";
+        for entry in &self.entries {
+            if let Entry::Some(e) = entry {
+                result += e.key.clone().str(runtime)?.as_str();
+                result += ": ";
+                result += e.key.clone().str(runtime)?.as_str();
+                result += ", ";
+            }
+        }
+        result.pop();
+        result.pop();
+        result += "}";
+        Result::Ok(result.into())
+    }
+
+    fn entry(&self, key: Variable, runtime: &mut Runtime) -> Result<Option<&Entry>, ()> {
+        // Returning Option::None means that no entry was found, but neither was a suitable
+        // empty value (all given were full)
+        assert!(!self.entries.is_empty());
+        let len = self.entries.len();
+        let hash = key.clone().hash(runtime)?;
+        let mut bucket = hash % len;
+        let mut first_removed = Option::None;
+        loop {
+            match &self.entries[bucket] {
+                e @ Entry::None => return Result::Ok(Option::Some(first_removed.unwrap_or(e))),
+                e @ Entry::Removed => {
+                    let rehash = Self::rehash(hash, bucket) % len;
+                    if rehash == hash % len {
+                        return Result::Ok(Option::Some(first_removed.unwrap_or(e)));
+                    } else {
+                        first_removed.get_or_insert(e);
+                        bucket = rehash;
+                    }
+                }
+                Entry::Some(e) => {
+                    if e.hash == hash && e.key.clone().equals(key.clone(), runtime)? {
+                        return Result::Ok(Option::Some(&self.entries[bucket]));
+                    }
+                    let rehash = Self::rehash(hash, bucket) % len;
+                    if rehash == hash % len {
+                        return Result::Ok(first_removed);
+                    } else {
+                        bucket = rehash
+                    }
+                }
+            }
+        }
+    }
+
+    fn entry_mut(
+        &mut self,
+        key: Variable,
+        runtime: &mut Runtime,
+    ) -> Result<Option<&mut Entry>, ()> {
+        assert!(!self.entries.is_empty());
+        let len = self.entries.len();
+        let hash = key.clone().hash(runtime)?;
+        let mut bucket = hash % len;
+        let mut first_removed = Option::None;
+        let bucket: usize = loop {
+            match &mut self.entries[bucket] {
+                Entry::None => {
+                    break first_removed.unwrap_or(bucket);
+                }
+                Entry::Removed => {
+                    let rehash = Self::rehash(hash, bucket) % len;
+                    if rehash == hash % len {
+                        break first_removed.unwrap_or(bucket);
+                    } else {
+                        first_removed.get_or_insert(bucket);
+                        bucket = rehash;
+                    }
+                }
+                Entry::Some(e) => {
+                    if e.hash == hash && e.key.clone().equals(key.clone(), runtime)? {
+                        break bucket;
+                    } else {
+                        let rehash = Self::rehash(hash, bucket) % len;
+                        if rehash == hash % len {
+                            match first_removed {
+                                Option::None => return Result::Ok(Option::None),
+                                Option::Some(rem) => break rem,
+                            }
+                        } else {
+                            bucket = rehash;
+                        }
+                    }
+                }
+            }
+        };
+        Result::Ok(Option::Some(&mut self.entries[bucket]))
+    }
+
+    fn resize(&mut self, new_size: usize, runtime: &mut Runtime) -> FnResult {
+        const LOAD_FACTOR: f64 = 0.75;
+        let current_size = self.entries.len();
+        if current_size as f64 * LOAD_FACTOR >= new_size as f64 {
+            return FnResult::Ok(());
+        }
+        let old_vec = replace(&mut self.entries, vec![Entry::None; next_power_2(new_size)]);
+        for entry in old_vec {
+            if let Entry::Some(e) = entry {
+                self.set(e.key, e.value, runtime)?;
+            }
+        }
+        FnResult::Ok(())
+    }
+
+    fn rehash(hash: usize, bucket: usize) -> usize {
+        const PERTURB_SHIFT: u32 = 5;
+        5 * bucket + 1 + (hash.wrapping_shr(PERTURB_SHIFT))
+    }
 }
 
 impl Entry {
-    pub fn get(
-        &self,
-        key: Variable,
-        hash: usize,
-        runtime: &mut Runtime,
-    ) -> Result<Option<Variable>, ()> {
-        if self.hash == hash && key.clone().equals(self.key.clone(), runtime)? {
-            Result::Ok(Option::Some(self.value.clone()))
-        } else {
-            match &self.next {
-                Option::None => Result::Ok(Option::None),
-                Option::Some(e) => e.get(key, hash, runtime),
-            }
+    pub fn take(&mut self) -> Self {
+        take(self)
+    }
+
+    pub fn remove(&mut self) -> Self {
+        replace(self, Entry::Removed)
+    }
+
+    pub fn unwrap(self) -> InnerEntry {
+        match self {
+            Entry::None => panic!(),
+            Entry::Removed => panic!(),
+            Entry::Some(e) => e,
         }
     }
+}
 
-    pub fn set(
-        &mut self,
-        key: Variable,
-        hash: usize,
-        val: Variable,
-        runtime: &mut Runtime,
-    ) -> Result<bool, ()> {
-        if self.hash == hash && key.clone().equals(self.key.clone(), runtime)? {
-            self.value = val;
-            Result::Ok(false)
-        } else {
-            match &mut self.next {
-                Option::None => {
-                    self.next = Option::Some(Box::new(Entry {
-                        key,
-                        value: val,
-                        hash,
-                        next: Option::None,
-                    }));
-                    Result::Ok(true)
-                }
-                Option::Some(e) => e.set(key, hash, val, runtime),
-            }
-        }
-    }
-
-    pub fn del(
-        &mut self,
-        key: &Variable,
-        hash: usize,
-        runtime: &mut Runtime,
-    ) -> Result<Option<Variable>, ()> {
-        if self.hash == hash && key.clone().equals(self.value.clone(), runtime)? {
-            Result::Ok(Option::Some(take(&mut self.value)))
-        } else {
-            match &mut self.next {
-                Option::None => Result::Ok(Option::None),
-                Option::Some(e) => match e.del(key, hash, runtime)? {
-                    Option::Some(val) => {
-                        self.next = e.next.take();
-                        Result::Ok(Option::Some(val))
-                    }
-                    Option::None => Result::Ok(Option::None),
-                },
-            }
-        }
-    }
-
-    pub fn get_key(&self) -> &Variable {
-        &self.key
-    }
-
-    pub fn get_value(&self) -> &Variable {
-        &self.value
-    }
-
-    pub fn get_next(&self) -> &Option<Box<Entry>> {
-        &self.next
-    }
-
-    fn get_entry(&self, key: Variable, runtime: &mut Runtime) -> Result<&Entry, ()> {
-        if self.value.clone().equals(key.clone(), runtime)? {
-            Result::Ok(self)
-        } else {
-            self.next
-                .as_ref()
-                .expect("Called get_entry() with no reasonable entry")
-                .get_entry(key, runtime)
-        }
-    }
-
-    fn get_mut_entry(
-        &mut self,
-        key: Variable,
-        hash: usize,
-        runtime: &mut Runtime,
-    ) -> Result<Option<&mut Entry>, ()> {
-        if self.hash == hash && self.value.clone().equals(key.clone(), runtime)? {
-            Result::Ok(Option::Some(self))
-        } else {
-            match self.next.as_mut() {
-                Option::Some(val) => val.get_mut_entry(key, hash, runtime),
-                Option::None => Result::Ok(Option::None),
-            }
-        }
+impl Default for Entry {
+    fn default() -> Self {
+        Entry::None
     }
 }
 
@@ -512,20 +500,7 @@ impl<'a> IntoIterator for &'a InnerDict {
     type IntoIter = InnerDictIter<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
-        for (i, value) in self.entries.iter().enumerate() {
-            if let Option::Some(x) = value {
-                return InnerDictIter {
-                    parent: self,
-                    i,
-                    current: Option::Some(x),
-                };
-            }
-        }
-        InnerDictIter {
-            parent: self,
-            i: self.entries.len(),
-            current: Option::None,
-        }
+        InnerDictIter { parent: self, i: 0 }
     }
 }
 
@@ -533,64 +508,42 @@ impl<'a> IntoIterator for &'a InnerDict {
 struct DictIter {
     parent: Rc<Dict>,
     bucket_no: Cell<usize>,
-    index: RefCell<Variable>,
 }
 
 impl DictIter {
     fn new(parent: Rc<Dict>) -> DictIter {
-        let val = DictIter {
+        DictIter {
             parent,
             bucket_no: Cell::new(0),
-            index: RefCell::new(Variable::null()),
-        };
-        val.point_to_next();
-        val
-    }
-
-    fn point_to_next(&self) {
-        let parent = self.parent.value.borrow();
-        let mut next = self.bucket_no.get();
-        while next < parent.size {
-            if let Option::Some(val) = parent.entries[next].as_ref() {
-                self.bucket_no.set(next);
-                self.index.replace(val.get_key().clone());
-                return;
-            }
-            next += 1;
         }
-        self.bucket_no.set(next);
     }
 
-    fn true_next(
-        self: Rc<Self>,
-        runtime: &mut Runtime,
-    ) -> Result<Option<(Variable, Variable)>, ()> {
+    fn true_next(self: Rc<Self>) -> Option<(Variable, Variable)> {
         let len = self.parent.len();
-        let bucket = self.bucket_no.get();
+        let mut bucket = self.bucket_no.get();
         if bucket >= len {
-            return Result::Ok(Option::None);
+            return Option::None;
         }
         let parent = self.parent.value.borrow();
-        let parent_node = parent.entries[bucket]
-            .as_ref()
-            .expect("Dict iterator expects self.bucket_no to always point at a non-None value");
-        let node = parent_node.get_entry(self.index.borrow().clone(), runtime)?;
-        let key = self.index.replace(Variable::null());
-        let val = node.get_value().clone();
-        debug_assert!(node.get_key().clone().equals(key.clone(), runtime)?);
-        if let Option::Some(next) = node.get_next() {
-            self.index.replace(next.get_value().clone());
-        } else {
-            self.point_to_next();
+        loop {
+            if bucket >= len {
+                self.bucket_no.set(bucket);
+                return Option::None;
+            } else if let Entry::Some(e) = &parent.entries[bucket] {
+                bucket += 1;
+                self.bucket_no.set(bucket);
+                return Option::Some((e.key.clone(), e.value.clone()));
+            } else {
+                bucket += 1;
+            }
         }
-        Result::Ok(Option::Some((key, val)))
     }
 }
 
 impl IterAttrs for DictIter {
     fn next_fn(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
-        match self.true_next(runtime)? {
+        match self.true_next() {
             Option::None => runtime.return_n(vec![Option::None.into(), Option::None.into()]),
             Option::Some(val) => {
                 runtime.return_n(vec![Option::Some(val.0).into(), Option::Some(val.1).into()])
@@ -604,41 +557,29 @@ impl IterAttrs for DictIter {
 }
 
 impl NativeIterator for DictIter {
-    fn next(self: Rc<Self>, runtime: &mut Runtime) -> IterResult {
-        IterResult::Ok(self.true_next(runtime)?.map(|(a, b)| vec![a, b]).into())
+    fn next(self: Rc<Self>, _runtime: &mut Runtime) -> IterResult {
+        IterResult::Ok(self.true_next().map(|(a, b)| vec![a, b]).into())
     }
 }
 
 struct InnerDictIter<'a> {
     parent: &'a InnerDict,
     i: usize,
-    current: Option<&'a Entry>,
-}
-
-impl InnerDictIter<'_> {
-    fn adjust_i(&mut self) {
-        self.i += 1;
-        while self.i < self.parent.entries.len() && self.parent.entries[self.i].is_none() {
-            self.i += 1;
-        }
-    }
 }
 
 impl<'a> Iterator for InnerDictIter<'a> {
     type Item = (&'a Variable, &'a Variable);
 
     fn next(&mut self) -> Option<Self::Item> {
-        match take(&mut self.current) {
-            Option::None => Option::None,
-            Option::Some(entry) => {
-                self.current = match &entry.next {
-                    Option::Some(x) => Option::Some(&**x),
-                    Option::None => {
-                        self.adjust_i();
-                        self.parent.entries[self.i].as_ref()
-                    }
-                };
-                Option::Some((&entry.key, &entry.value))
+        let len = self.parent.entries.len();
+        loop {
+            if self.i >= len {
+                return Option::None;
+            } else if let Entry::Some(e) = &self.parent.entries[self.i] {
+                self.i += 1;
+                return Option::Some((&e.key, &e.value));
+            } else {
+                self.i += 1;
             }
         }
     }
