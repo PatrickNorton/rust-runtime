@@ -154,10 +154,25 @@ impl Dict {
         debug_assert_eq!(args.len(), 2);
         let mut value = self.value.borrow_mut();
         let (arg, default) = first_two(args);
-        match value.get(arg.clone(), runtime)? {
-            Option::Some(x) => runtime.return_1(x),
+        let new_size = value.size + 1;
+        value.resize(new_size, runtime)?;
+        match value.entry_mut(arg.clone(), runtime)? {
+            Option::Some(entry) => match entry {
+                e @ Entry::None | e @ Entry::Removed => {
+                    let hash = arg.clone().hash(runtime)?;
+                    *e = Entry::Some(InnerEntry {
+                        key: arg,
+                        value: default.clone(),
+                        hash,
+                    });
+                    runtime.return_1(default)
+                }
+                Entry::Some(e) => runtime.return_1(e.value.clone()),
+            },
             Option::None => {
-                value.set(arg, default.clone(), runtime)?;
+                value
+                    .set(arg, default.clone(), runtime)
+                    .expect_err("Value.entry_mut should have returned Option::Some");
                 runtime.return_1(default)
             }
         }
