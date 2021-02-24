@@ -9,7 +9,7 @@ use crate::method::{NativeMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
-use crate::string_var::{AsciiVar, MaybeAscii, MaybeString, StrVar, StringVar};
+use crate::string_var::{AsciiVar, MaybeAscii, StrVar, StringVar};
 use crate::variable::{FnResult, Variable};
 use crate::{first, first_two, looping};
 use ascii::{AsAsciiStr, AsciiStr, AsciiString};

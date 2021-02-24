@@ -1,5 +1,5 @@
 use crate::first;
-use crate::looping::{IterAttrs, IterOk, IterResult, NativeIterator};
+use crate::looping::{IterAttrs, IterResult, NativeIterator};
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
