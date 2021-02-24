@@ -61,6 +61,8 @@ impl Set {
             "addAll" => Self::add_all,
             "remove" => Self::remove,
             "clear" => Self::clear,
+            "isSubset" => Self::subset,
+            "isSuperset" => Self::superset,
             _ => unimplemented!(),
         }
     }
@@ -186,6 +188,30 @@ impl Set {
                     self_val.equals(&*other.value.borrow(), runtime)?
                 }
             } {
+                return runtime.return_1(false.into());
+            }
+        }
+        runtime.return_1(true.into())
+    }
+
+    fn subset(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        let other = downcast_var::<Set>(first(args)).expect("Expected a set");
+        let other_val = other.value.borrow();
+        for (value, _) in &*self.value.borrow() {
+            if other_val.get(value.clone(), runtime)?.is_none() {
+                return runtime.return_1(false.into());
+            }
+        }
+        runtime.return_1(true.into())
+    }
+
+    fn superset(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        let other = downcast_var::<Set>(first(args)).expect("Expected a set");
+        let self_val = self.value.borrow();
+        for (value, _) in &*other.value.borrow() {
+            if self_val.get(value.clone(), runtime)?.is_none() {
                 return runtime.return_1(false.into());
             }
         }
