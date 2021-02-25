@@ -357,8 +357,6 @@ impl InnerDict {
     }
 
     fn entry(&self, key: Variable, runtime: &mut Runtime) -> Result<&Entry, ()> {
-        // Returning Option::None means that no entry was found, but neither was a suitable
-        // empty value (all given were full)
         assert!(!self.entries.is_empty());
         let len = self.entries.len();
         let hash = key.clone().hash(runtime)?;
