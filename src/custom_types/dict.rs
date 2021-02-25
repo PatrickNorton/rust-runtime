@@ -174,6 +174,7 @@ impl Dict {
                     value: default.clone(),
                     hash,
                 });
+                value.size += 1;
                 runtime.return_1(default)
             }
             Entry::Some(e) => runtime.return_1(e.value.clone()),
@@ -295,6 +296,7 @@ impl InnerDict {
             Entry::Removed => Result::Ok(Option::None),
             e @ Entry::Some(_) => {
                 let entry = e.remove().unwrap();
+                self.size -= 1;
                 Result::Ok(Option::Some(entry.value))
             }
         }
