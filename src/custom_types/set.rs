@@ -169,8 +169,8 @@ impl Set {
     }
 
     fn del_attr(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        self.remove(args, runtime)?;
-        runtime.pop_return();
+        debug_assert_eq!(args.len(), 1);
+        self.value.borrow_mut().del(first(args), runtime)?;
         runtime.return_0()
     }
 
