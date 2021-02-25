@@ -437,7 +437,7 @@ impl InnerDict {
 
     fn rehash(perturb: &mut usize, bucket: usize) -> usize {
         let result = 5 * bucket + 1 + *perturb;
-        *perturb = perturb.wrapping_shr(PERTURB_SHIFT);
+        *perturb >>= PERTURB_SHIFT;
         result
     }
 }
