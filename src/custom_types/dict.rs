@@ -165,7 +165,7 @@ impl Dict {
         let mut value = self.value.borrow_mut();
         let (arg, default) = first_two(args);
         let new_size = value.size + 1;
-        value.resize(new_size, runtime)?;
+        value.resize(new_size)?;
         match value.entry_mut(arg.clone(), runtime)? {
             e @ Entry::None | e @ Entry::Removed => {
                 let hash = arg.clone().hash(runtime)?;
@@ -258,7 +258,7 @@ impl InnerDict {
         runtime: &mut Runtime,
     ) -> Result<Option<Variable>, ()> {
         let hash = key.clone().hash(runtime)?;
-        self.resize(self.size + 1, runtime)?;
+        self.resize(self.size + 1)?;
         assert!(!self.entries.is_empty());
         match self.entry_mut(key.clone(), runtime)? {
             e @ Entry::None | e @ Entry::Removed => {
@@ -410,13 +410,13 @@ impl InnerDict {
         Result::Ok(&mut self.entries[bucket])
     }
 
-    fn resize(&mut self, new_size: usize, _runtime: &mut Runtime) -> FnResult {
-        const LOAD_FACTOR: f64 = 0.75;
+    fn resize(&mut self, new_size: usize) -> FnResult {
+        let new_capacity = self.new_capacity(new_size);
         let current_size = self.entries.len();
-        if current_size as f64 * LOAD_FACTOR >= new_size as f64 {
+        if current_size >= new_capacity {
             return FnResult::Ok(());
         }
-        let old_vec = replace(&mut self.entries, vec![Entry::None; next_power_2(new_size)]);
+        let old_vec = replace(&mut self.entries, vec![Entry::None; new_capacity]);
         let new_vec = &mut self.entries;
         let len = new_vec.len();
         for entry in old_vec {
@@ -433,6 +433,19 @@ impl InnerDict {
             }
         }
         FnResult::Ok(())
+    }
+
+    fn new_capacity(&self, new_size: usize) -> usize {
+        const LOAD_FACTOR: f64 = 0.75;
+        let current_size = self.entries.len();
+        if current_size as f64 * LOAD_FACTOR >= new_size as f64 {
+            return current_size;
+        }
+        let mut new_cap = next_power_2(new_size);
+        while new_cap as f64 * LOAD_FACTOR < new_size as f64 {
+            new_cap <<= 1;
+        }
+        new_cap
     }
 
     fn rehash(perturb: &mut usize, bucket: usize) -> usize {
