@@ -32,6 +32,7 @@ pub fn op_fn(o: Operator) -> NativeMethod<StringVar> {
         Operator::Iter => str_iter,
         Operator::Reversed => reversed,
         Operator::In => contains,
+        Operator::Hash => hash,
         _ => unimplemented!("str.{}", o.name()),
     }
 }
@@ -350,6 +351,15 @@ fn contains(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnRe
     debug_assert_eq!(args.len(), 1);
     let value = char::from(first(args));
     runtime.return_1(this.as_str().contains(value).into())
+}
+
+fn hash(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert!(args.is_empty());
+    let mut result = 0;
+    for c in this.chars() {
+        result += c as usize;
+    }
+    runtime.return_1(IntVar::from(result).into())
 }
 
 fn upper(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
