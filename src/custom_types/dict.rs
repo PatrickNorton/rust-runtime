@@ -15,12 +15,14 @@ use crate::{first, first_two};
 use ascii::{AsciiChar, AsciiStr};
 use once_cell::sync::Lazy;
 use std::cell::{Cell, Ref, RefCell};
+use std::cmp::max;
 use std::fmt::Debug;
 use std::iter::Iterator;
 use std::mem::{replace, take};
 use std::rc::Rc;
 
 const PERTURB_SHIFT: u32 = 5;
+const MIN_SIZE: usize = 8;
 
 pub(super) trait DictLike: Debug {
     fn borrow(&self) -> Ref<'_, InnerDict>;
@@ -441,7 +443,7 @@ impl InnerDict {
         if current_size as f64 * LOAD_FACTOR >= new_size as f64 {
             return current_size;
         }
-        let mut new_cap = next_power_2(new_size);
+        let mut new_cap = max(MIN_SIZE, next_power_2(new_size));
         while new_cap as f64 * LOAD_FACTOR < new_size as f64 {
             new_cap <<= 1;
         }
