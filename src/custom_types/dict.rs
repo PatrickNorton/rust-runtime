@@ -167,16 +167,19 @@ impl Dict {
         debug_assert_eq!(args.len(), 2);
         let mut value = self.value.borrow_mut();
         let (arg, default) = first_two(args);
-        value.resize(1)?;
+        value.resize(1);
         match value.entry_mut(arg.clone(), runtime)? {
             e @ Entry::None | e @ Entry::Removed => {
                 let hash = arg.clone().hash(runtime)?;
-                *e = Entry::Some(InnerEntry {
-                    key: arg,
-                    value: default.clone(),
-                    hash,
-                });
-                if let Entry::None = e {
+                let old_entry = replace(
+                    e,
+                    Entry::Some(InnerEntry {
+                        key: arg,
+                        value: default.clone(),
+                        hash,
+                    }),
+                );
+                if let Entry::None = old_entry {
                     value.size_w_deleted += 1;
                 }
                 value.size += 1;
@@ -265,16 +268,19 @@ impl InnerDict {
         runtime: &mut Runtime,
     ) -> Result<Option<Variable>, ()> {
         let hash = key.clone().hash(runtime)?;
-        self.resize(1)?;
+        self.resize(1);
         assert!(!self.entries.is_empty());
         match self.entry_mut(key.clone(), runtime)? {
             e @ Entry::None | e @ Entry::Removed => {
-                *e = Entry::Some(InnerEntry {
-                    key,
-                    hash,
-                    value: val,
-                });
-                if let Entry::None = e {
+                let old_entry = replace(
+                    e,
+                    Entry::Some(InnerEntry {
+                        key,
+                        hash,
+                        value: val,
+                    }),
+                );
+                if let Entry::None = old_entry {
                     self.size_w_deleted += 1;
                 }
                 self.size += 1;
@@ -420,14 +426,20 @@ impl InnerDict {
         Result::Ok(&mut self.entries[bucket])
     }
 
-    fn resize(&mut self, additional: usize) -> FnResult {
+    fn resize(&mut self, additional: usize) {
         let new_size = self.size_w_deleted + additional;
         let new_capacity = self.new_capacity(new_size);
         let current_size = self.entries.len();
-        if current_size >= new_capacity {
-            return FnResult::Ok(());
+        if current_size < new_capacity {
+            // Resize ignoring the deleted values b/c they'll all disappear in resizing
+            let new_cap = max(current_size, self.new_capacity(self.size + additional));
+            self.resize_exact(new_cap);
         }
-        let old_vec = replace(&mut self.entries, vec![Entry::None; new_capacity]);
+    }
+
+    fn resize_exact(&mut self, new_size: usize) {
+        debug_assert!(new_size.is_power_of_two());
+        let old_vec = replace(&mut self.entries, vec![Entry::None; new_size]);
         let new_vec = &mut self.entries;
         let len = new_vec.len();
         for entry in old_vec {
@@ -444,7 +456,6 @@ impl InnerDict {
             }
         }
         self.size_w_deleted = self.size;
-        FnResult::Ok(())
     }
 
     fn new_capacity(&self, new_size: usize) -> usize {
