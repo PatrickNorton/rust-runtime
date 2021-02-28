@@ -234,16 +234,24 @@ impl InnerDict {
         runtime: &mut Runtime,
     ) -> Result<InnerDict, ()> {
         debug_assert!(keys.len() == values.len());
-        let vec_capacity = keys.len().next_power_of_two();
-        let mut value = InnerDict {
-            size: 0,
-            size_w_deleted: 0,
-            entries: vec![Entry::None; vec_capacity],
-        };
-        for (x, y) in keys.into_iter().zip(values) {
-            value.set(x, y, runtime)?;
+        if keys.is_empty() {
+            Result::Ok(InnerDict {
+                size: 0,
+                size_w_deleted: 0,
+                entries: Vec::new(),
+            })
+        } else {
+            let vec_capacity = Self::new_cap(0, keys.len());
+            let mut value = InnerDict {
+                size: 0,
+                size_w_deleted: 0,
+                entries: vec![Entry::None; vec_capacity],
+            };
+            for (x, y) in keys.into_iter().zip(values) {
+                value.set(x, y, runtime)?;
+            }
+            Result::Ok(value)
         }
-        Result::Ok(value)
     }
 
     pub fn size(&self) -> usize {
@@ -458,10 +466,13 @@ impl InnerDict {
     }
 
     fn new_capacity(&self, new_size: usize) -> usize {
+        Self::new_cap(self.entries.len(), new_size)
+    }
+
+    fn new_cap(current_cap: usize, new_size: usize) -> usize {
         const LOAD_FACTOR: f64 = 0.75;
-        let current_size = self.entries.len();
-        if current_size as f64 * LOAD_FACTOR >= new_size as f64 {
-            return current_size;
+        if current_cap as f64 * LOAD_FACTOR >= new_size as f64 {
+            return current_cap;
         }
         let mut new_cap = max(MIN_SIZE, new_size.next_power_of_two());
         while new_cap as f64 * LOAD_FACTOR < new_size as f64 {
