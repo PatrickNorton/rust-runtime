@@ -73,14 +73,3 @@ where
     *index += byte_size;
     result
 }
-
-/// Return the next power of 2 greater than the number given.
-/// If the number is 0, 0 will be returned.
-pub fn next_power_2(len: usize) -> usize {
-    if len == 0 {
-        return 0;
-    }
-    let leading0s = len.leading_zeros();
-    const TOTAL_ZEROS: u32 = usize::leading_zeros(0);
-    1_usize << (TOTAL_ZEROS - leading0s)
-}

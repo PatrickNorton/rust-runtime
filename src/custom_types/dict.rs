@@ -1,7 +1,6 @@
 use crate::custom_types::exceptions::key_error;
 use crate::custom_types::ASCII_COMMA;
 use crate::custom_var::{downcast_var, CustomVar};
-use crate::int_tools::next_power_2;
 use crate::int_var::IntVar;
 use crate::looping::{self, IterAttrs, IterResult, NativeIterator};
 use crate::method::{NativeMethod, StdMethod};
@@ -235,7 +234,7 @@ impl InnerDict {
         runtime: &mut Runtime,
     ) -> Result<InnerDict, ()> {
         debug_assert!(keys.len() == values.len());
-        let vec_capacity = next_power_2(keys.len());
+        let vec_capacity = keys.len().next_power_of_two();
         let mut value = InnerDict {
             size: 0,
             size_w_deleted: 0,
@@ -464,7 +463,7 @@ impl InnerDict {
         if current_size as f64 * LOAD_FACTOR >= new_size as f64 {
             return current_size;
         }
-        let mut new_cap = max(MIN_SIZE, next_power_2(new_size));
+        let mut new_cap = max(MIN_SIZE, new_size.next_power_of_two());
         while new_cap as f64 * LOAD_FACTOR < new_size as f64 {
             new_cap <<= 1;
         }
