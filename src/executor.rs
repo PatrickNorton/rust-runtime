@@ -22,7 +22,7 @@ use crate::sys::{self, get_syscall, sys_name};
 use crate::tuple::LangTuple;
 use crate::variable::{FnResult, InnerVar, OptionVar, Variable};
 use num::traits::FromPrimitive;
-use num::Zero;
+use num::Signed;
 use std::convert::TryInto;
 use std::mem::take;
 use std::ops::SubAssign;
@@ -474,7 +474,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         Bytecode::Dotimes => {
             let mut value = runtime.pop().int(runtime)?;
             let jump = bytes_0;
-            if value.is_zero() {
+            if !value.is_positive() {
                 runtime.goto(jump);
             } else {
                 value.sub_assign(1.into());
