@@ -228,6 +228,14 @@ impl Dict {
 }
 
 impl InnerDict {
+    pub fn new() -> InnerDict {
+        InnerDict {
+            size: 0,
+            size_w_deleted: 0,
+            entries: Vec::new(),
+        }
+    }
+
     pub fn from_args(
         keys: Vec<Variable>,
         values: Vec<Variable>,
@@ -235,11 +243,7 @@ impl InnerDict {
     ) -> Result<InnerDict, ()> {
         debug_assert!(keys.len() == values.len());
         if keys.is_empty() {
-            Result::Ok(InnerDict {
-                size: 0,
-                size_w_deleted: 0,
-                entries: Vec::new(),
-            })
+            Result::Ok(InnerDict::new())
         } else {
             let vec_capacity = Self::new_cap(0, keys.len());
             let mut value = InnerDict {

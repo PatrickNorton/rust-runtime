@@ -249,8 +249,26 @@ impl Set {
     }
 
     fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        debug_assert!(args.is_empty()); // TODO: Set of a value
-        let set = Set::new(Type::Object, vec![], runtime)?;
+        let set = match args.len() {
+            0 => Set::from_inner(Type::Object, InnerDict::new()),
+            1 => match downcast_var::<Set>(first(args)) {
+                Result::Ok(x) => Set::from_inner(x.generic, x.value.borrow().clone()),
+                Result::Err(arg) => {
+                    let mut inner = InnerDict::new();
+                    let iter = arg.iter(runtime)?;
+                    while let Option::Some(val) = iter.next(runtime)?.take_first() {
+                        inner.set(val, Variable::null(), runtime)?;
+                    }
+                    // TODO: Generic value
+                    Set::from_inner(Type::Object, inner)
+                }
+            },
+            x => unimplemented!(
+                "set.operator new expected 0 or 1 args, got {}\n{}",
+                x,
+                runtime.frame_strings()
+            ),
+        };
         runtime.return_1(set.into())
     }
 
