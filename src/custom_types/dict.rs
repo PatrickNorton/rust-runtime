@@ -191,8 +191,8 @@ impl Dict {
     fn eq(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         for arg in args {
             match downcast_var::<Dict>(arg) {
-                Option::None => return runtime.return_1(false.into()),
-                Option::Some(other) => {
+                Result::Err(_) => return runtime.return_1(false.into()),
+                Result::Ok(other) => {
                     let self_val = self.value.borrow();
                     if !self_val.equals(&*other.value.borrow(), runtime)? {
                         return runtime.return_1(false.into());

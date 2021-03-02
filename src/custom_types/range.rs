@@ -81,8 +81,8 @@ impl Range {
     fn eq(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
         let is_eq = match downcast_var::<Range>(first(args)) {
-            Option::None => false,
-            Option::Some(other) => {
+            Result::Err(_) => false,
+            Result::Ok(other) => {
                 self.start == other.start && self.stop == other.stop && self.step == other.step
             }
         };

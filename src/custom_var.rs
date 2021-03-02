@@ -143,13 +143,13 @@ where
     }
 }
 
-pub fn downcast_var<T>(var: Variable) -> Option<Rc<T>>
+pub fn downcast_var<T>(var: Variable) -> Result<Rc<T>, Variable>
 where
     T: 'static + CustomVar,
 {
     if let Variable::Normal(InnerVar::Custom(wrapper)) = var {
-        wrapper.into_inner().downcast_rc::<T>().ok()
+        wrapper.into_inner().downcast_rc::<T>().map_err(Into::into)
     } else {
-        Option::None
+        Result::Err(var)
     }
 }

@@ -184,8 +184,8 @@ impl Set {
     fn eq(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         for arg in args {
             if !match downcast_var::<Set>(arg) {
-                Option::None => false,
-                Option::Some(other) => {
+                Result::Err(_) => false,
+                Result::Ok(other) => {
                     let self_val = self.value.borrow();
                     self_val.equals(&*other.value.borrow(), runtime)?
                 }

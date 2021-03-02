@@ -109,8 +109,8 @@ impl Array {
     fn eq(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         for arg in args {
             if !match downcast_var::<Array>(arg) {
-                Option::None => false,
-                Option::Some(other) => {
+                Result::Err(_) => false,
+                Result::Ok(other) => {
                     let self_val = self.vars.borrow();
                     let other_val = other.vars.borrow();
                     self_val.len() == other_val.len()
