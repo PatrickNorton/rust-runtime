@@ -16,7 +16,7 @@ use std::mem::replace;
 use std::ops::Neg;
 use std::rc::Rc;
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct Range {
     start: IntVar,
     stop: IntVar,
@@ -82,9 +82,7 @@ impl Range {
         debug_assert!(args.len() == 1);
         let is_eq = match downcast_var::<Range>(first(args)) {
             Result::Err(_) => false,
-            Result::Ok(other) => {
-                self.start == other.start && self.stop == other.stop && self.step == other.step
-            }
+            Result::Ok(other) => self == other,
         };
         runtime.return_1(is_eq.into())
     }
