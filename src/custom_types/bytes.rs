@@ -161,14 +161,13 @@ impl LangBytes {
                 let error = x.ascii_error();
                 // valid_up_to is perfectly fine to use as codepoints, b/c each ASCII character is
                 // exactly one byte, and all the characters up to valid_up_to() are ASCII
-                runtime.throw_quick(
+                runtime.throw_quick_native(
                     value_error(),
                     format!(
                         "Cannot convert to ascii: byte at position {} (value {}) is not in the range [0:128]", 
                         error.valid_up_to(), value[error.valid_up_to()]
                     )
-                )?;
-                unreachable!()
+                )
             }
         }
     }
@@ -185,12 +184,10 @@ impl LangBytes {
                 .collect::<Vec<_>>(),
         )
         .or_else(|_| {
-            runtime
-                .throw_quick(
-                    value_error(),
-                    "Invalid byte literal for little-endian utf-16 conversion",
-                )
-                .and_then(|_| unreachable!())
+            runtime.throw_quick_native(
+                value_error(),
+                "Invalid byte literal for little-endian utf-16 conversion",
+            )
         })
     }
 
@@ -204,12 +201,10 @@ impl LangBytes {
                 .collect::<Vec<_>>(),
         )
         .or_else(|_| {
-            runtime
-                .throw_quick(
-                    value_error(),
-                    "Invalid byte literal for big-endian utf-16 conversion",
-                )
-                .and_then(|_| unreachable!())
+            runtime.throw_quick_native(
+                value_error(),
+                "Invalid byte literal for big-endian utf-16 conversion",
+            )
         })
     }
 
@@ -219,9 +214,10 @@ impl LangBytes {
             .chunks(4)
             .map(|x| match char::from_u32(FromBytes::from_le(x)) {
                 Option::Some(value) => Result::Ok(value),
-                Option::None => runtime
-                    .throw_quick(value_error(), "Invalid byte literal for utf-32 conversion")
-                    .and_then(|_| unreachable!()),
+                Option::None => runtime.throw_quick_native(
+                    value_error(),
+                    "Invalid byte literal for utf-32 conversion",
+                ),
             })
             .collect()
     }
@@ -232,12 +228,10 @@ impl LangBytes {
             .chunks(4)
             .map(|x| match char::from_u32(FromBytes::from_be(x)) {
                 Option::Some(value) => Result::Ok(value),
-                Option::None => runtime
-                    .throw_quick(
-                        value_error(),
-                        "Invalid byte literal for big-endian utf-32 conversion",
-                    )
-                    .and_then(|_| unreachable!()),
+                Option::None => runtime.throw_quick_native(
+                    value_error(),
+                    "Invalid byte literal for big-endian utf-32 conversion",
+                ),
             })
             .collect()
     }
@@ -360,8 +354,7 @@ impl LangBytes {
     }
 
     fn utf8_err<T>(&self, runtime: &mut Runtime) -> Result<T, ()> {
-        runtime.throw_quick(value_error(), "Invalid byte literal for utf-8 conversion")?;
-        unreachable!()
+        runtime.throw_quick_native(value_error(), "Invalid byte literal for utf-8 conversion")
     }
 
     fn shrink_err(index: IntVar, runtime: &mut Runtime) -> FnResult {

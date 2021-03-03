@@ -536,12 +536,10 @@ impl List {
                 let cap = IntVar::from(cap);
                 let cap = match cap.to_usize() {
                     Option::Some(x) => x,
-                    Option::None => {
-                        return runtime.throw_quick(
-                            value_error(),
-                            format!("Value {} too big to create list", cap),
-                        )
-                    }
+                    Option::None => runtime.throw_quick_native(
+                        value_error(),
+                        format!("Value {} too big to create list", cap),
+                    )?,
                 };
                 let mut vec = Vec::with_capacity(cap);
                 for val in looping::for_each(value, runtime)? {

@@ -365,6 +365,22 @@ impl Runtime {
         self.unwind(exc_type, exc)
     }
 
+    pub fn throw_quick_native<T: Into<StringVar>, U>(
+        &mut self,
+        exc_type: Type,
+        message: T,
+    ) -> Result<U, ()> {
+        assert!(
+            self.is_native(),
+            "throw_quick_native expected a native function\n{}",
+            self.frame_strings()
+        );
+        let frames = self.collect_stack_frames();
+        let exc = InnerException::UnConstructed(exc_type, message.into(), frames);
+        self.thrown_exception = Option::Some(exc);
+        Result::Err(())
+    }
+
     fn unwind(&mut self, exc_type: Type, exc: InnerException) -> FnResult {
         let frame = self.exception_frames.get(&exc_type.into());
         match frame.and_then(|vec| vec.last()) {

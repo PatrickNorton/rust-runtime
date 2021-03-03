@@ -167,7 +167,7 @@ pub fn quick_mul(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
 }
 
 fn mul_err(big_var: IntVar, runtime: &mut Runtime) -> QuickResult {
-    runtime.throw_quick(
+    runtime.throw_quick_native(
         arithmetic_error(),
         format!(
             "Too many string repetitions: max number of shifts \
@@ -175,8 +175,7 @@ fn mul_err(big_var: IntVar, runtime: &mut Runtime) -> QuickResult {
             usize::MAX,
             big_var,
         ),
-    )?;
-    unreachable!()
+    )
 }
 
 pub fn quick_div(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
@@ -316,8 +315,7 @@ pub fn quick_subscript(this: Variable, other: Variable, runtime: &mut Runtime) -
             match val.chars().nth(index) {
                 Option::None => {
                     runtime.push_native();
-                    runtime.throw_quick(index_error(), "Index out of bounds")?;
-                    unreachable!() // Native frame will always return FnResult::Err
+                    runtime.throw_quick_native(index_error(), "Index out of bounds")
                 }
                 Option::Some(value) => Result::Ok(value.into()),
             }
@@ -452,10 +450,7 @@ fn q_rshift(this: IntVar, other: IntVar, runtime: &mut Runtime) -> QuickResult {
 fn shift_to_usize(big_var: IntVar, runtime: &mut Runtime) -> Result<usize, ()> {
     Result::Ok(match big_var.to_usize() {
         Option::Some(val) => val,
-        Option::None => {
-            runtime.throw_quick(arithmetic_error(), shift_err(big_var))?;
-            unreachable!()
-        }
+        Option::None => runtime.throw_quick_native(arithmetic_error(), shift_err(big_var))?,
     })
 }
 
