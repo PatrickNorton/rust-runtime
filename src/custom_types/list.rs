@@ -531,8 +531,26 @@ impl List {
         let result = match args.len() {
             0 => vec![],
             1 => looping::collect(first(args), runtime)?,
+            2 => {
+                let (value, cap) = first_two(args);
+                let cap = IntVar::from(cap);
+                let cap = match cap.to_usize() {
+                    Option::Some(x) => x,
+                    Option::None => {
+                        return runtime.throw_quick(
+                            value_error(),
+                            format!("Value {} too big to create list", cap),
+                        )
+                    }
+                };
+                let mut vec = Vec::with_capacity(cap);
+                for val in looping::for_each(value, runtime)? {
+                    vec.push(val?)
+                }
+                vec
+            }
             x => panic!(
-                "Expected 0 or 1 args to list::create, got {}\n{}",
+                "Expected 0, 1, or 2 args to list::create, got {}\n{}",
                 x,
                 runtime.frame_strings()
             ),

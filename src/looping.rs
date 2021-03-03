@@ -83,6 +83,16 @@ impl Iterator {
     }
 }
 
+pub fn for_each(
+    value: Variable,
+    runtime: &mut Runtime,
+) -> Result<impl stdIterator<Item = Result<Variable, ()>> + '_, ()> {
+    Result::Ok(IterAdaptor {
+        value: Result::Ok(value.iter(runtime)?),
+        runtime,
+    })
+}
+
 pub fn collect<T, U>(value: Variable, runtime: &mut Runtime) -> Result<T, ()>
 where
     T: FromIterator<U>,
