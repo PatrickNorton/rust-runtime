@@ -381,12 +381,21 @@ impl Runtime {
         Result::Err(())
     }
 
+    pub fn resume_throw(&mut self) -> FnResult {
+        match self.thrown_exception.take() {
+            Option::Some(exception) => self.unwind(exception.get_type(), exception),
+            Option::None => panic!(
+                "resume_throw() called with no thrown exception\n{}",
+                self.frame_strings()
+            ),
+        }
+    }
+
     fn unwind(&mut self, exc_type: Type, exc: InnerException) -> FnResult {
         let frame = self.exception_frames.get(&exc_type.into());
-        match frame.and_then(|vec| vec.last()) {
-            Option::Some(pair) => {
-                let pair2 = *pair;
-                self.unwind_to_height(pair2.0, pair2.1, exc)
+        match frame.and_then(|vec| vec.last().cloned()) {
+            Option::Some((location, frame_height)) => {
+                self.unwind_to_height(location, frame_height, exc)
             }
             Option::None => self.unwind_to_empty(exc),
         }
@@ -658,23 +667,6 @@ impl Runtime {
             StackFrame::from_old(0, fn_no, self.current_file_no(), args, frame, stack_height);
         let stack = Vec::new();
         self.push(Rc::new(Generator::new(new_frame, stack)).into())
-    }
-
-    pub fn resume_throw(&mut self) -> FnResult {
-        let exception = self
-            .thrown_exception
-            .take()
-            .expect("resume_throw() called with no thrown exception");
-        match self
-            .exception_frames
-            .get(&exception.get_type().into())
-            .and_then(|x| x.last().copied())
-        {
-            Option::Some((location, frame_height)) => {
-                self.unwind_to_height(location, frame_height, exception)
-            }
-            Option::None => self.unwind_to_empty(exception),
-        }
     }
 
     fn unwind_to_height(
