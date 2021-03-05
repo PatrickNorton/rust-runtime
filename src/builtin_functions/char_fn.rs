@@ -5,6 +5,7 @@ use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
+use ascii::{AsciiString, ToAsciiChar};
 
 pub fn op_fn(o: Operator) -> NativeMethod<char> {
     match o {
@@ -45,7 +46,11 @@ fn int(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
 
 fn str(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.return_1(StringVar::from(this.to_string()).into())
+    let str = match this.to_ascii_char() {
+        Result::Ok(chr) => StringVar::from(AsciiString::from(vec![chr])),
+        Result::Err(_) => StringVar::from(this.to_string()),
+    };
+    runtime.return_1(str.into())
 }
 
 fn repr(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
