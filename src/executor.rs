@@ -42,8 +42,9 @@ pub fn execute(runtime: &mut Runtime) -> FnResult {
             continue;
         }
         let bytes = runtime.current_fn();
-        let b: Bytecode = FromPrimitive::from_u8(bytes[runtime.current_pos()])
-            .expect("Attempted to parse invalid bytecode");
+        let current = bytes[runtime.current_pos()];
+        let b: Bytecode = FromPrimitive::from_u8(current)
+            .unwrap_or_else(|| panic!("Attempted to parse invalid bytecode: value {:x}", current));
         let byte_size = bytecode_size(b);
         let byte_start: usize = runtime.current_pos() + 1;
         let byte_0 = get_bytes(bytes, byte_start, byte_size.0);
