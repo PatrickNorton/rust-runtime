@@ -14,9 +14,10 @@ use crate::variable::{FnResult, Variable};
 use crate::{first, first_two};
 use ascii::AsciiChar;
 use num::{One, Signed, ToPrimitive, Zero};
-use std::cell::{Cell, RefCell};
+use std::cell::{Cell, Ref, RefCell};
 use std::cmp::min;
 use std::iter::repeat_with;
+use std::ops::Deref;
 use std::rc::Rc;
 
 #[derive(Debug)]
@@ -35,6 +36,12 @@ impl List {
 
     pub fn len(&self) -> usize {
         self.value.borrow().len()
+    }
+
+    pub fn values(&self) -> impl Deref<Target = [Variable]> + '_ {
+        SliceRef {
+            value: self.value.borrow(),
+        }
     }
 
     fn op_fn(name: Operator) -> NativeMethod<Rc<List>> {
@@ -707,5 +714,17 @@ impl TypicalIterator for ListRevIter {
 
     fn get_type() -> Type {
         custom_class!(ListRevIter, create, "ListRevIter")
+    }
+}
+
+struct SliceRef<'a> {
+    value: Ref<'a, Vec<Variable>>,
+}
+
+impl<'a> Deref for SliceRef<'a> {
+    type Target = [Variable];
+
+    fn deref(&self) -> &Self::Target {
+        &self.value
     }
 }

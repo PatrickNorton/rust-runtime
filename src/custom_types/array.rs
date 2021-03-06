@@ -1,5 +1,6 @@
 use crate::custom_types::exceptions::{index_error, value_error};
 use crate::custom_types::join_values;
+use crate::custom_types::list::List;
 use crate::custom_types::range::Range;
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_var::{normalize, IntVar};
@@ -190,8 +191,14 @@ impl Array {
         runtime.return_1(Array::new(vec![fill; usize_len].into_boxed_slice()).into())
     }
 
+    fn from_list(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        let list = downcast_var::<List>(first(args)).expect("Expected a list");
+        let new = list.values().iter().cloned().collect();
+        runtime.return_1(Array::new(new).into())
+    }
+
     pub fn array_type() -> Type {
-        custom_class!(Array, create, "Array")
+        custom_class!(Array, create, "Array", "fromList" => from_list)
     }
 
     fn index_err(runtime: &mut Runtime, len: usize, size: &IntVar) -> FnResult {
