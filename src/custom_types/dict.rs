@@ -41,6 +41,12 @@ struct InnerEntry {
     hash: usize,
 }
 
+struct EntryMut<'a> {
+    size: &'a mut usize,
+    size_w_deleted: &'a mut usize,
+    entry: &'a mut Entry,
+}
+
 #[derive(Debug)]
 pub struct Dict {
     value: RefCell<InnerDict>,
@@ -149,7 +155,8 @@ impl Dict {
     fn replace(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
         let (key, val) = first_two(args);
-        if let Entry::Some(e) = self.value.borrow_mut().entry_mut(key, runtime)? {
+        let mut value = self.value.borrow_mut();
+        if let Result::Ok(e) = value.entry_mut(key, runtime)?.into_value() {
             runtime.return_1(Option::Some(replace(&mut e.value, val)).into())
         } else {
             runtime.return_1(Option::None.into())
@@ -167,25 +174,15 @@ impl Dict {
         let mut value = self.value.borrow_mut();
         let (arg, default) = first_two(args);
         value.resize(1);
-        match value.entry_mut(arg.clone(), runtime)? {
-            e @ Entry::None | e @ Entry::Removed => {
+        let result = match value.entry_mut(arg.clone(), runtime)?.into_value() {
+            Result::Ok(e) => e.value.clone(),
+            Result::Err(mut e) => {
                 let hash = arg.clone().hash(runtime)?;
-                let old_entry = replace(
-                    e,
-                    Entry::Some(InnerEntry {
-                        key: arg,
-                        value: default.clone(),
-                        hash,
-                    }),
-                );
-                if let Entry::None = old_entry {
-                    value.size_w_deleted += 1;
-                }
-                value.size += 1;
-                runtime.return_1(default)
+                e.put(arg, default.clone(), hash);
+                default
             }
-            Entry::Some(e) => runtime.return_1(e.value.clone()),
-        }
+        };
+        runtime.return_1(result)
     }
 
     fn eq(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -281,24 +278,7 @@ impl InnerDict {
         let hash = key.clone().hash(runtime)?;
         self.resize(1);
         assert!(!self.entries.is_empty());
-        match self.entry_mut(key.clone(), runtime)? {
-            e @ Entry::None | e @ Entry::Removed => {
-                let old_entry = replace(
-                    e,
-                    Entry::Some(InnerEntry {
-                        key,
-                        hash,
-                        value: val,
-                    }),
-                );
-                if let Entry::None = old_entry {
-                    self.size_w_deleted += 1;
-                }
-                self.size += 1;
-                Result::Ok(Option::None)
-            }
-            Entry::Some(e) => Result::Ok(Option::Some(replace(&mut e.value, val))),
-        }
+        Result::Ok(self.entry_mut(key.clone(), runtime)?.put(key, val, hash))
     }
 
     pub fn equals(&self, other: &InnerDict, runtime: &mut Runtime) -> Result<bool, ()> {
@@ -317,15 +297,7 @@ impl InnerDict {
     }
 
     pub fn del(&mut self, value: Variable, runtime: &mut Runtime) -> Result<Option<Variable>, ()> {
-        match self.entry_mut(value, runtime)? {
-            Entry::None => Result::Ok(Option::None),
-            Entry::Removed => Result::Ok(Option::None),
-            e @ Entry::Some(_) => {
-                let entry = e.remove().unwrap();
-                self.size -= 1;
-                Result::Ok(Option::Some(entry.value))
-            }
-        }
+        Result::Ok(self.entry_mut(value, runtime)?.remove())
     }
 
     pub fn clear(&mut self) {
@@ -409,7 +381,7 @@ impl InnerDict {
         }
     }
 
-    fn entry_mut(&mut self, key: Variable, runtime: &mut Runtime) -> Result<&mut Entry, ()> {
+    fn entry_mut(&mut self, key: Variable, runtime: &mut Runtime) -> Result<EntryMut<'_>, ()> {
         assert!(!self.entries.is_empty());
         let len = self.entries.len();
         let hash = key.clone().hash(runtime)?;
@@ -434,7 +406,11 @@ impl InnerDict {
                 }
             }
         };
-        Result::Ok(&mut self.entries[bucket])
+        Result::Ok(EntryMut {
+            size: &mut self.size,
+            size_w_deleted: &mut self.size_w_deleted,
+            entry: &mut self.entries[bucket],
+        })
     }
 
     fn resize(&mut self, additional: usize) {
@@ -620,6 +596,48 @@ impl<T: DictLike> DictIter<T> {
             } else {
                 bucket += 1;
             }
+        }
+    }
+}
+
+impl<'a> EntryMut<'a> {
+    pub fn remove(&mut self) -> Option<Variable> {
+        match &mut self.entry {
+            Entry::None => Option::None,
+            Entry::Removed => Option::None,
+            e @ Entry::Some(_) => {
+                let entry = e.remove().unwrap();
+                *self.size -= 1;
+                Option::Some(entry.value)
+            }
+        }
+    }
+
+    pub fn put(&mut self, key: Variable, val: Variable, hash: usize) -> Option<Variable> {
+        match &mut self.entry {
+            e @ Entry::None | e @ Entry::Removed => {
+                let old_entry = replace(
+                    *e,
+                    Entry::Some(InnerEntry {
+                        key,
+                        hash,
+                        value: val,
+                    }),
+                );
+                if let Entry::None = old_entry {
+                    *self.size_w_deleted += 1;
+                }
+                *self.size += 1;
+                Option::None
+            }
+            Entry::Some(e) => Option::Some(replace(&mut e.value, val)),
+        }
+    }
+
+    pub fn into_value(self) -> Result<&'a mut InnerEntry, Self> {
+        match self.entry {
+            Entry::Some(e) => Result::Ok(e),
+            _ => Result::Err(self),
         }
     }
 }
