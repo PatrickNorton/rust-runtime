@@ -190,7 +190,7 @@ impl List {
                 }
                 _ => runtime.throw_quick(
                     value_error(),
-                    format!("List repetition {} too big to fit in memory", times),
+                    format!("List repetition {} times too big to fit in memory", times),
                 ),
             }
         }
