@@ -1,3 +1,4 @@
+use crate::builtin_functions::tuple_fn::bool;
 use crate::custom_types::exceptions::{arithmetic_error, index_error};
 use crate::from_bool::FromBool;
 use crate::int_var::IntVar;
@@ -273,12 +274,30 @@ pub fn quick_floor_div(this: Variable, other: Variable, runtime: &mut Runtime) -
 pub fn quick_mod(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
     match this {
         Variable::Normal(InnerVar::Null()) => unimplemented!(),
-        Variable::Normal(InnerVar::Bool(b)) => Result::Ok(IntVar::from_bool(b).into()),
-        Variable::Normal(InnerVar::Bigint(i)) => Result::Ok((i % IntVar::from(other)).into()),
+        Variable::Normal(InnerVar::Bool(b)) => {
+            let other = IntVar::from(other);
+            if !other.is_zero() {
+                Result::Ok(IntVar::from_bool(b).into())
+            } else {
+                mod_zero_error(runtime)
+            }
+        }
+        Variable::Normal(InnerVar::Bigint(i)) => {
+            let other = IntVar::from(other);
+            if other.is_zero() {
+                mod_zero_error(runtime)
+            } else {
+                Result::Ok((i % other).into())
+            }
+        }
         Variable::Normal(InnerVar::String(_)) => unimplemented!(),
         Variable::Normal(InnerVar::Decimal(d1)) => {
             if let Variable::Normal(InnerVar::Decimal(d2)) = other {
-                QuickResult::Ok((d1 % d2).into())
+                if d2.is_zero() {
+                    mod_zero_error(runtime)
+                } else {
+                    QuickResult::Ok((d1 % d2).into())
+                }
             } else {
                 unimplemented!()
             }
@@ -303,6 +322,10 @@ pub fn quick_mod(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
         }
         Variable::Option(_, _) => unimplemented!(),
     }
+}
+
+fn mod_zero_error<T>(runtime: &mut Runtime) -> Result<T, ()> {
+    runtime.throw_quick_native(arithmetic_error(), "Cannot modulo by zero")
 }
 
 pub fn quick_subscript(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
