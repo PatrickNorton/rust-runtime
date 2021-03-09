@@ -1,5 +1,4 @@
 use crate::custom_var::CustomVar;
-use crate::first;
 use crate::method::StdMethod;
 use crate::name::Name;
 use crate::operator::Operator;
@@ -7,6 +6,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::std_variable::StdVariable;
 use crate::variable::{FnResult, OptionVar, Variable};
+use crate::{first, first_two};
 use std::iter::FromIterator;
 use std::iter::Iterator as stdIterator;
 use std::rc::Rc;
@@ -154,6 +154,14 @@ impl IterOk {
             IterOk::None => Option::None,
             IterOk::One(v) => Option::Some(v),
             IterOk::Many(v) => Option::Some(first(v)),
+        }
+    }
+
+    pub fn take_two(self) -> Option<(Variable, Variable)> {
+        match self {
+            IterOk::None => Option::None,
+            IterOk::One(_) => panic!("Expected 2 values, got 1"),
+            IterOk::Many(v) => Option::Some(first_two(v)),
         }
     }
 }

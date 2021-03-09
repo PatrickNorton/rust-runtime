@@ -60,6 +60,12 @@ pub(super) struct InnerDict {
 }
 
 impl Dict {
+    pub fn new() -> Rc<Dict> {
+        Rc::new(Dict {
+            value: RefCell::new(InnerDict::new()),
+        })
+    }
+
     pub fn from_args(
         keys: Vec<Variable>,
         values: Vec<Variable>,
@@ -68,6 +74,12 @@ impl Dict {
         Result::Ok(Rc::new(Dict {
             value: RefCell::new(InnerDict::from_args(keys, values, runtime)?),
         }))
+    }
+
+    fn from_inner(value: InnerDict) -> Rc<Dict> {
+        Rc::new(Dict {
+            value: RefCell::new(value),
+        })
     }
 
     fn op_fn(o: Operator) -> NativeMethod<Rc<Dict>> {
@@ -206,8 +218,24 @@ impl Dict {
     }
 
     fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        debug_assert!(args.is_empty()); // TODO: List of a value
-        let dict = Dict::from_args(Vec::new(), Vec::new(), runtime)?;
+        let dict = match args.len() {
+            0 => Dict::new(),
+            1 => {
+                let value = first(args);
+                match downcast_var::<Dict>(value) {
+                    Result::Ok(x) => Dict::from_inner(x.value.borrow().clone()),
+                    Result::Err(x) => {
+                        let iter = x.iter(runtime)?;
+                        let mut inner = InnerDict::new();
+                        while let Option::Some((key, val)) = iter.next(runtime)?.take_two() {
+                            inner.set(key, val, runtime)?;
+                        }
+                        Dict::from_inner(inner)
+                    }
+                }
+            }
+            x => panic!("Expected 0 or 1 arguments for dict.operator new, got {}", x),
+        };
         runtime.return_1(dict.into())
     }
 
