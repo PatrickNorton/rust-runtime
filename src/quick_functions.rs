@@ -1,4 +1,3 @@
-use crate::builtin_functions::tuple_fn::bool;
 use crate::custom_types::exceptions::{arithmetic_error, index_error};
 use crate::from_bool::FromBool;
 use crate::int_var::IntVar;
@@ -228,7 +227,9 @@ pub fn quick_floor_div(this: Variable, other: Variable, runtime: &mut Runtime) -
         Variable::Normal(InnerVar::Bool(b)) => Result::Ok(
             if b {
                 let var = IntVar::from(other);
-                if var.is_one() {
+                if var.is_zero() {
+                    return div_zero_error(runtime);
+                } else if var.is_one() {
                     One::one()
                 } else if (-var).is_one() {
                     -IntVar::one()
@@ -240,7 +241,14 @@ pub fn quick_floor_div(this: Variable, other: Variable, runtime: &mut Runtime) -
             }
             .into(),
         ),
-        Variable::Normal(InnerVar::Bigint(i)) => Result::Ok((i / IntVar::from(other)).into()),
+        Variable::Normal(InnerVar::Bigint(i)) => {
+            let other = IntVar::from(other);
+            if other.is_zero() {
+                div_zero_error(runtime)
+            } else {
+                Result::Ok((i / other).into())
+            }
+        }
         Variable::Normal(InnerVar::String(_)) => unimplemented!(),
         Variable::Normal(InnerVar::Decimal(d1)) => {
             if let Variable::Normal(InnerVar::Decimal(d2)) = other {
@@ -269,6 +277,10 @@ pub fn quick_floor_div(this: Variable, other: Variable, runtime: &mut Runtime) -
         }
         Variable::Option(_, _) => unimplemented!(),
     }
+}
+
+fn div_zero_error<T>(runtime: &mut Runtime) -> Result<T, ()> {
+    runtime.throw_quick_native(arithmetic_error(), "Cannot divide by zero")
 }
 
 pub fn quick_mod(this: Variable, other: Variable, runtime: &mut Runtime) -> QuickResult {
