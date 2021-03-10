@@ -103,7 +103,7 @@ fn floor_div(this: IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
     if args.len() == 1 {
         let var: IntVar = first(args).into();
         if var.is_zero() {
-            return runtime.throw_quick(value_error(), "Cannot divide by 0");
+            return runtime.throw_quick(arithmetic_error(), "Cannot divide by zero");
         }
         return runtime.return_1((this / var).into());
     }
@@ -111,7 +111,7 @@ fn floor_div(this: IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
     for arg in args {
         let var = IntVar::from(arg);
         if var.is_zero() {
-            return runtime.throw_quick(value_error(), "Cannot divide by 0");
+            return runtime.throw_quick(arithmetic_error(), "Cannot divide by zero");
         }
         ratio /= var;
     }
@@ -123,7 +123,7 @@ fn div(this: IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     for arg in args {
         let var = IntVar::from(arg);
         if var.is_zero() {
-            return runtime.throw_quick(value_error(), "Cannot divide by 0");
+            return runtime.throw_quick(arithmetic_error(), "Cannot divide by zero");
         }
         ratio /= RationalVar::from_integer(var.into())
     }
@@ -141,7 +141,7 @@ fn modulo(this: IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult 
     debug_assert!(args.len() == 1);
     let arg_int = IntVar::from(first(args));
     if arg_int.is_zero() {
-        runtime.throw_quick(value_error(), "Cannot modulo by 0")
+        runtime.throw_quick(arithmetic_error(), "Cannot modulo by zero")
     } else {
         runtime.return_1((this % arg_int).into())
     }
