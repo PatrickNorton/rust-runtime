@@ -74,6 +74,36 @@ where
     }
 }
 
+impl<'a, T, U> DoubleEndedIterator for MixedIter<'a, T, U>
+where
+    T: DoubleEndedIterator + Iterator<Item = &'a AsciiStr>,
+    U: DoubleEndedIterator + Iterator<Item = &'a str>,
+{
+    fn next_back(&mut self) -> Option<Self::Item> {
+        match self {
+            MixedIter::Ascii(a) => a.next_back().map(MaybeAscii::Ascii),
+            MixedIter::Normal(s) => s.next_back().map(MaybeAscii::Standard),
+        }
+    }
+}
+
+impl<'a, T, U, V, W> DoubleEndedIterator for OwnedIter<'a, T, U, V, W>
+where
+    T: DoubleEndedIterator + Iterator<Item = &'a AsciiStr>,
+    U: DoubleEndedIterator + Iterator<Item = &'static AsciiStr>,
+    V: DoubleEndedIterator + Iterator<Item = &'a str>,
+    W: DoubleEndedIterator + Iterator<Item = &'static str>,
+{
+    fn next_back(&mut self) -> Option<Self::Item> {
+        match self {
+            OwnedIter::Ascii(a) => a.next_back().map(|x| x.to_owned().into()),
+            OwnedIter::AsciiLiteral(a) => a.next_back().map(Into::into),
+            OwnedIter::Normal(s) => s.next_back().map(|x| x.to_owned().into()),
+            OwnedIter::Literal(s) => s.next_back().map(Into::into),
+        }
+    }
+}
+
 impl Add for &StringVar {
     type Output = StringVar;
 
