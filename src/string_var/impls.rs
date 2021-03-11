@@ -1,5 +1,6 @@
 use crate::string_var::{MaybeAscii, StringVar};
 use ascii::AsciiStr;
+use std::iter::FusedIterator;
 use std::ops::Add;
 
 pub enum MixedIter<'a, T, U>
@@ -102,6 +103,38 @@ where
             OwnedIter::Literal(s) => s.next_back().map(Into::into),
         }
     }
+}
+
+impl<'a, T, U> ExactSizeIterator for MixedIter<'a, T, U>
+where
+    T: ExactSizeIterator + Iterator<Item = &'a AsciiStr>,
+    U: ExactSizeIterator + Iterator<Item = &'a str>,
+{
+}
+
+impl<'a, T, U, V, W> ExactSizeIterator for OwnedIter<'a, T, U, V, W>
+where
+    T: ExactSizeIterator + Iterator<Item = &'a AsciiStr>,
+    U: ExactSizeIterator + Iterator<Item = &'static AsciiStr>,
+    V: ExactSizeIterator + Iterator<Item = &'a str>,
+    W: ExactSizeIterator + Iterator<Item = &'static str>,
+{
+}
+
+impl<'a, T, U> FusedIterator for MixedIter<'a, T, U>
+where
+    T: FusedIterator + Iterator<Item = &'a AsciiStr>,
+    U: FusedIterator + Iterator<Item = &'a str>,
+{
+}
+
+impl<'a, T, U, V, W> FusedIterator for OwnedIter<'a, T, U, V, W>
+where
+    T: FusedIterator + Iterator<Item = &'a AsciiStr>,
+    U: FusedIterator + Iterator<Item = &'static AsciiStr>,
+    V: FusedIterator + Iterator<Item = &'a str>,
+    W: FusedIterator + Iterator<Item = &'static str>,
+{
 }
 
 impl Add for &StringVar {
