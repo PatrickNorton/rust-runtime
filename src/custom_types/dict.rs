@@ -13,6 +13,7 @@ use crate::variable::{FnResult, Variable};
 use crate::{first, first_two};
 use ascii::{AsciiChar, AsciiStr};
 use downcast_rs::__std::cmp::min;
+use downcast_rs::__std::iter::FusedIterator;
 use once_cell::sync::Lazy;
 use std::cell::{Cell, Ref, RefCell};
 use std::cmp::max;
@@ -720,3 +721,5 @@ impl<'a> Iterator for InnerDictIter<'a> {
         (0, Option::Some(min_max))
     }
 }
+
+impl FusedIterator for InnerDictIter<'_> {}
