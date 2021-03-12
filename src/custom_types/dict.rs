@@ -12,6 +12,7 @@ use crate::string_var::{MaybeString, StringVar};
 use crate::variable::{FnResult, Variable};
 use crate::{first, first_two};
 use ascii::{AsciiChar, AsciiStr};
+use downcast_rs::__std::cmp::min;
 use once_cell::sync::Lazy;
 use std::cell::{Cell, Ref, RefCell};
 use std::cmp::max;
@@ -712,5 +713,10 @@ impl<'a> Iterator for InnerDictIter<'a> {
                 self.i += 1;
             }
         }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let min_max = min(self.parent.size, self.parent.entries.len() - self.i);
+        (0, Option::Some(min_max))
     }
 }

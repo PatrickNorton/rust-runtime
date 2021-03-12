@@ -1,4 +1,5 @@
 use ascii::{AsciiChar, AsciiStr};
+use std::iter::FusedIterator;
 use std::iter::Peekable;
 use std::slice::Chunks;
 use std::str::{from_utf8_unchecked, CharIndices};
@@ -62,4 +63,18 @@ impl<'a> Iterator for AsciiChunks<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         self.value.next().map(Into::into)
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.value.size_hint()
+    }
 }
+
+impl DoubleEndedIterator for AsciiChunks<'_> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.value.next_back().map(Into::into)
+    }
+}
+
+impl ExactSizeIterator for AsciiChunks<'_> {}
+
+impl FusedIterator for AsciiChunks<'_> {}

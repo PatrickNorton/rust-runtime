@@ -7,8 +7,8 @@ use crate::std_type::Type;
 use crate::std_variable::StdVariable;
 use crate::variable::{FnResult, OptionVar, Variable};
 use crate::{first, first_two};
-use std::iter::FromIterator;
 use std::iter::Iterator as stdIterator;
+use std::iter::{FromIterator, FusedIterator};
 use std::rc::Rc;
 
 pub type IterResult = Result<IterOk, ()>;
@@ -237,3 +237,5 @@ impl std::iter::Iterator for IterAdaptor<'_> {
         }
     }
 }
+
+impl FusedIterator for IterAdaptor<'_> {}
