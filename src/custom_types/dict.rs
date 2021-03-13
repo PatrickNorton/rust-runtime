@@ -22,9 +22,6 @@ use std::iter::Iterator;
 use std::mem::{replace, take};
 use std::rc::Rc;
 
-const PERTURB_SHIFT: u32 = 5;
-const MIN_SIZE: usize = 8;
-
 pub(super) trait DictLike: Debug {
     fn borrow(&self) -> Ref<'_, InnerDict>;
 }
@@ -255,6 +252,9 @@ impl Dict {
 }
 
 impl InnerDict {
+    const PERTURB_SHIFT: u32 = 5;
+    const MIN_SIZE: usize = 8;
+
     pub fn new() -> InnerDict {
         InnerDict {
             size: 0,
@@ -484,7 +484,7 @@ impl InnerDict {
         if current_cap as f64 * LOAD_FACTOR >= new_size as f64 {
             return current_cap;
         }
-        let mut new_cap = max(MIN_SIZE, new_size.next_power_of_two());
+        let mut new_cap = max(Self::MIN_SIZE, new_size.next_power_of_two());
         while new_cap as f64 * LOAD_FACTOR < new_size as f64 {
             new_cap <<= 1;
         }
@@ -493,7 +493,7 @@ impl InnerDict {
 
     fn rehash(perturb: &mut usize, bucket: usize) -> usize {
         let result = 5 * bucket + 1 + *perturb;
-        *perturb >>= PERTURB_SHIFT;
+        *perturb >>= Self::PERTURB_SHIFT;
         result
     }
 }
