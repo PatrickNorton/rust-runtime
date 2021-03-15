@@ -8,11 +8,14 @@ use std::ffi::OsStr;
 use std::io;
 use std::path::MAIN_SEPARATOR;
 
+use crate::string_var::StringVar;
+use crate::sys::os::os_name;
 use files::{chdir, getcwd, list_dir, mkdir};
 use metadata::metadata;
 
 mod files;
 mod metadata;
+mod os;
 
 // Numbers borrowed from https://filippo.io/linux-syscall-table/
 pub fn sys_name(x: usize) -> &'static str {
@@ -27,6 +30,7 @@ pub fn sys_name(x: usize) -> &'static str {
 pub fn get_value(x: &str) -> Variable {
     match x {
         "FILE_SEPARATOR" => MAIN_SEPARATOR.into(),
+        "NAME" => StringVar::from(os_name()).into(),
         _ => Function::Native(get_syscall(x)).into(),
     }
 }
