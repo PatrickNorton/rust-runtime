@@ -12,7 +12,7 @@ pub fn repr(value: char) -> Cow<'static, str> {
         '\r' => r"\r".into(),
         '\t' => r"\t".into(),
         '\x0B' => r"\v".into(),
-        x if x.is_ascii_graphic() || x == ' ' => x.to_string().into(),
+        x @ ' '..='~' => x.to_string().into(), // graphic ASCII characters
         x if x.is_ascii() => format!(r"\x{:02X}", x as u32).into(),
         x => {
             let escaped = value.escape_debug().to_string();
