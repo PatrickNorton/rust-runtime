@@ -228,6 +228,20 @@ impl Hash for LangUnion {
     }
 }
 
+impl PartialEq for UnionType {
+    fn eq(&self, other: &Self) -> bool {
+        ptr::eq(self, other)
+    }
+}
+
+impl Eq for UnionType {}
+
+impl Hash for UnionType {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        ptr::hash(self, state);
+    }
+}
+
 mod default_functions {
     use crate::first;
     use crate::lang_union::{LangUnion, UnionMethod};
@@ -235,7 +249,7 @@ mod default_functions {
     use crate::operator::Operator;
     use crate::runtime::Runtime;
     use crate::string_var::StringVar;
-    use crate::variable::{FnResult, Variable};
+    use crate::variable::{FnResult, InnerVar, Variable};
 
     pub fn default_methods(name: Name) -> Option<UnionMethod> {
         if let Name::Operator(o) = name {
@@ -275,10 +289,13 @@ mod default_functions {
     }
 
     fn default_eq(this: LangUnion, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        let this_var = Variable::from(this);
         for arg in args {
-            if this_var != arg {
-                return runtime.return_1(false.into());
+            match arg {
+                Variable::Normal(InnerVar::Union(other))
+                    if (this.cls == other.cls
+                        && this.variant_no == other.variant_no
+                        && this.value.clone().equals(*other.value.clone(), runtime)?) => {}
+                _ => return runtime.return_1(false.into()),
             }
         }
         runtime.return_1(true.into())
