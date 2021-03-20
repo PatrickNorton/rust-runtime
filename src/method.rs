@@ -83,19 +83,20 @@ impl Clone for Box<dyn Method> {
     }
 }
 
-impl PartialEq for Box<dyn Method> {
-    fn eq(&self, other: &Box<dyn Method>) -> bool {
-        let left: *const dyn Method = self.as_ref();
-        let right: *const dyn Method = other.as_ref();
-        ptr::eq(left as *const (), right as *const ())
+impl PartialEq for dyn Method {
+    fn eq(&self, other: &Self) -> bool {
+        ptr::eq(
+            self as *const _ as *const (),
+            other as *const _ as *const (),
+        )
     }
 }
 
-impl Eq for Box<dyn Method> {}
+impl Eq for dyn Method {}
 
-impl Hash for Box<dyn Method> {
+impl Hash for dyn Method {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        ptr::hash(self.as_ref(), state)
+        ptr::hash(self, state)
     }
 }
 
