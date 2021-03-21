@@ -1,5 +1,8 @@
 #[macro_export]
 macro_rules! hash_map {
+    () => {
+        ::std::collections::HashMap::new()
+    };
     { $($key:expr => $value:expr),+ $(,)? } => {
         {
             let mut m = ::std::collections::HashMap::new();
@@ -13,6 +16,9 @@ macro_rules! hash_map {
 
 #[macro_export]
 macro_rules! hash_set {
+    () => {
+        ::std::collections::HashSet::new()
+    };
     { $($value:expr),* $(,)? } => {
         {
             let mut m = ::std::collections::HashSet::new();
