@@ -385,11 +385,10 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
                     _ => panic!("Iterators should return an option-wrapped value"),
                 }
             } else {
-                let mut ret = runtime.pop_generator_returns(bytes_1 as usize);
-                match take(&mut ret[0]) {
-                    Variable::Option(i, o) => match Option::<Variable>::from(OptionVar(i, o)) {
-                        Option::Some(opt) => {
-                            ret[0] = Option::Some(opt).into();
+                let ret = runtime.pop_generator_returns(bytes_1 as usize);
+                match &ret[0] {
+                    Variable::Option(i, o) => {
+                        if OptionVar::is_some(i, o) {
                             runtime.push(iterated);
                             let values = ret
                                 .into_iter()
@@ -412,11 +411,10 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
                                 );
                             }
                             runtime.extend(values);
-                        }
-                        Option::None => {
+                        } else {
                             runtime.goto(jump_loc);
                         }
-                    },
+                    }
                     _ => panic!(
                         "Iterators should return an option-wrapped value\n{}",
                         runtime.frame_strings()

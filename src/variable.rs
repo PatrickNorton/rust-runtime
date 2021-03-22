@@ -574,6 +574,12 @@ impl InnerVar {
     }
 }
 
+impl OptionVar {
+    pub fn is_some(count: &usize, inner: &Option<InnerVar>) -> bool {
+        count > &1 || inner.is_some()
+    }
+}
+
 impl PartialEq for InnerVar {
     fn eq(&self, other: &Self) -> bool {
         self.identical(other)
