@@ -212,6 +212,20 @@ impl Variable {
             _ => Option::None,
         }
     }
+
+    pub fn into_type(self) -> Result<Type, Variable> {
+        match self {
+            Variable::Normal(InnerVar::Type(t)) => Result::Ok(t),
+            x => Result::Err(x),
+        }
+    }
+
+    pub fn as_type(&self) -> Option<&Type> {
+        match self {
+            Variable::Normal(InnerVar::Type(t)) => Option::Some(t),
+            _ => Option::None,
+        }
+    }
 }
 
 impl InnerVar {

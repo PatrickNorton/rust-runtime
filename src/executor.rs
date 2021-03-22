@@ -324,15 +324,16 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         Bytecode::ThrowQuick => {
             let msg = runtime.pop();
             let exc_type = runtime.pop();
-            if let Variable::Normal(InnerVar::Type(t)) = exc_type {
-                let msg_str = msg.str(runtime)?;
-                return runtime.throw_quick(t, msg_str);
-            } else {
-                panic!(
+            match exc_type.into_type() {
+                Result::Ok(t) => {
+                    let msg_str = msg.str(runtime)?;
+                    return runtime.throw_quick(t, msg_str);
+                }
+                Result::Err(exc_type) => panic!(
                     "ThrowQuick must be called with a type, not {:?}\n{}",
                     exc_type,
                     runtime.frame_strings()
-                );
+                ),
             }
         }
         Bytecode::EnterTry => {
@@ -425,19 +426,19 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         }
         Bytecode::ListCreate => {
             let argc = bytes_0 as u16;
-            let list_type = match runtime.pop() {
-                Variable::Normal(InnerVar::Type(t)) => t,
-                _ => panic!("Bytecode::ListCreate should have generic type as first parameter"),
-            };
+            let list_type = runtime
+                .pop()
+                .into_type()
+                .expect("Bytecode::ListCreate should have generic type as first parameter");
             let value = List::from_values(list_type, runtime.load_args(argc as usize));
             runtime.push(value.into())
         }
         Bytecode::SetCreate => {
             let argc = bytes_0 as u16;
-            let set_type = match runtime.pop() {
-                Variable::Normal(InnerVar::Type(t)) => t,
-                _ => panic!("Bytecode::ListCreate should have generic type as first parameter"),
-            };
+            let set_type = runtime
+                .pop()
+                .into_type()
+                .expect("Bytecode::SetCreate should have generic type as first parameter");
             let argv = runtime.load_args(argc as usize);
             let value = Set::new(set_type, argv, runtime)?;
             runtime.push(value.into())
@@ -520,10 +521,10 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             runtime.push(Slice::from_vars(start, stop, step).into());
         }
         Bytecode::ListDyn => {
-            let list_type = match runtime.pop() {
-                Variable::Normal(InnerVar::Type(t)) => t,
-                _ => panic!("Bytecode::ListDyn should have generic type as first parameter"),
-            };
+            let list_type = runtime
+                .pop()
+                .into_type()
+                .expect("Bytecode::ListDyn should have generic type as first parameter");
             let argc = IntVar::from(runtime.pop())
                 .try_into()
                 .expect("Too many list values");
@@ -531,10 +532,10 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             runtime.push(value.into())
         }
         Bytecode::SetDyn => {
-            let set_type = match runtime.pop() {
-                Variable::Normal(InnerVar::Type(t)) => t,
-                _ => panic!("Bytecode::SetDyn should have generic type as first parameter"),
-            };
+            let set_type = runtime
+                .pop()
+                .into_type()
+                .expect("Bytecode::SetDyn should have generic type as first parameter");
             let argc = IntVar::from(runtime.pop())
                 .try_into()
                 .expect("Too many set values");

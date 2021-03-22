@@ -216,14 +216,12 @@ impl From<Variable> for char {
 
 impl From<Variable> for Type {
     fn from(var: Variable) -> Self {
-        if let Variable::Normal(InnerVar::Type(t)) = var {
-            t
-        } else {
+        var.into_type().unwrap_or_else(|var| {
             panic!(
                 "Attempted to turn a variable not a type ({}) into a type",
                 var.get_type().str()
             )
-        }
+        })
     }
 }
 
