@@ -19,7 +19,7 @@ impl From<InnerVar> for Variable {
 
 impl From<(usize, Option<InnerVar>)> for Variable {
     fn from(x: (usize, Option<InnerVar>)) -> Self {
-        Variable::Option(x.0, x.1)
+        Variable::Option(OptionVar::new(x.0, x.1))
     }
 }
 
@@ -28,8 +28,14 @@ impl From<OptionVar> for Option<Variable> {
         if x.depth == 1 {
             x.value.map(Variable::from)
         } else {
-            Option::Some(Variable::Option(x.depth - 1, x.value))
+            Option::Some(Variable::Option(OptionVar::new(x.depth - 1, x.value)))
         }
+    }
+}
+
+impl From<OptionVar> for Variable {
+    fn from(x: OptionVar) -> Self {
+        Variable::Option(x)
     }
 }
 
@@ -83,11 +89,11 @@ impl From<LangTuple> for Variable {
 
 impl From<Option<Variable>> for Variable {
     fn from(x: Option<Variable>) -> Self {
-        match x {
-            Option::None => Variable::Option(1, Option::None),
-            Option::Some(Variable::Normal(x)) => Variable::Option(1, Option::Some(x)),
-            Option::Some(Variable::Option(i, val)) => Variable::Option(i + 1, val),
-        }
+        Variable::Option(match x {
+            Option::None => (OptionVar::new(1, Option::None)),
+            Option::Some(Variable::Normal(x)) => (OptionVar::new(1, Option::Some(x))),
+            Option::Some(Variable::Option(var)) => OptionVar::new(var.depth + 1, var.value),
+        })
     }
 }
 

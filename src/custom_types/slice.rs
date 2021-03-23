@@ -150,13 +150,13 @@ fn int_to_var(value: Option<IntVar>) -> Variable {
 }
 
 fn var_to_int(value: Variable) -> Option<IntVar> {
-    if let Variable::Option(i, val) = value {
-        if i == 1 {
-            val.map(InnerVar::into).map(Variable::into)
+    if let Variable::Option(var) = value {
+        if var.depth == 1 {
+            var.value.map(InnerVar::into).map(Variable::into)
         } else {
             panic!(
                 "var_to_int expected a one-deep option, not {:?}",
-                Variable::Option(i, val)
+                Variable::Option(var)
             )
         }
     } else {

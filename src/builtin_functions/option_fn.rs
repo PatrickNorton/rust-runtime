@@ -3,34 +3,33 @@ use crate::method::StdMethod;
 use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
-use crate::std_type::Type;
 use crate::string_var::StringVar;
-use crate::variable::{FnResult, InnerVar, OptionVar, Variable};
+use crate::variable::{FnResult, OptionVar, Variable};
 
-pub fn str(i: usize, val: Option<InnerVar>, runtime: &mut Runtime) -> Result<StringVar, ()> {
-    Result::Ok(if i == 1 {
-        match val {
+pub fn str(this: OptionVar, runtime: &mut Runtime) -> Result<StringVar, ()> {
+    Result::Ok(if this.depth == 1 {
+        match this.value {
             Option::Some(x) => format!("Some({})", x.str(runtime)?).into(),
             Option::None => "null".into(),
         }
     } else {
-        match val {
-            Option::Some(x) => fold_some(i, &*x.str(runtime)?),
-            Option::None => fold_some(i, "null"),
+        match this.value {
+            Option::Some(x) => fold_some(this.depth, &*x.str(runtime)?),
+            Option::None => fold_some(this.depth, "null"),
         }
     })
 }
 
-pub fn repr(i: usize, val: Option<InnerVar>, runtime: &mut Runtime) -> Result<StringVar, ()> {
-    Result::Ok(if i == 1 {
-        match val {
+pub fn repr(this: OptionVar, runtime: &mut Runtime) -> Result<StringVar, ()> {
+    Result::Ok(if this.depth == 1 {
+        match this.value {
             Option::Some(x) => format!("Some({})", x.repr(runtime)?).into(),
             Option::None => "null".into(),
         }
     } else {
-        match val {
-            Option::Some(x) => fold_some(i, &*x.repr(runtime)?),
-            Option::None => fold_some(i, "null"),
+        match this.value {
+            Option::Some(x) => fold_some(this.depth, &*x.repr(runtime)?),
+            Option::None => fold_some(this.depth, "null"),
         }
     })
 }
@@ -41,13 +40,7 @@ fn fold_some(i: usize, x: &str) -> StringVar {
     (prefix + x + &*suffix).into()
 }
 
-pub fn type_of(i: usize, val: Option<&InnerVar>) -> Type {
-    val.map(InnerVar::get_type)
-        .unwrap_or(Type::Object)
-        .make_option_n(i)
-}
-
-pub fn get_attr(this: (usize, Option<InnerVar>), attr: &str) -> Variable {
+pub fn get_attr(this: OptionVar, attr: &str) -> Variable {
     let func = match attr {
         "map" => map_fn,
         "flatMap" => flat_map,
@@ -56,7 +49,7 @@ pub fn get_attr(this: (usize, Option<InnerVar>), attr: &str) -> Variable {
     StdMethod::new_native(this, func).into()
 }
 
-pub fn get_op(this: (usize, Option<InnerVar>), op: Operator) -> Variable {
+pub fn get_op(this: OptionVar, op: Operator) -> Variable {
     let func = match op {
         Operator::Str => to_str,
         Operator::Repr => to_repr,
@@ -65,26 +58,25 @@ pub fn get_op(this: (usize, Option<InnerVar>), op: Operator) -> Variable {
     StdMethod::new_native(this, func).into()
 }
 
-pub fn index(i: usize, val: Option<InnerVar>, name: Name) -> Variable {
+pub fn index(this: OptionVar, name: Name) -> Variable {
     match name {
-        Name::Attribute(a) => get_attr((i, val), a),
-        Name::Operator(o) => get_op((i, val), o),
+        Name::Attribute(a) => get_attr(this, a),
+        Name::Operator(o) => get_op(this, o),
     }
 }
 
 pub fn call_op(
-    i: usize,
-    val: Option<InnerVar>,
+    this: OptionVar,
     op: Operator,
     args: Vec<Variable>,
     runtime: &mut Runtime,
 ) -> FnResult {
-    get_op((i, val), op).call((args, runtime))
+    get_op(this, op).call((args, runtime))
 }
 
-fn map_fn(this: (usize, Option<InnerVar>), args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn map_fn(this: OptionVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    let result = match OptionVar::new(this.0, this.1).into() {
+    let result = match this.into() {
         Option::Some(val) => {
             first(args).call((vec![val], runtime))?;
             Option::Some(runtime.pop_return())
@@ -94,13 +86,9 @@ fn map_fn(this: (usize, Option<InnerVar>), args: Vec<Variable>, runtime: &mut Ru
     runtime.return_1(result.into())
 }
 
-fn flat_map(
-    this: (usize, Option<InnerVar>),
-    args: Vec<Variable>,
-    runtime: &mut Runtime,
-) -> FnResult {
+fn flat_map(this: OptionVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    match OptionVar::new(this.0, this.1).into() {
+    match this.into() {
         Option::Some(val) => {
             first(args).call((vec![val], runtime))?;
             let val = runtime.pop_return();
@@ -110,18 +98,14 @@ fn flat_map(
     }
 }
 
-fn to_str(this: (usize, Option<InnerVar>), args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+fn to_str(this: OptionVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    let val = str(this.0, this.1, runtime)?;
+    let val = str(this, runtime)?;
     runtime.return_1(val.into())
 }
 
-fn to_repr(
-    this: (usize, Option<InnerVar>),
-    args: Vec<Variable>,
-    runtime: &mut Runtime,
-) -> FnResult {
+fn to_repr(this: OptionVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    let val = repr(this.0, this.1, runtime)?;
+    let val = repr(this, runtime)?;
     runtime.return_1(val.into())
 }

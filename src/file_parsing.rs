@@ -10,7 +10,7 @@ use crate::int_tools::bytes_index;
 use crate::jump_table::JumpTable;
 use crate::std_type::Type;
 use crate::tuple::LangTuple;
-use crate::variable::{InnerVar, Variable};
+use crate::variable::Variable;
 use std::collections::HashMap;
 use std::fs::read;
 use std::path::Path;

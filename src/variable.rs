@@ -36,7 +36,7 @@ pub type FnResult = Result<(), ()>;
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum Variable {
     Normal(InnerVar),
-    Option(usize, Option<InnerVar>),
+    Option(OptionVar),
 }
 
 #[derive(Debug, Clone)]
@@ -56,7 +56,7 @@ pub enum InnerVar {
     Union(LangUnion),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct OptionVar {
     pub depth: usize,
     pub value: Option<InnerVar>,
@@ -70,75 +70,69 @@ impl Variable {
     pub fn str(self, runtime: &mut Runtime) -> Result<StringVar, ()> {
         match self {
             Variable::Normal(var) => var.str(runtime),
-            Variable::Option(i, val) => option_fn::str(i, val, runtime),
+            Variable::Option(var) => option_fn::str(var, runtime),
         }
     }
 
     pub fn repr(self, runtime: &mut Runtime) -> Result<StringVar, ()> {
         match self {
             Variable::Normal(var) => var.repr(runtime),
-            Variable::Option(i, val) => option_fn::repr(i, val, runtime),
+            Variable::Option(var) => option_fn::repr(var, runtime),
         }
     }
 
     pub fn int(self, runtime: &mut Runtime) -> Result<IntVar, ()> {
         match self {
             Variable::Normal(var) => var.int(runtime),
-            Variable::Option(_, _) => unimplemented!(),
+            Variable::Option(_) => unimplemented!(),
         }
     }
 
     pub fn into_bool(self, runtime: &mut Runtime) -> Result<bool, ()> {
         match self {
             Variable::Normal(var) => var.into_bool(runtime),
-            Variable::Option(i, val) => Result::Ok(i > 1 || val.is_some()),
+            Variable::Option(var) => Result::Ok(var.is_some()),
         }
     }
 
     pub fn call(self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
         match self {
             Variable::Normal(var) => var.call(args),
-            Variable::Option(i, val) => unimplemented!(
-                "{}()\n{}",
-                option_fn::type_of(i, val.as_ref()).str(),
-                args.1.frame_strings()
-            ),
+            Variable::Option(var) => {
+                unimplemented!("{}()\n{}", var.get_type().str(), args.1.frame_strings())
+            }
         }
     }
 
     pub fn call_or_goto(self, args: (Vec<Variable>, &mut Runtime)) -> FnResult {
         match self {
             Variable::Normal(var) => var.call_or_goto(args),
-            Variable::Option(i, val) => unimplemented!(
-                "{}()\n{}",
-                option_fn::type_of(i, val.as_ref()).str(),
-                args.1.frame_strings()
-            ),
+            Variable::Option(var) => {
+                unimplemented!("{}()\n{}", var.get_type().str(), args.1.frame_strings())
+            }
         }
     }
 
     pub fn iter(self, runtime: &mut Runtime) -> Result<looping::Iterator, ()> {
         match self {
             Variable::Normal(var) => var.iter(runtime),
-            Variable::Option(i, val) => unimplemented!(
-                "{}()\n{}",
-                option_fn::type_of(i, val.as_ref()).str(),
-                runtime.frame_strings()
-            ),
+            Variable::Option(var) => {
+                unimplemented!("{}()\n{}", var.get_type().str(), runtime.frame_strings())
+            }
         }
     }
 
     pub fn index(self, index: Name, runtime: &mut Runtime) -> Result<Variable, ()> {
         match self {
             Variable::Normal(var) => var.index(index, runtime),
-            Variable::Option(i, val) => Result::Ok(option_fn::index(i, val, index)),
+            Variable::Option(var) => Result::Ok(option_fn::index(var, index)),
         }
     }
 
     pub fn set(self, index: &str, value: Variable, runtime: &mut Runtime) -> FnResult {
         match self {
             Variable::Normal(var) => var.set(index, value, runtime)?,
-            Variable::Option(_, _) => unimplemented!(),
+            Variable::Option(_) => unimplemented!(),
         }
         runtime.return_0()
     }
@@ -146,14 +140,14 @@ impl Variable {
     pub fn get_type(&self) -> Type {
         match self {
             Variable::Normal(val) => val.get_type(),
-            Variable::Option(i, val) => option_fn::type_of(*i, val.as_ref()),
+            Variable::Option(var) => var.get_type(),
         }
     }
 
     pub fn identical(&self, other: &Variable) -> bool {
         match (self, other) {
             (Variable::Normal(a), Variable::Normal(b)) => a.identical(b),
-            (Variable::Option(a1, a2), Variable::Option(b1, b2)) => a1 == b1 && a2 == b2,
+            (Variable::Option(a), Variable::Option(b)) => a == b,
             _ => false,
         }
     }
@@ -173,14 +167,14 @@ impl Variable {
     pub fn hash(self, runtime: &mut Runtime) -> Result<usize, ()> {
         match self {
             Variable::Normal(var) => var.hash(runtime),
-            Variable::Option(_, val) => val.map_or_else(|| Result::Ok(0), |x| x.hash(runtime)),
+            Variable::Option(var) => var.value.map_or_else(|| Result::Ok(0), |x| x.hash(runtime)),
         }
     }
 
     pub fn call_op(self, name: Operator, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         match self {
             Variable::Normal(var) => var.call_op(name, args, runtime),
-            Variable::Option(i, var) => option_fn::call_op(i, var, name, args, runtime),
+            Variable::Option(var) => option_fn::call_op(var, name, args, runtime),
         }
     }
 
@@ -192,21 +186,21 @@ impl Variable {
     ) -> FnResult {
         match self {
             Variable::Normal(var) => var.call_op_or_goto(name, args, runtime),
-            Variable::Option(i, var) => option_fn::call_op(i, var, name, args, runtime),
+            Variable::Option(var) => option_fn::call_op(var, name, args, runtime),
         }
     }
 
     pub fn is_null(&self) -> bool {
         match self {
             Variable::Normal(var) => var.is_null(),
-            Variable::Option(i, var) => *i == 1 && var.is_none(),
+            Variable::Option(var) => var.is_none(),
         }
     }
 
     pub fn id(&self) -> usize {
         match self {
             Variable::Normal(var) => var.id(),
-            Variable::Option(_, val) => val.as_ref().map_or(0, |x| x.id()),
+            Variable::Option(var) => var.id(),
         }
     }
 
@@ -586,8 +580,24 @@ impl OptionVar {
         }
     }
 
-    pub fn is_some(count: &usize, inner: &Option<InnerVar>) -> bool {
-        count > &1 || inner.is_some()
+    pub fn is_some(&self) -> bool {
+        self.depth > 1 || self.value.is_some()
+    }
+
+    pub fn is_none(&self) -> bool {
+        self.depth == 1 && self.value.is_none()
+    }
+
+    pub fn id(&self) -> usize {
+        self.value.as_ref().map_or(0, |x| x.id())
+    }
+
+    pub fn get_type(&self) -> Type {
+        self.value
+            .as_ref()
+            .map(InnerVar::get_type)
+            .unwrap_or(Type::Object)
+            .make_option_n(self.depth)
     }
 }
 

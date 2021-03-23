@@ -75,7 +75,7 @@ impl Iterator {
             .call((Vec::new(), runtime));
         match result {
             FnResult::Ok(_) => match runtime.pop_return() {
-                Variable::Option(i, o) => IterResult::Ok(OptionVar::new(i, o).into()),
+                Variable::Option(var) => IterResult::Ok(var.into()),
                 _ => panic!("Expected iterator to return an option"),
             },
             FnResult::Err(_) => IterResult::Err(()),

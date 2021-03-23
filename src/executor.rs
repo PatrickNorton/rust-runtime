@@ -20,11 +20,10 @@ use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::sys::{self, get_syscall, sys_name};
 use crate::tuple::LangTuple;
-use crate::variable::{FnResult, InnerVar, OptionVar, Variable};
+use crate::variable::{FnResult, InnerVar, Variable};
 use num::traits::FromPrimitive;
 use num::Signed;
 use std::convert::TryInto;
-use std::mem::take;
 use std::ops::SubAssign;
 
 pub fn execute(runtime: &mut Runtime) -> FnResult {
@@ -373,7 +372,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             assert_ne!(bytes_1, 0);
             if bytes_1 == 1 {
                 match runtime.pop_return() {
-                    Variable::Option(i, o) => match OptionVar::new(i, o).into() {
+                    Variable::Option(var) => match var.into() {
                         Option::Some(val) => {
                             runtime.push(iterated);
                             runtime.push(val);
@@ -387,15 +386,13 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             } else {
                 let ret = runtime.pop_generator_returns(bytes_1 as usize);
                 match &ret[0] {
-                    Variable::Option(i, o) => {
-                        if OptionVar::is_some(i, o) {
+                    Variable::Option(var) => {
+                        if var.is_some() {
                             runtime.push(iterated);
                             let values = ret
                                 .into_iter()
                                 .map(|x| match x {
-                                    Variable::Option(i, o) => {
-                                        Option::from(OptionVar::new(i, o)).unwrap()
-                                    }
+                                    Variable::Option(var) => Option::from(var).unwrap(),
                                     _ => panic!(
                                         "Iterators should return an option-wrapped value\n{}",
                                         runtime.frame_strings()
@@ -491,7 +488,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             for iterator in &iterators {
                 runtime.call_attr(iterator.clone(), "next", vec![])?;
                 match runtime.pop_return() {
-                    Variable::Option(i, o) => match OptionVar::new(i, o).into() {
+                    Variable::Option(var) => match var.into() {
                         Option::Some(val) => results.push(val),
                         Option::None => {
                             loop_done = true;
@@ -615,10 +612,8 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         }
         Bytecode::UnwrapOption => {
             let tos = runtime.pop();
-            if let Variable::Option(i, o) = tos {
-                runtime.push(
-                    Option::<Variable>::from(OptionVar::new(i, o)).unwrap_or_else(Variable::null),
-                )
+            if let Variable::Option(var) = tos {
+                runtime.push(Option::<Variable>::from(var).unwrap_or_else(Variable::null))
             } else {
                 panic!(
                     "Called Bytecode::UnwrapOption where TOS not an option\n{}",
