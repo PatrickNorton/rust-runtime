@@ -373,7 +373,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             assert_ne!(bytes_1, 0);
             if bytes_1 == 1 {
                 match runtime.pop_return() {
-                    Variable::Option(i, o) => match OptionVar(i, o).into() {
+                    Variable::Option(i, o) => match OptionVar::new(i, o).into() {
                         Option::Some(val) => {
                             runtime.push(iterated);
                             runtime.push(val);
@@ -394,7 +394,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
                                 .into_iter()
                                 .map(|x| match x {
                                     Variable::Option(i, o) => {
-                                        Option::from(OptionVar(i, o)).unwrap()
+                                        Option::from(OptionVar::new(i, o)).unwrap()
                                     }
                                     _ => panic!(
                                         "Iterators should return an option-wrapped value\n{}",
@@ -491,7 +491,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             for iterator in &iterators {
                 runtime.call_attr(iterator.clone(), "next", vec![])?;
                 match runtime.pop_return() {
-                    Variable::Option(i, o) => match OptionVar(i, o).into() {
+                    Variable::Option(i, o) => match OptionVar::new(i, o).into() {
                         Option::Some(val) => results.push(val),
                         Option::None => {
                             loop_done = true;
@@ -616,8 +616,9 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         Bytecode::UnwrapOption => {
             let tos = runtime.pop();
             if let Variable::Option(i, o) = tos {
-                runtime
-                    .push(Option::<Variable>::from(OptionVar(i, o)).unwrap_or_else(Variable::null))
+                runtime.push(
+                    Option::<Variable>::from(OptionVar::new(i, o)).unwrap_or_else(Variable::null),
+                )
             } else {
                 panic!(
                     "Called Bytecode::UnwrapOption where TOS not an option\n{}",

@@ -56,7 +56,11 @@ pub enum InnerVar {
     Union(LangUnion),
 }
 
-pub struct OptionVar(pub usize, pub Option<InnerVar>);
+#[derive(Debug)]
+pub struct OptionVar {
+    pub depth: usize,
+    pub value: Option<InnerVar>,
+}
 
 impl Variable {
     pub fn null() -> Variable {
@@ -575,6 +579,13 @@ impl InnerVar {
 }
 
 impl OptionVar {
+    pub fn new(i: usize, var: Option<InnerVar>) -> OptionVar {
+        OptionVar {
+            depth: i,
+            value: var,
+        }
+    }
+
     pub fn is_some(count: &usize, inner: &Option<InnerVar>) -> bool {
         count > &1 || inner.is_some()
     }

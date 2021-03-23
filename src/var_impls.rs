@@ -25,10 +25,10 @@ impl From<(usize, Option<InnerVar>)> for Variable {
 
 impl From<OptionVar> for Option<Variable> {
     fn from(x: OptionVar) -> Self {
-        if x.0 == 1 {
-            x.1.map(Variable::from)
+        if x.depth == 1 {
+            x.value.map(Variable::from)
         } else {
-            Option::Some(Variable::Option(x.0 - 1, x.1))
+            Option::Some(Variable::Option(x.depth - 1, x.value))
         }
     }
 }

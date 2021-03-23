@@ -94,7 +94,7 @@ impl NativeIterator for Generator {
         runtime.add_generator(self)?;
         match executor::execute(runtime) {
             FnResult::Ok(_) => match runtime.pop_return() {
-                Variable::Option(i, val) => IterResult::Ok(OptionVar(i, val).into()),
+                Variable::Option(i, val) => IterResult::Ok(OptionVar::new(i, val).into()),
                 _ => panic!("Expected option to be returned from generator"),
             },
             FnResult::Err(_) => IterResult::Err(()),

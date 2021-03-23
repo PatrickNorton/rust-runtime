@@ -84,7 +84,7 @@ pub fn call_op(
 
 fn map_fn(this: (usize, Option<InnerVar>), args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    let result = match OptionVar(this.0, this.1).into() {
+    let result = match OptionVar::new(this.0, this.1).into() {
         Option::Some(val) => {
             first(args).call((vec![val], runtime))?;
             Option::Some(runtime.pop_return())
@@ -100,7 +100,7 @@ fn flat_map(
     runtime: &mut Runtime,
 ) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    match OptionVar(this.0, this.1).into() {
+    match OptionVar::new(this.0, this.1).into() {
         Option::Some(val) => {
             first(args).call((vec![val], runtime))?;
             let val = runtime.pop_return();
