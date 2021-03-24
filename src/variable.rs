@@ -580,6 +580,14 @@ impl OptionVar {
         }
     }
 
+    pub fn some(var: InnerVar) -> OptionVar {
+        OptionVar::new(1, Option::Some(var))
+    }
+
+    pub fn null() -> OptionVar {
+        OptionVar::new(1, Option::None)
+    }
+
     pub fn is_some(&self) -> bool {
         self.depth > 1 || self.value.is_some()
     }
