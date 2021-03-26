@@ -12,13 +12,11 @@ use crate::string_var::{MaybeString, StringVar};
 use crate::variable::{FnResult, Variable};
 use crate::{first, first_two};
 use ascii::{AsciiChar, AsciiStr};
-use downcast_rs::__std::cmp::min;
-use downcast_rs::__std::iter::FusedIterator;
 use once_cell::sync::Lazy;
 use std::cell::{Cell, Ref, RefCell};
-use std::cmp::max;
+use std::cmp::{max, min};
 use std::fmt::Debug;
-use std::iter::Iterator;
+use std::iter::{FusedIterator, Iterator};
 use std::mem::{replace, take};
 use std::rc::Rc;
 
