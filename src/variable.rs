@@ -553,9 +553,9 @@ impl InnerVar {
     pub fn id(&self) -> usize {
         match self {
             InnerVar::Null() => 0,
-            InnerVar::Bool(_) => todo!("Unique ids for bool"),
+            InnerVar::Bool(b) => b.then(|| 3).unwrap_or(1),
             InnerVar::Bigint(b) => match b {
-                IntVar::Small(_) => todo!("Unique ids for small int"),
+                IntVar::Small(s) => (2 * *s + 1).abs() as usize, // Fix with #[feature(unsigned_abs)]
                 IntVar::Big(b) => &**b as *const _ as usize,
             },
             InnerVar::String(s) => s.as_str() as *const str as *const () as usize,
