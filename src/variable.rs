@@ -555,7 +555,7 @@ impl InnerVar {
             InnerVar::Null() => 0,
             InnerVar::Bool(b) => b.then(|| 3).unwrap_or(1),
             InnerVar::Bigint(b) => match b {
-                IntVar::Small(s) => (2 * *s + 1).abs() as usize, // Fix with #[feature(unsigned_abs)]
+                IntVar::Small(s) => (2 * *s + 1).unsigned_abs(),
                 IntVar::Big(b) => &**b as *const _ as usize,
             },
             InnerVar::String(s) => s.as_str() as *const str as *const () as usize,

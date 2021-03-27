@@ -211,7 +211,7 @@ fn index_ascii(a: &AsciiStr, big_index: IntVar, runtime: &mut Runtime) -> FnResu
 // Prevents unnecessary clone of `i`
 fn to_abs_usize(i: &IntVar) -> Option<usize> {
     match i {
-        IntVar::Small(s) => Option::Some(s.abs() as usize), // unsigned_abs() is gated behind #74913
+        IntVar::Small(s) => Option::Some(s.unsigned_abs()),
         IntVar::Big(b) => b.magnitude().to_usize(),
     }
 }
