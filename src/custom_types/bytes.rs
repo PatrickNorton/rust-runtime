@@ -13,6 +13,7 @@ use crate::variable::{FnResult, Variable};
 use crate::{first, first_two};
 use ascii::{AsciiChar, AsciiString, IntoAsciiString};
 use num::{BigInt, ToPrimitive};
+use std::array::IntoIter;
 use std::cell::{Cell, Ref, RefCell};
 use std::char;
 use std::rc::Rc;
@@ -311,23 +312,22 @@ impl LangBytes {
             .extend_from_slice(value.encode_utf8(&mut [0; 4]).as_bytes())
     }
 
-    // These two can probably be improved with #![feature(array_value_iter)]
-    // val.extend(value.encode_utf16(&mut [0; 2]).flat_map(u16::to_le_bytes))
-
     fn add_utf16(&self, value: char) {
-        let mut val = self.value.borrow_mut();
-        value
-            .encode_utf16(&mut [0; 2])
-            .iter()
-            .for_each(|x| val.extend_from_slice(&x.to_le_bytes()));
+        self.value.borrow_mut().extend(
+            value
+                .encode_utf16(&mut [0; 2])
+                .iter()
+                .flat_map(|x| IntoIter::new(x.to_le_bytes())),
+        );
     }
 
     fn add_utf16be(&self, value: char) {
-        let mut val = self.value.borrow_mut();
-        value
-            .encode_utf16(&mut [0; 2])
-            .iter()
-            .for_each(|x| val.extend_from_slice(&x.to_be_bytes()));
+        self.value.borrow_mut().extend(
+            value
+                .encode_utf16(&mut [0; 2])
+                .iter()
+                .flat_map(|x| IntoIter::new(x.to_be_bytes())),
+        );
     }
 
     fn add_utf32(&self, value: char) {

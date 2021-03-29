@@ -14,6 +14,7 @@ use crate::variable::{FnResult, Variable};
 use crate::{first, first_two, looping};
 use ascii::{AsAsciiStr, AsciiStr, AsciiString};
 use num::{BigInt, Num, One, Signed, ToPrimitive};
+use std::array::IntoIter;
 use std::cell::Cell;
 use std::fmt::Debug;
 use std::rc::Rc;
@@ -520,7 +521,6 @@ fn last_index_of(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) ->
 
 fn encode(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    // #![feature(array_value_iter)] will make this so much easier...
     let byte_val = match first(args).str(runtime)?.to_lowercase().as_str() {
         "ascii" => match this.as_ascii_str() {
             Result::Ok(s) => s.as_bytes().to_vec(),
@@ -537,19 +537,19 @@ fn encode(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
         "utf-8" => this.as_bytes().to_vec(),
         "utf-16" => this
             .encode_utf16()
-            .flat_map(|x| x.to_le_bytes().to_vec())
+            .flat_map(|x| IntoIter::new(x.to_le_bytes()))
             .collect(),
         "utf-16be" => this
             .encode_utf16()
-            .flat_map(|x| x.to_be_bytes().to_vec())
+            .flat_map(|x| IntoIter::new(x.to_be_bytes()))
             .collect(),
         "utf-32" => this
             .chars()
-            .flat_map(|x| (x as u32).to_le_bytes().to_vec())
+            .flat_map(|x| IntoIter::new((x as u32).to_le_bytes()))
             .collect(),
         "utf-32be" => this
             .chars()
-            .flat_map(|x| (x as u32).to_be_bytes().to_vec())
+            .flat_map(|x| IntoIter::new((x as u32).to_be_bytes()))
             .collect(),
         x => {
             return runtime.throw_quick(
