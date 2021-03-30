@@ -3,15 +3,14 @@ use crate::custom_types::exceptions::io_error;
 use crate::custom_var::downcast_var;
 use crate::function::{Function, NativeFunction};
 use crate::runtime::Runtime;
+use crate::string_var::StringVar;
+use crate::sys::os::os_name;
 use crate::variable::{FnResult, Variable};
+use files::{chdir, getcwd, list_dir, mkdir};
+use metadata::metadata;
 use std::ffi::OsStr;
 use std::io;
 use std::path::MAIN_SEPARATOR;
-
-use crate::string_var::StringVar;
-use crate::sys::os::os_name;
-use files::{chdir, getcwd, list_dir, mkdir};
-use metadata::metadata;
 
 mod files;
 mod metadata;
