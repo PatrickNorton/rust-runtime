@@ -41,8 +41,8 @@ impl IterAttrs for Enumerate {
     fn next_fn(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.is_empty());
         match self.inner_next(runtime)? {
-            Option::Some(value) => {
-                runtime.return_n([Option::Some(value.0).into(), Option::Some(value.1).into()])
+            Option::Some((index, value)) => {
+                runtime.return_n([Option::Some(index).into(), Option::Some(value).into()])
             }
             Option::None => runtime.return_1(Option::None.into()),
         }
