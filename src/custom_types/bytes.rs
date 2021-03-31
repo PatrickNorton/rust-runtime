@@ -10,7 +10,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
-use crate::{first, first_two};
+use crate::{first, first_n};
 use ascii::{AsciiChar, AsciiString, IntoAsciiString};
 use num::{BigInt, ToPrimitive};
 use std::array::IntoIter;
@@ -87,7 +87,7 @@ impl LangBytes {
     fn set_index(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
         let len = self.value.borrow().len();
-        let (signed_index, value) = first_two(args);
+        let [signed_index, value] = first_n(args);
         match normalize(len, signed_index.into()) {
             Result::Ok(index) => {
                 let value = IntVar::from(value);
@@ -260,7 +260,7 @@ impl LangBytes {
 
     fn add_char(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
-        let (char_val, encoding) = first_two(args);
+        let [char_val, encoding] = first_n(args);
         let char_val = char_val.into();
         match encoding.str(runtime)?.to_lowercase().as_str() {
             "ascii" => self.add_ascii(char_val, runtime)?,

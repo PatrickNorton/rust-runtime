@@ -11,7 +11,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::{MaybeString, StringVar};
 use crate::variable::{FnResult, Variable};
-use crate::{first, first_two};
+use crate::{first, first_n};
 use ascii::AsciiChar;
 use num::{One, Signed, ToPrimitive, Zero};
 use std::cell::{Cell, Ref, RefCell};
@@ -114,7 +114,7 @@ impl List {
 
     fn set_index(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
-        let (signed_index, value) = first_two(args);
+        let [signed_index, value] = first_n(args);
         let len = self.value.borrow().len(); // Keep out of match to prevent double-borrow error
         match normalize(len, signed_index.into()) {
             Result::Ok(index) => {
@@ -138,7 +138,7 @@ impl List {
             })
         } else {
             debug_assert_eq!(args.len(), 2);
-            let (signed_index, default) = first_two(args);
+            let [signed_index, default] = first_n(args);
             runtime.return_1(match normalize(val.len(), signed_index.into()) {
                 Result::Ok(index) => val[index].clone(),
                 Result::Err(_) => default,
@@ -214,7 +214,7 @@ impl List {
         debug_assert_eq!(args.len(), 2);
         let mut value = self.value.borrow_mut();
         let len = value.len();
-        let (index_1, index_2) = first_two(args);
+        let [index_1, index_2] = first_n(args);
         match normalize(len, index_1.into()) {
             Result::Ok(i1) => match normalize(len, index_2.into()) {
                 Result::Ok(i2) => {
@@ -394,7 +394,7 @@ impl List {
 
     fn set_slice(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
-        let (range, values) = first_two(args);
+        let [range, values] = first_n(args);
         let range = self.slice_to_range(runtime, range)?;
         if !range.get_step().is_one() {
             return runtime.throw_quick(
@@ -492,7 +492,7 @@ impl List {
 
     pub fn insert(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
-        let (index, param) = first_two(args);
+        let [index, param] = first_n(args);
         let index = index.int(runtime)?;
         let mut value = self.value.borrow_mut();
         if index == value.len().into() {
@@ -532,7 +532,7 @@ impl List {
             0 => vec![],
             1 => looping::collect(first(args), runtime)?,
             2 => {
-                let (value, cap) = first_two(args);
+                let [value, cap] = first_n(args);
                 let cap = IntVar::from(cap);
                 let cap = match cap.to_usize() {
                     Option::Some(x) => x,

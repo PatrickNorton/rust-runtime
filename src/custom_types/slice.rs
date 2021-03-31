@@ -9,7 +9,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, InnerVar, Variable};
-use crate::{first, first_three};
+use crate::{first, first_n};
 use num::{One, Signed, Zero};
 use std::borrow::Cow;
 use std::rc::Rc;
@@ -96,7 +96,7 @@ impl Slice {
 
     fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 3);
-        let (start, stop, step) = first_three(args);
+        let [start, stop, step] = first_n(args);
         let val = Slice::new(var_to_int(start), var_to_int(stop), var_to_int(step));
         if val.step.as_ref().map_or_else(|| false, Zero::is_zero) {
             runtime.throw_quick(value_error(), "Step cannot be 0")

@@ -11,7 +11,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::{AsciiVar, MaybeAscii, StrVar, StringVar};
 use crate::variable::{FnResult, Variable};
-use crate::{first, first_two, looping};
+use crate::{first, first_n, looping};
 use ascii::{AsAsciiStr, AsciiStr, AsciiString};
 use num::{BigInt, Num, One, Signed, ToPrimitive};
 use std::array::IntoIter;
@@ -404,7 +404,7 @@ fn join_all(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnRe
 
 fn starts_with(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 2);
-    let (a, b) = first_two(args);
+    let [a, b] = first_n(args);
     let val = StringVar::from(a);
     let index = IntVar::from(b);
     let len = this.char_len();
@@ -446,7 +446,7 @@ fn ends_with(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnR
 
 fn split(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 2);
-    let (a, opt_count) = first_two(args);
+    let [a, opt_count] = first_n(args);
     let pat = StringVar::from(a);
     if opt_count.is_null() {
         let result = List::from_values(

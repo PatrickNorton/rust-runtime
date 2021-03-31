@@ -9,7 +9,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
-use crate::{first, first_three};
+use crate::{first, first_n};
 use num::{One, Signed, Zero};
 use std::cell::RefCell;
 use std::mem::replace;
@@ -155,7 +155,7 @@ impl Range {
 
     fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 3);
-        let (start, stop, step) = first_three(args);
+        let [start, stop, step] = first_n(args);
         let range = Range::new(start.into(), stop.into(), step.into());
         if range.step.is_zero() {
             runtime.throw_quick(value_error(), "Step cannot be 0")

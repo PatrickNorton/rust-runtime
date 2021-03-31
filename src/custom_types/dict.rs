@@ -10,7 +10,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::{MaybeString, StringVar};
 use crate::variable::{FnResult, Variable};
-use crate::{first, first_two};
+use crate::{first, first_n};
 use ascii::{AsciiChar, AsciiStr};
 use once_cell::sync::Lazy;
 use std::cell::{Cell, Ref, RefCell};
@@ -126,7 +126,7 @@ impl Dict {
 
     fn set(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
-        let (key, val) = first_two(args);
+        let [key, val] = first_n(args);
         self.value.borrow_mut().set(key, val, runtime)?;
         runtime.return_0()
     }
@@ -155,7 +155,7 @@ impl Dict {
             runtime.return_1(val)
         } else {
             debug_assert_eq!(args.len(), 2);
-            let (key, default) = first_two(args);
+            let [key, default] = first_n(args);
             let val = self.value.borrow().get(key, runtime)?.unwrap_or(default);
             runtime.return_1(val)
         }
@@ -163,7 +163,7 @@ impl Dict {
 
     fn replace(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
-        let (key, val) = first_two(args);
+        let [key, val] = first_n(args);
         let mut value = self.value.borrow_mut();
         if let Result::Ok(e) = value.entry_mut(key, runtime)?.into_value() {
             runtime.return_1(Option::Some(replace(&mut e.value, val)).into())
@@ -181,7 +181,7 @@ impl Dict {
     fn set_default(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
         let mut value = self.value.borrow_mut();
-        let (arg, default) = first_two(args);
+        let [arg, default] = first_n(args);
         value.resize(1);
         let result = match value.entry_mut(arg.clone(), runtime)?.into_value() {
             Result::Ok(e) => e.value.clone(),
@@ -224,7 +224,7 @@ impl Dict {
                     Result::Err(x) => {
                         let iter = x.iter(runtime)?;
                         let mut inner = InnerDict::new();
-                        while let Option::Some((key, val)) = iter.next(runtime)?.take_two() {
+                        while let Option::Some([key, val]) = iter.next(runtime)?.take_n() {
                             inner.set(key, val, runtime)?;
                         }
                         Dict::from_inner(inner)

@@ -8,6 +8,7 @@ use crate::executor::execute;
 use crate::file_info::FileInfo;
 use crate::file_parsing::parse_file;
 use crate::runtime::Runtime;
+use std::convert::TryInto;
 
 #[macro_use]
 mod macros;
@@ -58,10 +59,6 @@ fn main() {
     }
 }
 
-// Once #[feature(box_patterns)] is stabilized, we can remove the iterator
-// let box [a, ..] = args.into_boxed_slice();
-// How I wish there were a better way to do this
-
 fn first<T>(args: Vec<T>) -> T {
     debug_assert!(
         !args.is_empty(),
@@ -70,24 +67,7 @@ fn first<T>(args: Vec<T>) -> T {
     args.into_iter().next().unwrap()
 }
 
-fn first_two<T>(args: Vec<T>) -> (T, T) {
-    debug_assert!(
-        args.len() >= 2,
-        "Value passed to first_two must have at least 2 elements"
-    );
-    let mut iter = args.into_iter();
-    (iter.next().unwrap(), iter.next().unwrap())
-}
-
-fn first_three<T>(args: Vec<T>) -> (T, T, T) {
-    debug_assert!(
-        args.len() >= 3,
-        "Value passed to first_three must have at least 3 elements"
-    );
-    let mut iter = args.into_iter();
-    (
-        iter.next().unwrap(),
-        iter.next().unwrap(),
-        iter.next().unwrap(),
-    )
+fn first_n<T, const N: usize>(args: Vec<T>) -> [T; N] {
+    args.try_into()
+        .unwrap_or_else(|x: Vec<T>| panic!("Value had length {}, expected length {}", x.len(), N))
 }

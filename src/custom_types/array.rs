@@ -12,7 +12,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::{MaybeString, StringVar};
 use crate::variable::{FnResult, Variable};
-use crate::{first, first_two};
+use crate::{first, first_n};
 use ascii::{AsciiChar, AsciiStr};
 use num::ToPrimitive;
 use once_cell::sync::Lazy;
@@ -64,7 +64,7 @@ impl Array {
 
     fn set_index(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
-        let (index, value) = first_two(args);
+        let [index, value] = first_n(args);
         let mut vars = self.vars.borrow_mut();
         match normalize(vars.len(), IntVar::from(index)) {
             Result::Ok(val) => vars[val] = value,
@@ -180,7 +180,7 @@ impl Array {
 
     fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
-        let (len, fill) = first_two(args);
+        let [len, fill] = first_n(args);
         let len = IntVar::from(len);
         let usize_len = match len.to_usize() {
             Option::Some(val) => val,
