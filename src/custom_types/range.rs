@@ -1,7 +1,7 @@
 use crate::custom_types::exceptions::{index_error, value_error};
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_var::IntVar;
-use crate::looping::{self, IterAttrs, IterResult, NativeIterator};
+use crate::looping::{self, TypicalIterator};
 use crate::method::{NativeMethod, StdMethod};
 use crate::name::Name;
 use crate::operator::Operator;
@@ -254,20 +254,13 @@ impl RangeIter {
     }
 }
 
-impl IterAttrs for RangeIter {
-    fn next_fn(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        debug_assert!(args.is_empty());
-        runtime.return_1(self.true_next().map(Variable::from).into())
+impl TypicalIterator for RangeIter {
+    fn inner_next(&self) -> Option<Variable> {
+        self.true_next().map(Into::into)
     }
 
     fn get_type() -> Type {
         Self::range_iter_type()
-    }
-}
-
-impl NativeIterator for RangeIter {
-    fn next(self: Rc<Self>, _runtime: &mut Runtime) -> IterResult {
-        IterResult::Ok(self.true_next().map(Variable::from).into())
     }
 }
 
