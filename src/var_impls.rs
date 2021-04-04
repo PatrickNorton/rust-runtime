@@ -10,7 +10,7 @@ use crate::string_var::StringVar;
 use crate::tuple::LangTuple;
 use crate::variable::{InnerVar, OptionVar, Variable};
 use ascii::AsciiChar;
-use num::FromPrimitive;
+use num::{FromPrimitive, ToPrimitive};
 
 impl From<InnerVar> for Variable {
     fn from(x: InnerVar) -> Self {
@@ -256,6 +256,17 @@ macro_rules! from_prim {
     };
 }
 
+macro_rules! to_prim {
+    ($fn_name:ident, $typ:ty) => {
+        fn $fn_name(&self) -> Option<$typ> {
+            match self {
+                Variable::Normal(InnerVar::Bigint(x)) => x.$fn_name(),
+                _ => Option::None,
+            }
+        }
+    };
+}
+
 impl FromPrimitive for Variable {
     from_prim!(from_i64, i64);
     from_prim!(from_u64, u64);
@@ -263,6 +274,15 @@ impl FromPrimitive for Variable {
     from_prim!(from_i128, i128);
     from_prim!(from_usize, usize);
     from_prim!(from_isize, isize);
+}
+
+impl ToPrimitive for Variable {
+    to_prim!(to_i64, i64);
+    to_prim!(to_u64, u64);
+    to_prim!(to_u128, u128);
+    to_prim!(to_i128, i128);
+    to_prim!(to_usize, usize);
+    to_prim!(to_isize, isize);
 }
 
 macro_rules! impl_from {
