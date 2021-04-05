@@ -517,7 +517,7 @@ impl CustomVar for LangBytes {
 
     fn get_attribute(self: Rc<Self>, attr: &str) -> Variable {
         let func = match attr {
-            "length" => return IntVar::from(self.value.borrow().len()).into(),
+            "length" => return self.value.borrow().len().into(),
             _ => Self::attr_fn(attr),
         };
         StdMethod::new_native(self, func).into()

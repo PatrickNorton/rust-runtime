@@ -22,7 +22,7 @@ pub fn get_operator(this: LangTuple, o: Operator) -> Variable {
 
 pub fn get_attr(this: LangTuple, s: &str) -> Variable {
     if s == "length" {
-        return IntVar::from(this.len()).into();
+        return this.len().into();
     }
     match s.parse() {
         Result::Ok(x) => this[x].clone(),

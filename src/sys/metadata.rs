@@ -44,7 +44,7 @@ impl CustomVar for LangMetadata {
         match name {
             "isDir" => self.value.is_dir().into(),
             "isFile" => self.value.is_file().into(),
-            "length" => IntVar::from(self.value.len()).into(),
+            "length" => self.value.len().into(),
             x => unimplemented!("Metadata.{}", x),
         }
     }

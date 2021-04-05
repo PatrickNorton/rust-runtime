@@ -590,7 +590,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         }
         Bytecode::VariantNo => {
             if let Variable::Normal(InnerVar::Union(value)) = runtime.pop() {
-                runtime.push(IntVar::from(value.variant_no()).into())
+                runtime.push(value.variant_no().into())
             } else {
                 panic!("Called Bytecode::VariantNo where TOS not a union")
             }
@@ -664,7 +664,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
                 runtime.push(val);
                 i += 1;
             }
-            runtime.push(IntVar::from(i).into())
+            runtime.push(i.into())
         }
         Bytecode::PackIterable => {
             unimplemented!()

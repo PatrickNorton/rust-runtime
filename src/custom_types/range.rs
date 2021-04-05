@@ -48,7 +48,7 @@ impl Range {
     }
 
     pub fn from_slice(len: usize, runtime: &mut Runtime, arg: Variable) -> Result<Rc<Range>, ()> {
-        runtime.call_attr(arg, "toRange", vec![IntVar::from(len).into()])?;
+        runtime.call_attr(arg, "toRange", vec![len.into()])?;
         Result::Ok(downcast_var(runtime.pop_return()).expect("Expected a range"))
     }
 

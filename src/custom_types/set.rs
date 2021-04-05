@@ -301,7 +301,7 @@ impl CustomVar for Set {
 
     fn get_attribute(self: Rc<Self>, name: &str) -> Variable {
         match name {
-            "length" => IntVar::from(self.len()).into(),
+            "length" => self.len().into(),
             _ => StdMethod::new_native(self, Self::attr_fn(name)).into(),
         }
     }

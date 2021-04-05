@@ -280,7 +280,7 @@ impl List {
         let searcher = first(args);
         for (i, var) in self.value.borrow().iter().enumerate() {
             if searcher.clone().equals(var.clone(), runtime)? {
-                return runtime.return_1(Option::Some(IntVar::from(i).into()).into());
+                return runtime.return_1(Option::Some(i.into()).into());
             }
         }
         runtime.return_1(Option::None.into())
@@ -305,7 +305,7 @@ impl List {
                 count += 1;
             }
         }
-        runtime.return_1(IntVar::from(count).into())
+        runtime.return_1(count.into())
     }
 
     fn clear(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -598,7 +598,7 @@ impl CustomVar for List {
 
     fn get_attribute(self: Rc<Self>, name: &str) -> Variable {
         match name {
-            "length" => IntVar::from(self.len()).into(),
+            "length" => self.len().into(),
             x => StdMethod::new_native(self, Self::attr_fn(x)).into(),
         }
     }
