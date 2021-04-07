@@ -97,9 +97,15 @@ impl Range {
         let index = IntVar::from(first(args));
         let result = &self.start + &(&index * &self.step);
         if !self.before_end(&result) {
+            let max_index = (&self.stop - &self.start) / self.step.clone();
             runtime.throw_quick(
                 index_error(),
-                format!("Index {} out of bounds for {}", result, self.to_str()),
+                format!(
+                    "Index {} out of bounds for {} (max index is {})",
+                    result,
+                    self.to_str(),
+                    max_index,
+                ),
             )
         } else {
             runtime.return_1(result.into())
