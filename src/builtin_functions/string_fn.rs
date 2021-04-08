@@ -360,7 +360,7 @@ fn hash(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult
     for c in this.chars() {
         result += c as usize;
     }
-    runtime.return_1(IntVar::from(result).into())
+    runtime.return_1(result.into())
 }
 
 fn upper(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -497,7 +497,7 @@ fn index_of(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnRe
         MaybeAscii::Standard(s) => s.chars().position(|c| c == chr),
         MaybeAscii::Ascii(a) => a.chars().position(|val| val == chr),
     };
-    runtime.return_1(index.map(IntVar::from).map(Variable::from).into())
+    runtime.return_1(index.map(Variable::from).into())
 }
 
 fn last_index_of(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -516,7 +516,7 @@ fn last_index_of(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) ->
         }
         MaybeAscii::Ascii(a) => a.chars().rposition(|val| val == chr),
     };
-    runtime.return_1(index.map(IntVar::from).map(Variable::from).into())
+    runtime.return_1(index.map(Variable::from).into())
 }
 
 fn encode(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

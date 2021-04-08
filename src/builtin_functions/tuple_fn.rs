@@ -72,6 +72,6 @@ pub fn repr(this: LangTuple, args: Vec<Variable>, runtime: &mut Runtime) -> FnRe
 
 pub fn hash(this: LangTuple, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    let result = IntVar::from(this.lang_hash(runtime)?).into();
+    let result = this.lang_hash(runtime)?.into();
     runtime.return_1(result)
 }

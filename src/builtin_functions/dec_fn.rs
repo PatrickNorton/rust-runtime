@@ -60,7 +60,7 @@ fn floor_div(this: RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> F
     for arg in args {
         ratio /= RationalVar::from(arg).to_integer()
     }
-    runtime.return_1(IntVar::from(ratio).into())
+    runtime.return_1(ratio.into())
 }
 
 fn div(this: RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -103,5 +103,5 @@ fn to_str(this: RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnRe
 
 fn to_int(this: RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.return_1(IntVar::from(this.to_integer()).into())
+    runtime.return_1(this.to_integer().into())
 }

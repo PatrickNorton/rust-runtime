@@ -66,7 +66,7 @@ pub fn load_int(data: &[u8], index: &mut usize) -> Variable {
 }
 
 pub fn load_bigint(data: &[u8], index: &mut usize) -> Variable {
-    IntVar::from(inner_bigint(data, index)).into()
+    inner_bigint(data, index).into()
 }
 
 fn inner_bigint(data: &[u8], index: &mut usize) -> BigInt {

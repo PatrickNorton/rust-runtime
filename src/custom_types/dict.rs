@@ -536,7 +536,7 @@ impl CustomVar for Dict {
 
     fn get_attribute(self: Rc<Self>, s: &str) -> Variable {
         let func = match s {
-            "length" => return IntVar::from(self.len()).into(),
+            "length" => return self.len().into(),
             _ => Self::attr_fn(s),
         };
         StdMethod::new_native(self, func).into()

@@ -79,7 +79,7 @@ impl LangBytes {
     fn index(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert!(args.len() == 1);
         match normalize(self.value.borrow().len(), first(args).into()) {
-            Result::Ok(index) => runtime.return_1(IntVar::from(self.value.borrow()[index]).into()),
+            Result::Ok(index) => runtime.return_1(self.value.borrow()[index].into()),
             Result::Err(index) => self.index_err(index, runtime),
         }
     }
@@ -578,7 +578,7 @@ impl TypicalIterator for BytesIter {
         if self.current.get() != self.value.value.borrow().len() {
             let result = self.value.value.borrow()[self.current.get()];
             self.current.set(self.current.get() + 1);
-            Option::Some(IntVar::from(result).into())
+            Option::Some(result.into())
         } else {
             Option::None
         }
@@ -599,7 +599,7 @@ impl TypicalIterator for BytesRevIter {
     fn inner_next(&self) -> Option<Variable> {
         if self.current.get() != 0 {
             let result = self.value.value.borrow()[self.current.replace(self.current.get() - 1)];
-            Option::Some(IntVar::from(result).into())
+            Option::Some(result.into())
         } else {
             Option::None
         }
