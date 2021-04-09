@@ -10,7 +10,7 @@ use crate::string_var::StringVar;
 use crate::tuple::LangTuple;
 use crate::variable::{InnerVar, OptionVar, Variable};
 use ascii::AsciiChar;
-use num::{FromPrimitive, ToPrimitive};
+use num::{BigInt, FromPrimitive, ToPrimitive};
 
 impl From<InnerVar> for Variable {
     fn from(x: InnerVar) -> Self {
@@ -307,3 +307,4 @@ impl_from!(u128);
 impl_from!(i128);
 impl_from!(usize);
 impl_from!(isize);
+impl_from!(BigInt);
