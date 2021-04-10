@@ -1,6 +1,5 @@
 use crate::custom_var::CustomVar;
 use crate::first;
-use crate::int_var::IntVar;
 use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;

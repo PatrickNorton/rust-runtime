@@ -1,4 +1,3 @@
-use crate::int_var::IntVar;
 use crate::method::{NativeMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;

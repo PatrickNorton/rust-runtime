@@ -1,7 +1,6 @@
 use crate::custom_types::exceptions::key_error;
 use crate::custom_types::ASCII_COMMA;
 use crate::custom_var::{downcast_var, CustomVar};
-use crate::int_var::IntVar;
 use crate::looping::{self, IterAttrs, IterResult, NativeIterator};
 use crate::method::{NativeMethod, StdMethod};
 use crate::name::Name;

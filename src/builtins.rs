@@ -13,7 +13,6 @@ use crate::custom_types::set::Set;
 use crate::custom_types::slice::Slice;
 use crate::first;
 use crate::function::Function;
-use crate::int_var::IntVar;
 use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;

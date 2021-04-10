@@ -1,7 +1,6 @@
 use crate::custom_types::dict::{DictIter, DictLike, InnerDict};
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::first;
-use crate::int_var::IntVar;
 use crate::looping;
 use crate::method::{NativeMethod, StdMethod};
 use crate::name::Name;
