@@ -194,6 +194,14 @@ where
     fn get_attribute(self: Rc<Self>, name: &str) -> Variable {
         self.get_name(name)
     }
+
+    fn iter(self: Rc<Self>, _runtime: &mut Runtime) -> Result<Iterator, ()> {
+        Result::Ok(Iterator::Native(self))
+    }
+
+    fn into_iter(self: Rc<Self>) -> Iterator {
+        Iterator::Native(self)
+    }
 }
 
 impl<T> IterAttrs for T
