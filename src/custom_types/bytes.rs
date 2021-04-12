@@ -1,4 +1,5 @@
 use crate::custom_types::exceptions::{arithmetic_error, index_error, value_error};
+use crate::custom_types::list::List;
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_tools::FromBytes;
 use crate::int_var::{normalize, IntVar};
@@ -488,11 +489,21 @@ impl LangBytes {
     }
 
     fn create(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-        let mut result = Vec::new();
-        let iter = first(args).iter(runtime)?;
-        while let Option::Some(val) = iter.next(runtime)?.take_first() {
-            result.push(IntVar::from(val).to_u8().unwrap());
-        }
+        let result = match downcast_var::<List>(first(args)) {
+            Result::Ok(list) => list
+                .values()
+                .iter()
+                .map(|x| IntVar::from(x.clone()).to_u8().unwrap())
+                .collect(),
+            Result::Err(first) => {
+                let mut result = Vec::new();
+                let iter = first.iter(runtime)?;
+                while let Option::Some(val) = iter.next(runtime)?.take_first() {
+                    result.push(IntVar::from(val).to_u8().unwrap());
+                }
+                result
+            }
+        };
         runtime.return_1(Rc::new(LangBytes::new(result)).into())
     }
 
