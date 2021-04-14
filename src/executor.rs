@@ -337,10 +337,9 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
         }
         Bytecode::EnterTry => {
             let mut exc_pos = bytes_0 as usize;
-            while {
-                let bc: Option<Bytecode> = FromPrimitive::from_u8(runtime.current_fn()[exc_pos]);
-                bc.expect("Invalid bytecode encountered")
-            } == Bytecode::ExceptN
+            while Bytecode::from_u8(runtime.current_fn()[exc_pos])
+                .expect("Invalid bytecode encountered")
+                == Bytecode::ExceptN
             {
                 exc_pos += 1;
                 let const_index = bytes_index::<u32>(runtime.current_fn(), &mut exc_pos);
