@@ -26,12 +26,13 @@ pub struct StdVariable {
 struct InnerVar {
     pub cls: &'static StdType,
     pub values: HashMap<Arc<str>, Variable>,
+    supers: Vec<Variable>,
 }
 
 impl StdVariable {
     pub fn new(cls: &'static StdType, values: HashMap<Arc<str>, Variable>) -> StdVariable {
         StdVariable {
-            value: Rc::new(RefCell::new(InnerVar::new(cls, values))),
+            value: Rc::new(RefCell::new(InnerVar::new(cls, values, Vec::new()))),
         }
     }
 
@@ -140,8 +141,16 @@ impl StdVariable {
 }
 
 impl InnerVar {
-    fn new(cls: &'static StdType, values: HashMap<Arc<str>, Variable>) -> InnerVar {
-        InnerVar { cls, values }
+    fn new(
+        cls: &'static StdType,
+        values: HashMap<Arc<str>, Variable>,
+        supers: Vec<Variable>,
+    ) -> InnerVar {
+        InnerVar {
+            cls,
+            values,
+            supers,
+        }
     }
 }
 
