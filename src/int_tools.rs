@@ -12,24 +12,20 @@ macro_rules! impl_from_bytes {
         impl FromBytes for $type {
             #[inline]
             fn from_be(bytes: &[u8]) -> Self {
-                <$type>::from_be_bytes(bytes.try_into().unwrap_or_else(|_| {
-                    panic!(
-                        "Could not convert byte slice: expected {} bytes, got {}",
-                        std::mem::size_of::<$type>(),
-                        bytes.len()
-                    )
-                }))
+                <$type>::from_be_bytes(
+                    bytes
+                        .try_into()
+                        .unwrap_or_else(|_| bytes_error::<$type>(bytes.len())),
+                )
             }
 
             #[inline]
             fn from_le(bytes: &[u8]) -> Self {
-                <$type>::from_le_bytes(bytes.try_into().unwrap_or_else(|_| {
-                    panic!(
-                        "Could not convert byte slice: expected {} bytes, got {}",
-                        std::mem::size_of::<$type>(),
-                        bytes.len()
-                    )
-                }))
+                <$type>::from_le_bytes(
+                    bytes
+                        .try_into()
+                        .unwrap_or_else(|_| bytes_error::<$type>(bytes.len())),
+                )
             }
         }
     };
@@ -50,13 +46,21 @@ impl_from_bytes!(isize);
 
 impl FromBytes for char {
     fn from_be(bytes: &[u8]) -> Self {
-        let val = u32::from_be_bytes(bytes.try_into().unwrap());
-        char::from_u32(val).expect(&*format!("Invalid char value {}", val))
+        let val = u32::from_be_bytes(
+            bytes
+                .try_into()
+                .unwrap_or_else(|_| bytes_error::<char>(bytes.len())),
+        );
+        char::from_u32(val).expect(&*format!("Invalid char value {:#x}", val))
     }
 
     fn from_le(bytes: &[u8]) -> Self {
-        let val = u32::from_le_bytes(bytes.try_into().unwrap());
-        char::from_u32(val).expect(&*format!("Invalid char value {}", val))
+        let val = u32::from_le_bytes(
+            bytes
+                .try_into()
+                .unwrap_or_else(|_| bytes_error::<char>(bytes.len())),
+        );
+        char::from_u32(val).expect(&*format!("Invalid char value {:#x}", val))
     }
 }
 
@@ -72,4 +76,12 @@ where
     let result = T::from_be(&bytes[*index..*index + byte_size]);
     *index += byte_size;
     result
+}
+
+fn bytes_error<T>(len: usize) -> ! {
+    panic!(
+        "Could not convert byte slice: expected {} bytes, got {}",
+        std::mem::size_of::<T>(),
+        len,
+    )
 }
