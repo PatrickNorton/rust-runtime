@@ -1,5 +1,6 @@
 use crate::string_var::StringVar;
-use ascii::{AsciiChar, AsciiStr, AsciiString};
+use ascii::{AsAsciiStr, AsciiChar, AsciiStr, AsciiString};
+use std::convert::TryFrom;
 use std::fmt::{self, Display, Formatter};
 use std::mem::take;
 use std::ops::{Add, AddAssign};
@@ -162,5 +163,39 @@ impl AddAssign<StringVar> for MaybeString {
 impl Default for MaybeString {
     fn default() -> Self {
         MaybeString::Ascii(AsciiString::default())
+    }
+}
+
+impl Default for MaybeAscii<'static> {
+    fn default() -> Self {
+        MaybeAscii::Ascii(Default::default())
+    }
+}
+
+impl fmt::Write for MaybeString {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        match self {
+            MaybeString::Standard(m) => m.push_str(s),
+            MaybeString::Ascii(a) => match s.as_ascii_str() {
+                Result::Ok(s) => a.push_str(s),
+                Result::Err(_) => *self = MaybeString::Standard(a.to_string() + s),
+            },
+        }
+        Result::Ok(())
+    }
+
+    fn write_char(&mut self, c: char) -> fmt::Result {
+        match self {
+            MaybeString::Standard(s) => s.push(c),
+            MaybeString::Ascii(a) => match AsciiChar::from_ascii(c) {
+                Result::Ok(ch) => a.push(ch),
+                Result::Err(_) => {
+                    let mut string = a.to_string();
+                    string.push(c);
+                    *self = MaybeString::Standard(string);
+                }
+            },
+        }
+        Result::Ok(())
     }
 }
