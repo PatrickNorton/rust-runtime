@@ -445,13 +445,7 @@ impl InnerVar {
                 let hash = i % max;
                 Result::Ok(hash.to_usize().unwrap())
             }
-            InnerVar::String(s) => {
-                let mut result = 0;
-                for c in s.chars() {
-                    result += c as usize;
-                }
-                Result::Ok(result)
-            }
+            InnerVar::String(s) => Result::Ok(s.chars().map(|x| x as usize).sum()),
             InnerVar::Decimal(d) => {
                 let max = BigInt::from(usize::MAX) + 1;
                 let hash: BigInt = d.to_integer() % &max;

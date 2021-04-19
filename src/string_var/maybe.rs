@@ -1,6 +1,5 @@
 use crate::string_var::StringVar;
 use ascii::{AsAsciiStr, AsciiChar, AsciiStr, AsciiString};
-use std::convert::TryFrom;
 use std::fmt::{self, Display, Formatter};
 use std::mem::take;
 use std::ops::{Add, AddAssign};
