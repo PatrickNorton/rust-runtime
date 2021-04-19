@@ -26,6 +26,7 @@ use std::clone::Clone;
 use std::cmp::PartialEq;
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
+use std::num::Wrapping;
 use std::ptr;
 use std::rc::Rc;
 use std::str::FromStr;
@@ -445,7 +446,12 @@ impl InnerVar {
                 let hash = i % max;
                 Result::Ok(hash.to_usize().unwrap())
             }
-            InnerVar::String(s) => Result::Ok(s.chars().map(|x| x as usize).sum()),
+            InnerVar::String(s) => Result::Ok(
+                s.chars()
+                    .map(|x| Wrapping(x as usize))
+                    .sum::<Wrapping<usize>>()
+                    .0,
+            ),
             InnerVar::Decimal(d) => {
                 let max = BigInt::from(usize::MAX) + 1;
                 let hash: BigInt = d.to_integer() % &max;
