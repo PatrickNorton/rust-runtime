@@ -18,12 +18,6 @@ impl From<InnerVar> for Variable {
     }
 }
 
-impl From<(usize, Option<InnerVar>)> for Variable {
-    fn from(x: (usize, Option<InnerVar>)) -> Self {
-        Variable::Option(OptionVar::new(x.0, x.1))
-    }
-}
-
 impl From<OptionVar> for Option<Variable> {
     fn from(x: OptionVar) -> Self {
         if x.depth == 1 {
