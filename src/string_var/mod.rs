@@ -181,6 +181,24 @@ impl From<MaybeString> for StringVar {
     }
 }
 
+impl From<StrVar> for StringVar {
+    fn from(s: StrVar) -> Self {
+        match s {
+            StrVar::Literal(l) => StringVar::Literal(l),
+            StrVar::Other(o) => StringVar::Other(o),
+        }
+    }
+}
+
+impl From<AsciiVar> for StringVar {
+    fn from(s: AsciiVar) -> Self {
+        match s {
+            AsciiVar::Literal(l) => StringVar::AsciiLiteral(l),
+            AsciiVar::Other(o) => StringVar::Ascii(o),
+        }
+    }
+}
+
 impl Deref for StringVar {
     type Target = str;
 
