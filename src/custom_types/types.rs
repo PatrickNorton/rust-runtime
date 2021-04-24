@@ -82,8 +82,12 @@ impl CustomVar for TypeIdentity {
         unimplemented!()
     }
 
-    fn get_operator(self: Rc<Self>, _op: Operator) -> Variable {
-        unimplemented!()
+    fn get_operator(self: Rc<Self>, op: Operator) -> Variable {
+        if let Operator::Call = op {
+            self.into()
+        } else {
+            unimplemented!()
+        }
     }
 
     fn get_attribute(self: Rc<Self>, _name: &str) -> Variable {
