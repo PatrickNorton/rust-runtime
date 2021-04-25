@@ -197,8 +197,17 @@ impl Array {
         runtime.return_1(Array::new(new).into())
     }
 
+    fn from_iterable(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        let mut result = Vec::new();
+        let iter = first(args).iter(runtime)?;
+        while let Option::Some(next) = iter.next(runtime)?.take_first() {
+            result.push(next);
+        }
+        runtime.return_1(Array::new(result.into_boxed_slice()).into())
+    }
+
     pub fn array_type() -> Type {
-        custom_class!(Array, create, "Array", "fromList" => from_list)
+        custom_class!(Array, create, "Array", "fromList" => from_list, "fromIterable" => from_iterable)
     }
 
     fn index_err(runtime: &mut Runtime, len: usize, size: &IntVar) -> FnResult {
