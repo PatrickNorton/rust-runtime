@@ -20,7 +20,7 @@ macro_rules! custom_class {
                 name_map!(
                     $(
                         $name.into() => Function::Native(<$type_value>::$value),
-                    ),*
+                    )*
                 )
             )
         );
