@@ -578,7 +578,7 @@ impl CustomVar for Dict {
 
 impl DictLike for Dict {
     fn borrow(&self) -> Ref<'_, InnerDict> {
-        unimplemented!()
+        self.value.borrow()
     }
 }
 
