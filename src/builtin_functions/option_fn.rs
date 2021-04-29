@@ -34,6 +34,13 @@ pub fn repr(this: OptionVar, runtime: &mut Runtime) -> Result<StringVar, ()> {
     })
 }
 
+pub fn hash(this: OptionVar, runtime: &mut Runtime) -> Result<usize, ()> {
+    match Option::<Variable>::from(this) {
+        Option::Some(x) => x.hash(runtime),
+        Option::None => Result::Ok(0),
+    }
+}
+
 fn fold_some(i: usize, x: &str) -> StringVar {
     let prefix = "Some(".repeat(i);
     let suffix = ")".repeat(i);
@@ -53,6 +60,7 @@ pub fn get_op(this: OptionVar, op: Operator) -> Variable {
     let func = match op {
         Operator::Str => to_str,
         Operator::Repr => to_repr,
+        Operator::Hash => to_hash,
         _ => unimplemented!("Option.{}", op.name()),
     };
     StdMethod::new_native(this, func).into()
@@ -107,5 +115,11 @@ fn to_str(this: OptionVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
 fn to_repr(this: OptionVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     let val = repr(this, runtime)?;
+    runtime.return_1(val.into())
+}
+
+fn to_hash(this: OptionVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert!(args.is_empty());
+    let val = hash(this, runtime)?;
     runtime.return_1(val.into())
 }

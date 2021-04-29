@@ -168,7 +168,7 @@ impl Variable {
     pub fn hash(self, runtime: &mut Runtime) -> Result<usize, ()> {
         match self {
             Variable::Normal(var) => var.hash(runtime),
-            Variable::Option(var) => var.value.map_or_else(|| Result::Ok(0), |x| x.hash(runtime)),
+            Variable::Option(var) => option_fn::hash(var, runtime),
         }
     }
 
