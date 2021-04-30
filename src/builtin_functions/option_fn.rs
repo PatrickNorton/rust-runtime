@@ -51,7 +51,7 @@ pub fn get_attr(this: OptionVar, attr: &str) -> Variable {
     let func = match attr {
         "map" => map_fn,
         "flatMap" => flat_map,
-        _ => unimplemented!(),
+        _ => unimplemented!("Option.{}", attr),
     };
     StdMethod::new_native(this, func).into()
 }
