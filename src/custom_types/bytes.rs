@@ -134,7 +134,7 @@ impl LangBytes {
         } else {
             StringVar::from(first(args))
         };
-        let result = match encoding_type.to_lowercase().as_str() {
+        let result = match &*encoding_type.to_lowercase() {
             "ascii" => StringVar::from(self.convert_ascii(runtime)?),
             "utf-8" => StringVar::from(
                 String::from_utf8(self.value.borrow().clone())
@@ -263,7 +263,7 @@ impl LangBytes {
         debug_assert_eq!(args.len(), 2);
         let [char_val, encoding] = first_n(args);
         let char_val = char_val.into();
-        match encoding.str(runtime)?.to_lowercase().as_str() {
+        match &*encoding.str(runtime)?.to_lowercase() {
             "ascii" => self.add_ascii(char_val, runtime)?,
             "utf-8" => self.add_utf8(char_val),
             "utf-16" => self.add_utf16(char_val),

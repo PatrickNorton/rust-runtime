@@ -521,7 +521,7 @@ fn last_index_of(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) ->
 
 fn encode(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    let byte_val = match first(args).str(runtime)?.to_lowercase().as_str() {
+    let byte_val = match &*first(args).str(runtime)?.to_lowercase() {
         "ascii" => match this.as_ascii_str() {
             Result::Ok(s) => s.as_bytes().to_vec(),
             Result::Err(err) => {
