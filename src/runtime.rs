@@ -42,6 +42,13 @@ enum InnerException {
     UnConstructed(Type, StringVar, Vec<SFInfo>),
 }
 
+#[derive(Debug)]
+struct DeconstructedExc {
+    cls: Type,
+    msg: StringVar,
+    frames: Vec<SFInfo>,
+}
+
 impl Runtime {
     pub fn new(files: Vec<FileInfo>, starting_no: usize) -> Runtime {
         Runtime {
@@ -721,28 +728,30 @@ impl InnerException {
     }
 
     fn str(self, runtime: &mut Runtime) -> Result<StringVar, ()> {
-        let (cls, msg, frames) = self.deconstruct(runtime)?;
+        let exc = self.deconstruct(runtime)?;
         Result::Ok(
             format!(
                 "{}:\n{}\n{}",
-                cls.str(),
-                msg,
-                frame_strings(frames.into_iter().rev(), runtime)
+                exc.cls.str(),
+                exc.msg,
+                frame_strings(exc.frames.into_iter().rev(), runtime)
             )
             .into(),
         )
     }
 
-    fn deconstruct(self, runtime: &mut Runtime) -> Result<(Type, StringVar, Vec<SFInfo>), ()> {
+    fn deconstruct(self, runtime: &mut Runtime) -> Result<DeconstructedExc, ()> {
         match self {
             InnerException::Std(var, frames) => {
                 let cls = var.get_type();
                 var.index(Name::Attribute("msg"), runtime)?
                     .call((Vec::new(), runtime))?;
                 let result = StringVar::from(runtime.pop_return());
-                Result::Ok((cls, result, frames))
+                Result::Ok(DeconstructedExc::new(cls, result, frames))
             }
-            InnerException::UnConstructed(cls, msg, frames) => Result::Ok((cls, msg, frames)),
+            InnerException::UnConstructed(cls, msg, frames) => {
+                Result::Ok(DeconstructedExc::new(cls, msg, frames))
+            }
         }
     }
 
@@ -752,5 +761,11 @@ impl InnerException {
             // FIXME: Won't collect stack frames properly
             InnerException::UnConstructed(t, s, _) => t.create_inst(vec![s.into()], runtime)?,
         })
+    }
+}
+
+impl DeconstructedExc {
+    pub fn new(cls: Type, msg: StringVar, frames: Vec<SFInfo>) -> DeconstructedExc {
+        DeconstructedExc { cls, msg, frames }
     }
 }
