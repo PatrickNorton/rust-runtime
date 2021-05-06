@@ -44,6 +44,8 @@ pub mod slice;
 pub mod types;
 
 /// A static reference to prevent multiple-checking of ascii
+///
+/// It'd be nice if this was `const`, but it's not yet
 static ASCII_COMMA: Lazy<&AsciiStr> = Lazy::new(|| AsciiStr::from_ascii(", ").unwrap());
 
 pub fn join_values(
