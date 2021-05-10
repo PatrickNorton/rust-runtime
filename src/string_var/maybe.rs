@@ -159,6 +159,12 @@ impl AddAssign<StringVar> for MaybeString {
     }
 }
 
+impl AddAssign<&'_ str> for MaybeString {
+    fn add_assign(&mut self, rhs: &str) {
+        *self += MaybeAscii::Standard(rhs)
+    }
+}
+
 impl Default for MaybeString {
     fn default() -> Self {
         MaybeString::Ascii(AsciiString::default())
