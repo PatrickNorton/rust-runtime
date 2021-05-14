@@ -1,6 +1,7 @@
 use crate::string_var::StringVar;
 use ascii::{AsAsciiStr, AsciiChar, AsciiStr, AsciiString};
 use std::fmt::{self, Display, Formatter};
+use std::hash::{Hash, Hasher};
 use std::mem::take;
 use std::ops::{Add, AddAssign};
 
@@ -44,6 +45,13 @@ impl Display for MaybeAscii<'_> {
 impl MaybeString {
     pub fn new() -> MaybeString {
         Default::default()
+    }
+
+    pub fn as_str(&self) -> &str {
+        match self {
+            MaybeString::Standard(s) => &s,
+            MaybeString::Ascii(a) => a.as_str(),
+        }
     }
 
     pub fn borrow(&self) -> MaybeAscii<'_> {
@@ -174,6 +182,34 @@ impl Default for MaybeString {
 impl Default for MaybeAscii<'static> {
     fn default() -> Self {
         MaybeAscii::Ascii(Default::default())
+    }
+}
+
+impl<'a> PartialEq for MaybeAscii<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.as_str() == other.as_str()
+    }
+}
+
+impl<'a> Eq for MaybeAscii<'a> {}
+
+impl<'a> Hash for MaybeAscii<'a> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        Hash::hash(self.as_str(), state)
+    }
+}
+
+impl PartialEq for MaybeString {
+    fn eq(&self, other: &Self) -> bool {
+        self.as_str() == other.as_str()
+    }
+}
+
+impl Eq for MaybeString {}
+
+impl Hash for MaybeString {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        Hash::hash(self.as_str(), state)
     }
 }
 
