@@ -1,5 +1,6 @@
 use crate::custom_var::CustomVar;
 use crate::first;
+use crate::method::StdMethod;
 use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
@@ -24,6 +25,11 @@ impl LangMetadata {
     fn new(value: Metadata) -> Rc<LangMetadata> {
         Rc::new(LangMetadata { value })
     }
+
+    fn repr(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        runtime.return_1(format!("{:?}", self.value).into())
+    }
 }
 
 impl CustomVar for LangMetadata {
@@ -36,7 +42,10 @@ impl CustomVar for LangMetadata {
     }
 
     fn get_operator(self: Rc<Self>, op: Operator) -> Variable {
-        unimplemented!("Metadata.{}", op.name())
+        match op {
+            Operator::Str | Operator::Repr => StdMethod::new_native(self, Self::repr).into(),
+            _ => unimplemented!("Metadata.{}", op.name()),
+        }
     }
 
     fn get_attribute(self: Rc<Self>, name: &str) -> Variable {
