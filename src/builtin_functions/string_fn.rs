@@ -59,6 +59,9 @@ pub fn get_attr(this: StringVar, s: &str) -> Variable {
         "encode" => encode,
         "intBase" => int_base,
         "asInt" => as_int,
+        "strip" => strip,
+        "stripFront" => strip_front,
+        "stripBack" => strip_back,
         x => unimplemented!("str.{}", x),
     };
     StdMethod::new_native(this, func).into()
@@ -584,6 +587,50 @@ fn int_base(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnRe
 fn as_int(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     runtime.return_1(IntVar::from_str(&*this).ok().map(Variable::from).into())
+}
+
+fn strip(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    let arg = get_first(args);
+    match arg {
+        Option::None => runtime.return_1(StringVar::from(this.trim().to_string()).into()),
+        Option::Some(x) => {
+            let chr = char::from(x);
+            runtime.return_1(StringVar::from(this.trim_matches(chr).to_string()).into())
+        }
+    }
+}
+
+fn strip_front(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    let arg = get_first(args);
+    match arg {
+        Option::None => runtime.return_1(StringVar::from(this.trim_start().to_string()).into()),
+        Option::Some(x) => {
+            let str = StringVar::from(x);
+            runtime.return_1(StringVar::from(this.trim_start_matches(&*str).to_string()).into())
+        }
+    }
+}
+
+fn strip_back(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    let arg = get_first(args);
+    match arg {
+        Option::None => runtime.return_1(StringVar::from(this.trim_end().to_string()).into()),
+        Option::Some(x) => {
+            let str = StringVar::from(x);
+            runtime.return_1(StringVar::from(this.trim_end_matches(&*str).to_string()).into())
+        }
+    }
+}
+
+fn get_first<T>(args: Vec<T>) -> Option<T>
+where
+    T: Into<Option<T>>,
+{
+    if args.is_empty() {
+        Option::None
+    } else {
+        first(args).into()
+    }
 }
 
 #[derive(Debug)]
