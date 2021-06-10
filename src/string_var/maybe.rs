@@ -3,7 +3,7 @@ use ascii::{AsAsciiStr, AsciiChar, AsciiStr, AsciiString};
 use std::fmt::{self, Display, Formatter};
 use std::hash::{Hash, Hasher};
 use std::mem::take;
-use std::ops::{Add, AddAssign};
+use std::ops::{Add, AddAssign, Deref};
 
 #[derive(Debug, Copy, Clone)]
 pub enum MaybeAscii<'a> {
@@ -29,6 +29,17 @@ impl MaybeAscii<'_> {
         match self {
             MaybeAscii::Standard(s) => s.chars().count(),
             MaybeAscii::Ascii(a) => a.len(),
+        }
+    }
+}
+
+impl Deref for MaybeAscii<'_> {
+    type Target = str;
+
+    fn deref(&self) -> &Self::Target {
+        match self {
+            MaybeAscii::Standard(s) => *s,
+            MaybeAscii::Ascii(a) => a.as_str(),
         }
     }
 }
@@ -97,6 +108,20 @@ impl MaybeString {
         }
     }
 }
+
+impl Deref for MaybeString {
+    type Target = str;
+
+    fn deref(&self) -> &Self::Target {
+        match self {
+            MaybeString::Standard(s) => &s,
+            MaybeString::Ascii(a) => a.as_str(),
+        }
+    }
+}
+
+// DerefMut is not implementable b/c AsciiString can't be mutated through
+// normal str methods (e.g. insert('é'))
 
 impl Display for MaybeString {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
