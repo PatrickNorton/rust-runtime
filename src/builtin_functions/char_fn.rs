@@ -1,10 +1,12 @@
-use crate::character;
+use crate::builtin_functions::Encoding;
 use crate::custom_types::bytes::LangBytes;
+use crate::custom_types::exceptions::value_error;
 use crate::method::{NativeMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
+use crate::{character, first};
 use ascii::{AsciiString, ToAsciiChar};
 use std::array::IntoIter;
 use std::rc::Rc;
@@ -32,8 +34,7 @@ pub fn attr_fn(s: &str) -> NativeMethod<char> {
         "isLower" => is_lower,
         "utf8Len" => utf8_len,
         "utf16Len" => utf16_len,
-        "encodeUtf8" => encode_utf8,
-        "encodeUtf16" => encode_utf16,
+        "encode" => encode,
         x => unimplemented!("char.{}", x),
     }
 }
@@ -101,24 +102,53 @@ fn utf16_len(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult
     runtime.return_1(this.len_utf16().into())
 }
 
-fn encode_utf8(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    debug_assert!(args.is_empty());
-    let mut result = [0; 4];
-    let len = this.encode_utf8(&mut result).len();
-    runtime.return_1(Rc::new(LangBytes::new(result[..len].into())).into())
+fn encode(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    let encoding = match Encoding::from_str(&first(args).str(runtime)?) {
+        Result::Ok(x) => x,
+        Result::Err(x) => {
+            return runtime
+                .throw_quick_native(value_error(), format!("{} is not a valid encoding", x))
+        }
+    };
+    let bytes = match encoding {
+        Encoding::Ascii => {
+            if this.is_ascii() {
+                vec![this as u32 as u8]
+            } else {
+                return runtime.throw_quick_native(
+                    value_error(),
+                    format!(
+                        "Cannot convert to ascii: character {} (Unicode value {:x}) is not ASCII",
+                        this, this as u32
+                    ),
+                );
+            }
+        }
+        Encoding::Utf8 => {
+            let mut result = [0; 4];
+            let len = this.encode_utf8(&mut result).len();
+            result[..len].into()
+        }
+        Encoding::Utf16Le => encode_utf_16(this, false),
+        Encoding::Utf16Be => encode_utf_16(this, true),
+        Encoding::Utf32Le => (this as u32).to_le_bytes().into(),
+        Encoding::Utf32Be => (this as u32).to_be_bytes().into(),
+    };
+    runtime.return_1(Rc::new(LangBytes::new(bytes)).into())
 }
 
-fn encode_utf16(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    debug_assert!(args.is_empty());
+#[inline]
+fn encode_utf_16(value: char, big_end: bool) -> Vec<u8> {
     let mut result = [0; 2];
-    let len = this.encode_utf16(&mut result).len();
-    runtime.return_1(
-        Rc::new(LangBytes::new(
-            result[..len]
-                .iter()
-                .flat_map(|x| IntoIter::new(x.to_le_bytes()))
-                .collect(),
-        ))
-        .into(),
-    )
+    let len = value.encode_utf16(&mut result).len();
+    result[..len]
+        .iter()
+        .flat_map(|x| {
+            IntoIter::new(if big_end {
+                x.to_be_bytes()
+            } else {
+                x.to_le_bytes()
+            })
+        })
+        .collect()
 }
