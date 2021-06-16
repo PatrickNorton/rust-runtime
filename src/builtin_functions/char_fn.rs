@@ -8,7 +8,9 @@ use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
 use crate::{character, first};
 use ascii::{AsciiString, ToAsciiChar};
+use num::ToPrimitive;
 use std::array::IntoIter;
+use std::fmt::Display;
 use std::rc::Rc;
 
 pub fn op_fn(o: Operator) -> NativeMethod<char> {
@@ -35,6 +37,8 @@ pub fn attr_fn(s: &str) -> NativeMethod<char> {
         "utf8Len" => utf8_len,
         "utf16Len" => utf16_len,
         "encode" => encode,
+        "isDigit" => is_digit,
+        "isNumeric" => is_numeric,
         x => unimplemented!("char.{}", x),
     }
 }
@@ -102,6 +106,26 @@ fn utf16_len(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult
     runtime.return_1(this.len_utf16().into())
 }
 
+fn is_digit(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    let first = first(args).int(runtime)?;
+    let radix = match first.to_u32() {
+        Option::None => return base_err(first, runtime),
+        Option::Some(x) => {
+            if (0..=36).contains(&x) {
+                x
+            } else {
+                return base_err(x, runtime);
+            }
+        }
+    };
+    runtime.return_1(this.is_digit(radix).into())
+}
+
+fn is_numeric(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert!(args.is_empty());
+    runtime.return_1(this.is_numeric().into())
+}
+
 fn encode(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let encoding = match Encoding::from_str(&first(args).str(runtime)?) {
         Result::Ok(x) => x,
@@ -151,4 +175,14 @@ fn encode_utf_16(value: char, big_end: bool) -> Vec<u8> {
             })
         })
         .collect()
+}
+
+fn base_err<T: Display>(value: T, runtime: &mut Runtime) -> FnResult {
+    runtime.throw_quick_native(
+        value_error(),
+        format!(
+            "Invalid base: bases must be between 0 and 36, got {}",
+            value
+        ),
+    )
 }
