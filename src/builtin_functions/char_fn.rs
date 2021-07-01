@@ -168,11 +168,11 @@ fn encode_utf_16(value: char, big_end: bool) -> Vec<u8> {
     result[..len]
         .iter()
         .flat_map(|x| {
-            IntoIter::new(if big_end {
+            if big_end {
                 x.to_be_bytes()
             } else {
                 x.to_le_bytes()
-            })
+            }
         })
         .collect()
 }

@@ -318,7 +318,7 @@ impl LangBytes {
             value
                 .encode_utf16(&mut [0; 2])
                 .iter()
-                .flat_map(|x| IntoIter::new(x.to_le_bytes())),
+                .flat_map(|x| x.to_le_bytes()),
         );
     }
 
@@ -327,7 +327,7 @@ impl LangBytes {
             value
                 .encode_utf16(&mut [0; 2])
                 .iter()
-                .flat_map(|x| IntoIter::new(x.to_be_bytes())),
+                .flat_map(|x| x.to_be_bytes()),
         );
     }
 

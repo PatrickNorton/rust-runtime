@@ -1,3 +1,4 @@
+use crate::builtin_functions::Encoding;
 use crate::custom_types::bytes::LangBytes;
 use crate::custom_types::exceptions::{arithmetic_error, index_error, value_error};
 use crate::custom_types::list::List;
@@ -16,6 +17,7 @@ use ascii::{AsAsciiStr, AsciiStr, AsciiString};
 use num::{BigInt, Num, One, Signed, ToPrimitive};
 use std::array::IntoIter;
 use std::cell::Cell;
+use std::convert::TryInto;
 use std::fmt::Debug;
 use std::rc::Rc;
 use std::str::{from_utf8_unchecked, FromStr};
@@ -546,19 +548,19 @@ fn encode(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
         Encoding::Utf8 => this.as_bytes().to_vec(),
         Encoding::Utf16Le => this
             .encode_utf16()
-            .flat_map(|x| IntoIter::new(x.to_le_bytes()))
+            .flat_map(|x| x.to_le_bytes())
             .collect(),
         Encoding::Utf16Be => this
             .encode_utf16()
-            .flat_map(|x| IntoIter::new(x.to_be_bytes()))
+            .flat_map(|x| x.to_be_bytes())
             .collect(),
         Encoding::Utf32Le => this
             .chars()
-            .flat_map(|x| IntoIter::new((x as u32).to_le_bytes()))
+            .flat_map(|x|(x as u32).to_le_bytes())
             .collect(),
         Encoding::Utf32Be => this
             .chars()
-            .flat_map(|x| IntoIter::new((x as u32).to_be_bytes()))
+            .flat_map(|x| (x as u32).to_be_bytes())
             .collect(),
     };
     runtime.return_1(Rc::new(LangBytes::new(byte_val.to_vec())).into())

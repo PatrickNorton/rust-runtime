@@ -489,7 +489,7 @@ impl Runtime {
 
     pub fn return_n<const N: usize>(&mut self, var: [Variable; N]) -> FnResult {
         self.ret_count = N;
-        self.variables.extend(IntoIter::new(var));
+        self.variables.extend(var);
         FnResult::Ok(())
     }
 
