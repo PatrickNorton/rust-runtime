@@ -524,8 +524,14 @@ fn last_index_of(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) ->
 
 fn encode(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert_eq!(args.len(), 1);
-    let byte_val = match &*first(args).str(runtime)?.to_lowercase() {
-        "ascii" => match this.as_ascii_str() {
+    let encoding = match Encoding::from_str(&first(args).str(runtime)?) {
+        Result::Ok(x) => x,
+        Result::Err(x) => {
+            return runtime.throw_quick(value_error(), format!("{} is not a valid encoding", x))
+        }
+    };
+    let byte_val = match encoding {
+        Encoding::Ascii => match this.as_ascii_str() {
             Result::Ok(s) => s.as_bytes().to_vec(),
             Result::Err(err) => {
                 return runtime.throw_quick(
@@ -537,29 +543,23 @@ fn encode(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResu
                 )
             }
         }
-        "utf-8" => this.as_bytes().to_vec(),
-        "utf-16" => this
+        Encoding::Utf8 => this.as_bytes().to_vec(),
+        Encoding::Utf16Le => this
             .encode_utf16()
             .flat_map(|x| IntoIter::new(x.to_le_bytes()))
             .collect(),
-        "utf-16be" => this
+        Encoding::Utf16Be => this
             .encode_utf16()
             .flat_map(|x| IntoIter::new(x.to_be_bytes()))
             .collect(),
-        "utf-32" => this
+        Encoding::Utf32Le => this
             .chars()
             .flat_map(|x| IntoIter::new((x as u32).to_le_bytes()))
             .collect(),
-        "utf-32be" => this
+        Encoding::Utf32Be => this
             .chars()
             .flat_map(|x| IntoIter::new((x as u32).to_be_bytes()))
             .collect(),
-        x => {
-            return runtime.throw_quick(
-                value_error(),
-                format!("{} is not a valid encoding", x),
-            )
-        }
     };
     runtime.return_1(Rc::new(LangBytes::new(byte_val.to_vec())).into())
 }
