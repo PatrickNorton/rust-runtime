@@ -245,7 +245,7 @@ impl RangeIter {
 
     fn true_next(&self) -> Option<IntVar> {
         if self.value.before_end(&*self.current.borrow()) {
-            Option::Some(self.current.replace_with(|x| self.value.get_step() + x))
+            Option::Some(self.current.replace_with(|x| self.value.get_step() + &*x))
         } else {
             Option::None
         }

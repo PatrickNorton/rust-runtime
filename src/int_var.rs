@@ -35,7 +35,7 @@ impl IntVar {
 
 pub fn normalize(len: usize, signed_index: IntVar) -> Result<usize, IntVar> {
     let index = if signed_index.is_negative() {
-        signed_index + len.into()
+        signed_index + len
     } else {
         signed_index
     };
@@ -415,6 +415,31 @@ macro_rules! impl_checked {
             }
         }
     };
+
+    ($name:ident, $trait:ident, $subtype:ty, $checked:ident) => {
+        impl $trait<$subtype> for IntVar {
+            type Output = IntVar;
+
+            fn $name(self, rhs: $subtype) -> Self::Output {
+                match self {
+                    IntVar::Small(s1) => match rhs.try_into() {
+                        Result::Ok(s2) => match s1.$checked(s2) {
+                            Option::Some(val) => IntVar::Small(val),
+                            Option::None => BigInt::from(s1).$name(s2).into(),
+                        },
+                        Result::Err(_) => BigInt::from(s1).$name(rhs).into(),
+                    },
+                    IntVar::Big(b1) => b1.as_ref().$name(rhs).into(),
+                }
+            }
+        }
+    };
+
+    ($name:ident, $trait:ident, $checked:ident, {$($ty:ty),+ $(,)?}) => {
+        $(
+            impl_checked!($name, $trait, $ty, $checked);
+        )+
+    }
 }
 
 macro_rules! impl_checked_ref {
@@ -436,6 +461,31 @@ macro_rules! impl_checked_ref {
             }
         }
     };
+
+    ($name:ident, $trait:ident, $subtype:ty, $checked:ident) => {
+        impl $trait<$subtype> for &IntVar {
+            type Output = IntVar;
+
+            fn $name(self, rhs: $subtype) -> Self::Output {
+                match self {
+                    IntVar::Small(s1) => match rhs.try_into() {
+                        Result::Ok(s2) => match s1.$checked(s2) {
+                            Option::Some(val) => IntVar::Small(val),
+                            Option::None => BigInt::from(*s1).$name(s2).into(),
+                        },
+                        Result::Err(_) => BigInt::from(*s1).$name(rhs).into(),
+                    },
+                    IntVar::Big(b1) => b1.as_ref().$name(rhs).into(),
+                }
+            }
+        }
+    };
+
+    ($name:ident, $trait:ident, $checked:ident, {$($ty:ty),+ $(,)?}) => {
+        $(
+            impl_checked_ref!($name, $trait, $ty, $checked);
+        )+
+    }
 }
 
 macro_rules! impl_assign {
@@ -446,6 +496,20 @@ macro_rules! impl_assign {
             }
         }
     };
+
+    ($name:ident, $trait:ident, $subtype:ty, $original:ident) => {
+        impl $trait<$subtype> for IntVar {
+            fn $name(&mut self, rhs: $subtype) {
+                *self = (self as &Self).$original(rhs);
+            }
+        }
+    };
+
+    ($name:ident, $trait:ident, $original:ident, {$($ty:ty),+ $(,)?}) => {
+        $(
+            impl_assign!($name, $trait, $ty, $original);
+        )+
+    }
 }
 
 macro_rules! inner_impl {
@@ -481,10 +545,20 @@ macro_rules! impl_nonzero {
 }
 
 macro_rules! impl_op {
-    ($name:ident, $trait:ty, $checked:ident, $assign:ident, $assign_tr:ty) => {
+    ($name:ident, $trait:ident, $checked:ident, $assign:ident, $assign_tr:ident) => {
         impl_checked!($name, $trait, $checked);
         impl_checked_ref!($name, $trait, $checked);
         impl_assign!($assign, $assign_tr, $name);
+
+        impl_checked!($name, $trait, $checked, {
+            u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize
+        });
+        impl_checked_ref!($name, $trait, $checked, {
+            u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize
+        });
+        impl_assign!($assign, $assign_tr, $name, {
+            u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize
+        });
     };
 }
 

@@ -14,7 +14,6 @@ use crate::variable::{FnResult, Variable};
 use crate::{first, first_n};
 use ascii::{AsciiChar, AsciiString, IntoAsciiString};
 use num::{BigInt, ToPrimitive};
-use std::array::IntoIter;
 use std::cell::{Cell, Ref, RefCell};
 use std::char;
 use std::rc::Rc;

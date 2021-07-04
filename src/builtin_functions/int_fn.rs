@@ -63,7 +63,7 @@ pub fn get_attribute(this: IntVar, s: &str) -> Variable {
 
 fn add(this: IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     if args.len() == 1 {
-        return runtime.return_1((this + first(args).into()).into());
+        return runtime.return_1((this + IntVar::from(first(args))).into());
     }
     let mut sum = this;
     for arg in args {
@@ -74,7 +74,7 @@ fn add(this: IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
 
 fn sub(this: IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     if args.len() == 1 {
-        return runtime.return_1((this - first(args).into()).into());
+        return runtime.return_1((this - IntVar::from(first(args))).into());
     }
     let mut diff = this;
     for arg in args {
@@ -90,7 +90,7 @@ fn u_minus(this: IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult
 
 fn mul(this: IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     if args.len() == 1 {
-        return runtime.return_1((this * first(args).into()).into());
+        return runtime.return_1((this * IntVar::from(first(args))).into());
     }
     let mut prod = this;
     for arg in args {

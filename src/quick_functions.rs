@@ -15,7 +15,7 @@ pub fn quick_add(this: Variable, other: Variable, runtime: &mut Runtime) -> Quic
     match this {
         Variable::Normal(InnerVar::Null()) => unimplemented!(),
         Variable::Normal(InnerVar::Bool(b)) => {
-            Result::Ok((IntVar::from(other) + if b { 1 } else { 0 }.into()).into())
+            Result::Ok((IntVar::from(other) + u8::from_bool(b)).into())
         }
         Variable::Normal(InnerVar::Bigint(i)) => Result::Ok((i + IntVar::from(other)).into()),
         Variable::Normal(InnerVar::String(s)) => {

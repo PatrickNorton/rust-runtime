@@ -13,7 +13,6 @@ use crate::stack_frame::{frame_strings, SFInfo, StackFrame};
 use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, Variable};
-use std::array::IntoIter;
 use std::cmp::{max, min, Ordering};
 use std::collections::{HashMap, HashSet};
 use std::mem::{replace, take};
