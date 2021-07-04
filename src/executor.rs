@@ -24,7 +24,6 @@ use crate::variable::{FnResult, InnerVar, Variable};
 use num::traits::FromPrimitive;
 use num::Signed;
 use std::convert::TryInto;
-use std::ops::SubAssign;
 
 pub fn execute(runtime: &mut Runtime) -> FnResult {
     while !runtime.is_native() {
@@ -473,7 +472,7 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             if !value.is_positive() {
                 runtime.goto(jump);
             } else {
-                value.sub_assign(1.into());
+                value -= 1;
                 runtime.push(value.into());
             }
         }
