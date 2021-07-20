@@ -24,6 +24,7 @@ mod custom_var;
 mod executor;
 mod file_info;
 mod file_parsing;
+mod fmt;
 mod from_bool;
 mod function;
 mod int_tools;

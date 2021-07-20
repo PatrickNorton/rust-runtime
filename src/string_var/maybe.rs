@@ -1,5 +1,5 @@
 use crate::string_var::StringVar;
-use ascii::{AsAsciiStr, AsciiChar, AsciiStr, AsciiString};
+use ascii::{AsAsciiStr, AsciiChar, AsciiStr, AsciiString, ToAsciiChar, ToAsciiCharError};
 use std::fmt::{self, Display, Formatter};
 use std::hash::{Hash, Hasher};
 use std::mem::take;
@@ -56,6 +56,13 @@ impl Display for MaybeAscii<'_> {
 impl MaybeString {
     pub fn new() -> MaybeString {
         Default::default()
+    }
+
+    pub fn from_str_checked(value: String) -> MaybeString {
+        match AsciiString::from_ascii(value) {
+            Result::Ok(x) => MaybeString::Ascii(x),
+            Result::Err(e) => MaybeString::Standard(e.into_source()),
+        }
     }
 
     pub fn as_str(&self) -> &str {
@@ -129,6 +136,33 @@ impl Display for MaybeString {
             MaybeString::Standard(s) => f.write_str(s),
             MaybeString::Ascii(a) => f.write_str(a.as_str()),
         }
+    }
+}
+
+impl From<String> for MaybeString {
+    fn from(x: String) -> Self {
+        MaybeString::Standard(x)
+    }
+}
+
+impl From<AsciiString> for MaybeString {
+    fn from(x: AsciiString) -> Self {
+        MaybeString::Ascii(x)
+    }
+}
+
+impl From<char> for MaybeString {
+    fn from(x: char) -> Self {
+        match x.to_ascii_char() {
+            Result::Ok(ch) => ch.into(),
+            Result::Err(_) => x.to_string().into(),
+        }
+    }
+}
+
+impl From<AsciiChar> for MaybeString {
+    fn from(ch: AsciiChar) -> Self {
+        ch.as_ref().to_owned().into()
     }
 }
 

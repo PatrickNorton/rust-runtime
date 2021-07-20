@@ -2,6 +2,7 @@ use crate::base_fn::BaseFunction;
 use crate::builtins::builtin_of;
 use crate::custom_types::bytes::LangBytes;
 use crate::custom_types::range::Range;
+use crate::fmt::FormatArgs;
 use crate::int_tools::bytes_index;
 use crate::int_var::IntVar;
 use crate::method::InnerMethod;
@@ -136,6 +137,10 @@ pub fn load_char(data: &[u8], index: &mut usize) -> Variable {
 
 pub fn load_ascii(data: &[u8], index: &mut usize) -> Variable {
     StringVar::from_leak_ascii(load_ascii_str(data, index)).into()
+}
+
+pub fn load_fmt_args(data: &[u8], index: &mut usize) -> Variable {
+    Rc::new(FormatArgs::parse(data, index)).into()
 }
 
 pub fn tuple_indices(data: &[u8], index: &mut usize) -> Vec<u16> {

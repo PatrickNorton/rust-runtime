@@ -1,9 +1,11 @@
 mod chunks;
 mod impls;
 mod maybe;
+mod owned;
 mod vars;
 
 pub use maybe::{MaybeAscii, MaybeString};
+pub use owned::OwnedStringVar;
 pub use vars::{AsciiVar, StrVar};
 
 use crate::character;
@@ -132,6 +134,27 @@ impl StringVar {
         let x: String = self.chars().map(character::repr).collect();
         StringVar::from(format!("\"{}\"", x))
     }
+
+    pub fn is_ascii(&self) -> bool {
+        match self.as_maybe_ascii() {
+            MaybeAscii::Standard(s) => s.is_ascii(),
+            MaybeAscii::Ascii(_) => true,
+        }
+    }
+
+    pub fn to_uppercase(&self) -> String {
+        match self.as_maybe_ascii() {
+            MaybeAscii::Standard(s) => s.to_uppercase(),
+            MaybeAscii::Ascii(a) => a.as_str().to_ascii_uppercase(),
+        }
+    }
+
+    pub fn to_lowercase(&self) -> String {
+        match self.as_maybe_ascii() {
+            MaybeAscii::Standard(s) => s.to_lowercase(),
+            MaybeAscii::Ascii(a) => a.as_str().to_ascii_lowercase(),
+        }
+    }
 }
 
 impl From<&'static str> for StringVar {
@@ -195,6 +218,17 @@ impl From<AsciiVar> for StringVar {
         match s {
             AsciiVar::Literal(l) => StringVar::AsciiLiteral(l),
             AsciiVar::Other(o) => StringVar::Ascii(o),
+        }
+    }
+}
+
+impl From<OwnedStringVar> for StringVar {
+    fn from(s: OwnedStringVar) -> Self {
+        match s {
+            OwnedStringVar::Literal(l) => StringVar::Literal(l),
+            OwnedStringVar::AsciiLiteral(a) => StringVar::AsciiLiteral(a),
+            OwnedStringVar::Other(s) => s.into(),
+            OwnedStringVar::Ascii(a) => a.into(),
         }
     }
 }

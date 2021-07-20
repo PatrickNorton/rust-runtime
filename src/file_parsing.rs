@@ -1,8 +1,8 @@
 use crate::base_fn::BaseFunction;
 use crate::constant_loaders::{
     class_index, function_index, load_ascii, load_bigint, load_bool, load_builtin, load_bytes,
-    load_char, load_class, load_decimal, load_int, load_range, load_std_str, load_str,
-    option_index, tuple_indices,
+    load_char, load_class, load_decimal, load_fmt_args, load_int, load_range, load_std_str,
+    load_str, option_index, tuple_indices,
 };
 use crate::file_info::FileInfo;
 use crate::function::Function;
@@ -54,6 +54,7 @@ fn load_constant(data: &[u8], index: &mut usize, imports: &[Variable]) -> Consta
         14 => LoadType::OptionType(class_index(data, index)).into(),
         15 => load_char(data, index).into(),
         16 => load_ascii(data, index).into(),
+        17 => load_fmt_args(data, index).into(),
         x => panic!("Invalid value for constant: {}", x),
     }
 }

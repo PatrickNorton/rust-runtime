@@ -12,6 +12,7 @@ use crate::custom_types::range::Range;
 use crate::custom_types::set::Set;
 use crate::custom_types::slice::Slice;
 use crate::first;
+use crate::fmt::format_internal;
 use crate::function::Function;
 use crate::name::Name;
 use crate::operator::Operator;
@@ -136,6 +137,7 @@ pub fn builtin_of(index: usize) -> Variable {
         28 => null_error().into(),
         29 => Iterable::cls().into(),
         30 => assertion_error().into(),
+        31 => fmt_internal(),
         x => unimplemented!("Builtin number {}", x),
     }
 }
@@ -191,4 +193,8 @@ fn default_in(this: StdVariable, args: Vec<Variable>, runtime: &mut Runtime) -> 
         }
     }
     runtime.return_1(false.into())
+}
+
+fn fmt_internal() -> Variable {
+    Function::Native(format_internal).into()
 }
