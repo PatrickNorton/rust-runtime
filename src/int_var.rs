@@ -18,6 +18,12 @@ pub enum IntVar {
     Big(Rc<BigInt>),
 }
 
+#[derive(Copy, Clone, Debug)]
+pub enum IntMag<'a> {
+    Small(usize),
+    Big(&'a BigUint),
+}
+
 impl IntVar {
     pub fn to_str_radix(&self, radix: u32) -> String {
         match self {
@@ -29,6 +35,24 @@ impl IntVar {
                 x => BigInt::from(x).to_str_radix(radix),
             },
             IntVar::Big(b) => b.to_str_radix(radix),
+        }
+    }
+
+    pub fn magnitude(&self) -> IntMag<'_> {
+        match self {
+            IntVar::Small(s) => IntMag::Small(s.unsigned_abs()),
+            IntVar::Big(b) => IntMag::Big(b.magnitude()),
+        }
+    }
+
+    pub fn sign(&self) -> Sign {
+        match self {
+            IntVar::Small(s) => match s.cmp(&0) {
+                Ordering::Less => Sign::Minus,
+                Ordering::Equal => Sign::NoSign,
+                Ordering::Greater => Sign::Plus,
+            },
+            IntVar::Big(b) => b.sign(),
         }
     }
 }
@@ -712,6 +736,23 @@ macro_rules! impl_display {
 }
 
 impl_display! {Binary, Display, LowerHex, Octal, UpperHex}
+
+macro_rules! impl_mag_display {
+    ( $($val:ident),* ) => {
+        $(
+            impl $val for IntMag<'_> {
+                fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+                    match self {
+                        IntMag::Small(i) => $val::fmt(i, f),
+                        IntMag::Big(b) => $val::fmt(b, f),
+                    }
+                }
+            }
+        )+
+    };
+}
+
+impl_mag_display! {Binary, Display, LowerHex, Octal, UpperHex}
 
 macro_rules! integer_fn {
     ($name:ident) => {

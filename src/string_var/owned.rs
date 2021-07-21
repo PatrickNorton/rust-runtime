@@ -1,5 +1,5 @@
 use crate::string_var::{AsciiVar, MaybeString, StrVar};
-use ascii::{AsciiStr, AsciiString};
+use ascii::{AsAsciiStr, AsciiStr, AsciiString, ToAsciiChar};
 use std::borrow::Cow;
 use std::ops::Deref;
 
@@ -19,6 +19,15 @@ impl OwnedStringVar {
         }
     }
 
+    pub fn char_len(&self) -> usize {
+        match self {
+            OwnedStringVar::Literal(l) => l.chars().count(),
+            OwnedStringVar::AsciiLiteral(a) => a.len(),
+            OwnedStringVar::Other(o) => o.chars().count(),
+            OwnedStringVar::Ascii(a) => a.len(),
+        }
+    }
+
     pub fn make_ascii_uppercase(&mut self) {
         match self {
             OwnedStringVar::Literal(l) => {
@@ -29,6 +38,150 @@ impl OwnedStringVar {
             }
             OwnedStringVar::Other(o) => o.make_ascii_uppercase(),
             OwnedStringVar::Ascii(a) => a.make_ascii_uppercase(),
+        }
+    }
+
+    pub fn insert(&mut self, idx: usize, value: char) {
+        match self {
+            OwnedStringVar::Literal(l) => {
+                let mut val = l.to_string();
+                val.insert(idx, value);
+                *self = OwnedStringVar::Other(val);
+            }
+            OwnedStringVar::AsciiLiteral(a) => {
+                if let Result::Ok(value) = value.to_ascii_char() {
+                    let mut val = a.to_ascii_string();
+                    val.insert(idx, value);
+                    *self = OwnedStringVar::Ascii(val);
+                } else {
+                    let mut val = a.to_string();
+                    val.insert(idx, value);
+                    *self = OwnedStringVar::Other(val);
+                }
+            }
+            OwnedStringVar::Other(o) => o.insert(idx, value),
+            OwnedStringVar::Ascii(a) => {
+                if let Result::Ok(value) = value.to_ascii_char() {
+                    a.insert(idx, value);
+                } else {
+                    let mut val = a.to_string();
+                    val.insert(idx, value);
+                    *self = OwnedStringVar::Other(val);
+                }
+            }
+        }
+    }
+
+    pub fn insert_str(&mut self, idx: usize, value: &str) {
+        match self {
+            OwnedStringVar::Literal(l) => {
+                let mut val = l.to_string();
+                val.insert_str(idx, value);
+                *self = OwnedStringVar::Other(val);
+            }
+            OwnedStringVar::AsciiLiteral(a) => {
+                if let Result::Ok(value) = value.as_ascii_str() {
+                    let mut val = a.to_ascii_string();
+                    for (i, chr) in value.chars().enumerate() {
+                        val.insert(idx + i, chr);
+                    }
+                    *self = OwnedStringVar::Ascii(val);
+                } else {
+                    let mut val = a.to_string();
+                    val.insert_str(idx, value);
+                    *self = OwnedStringVar::Other(val);
+                }
+            }
+            OwnedStringVar::Other(o) => o.insert_str(idx, value),
+            OwnedStringVar::Ascii(a) => {
+                if let Result::Ok(value) = value.as_ascii_str() {
+                    for (i, chr) in value.chars().enumerate() {
+                        a.insert(idx + i, chr);
+                    }
+                } else {
+                    let mut val = a.to_string();
+                    val.insert_str(idx, value);
+                    *self = OwnedStringVar::Other(val);
+                }
+            }
+        }
+    }
+
+    pub fn insert_n_chr(&mut self, idx: usize, n: usize, value: char) {
+        match self {
+            OwnedStringVar::Literal(l) => {
+                let mut val = l.to_string();
+                val.insert_str(idx, &value.to_string().repeat(n));
+                *self = OwnedStringVar::Other(val)
+            }
+            OwnedStringVar::AsciiLiteral(a) => {
+                if let Result::Ok(value) = value.to_ascii_char() {
+                    let mut val = a.to_ascii_string();
+                    val.reserve(n);
+                    for idx in idx..idx + n {
+                        val.insert(idx, value);
+                    }
+                    *self = OwnedStringVar::Ascii(val)
+                } else {
+                    let mut val = a.to_string();
+                    val.insert_str(idx, &value.to_string().repeat(n));
+                    *self = OwnedStringVar::Other(val)
+                }
+            }
+            OwnedStringVar::Other(o) => {
+                o.insert_str(idx, &value.to_string().repeat(n));
+            }
+            OwnedStringVar::Ascii(a) => {
+                if let Result::Ok(value) = value.to_ascii_char() {
+                    a.reserve(n);
+                    for idx in idx..idx + n {
+                        a.insert(idx, value);
+                    }
+                } else {
+                    let mut val = a.to_string();
+                    val.insert_str(idx, &value.to_string().repeat(n));
+                    *self = OwnedStringVar::Other(val)
+                }
+            }
+        }
+    }
+
+    pub fn push_n_chr(&mut self, n: usize, value: char) {
+        match self {
+            OwnedStringVar::Literal(l) => {
+                let mut val = l.to_string();
+                val.push_str(&value.to_string().repeat(n));
+                *self = OwnedStringVar::Other(val)
+            }
+            OwnedStringVar::AsciiLiteral(a) => {
+                if let Result::Ok(value) = value.to_ascii_char() {
+                    let mut val = a.to_ascii_string();
+                    val.reserve(n);
+                    for _ in 0..n {
+                        val.push(value);
+                    }
+                    *self = OwnedStringVar::Ascii(val)
+                } else {
+                    let mut val = a.to_string();
+                    val.push_str(&value.to_string().repeat(n));
+                    *self = OwnedStringVar::Other(val)
+                }
+            }
+            OwnedStringVar::Other(o) => {
+                o.push_str(&value.to_string().repeat(n));
+            }
+            OwnedStringVar::Ascii(a) => {
+                if let Result::Ok(value) = value.to_ascii_char() {
+                    a.reserve(n);
+                    for _ in 0..n {
+                        a.push(value);
+                    }
+                } else {
+                    let mut val = a.to_string();
+                    val.push_str(&value.to_string().repeat(n));
+                    *self = OwnedStringVar::Other(val)
+                }
+            }
         }
     }
 }

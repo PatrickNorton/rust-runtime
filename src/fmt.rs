@@ -10,7 +10,7 @@ use crate::string_var::{MaybeString, OwnedStringVar, StringVar};
 use crate::variable::{FnResult, InnerVar, Variable};
 use ascii::{AsciiChar, AsciiStr};
 use num::pow::Pow;
-use num::{BigInt, BigRational, BigUint, One, Signed, ToPrimitive, Zero};
+use num::{bigint, BigInt, BigRational, BigUint, One, Signed, ToPrimitive, Zero};
 use once_cell::sync::Lazy;
 use std::fmt::{Display, Formatter, Write};
 use std::rc::Rc;
@@ -128,44 +128,113 @@ impl FormatArgs {
             && self.precision == 0
     }
 
-    fn fmt_binary(&self, var: Variable) -> MaybeString {
-        if !self.is_simple_format() {
-            todo!("Non-trivial formatting")
+    fn pad_integer(
+        &self,
+        mut value: OwnedStringVar,
+        sign: bigint::Sign,
+        prefix: &str,
+    ) -> OwnedStringVar {
+        if self.is_simple_format() {
+            return value;
         }
-        let value = IntVar::from(var);
-        MaybeString::from_str_checked(format!("{:b}", value))
+        if self.precision != 0 {
+            panic!("Precision not allowed in integer format specifier");
+        }
+        if self.hash {
+            value.insert_str(0, prefix);
+        }
+        let sign_chr = self.sign_char(sign);
+        if let Option::Some(sign) = sign_chr {
+            value.insert(0, sign);
+        }
+        if let Option::Some(diff) = value.char_len().checked_sub(self.min_width as usize) {
+            if self.zero && self.fill == '\0' {
+                let start = if sign_chr.is_some() { 1 } else { 0 }
+                    + if self.hash { prefix.len() } else { 0 };
+                value.insert_n_chr(start, diff, '0');
+            } else {
+                let fill_char = if self.fill != '\0' { self.fill } else { ' ' };
+                match self.align {
+                    Align::Left => value.insert_n_chr(0, diff, fill_char),
+                    Align::Right => value.push_n_chr(diff, fill_char),
+                    Align::AfterSign => {
+                        value.insert_n_chr(if sign_chr.is_some() { 1 } else { 0 }, diff, fill_char)
+                    }
+                    Align::Center => {
+                        let pre_count = diff / 2; // Rounds down
+                        let post_count = (diff + 1) / 2; // Rounds up
+                        value.insert_n_chr(0, pre_count, fill_char);
+                        value.push_n_chr(post_count, fill_char);
+                    }
+                }
+            }
+        }
+        value
     }
 
-    fn fmt_decimal(&self, var: Variable) -> MaybeString {
-        if !self.is_simple_format() {
-            todo!("Non-trivial formatting")
+    fn sign_char(&self, sign: bigint::Sign) -> Option<char> {
+        match self.sign {
+            Sign::Both => match sign {
+                bigint::Sign::Minus => Option::Some('-'),
+                bigint::Sign::NoSign => Option::Some('+'),
+                bigint::Sign::Plus => Option::Some('+'),
+            },
+            Sign::NegativeOnly => match sign {
+                bigint::Sign::Minus => Option::Some('-'),
+                bigint::Sign::NoSign => Option::None,
+                bigint::Sign::Plus => Option::None,
+            },
+            Sign::LeadingSpace => match sign {
+                bigint::Sign::Minus => Option::Some('-'),
+                bigint::Sign::NoSign => Option::Some(' '),
+                bigint::Sign::Plus => Option::Some(' '),
+            },
         }
-        let value = IntVar::from(var);
-        MaybeString::from_str_checked(format!("{}", value))
     }
 
-    fn fmt_octal(&self, var: Variable) -> MaybeString {
+    fn fmt_binary(&self, var: Variable) -> OwnedStringVar {
         if !self.is_simple_format() {
             todo!("Non-trivial formatting")
         }
         let value = IntVar::from(var);
-        MaybeString::from_str_checked(format!("{:o}", value))
+        let str_val = OwnedStringVar::from_str_checked(format!("{:b}", value.magnitude()));
+        self.pad_integer(str_val, value.sign(), "0b")
     }
 
-    fn fmt_hex(&self, var: Variable) -> MaybeString {
+    fn fmt_decimal(&self, var: Variable) -> OwnedStringVar {
         if !self.is_simple_format() {
             todo!("Non-trivial formatting")
         }
         let value = IntVar::from(var);
-        MaybeString::from_str_checked(format!("{:x}", value))
+        let str_val = OwnedStringVar::from_str_checked(format!("{}", value.magnitude()));
+        self.pad_integer(str_val, value.sign(), "")
     }
 
-    fn fmt_upper_hex(&self, var: Variable) -> MaybeString {
+    fn fmt_octal(&self, var: Variable) -> OwnedStringVar {
         if !self.is_simple_format() {
             todo!("Non-trivial formatting")
         }
         let value = IntVar::from(var);
-        MaybeString::from_str_checked(format!("{:X}", value))
+        let str_val = OwnedStringVar::from_str_checked(format!("{:o}", value.magnitude()));
+        self.pad_integer(str_val, value.sign(), "0o")
+    }
+
+    fn fmt_hex(&self, var: Variable) -> OwnedStringVar {
+        if !self.is_simple_format() {
+            todo!("Non-trivial formatting")
+        }
+        let value = IntVar::from(var);
+        let str_val = OwnedStringVar::from_str_checked(format!("{:x}", value.magnitude()));
+        self.pad_integer(str_val, value.sign(), "0x")
+    }
+
+    fn fmt_upper_hex(&self, var: Variable) -> OwnedStringVar {
+        if !self.is_simple_format() {
+            todo!("Non-trivial formatting")
+        }
+        let value = IntVar::from(var);
+        let str_val = OwnedStringVar::from_str_checked(format!("{:X}", value.magnitude()));
+        self.pad_integer(str_val, value.sign(), "0X")
     }
 
     fn fmt_character(&self, var: Variable) -> MaybeString {
@@ -192,7 +261,7 @@ impl FormatArgs {
         if i { AsciiChar::SOH } else { AsciiChar::Null }.into()
     }
 
-    fn fmt_number(&self, var: Variable) -> MaybeString {
+    fn fmt_number(&self, var: Variable) -> OwnedStringVar {
         self.fmt_decimal(var)
     }
 
