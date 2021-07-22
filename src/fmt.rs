@@ -1,5 +1,6 @@
 use crate::custom_var::CustomVar;
 use crate::first_n;
+use crate::fmt_num::{format_exp, format_rational, format_upper_exp, BIG_TEN};
 use crate::int_tools::bytes_index;
 use crate::int_var::IntVar;
 use crate::name::Name;
@@ -10,17 +11,12 @@ use crate::string_var::{MaybeString, OwnedStringVar, StringVar};
 use crate::variable::{FnResult, InnerVar, Variable};
 use ascii::{AsciiChar, AsciiStr};
 use num::pow::Pow;
-use num::{bigint, BigInt, BigRational, BigUint, One, Signed, ToPrimitive, Zero};
+use num::{bigint, BigInt, BigRational, One, Signed, ToPrimitive, Zero};
 use once_cell::sync::Lazy;
 use std::fmt::{Display, Formatter, Write};
 use std::rc::Rc;
 
 const DEFAULT_FLOAT_DECIMALS: usize = 6;
-
-static BIG_U_TEN: Lazy<BigUint> = Lazy::new(|| BigUint::from(10u32));
-static BIG_TEN: Lazy<BigInt> = Lazy::new(|| BigInt::from(10));
-static BIG_TEN_RATIONAL: Lazy<BigRational> =
-    Lazy::new(|| BigRational::from_integer((*BIG_TEN).clone()));
 
 #[derive(Debug, Default)]
 pub struct FormatArgs {
@@ -309,43 +305,18 @@ impl FormatArgs {
         if !self.is_simple_format() {
             todo!("Non-trivial formatting")
         }
-        let abs_value = value.abs();
-        let cased_e = if uppercase { 'E' } else { 'e' };
         if value.is_zero() {
             if uppercase {
                 "0.000000E+00".into()
             } else {
                 "0.000000e+00".into()
             }
-        } else if abs_value < *BIG_TEN_RATIONAL && abs_value >= BigRational::one() {
-            let mut result = as_decimal(value, DEFAULT_FLOAT_DECIMALS);
-            result.push(cased_e);
-            result.push_str("+00");
-            OwnedStringVar::from_str_checked(result)
-        } else if abs_value < BigRational::one() {
-            // FIXME: This is *horrifically* slow
-            let mut count = 0;
-            let mut result = value.clone();
-            while result.abs() < BigRational::one() {
-                result *= &*BIG_TEN;
-                count += 1;
-            }
-            let result_str = as_decimal(&result, DEFAULT_FLOAT_DECIMALS);
-            OwnedStringVar::from_str_checked(format!("{}{}-{}", result_str, cased_e, count))
         } else {
-            // FIXME: digit_count still reallocates O(n) times; it would be
-            //  nice if there were an algorithm for determining decimal digit
-            //  placement without reallocation necessary.
-            let (round_num, _) = value.round().into();
-            let decimal_digits = digit_count(round_num);
-            let result = value / (Pow::pow(&*BIG_TEN, decimal_digits) - 1);
-            let result_str = as_decimal(&result, DEFAULT_FLOAT_DECIMALS);
-            OwnedStringVar::from_str_checked(format!(
-                "{}{}+{}",
-                result_str,
-                cased_e,
-                decimal_digits - 1
-            ))
+            OwnedStringVar::from_str_checked(if uppercase {
+                format_upper_exp(value.clone(), DEFAULT_FLOAT_DECIMALS as u32)
+            } else {
+                format_exp(value.clone(), DEFAULT_FLOAT_DECIMALS as u32)
+            })
         }
     }
 
@@ -361,11 +332,9 @@ impl FormatArgs {
                 OwnedStringVar::from_str_checked(format!("{}.000000", i))
             }
             Variable::Normal(InnerVar::Bool(b)) => if b { *ONE_FIXED } else { *ZERO_FIXED }.into(),
-            Variable::Normal(InnerVar::Decimal(d)) => {
-                // FIXME: Use BigRational better formatting if/when it comes
-                //  (see https://github.com/rust-num/num-rational/issues/10)
-                OwnedStringVar::from_str_checked(as_decimal(&*d, DEFAULT_FLOAT_DECIMALS))
-            }
+            Variable::Normal(InnerVar::Decimal(d)) => OwnedStringVar::from_str_checked(
+                format_rational((*d).clone(), DEFAULT_FLOAT_DECIMALS as u32),
+            ),
             _ => panic!(),
         }
     }
@@ -548,31 +517,6 @@ fn as_decimal(value: &BigRational, precision: usize) -> String {
     ret_val.push_str(&tail_zeroes);
     ret_val.push_str(&tail_str);
     ret_val
-}
-
-// Based on https://stackoverflow.com/questions/18828377/
-fn digit_count(value: BigInt) -> u64 {
-    if let Option::Some(small) = value.to_u64() {
-        return small_digit_count(small);
-    }
-    let mut value = value.into_parts().1;
-    let mut digits = 0;
-    let mut bits = value.bits();
-    while bits > 4 {
-        // 4 > log[2](10) so we should not reduce it too far.
-        let reduce = bits / 4;
-        value /= Pow::pow(&*BIG_U_TEN, reduce);
-        digits += reduce;
-        bits = value.bits();
-    }
-    if bits.to_u64().unwrap() > 9 {
-        digits += 1;
-    }
-    digits
-}
-
-fn small_digit_count(value: u64) -> u64 {
-    todo!()
 }
 
 fn get_formatter(var: Variable) -> Rc<FormatArgs> {

@@ -1,0 +1,472 @@
+use num::bigint::Sign;
+use num::traits::Pow;
+use num::{BigInt, BigRational, BigUint, Integer, One, Signed, ToPrimitive, Zero};
+use once_cell::sync::Lazy;
+use std::borrow::Cow;
+use std::cmp::Ordering;
+use std::convert::TryInto;
+use std::fmt::{Display, Formatter, LowerExp, UpperExp, Write};
+
+#[derive(Debug, Eq, PartialEq)]
+struct FmtDecimal {
+    value: BigInt,
+    scale: i64,
+}
+
+const LONG_TEN_POWERS_TABLE: [i64; 19] = [
+    1,                   // 0 / 10^0
+    10,                  // 1 / 10^1
+    100,                 // 2 / 10^2
+    1000,                // 3 / 10^3
+    10000,               // 4 / 10^4
+    100000,              // 5 / 10^5
+    1000000,             // 6 / 10^6
+    10000000,            // 7 / 10^7
+    100000000,           // 8 / 10^8
+    1000000000,          // 9 / 10^9
+    10000000000,         // 10 / 10^10
+    100000000000,        // 11 / 10^11
+    1000000000000,       // 12 / 10^12
+    10000000000000,      // 13 / 10^13
+    100000000000000,     // 14 / 10^14
+    1000000000000000,    // 15 / 10^15
+    10000000000000000,   // 16 / 10^16
+    100000000000000000,  // 17 / 10^17
+    1000000000000000000, // 18 / 10^18
+];
+
+const BIG_TEN_POWERS_TABLE_INITLEN: usize = 19;
+const BIG_TEN_POWERS_TABLE_MAX: usize = 16 * BIG_TEN_POWERS_TABLE_INITLEN;
+static BIG_TEN_POWERS_TABLE: Lazy<[BigInt; BIG_TEN_POWERS_TABLE_INITLEN]> = Lazy::new(|| {
+    [
+        BigInt::one(),
+        BigInt::from(10u64),
+        BigInt::from(100u64),
+        BigInt::from(1000u64),
+        BigInt::from(10000u64),
+        BigInt::from(100000u64),
+        BigInt::from(1000000u64),
+        BigInt::from(10000000u64),
+        BigInt::from(100000000u64),
+        BigInt::from(1000000000u64),
+        BigInt::from(10000000000u64),
+        BigInt::from(100000000000u64),
+        BigInt::from(1000000000000u64),
+        BigInt::from(10000000000000u64),
+        BigInt::from(100000000000000u64),
+        BigInt::from(1000000000000000u64),
+        BigInt::from(10000000000000000u64),
+        BigInt::from(100000000000000000u64),
+        BigInt::from(1000000000000000000u64),
+    ]
+});
+
+pub static BIG_U_TEN: Lazy<BigUint> = Lazy::new(|| BigUint::from(10u32));
+pub static BIG_TEN: Lazy<BigInt> = Lazy::new(|| BigInt::from(10u32));
+
+pub fn format_rational(value: BigRational, precision: u32) -> String {
+    let (numer, denom) = value.into();
+    let fmt_dec = FmtDecimal::from_ratio(numer, denom, precision as u64);
+    format!("{:.*}", precision as usize, fmt_dec)
+}
+
+pub fn format_exp(value: BigRational, precision: u32) -> String {
+    format!("{:.*e}", precision as usize, get_dec(value, precision))
+}
+
+pub fn format_upper_exp(value: BigRational, precision: u32) -> String {
+    format!("{:.*E}", precision as usize, get_dec(value, precision))
+}
+
+fn get_dec(value: BigRational, precision: u32) -> FmtDecimal {
+    let (numer, denom) = value.into();
+    // If |value| < 1, the precision we pass won't be enough for it to print
+    // the requisite number of digits. As such, we need to pre-calculate the
+    // shift (the number after the 'e'), and add that to the requisite
+    // precision.
+    let precision = if numer.magnitude() < denom.magnitude() {
+        // The shift over should be <= to the number of the digits of the remainder
+        let digits = digit_count(&denom);
+        precision as u64 + digits
+    } else {
+        precision as u64
+    };
+    FmtDecimal::from_ratio(numer, denom, precision)
+}
+
+impl FmtDecimal {
+    pub fn from_ratio(numer: BigInt, denom: BigInt, decimal_digs: u64) -> FmtDecimal {
+        Self::divide_integer(numer, denom, decimal_digs.try_into().unwrap())
+    }
+
+    fn new(int_val: BigInt, scale: i64) -> FmtDecimal {
+        FmtDecimal {
+            value: int_val,
+            scale,
+        }
+    }
+
+    fn divide_integer(dividend: BigInt, divisor: BigInt, scale: i64) -> FmtDecimal {
+        if scale > 0 {
+            let scaled_dividend = Self::big_multiply_power_ten(dividend, scale);
+            Self::divide_and_round(scaled_dividend, divisor, scale, scale)
+        } else {
+            let scaled_divisor = Self::big_multiply_power_ten(divisor, -scale);
+            Self::divide_and_round(dividend, scaled_divisor, scale, scale)
+        }
+    }
+
+    fn big_multiply_power_ten(value: BigInt, n: i64) -> BigInt {
+        if n <= 0 {
+            value
+        } else if (n as usize) < LONG_TEN_POWERS_TABLE.len() {
+            value * LONG_TEN_POWERS_TABLE[n as usize]
+        } else {
+            value * &*Self::big_ten_to_the(n)
+        }
+    }
+
+    fn divide_and_round(
+        dividend: BigInt,
+        divisor: BigInt,
+        scale: i64,
+        preferred_scale: i64,
+    ) -> FmtDecimal {
+        let (mq, mr) = dividend.div_rem(&divisor);
+        let is_remainder_zero = mr.is_zero();
+        let q_sign = mq.sign();
+        if !is_remainder_zero {
+            if Self::needs_increment(&divisor, q_sign, &mr) {
+                FmtDecimal::new(mq + 1, scale)
+            } else {
+                FmtDecimal::new(mq, scale)
+            }
+        } else if preferred_scale != scale {
+            Self::create_and_strip_zeros_to_match_scale(mq, scale, preferred_scale)
+        } else {
+            FmtDecimal::new(mq, scale)
+        }
+    }
+
+    fn needs_increment(divisor: &BigInt, q_sign: Sign, mr: &BigInt) -> bool {
+        assert!(!mr.is_zero());
+        let cmp_frac_half = compare_half(mr, divisor);
+        Self::common_need_increment(q_sign, cmp_frac_half)
+    }
+
+    fn common_need_increment(_q_sign: Sign, cmp_frac_half: Ordering) -> bool {
+        // We round half up here
+        match cmp_frac_half {
+            Ordering::Less => false,
+            Ordering::Greater => true,
+            Ordering::Equal => true,
+        }
+    }
+
+    fn create_and_strip_zeros_to_match_scale(
+        mut int_val: BigInt,
+        mut scale: i64,
+        preferred_scale: i64,
+    ) -> FmtDecimal {
+        while int_val.magnitude() > &*BIG_U_TEN && scale > preferred_scale {
+            if int_val.is_odd() {
+                break; // odd number cannot end in 0
+            }
+            let (quot, rem) = int_val.div_rem(&*BIG_TEN);
+            if !rem.is_zero() {
+                break; // non-0 remainder
+            }
+            int_val = quot;
+            scale -= 1;
+        }
+        FmtDecimal::new(int_val, scale)
+    }
+
+    fn big_ten_to_the(n: i64) -> Cow<'static, BigInt> {
+        if n < 0 {
+            Cow::Owned(BigInt::zero())
+        } else if n < BIG_TEN_POWERS_TABLE_MAX as i64 {
+            let powers = &*BIG_TEN_POWERS_TABLE;
+            if n < powers.len() as i64 {
+                Cow::Borrowed(&powers[n as usize])
+            } else {
+                // TODO? expand_big_integer_ten_powers(n)
+                Cow::Owned(Pow::pow(BigInt::from(10), n as u64))
+            }
+        } else {
+            Cow::Owned(Pow::pow(BigInt::from(10), n as u64))
+        }
+    }
+
+    fn fmt_exp(&self, f: &mut Formatter<'_>, e: char) -> std::fmt::Result {
+        let precision = f.precision();
+        let digits = get_digits(&self.value);
+        f.write_char(digits[0])?;
+        if digits.len() > 1 {
+            f.write_char('.')?;
+            match precision {
+                Option::Some(x) => {
+                    if x + 1 >= digits.len() {
+                        for ch in &digits[1..] {
+                            f.write_char(*ch)?;
+                        }
+                        for _ in 0..x + 1 - digits.len() {
+                            f.write_char('0')?;
+                        }
+                    } else {
+                        for ch in &digits[1..x + 1] {
+                            f.write_char(*ch)?; // FIXME: Round last digit
+                        }
+                    }
+                }
+                Option::None => {
+                    for ch in &digits[1..] {
+                        f.write_char(*ch)?;
+                    }
+                }
+            }
+        }
+        let adjusted = -self.scale + (digits.len() as i64) - 1;
+        f.write_char(e)?;
+        write!(f, "{:+03}", adjusted)?;
+        Result::Ok(())
+    }
+}
+
+impl Display for FmtDecimal {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        if self.scale == 0 {
+            return self.value.fmt(f);
+        }
+        let digits = get_digits(&self.value);
+        if self.value.is_negative() {
+            f.write_char('-')?;
+        }
+        let scale = self.scale as i64;
+        let digit_len = digits.len();
+        let pad = scale - digit_len as i64;
+        if pad >= 0 {
+            f.write_char('0')?;
+            f.write_char('.')?;
+            match f.precision() {
+                Option::None => {
+                    for _ in 0..pad {
+                        f.write_char('0')?;
+                    }
+                    for ch in digits {
+                        f.write_char(ch)?;
+                    }
+                }
+                Option::Some(prec) => {
+                    if prec < pad as usize {
+                        for _ in 0..prec {
+                            f.write_char('0')?;
+                        }
+                    } else if prec - pad as usize >= digit_len {
+                        for _ in 0..pad {
+                            f.write_char('0')?;
+                        }
+                        for ch in digits {
+                            f.write_char(ch)?;
+                        }
+                        for _ in 0..prec - pad as usize - digit_len {
+                            f.write_char('0')?;
+                        }
+                    } else {
+                        // FIXME: Round properly
+                        for _ in 0..pad {
+                            f.write_char('0')?;
+                        }
+                        for ch in &digits[..prec - pad as usize] {
+                            f.write_char(*ch)?;
+                        }
+                    }
+                }
+            }
+        } else {
+            let pad = (-pad) as usize;
+            for ch in &digits[..pad] {
+                f.write_char(*ch)?;
+            }
+            f.write_char('.')?;
+            match f.precision() {
+                Option::None => {
+                    for ch in &digits[pad..] {
+                        f.write_char(*ch)?;
+                    }
+                }
+                Option::Some(x) => {
+                    if x + pad >= digit_len {
+                        for ch in &digits[pad..] {
+                            f.write_char(*ch)?;
+                        }
+                        for _ in 0..x + pad - digit_len {
+                            f.write_char('0')?;
+                        }
+                    } else {
+                        // FIXME: Round properly
+                        for ch in &digits[pad..x + pad] {
+                            f.write_char(*ch)?;
+                        }
+                    }
+                }
+            }
+        }
+        Result::Ok(())
+    }
+}
+
+impl LowerExp for FmtDecimal {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        self.fmt_exp(f, 'e')
+    }
+}
+
+impl UpperExp for FmtDecimal {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        self.fmt_exp(f, 'E')
+    }
+}
+
+fn get_digits(value: &BigInt) -> Vec<char> {
+    value.magnitude().to_string().chars().collect()
+}
+
+/// Computes `a.cmp(b/2)`.
+///
+/// This is faster than the standard computation, as this avoids any
+/// intermediate allocation.
+///
+/// # Examples
+///
+/// ```
+/// use num::BigInt;
+/// use std::cmp::Ordering;
+///
+/// let a = BigInt::from(10);
+/// let b = BigInt::from(15);
+/// let c = BigInt::from(20);
+/// let d = BigInt::from(30);
+/// assert_eq!(compare_half(&a, &b), Ordering::Greater);
+/// assert_eq!(compare_half(&a, &c), Ordering::Equal);
+/// assert_eq!(compare_half(&a, &d), Ordering::Less);
+/// ```
+fn compare_half(a: &BigInt, b: &BigInt) -> Ordering {
+    let a_val = a.iter_u32_digits();
+    let mut b_val = b.iter_u32_digits();
+    let a_len = a_val.len();
+    let b_len = b_val.len();
+    if a_len == 0 {
+        return a_len.cmp(&b_len);
+    } else if a_len > b_len {
+        return Ordering::Greater;
+    } else if a_len < b_len - 1 {
+        return Ordering::Less;
+    }
+    let mut carry = 0u32;
+    // Only 2 cases left: a_len == b_len or a_len == b_len - 1
+    if a_len != b_len {
+        // a_len == b_len - 1
+        if b_val.next().unwrap() == 1 {
+            carry = 0x8000_0000;
+        } else {
+            return Ordering::Less;
+        }
+    }
+    for (av, bv) in a_val.zip(b_val) {
+        let hb = (bv >> 1) + carry;
+        if av != hb {
+            return av.cmp(&hb);
+        }
+        carry = (bv & 1) << (u32::BITS - 1); // carry will be either 0x80000000 or 0
+    }
+    if carry == 0 {
+        Ordering::Equal
+    } else {
+        Ordering::Less
+    }
+}
+
+fn digit_count(x: &BigInt) -> u64 {
+    // Fast paths for small numbers
+    if x.is_zero() {
+        1
+    } else if let Option::Some(x) = x.to_i64() {
+        // The checked_abs here is needed b/c i64::MIN.abs() overflows back to
+        // i64::MIN, however, i64::MIN has the same number of digits as
+        // i64::MAX, so we can just replace it with that.
+        let x_abs = x.checked_abs().unwrap_or(i64::MAX);
+        match LONG_TEN_POWERS_TABLE.binary_search(&x_abs) {
+            Result::Ok(x) => (x + 1) as u64,
+            Result::Err(x) => x as u64,
+        }
+    } else {
+        // TODO: Do this without an intermediate allocation
+        get_digits(x).len() as u64
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::fmt_num::{compare_half, digit_count, FmtDecimal, BIG_TEN};
+    use num::traits::Pow;
+    use num::{BigInt, One, Zero};
+    use std::cmp::Ordering;
+
+    #[test]
+    fn dig_count() {
+        assert_eq!(digit_count(&BigInt::zero()), 1);
+        assert_eq!(digit_count(&BigInt::from(100)), 3);
+        assert_eq!(digit_count(&BigInt::from(123)), 3);
+        assert_eq!(digit_count(&Pow::pow(&*BIG_TEN, 75u32)), 76);
+    }
+
+    #[test]
+    fn comp_half() {
+        let a = BigInt::from(10);
+        let b = BigInt::from(15);
+        let c = BigInt::from(20);
+        let d = BigInt::from(30);
+        assert_eq!(compare_half(&a, &b), Ordering::Greater);
+        assert_eq!(compare_half(&a, &c), Ordering::Equal);
+        assert_eq!(compare_half(&a, &d), Ordering::Less);
+    }
+
+    #[test]
+    fn create_decimal() {
+        let e1 = FmtDecimal::new(BigInt::from(333333), 6);
+        let a1 = FmtDecimal::from_ratio(BigInt::one(), BigInt::from(3), 6);
+        assert_eq!(e1, a1);
+
+        let e2 = FmtDecimal::new(BigInt::from(666667), 6);
+        let a2 = FmtDecimal::from_ratio(BigInt::from(2), BigInt::from(3), 6);
+        assert_eq!(e2, a2);
+    }
+
+    #[test]
+    fn fixed_fmt() {
+        let d1 = FmtDecimal::new(BigInt::from(333333), 6);
+        assert_eq!(&format!("{}", d1), "0.333333");
+        assert_eq!(&format!("{:.5}", d1), "0.33333");
+        assert_eq!(&format!("{:.7}", d1), "0.3333330");
+        // TODO: Get rounding working and add a test here
+    }
+
+    #[test]
+    fn exp_fmt() {
+        let d1 = FmtDecimal::new(BigInt::from(333333), 6);
+        assert_eq!(&format!("{:e}", d1), "3.33333e-01");
+        assert_eq!(&format!("{:.4e}", d1), "3.3333e-01");
+        assert_eq!(&format!("{:.6e}", d1), "3.333330e-01");
+        // TODO: Get rounding working and add a test here
+    }
+
+    #[test]
+    fn upper_exp_fmt() {
+        let d1 = FmtDecimal::new(BigInt::from(333333), 6);
+        assert_eq!(&format!("{:E}", d1), "3.33333E-01");
+        assert_eq!(&format!("{:.4E}", d1), "3.3333E-01");
+        assert_eq!(&format!("{:.6E}", d1), "3.333330E-01");
+        // TODO: Get rounding working and add a test here
+    }
+}
