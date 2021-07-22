@@ -1,6 +1,6 @@
 use crate::custom_var::CustomVar;
 use crate::first_n;
-use crate::fmt_num::{format_exp, format_rational, format_upper_exp, BIG_TEN};
+use crate::fmt_num::{format_exp, format_rational, format_upper_exp};
 use crate::int_tools::bytes_index;
 use crate::int_var::IntVar;
 use crate::name::Name;
@@ -10,8 +10,7 @@ use crate::std_type::Type;
 use crate::string_var::{MaybeString, OwnedStringVar, StringVar};
 use crate::variable::{FnResult, InnerVar, Variable};
 use ascii::{AsciiChar, AsciiStr};
-use num::pow::Pow;
-use num::{bigint, BigInt, BigRational, One, Signed, ToPrimitive, Zero};
+use num::{bigint, BigInt, BigRational, One, ToPrimitive, Zero};
 use once_cell::sync::Lazy;
 use std::fmt::{Display, Formatter, Write};
 use std::rc::Rc;
@@ -143,7 +142,7 @@ impl FormatArgs {
         if let Option::Some(sign) = sign_chr {
             value.insert(0, sign);
         }
-        if let Option::Some(diff) = value.char_len().checked_sub(self.min_width as usize) {
+        if let Option::Some(diff) = (self.min_width as usize).checked_sub(value.char_len()) {
             if self.zero && self.fill == '\0' {
                 let start = if sign_chr.is_some() { 1 } else { 0 }
                     + if self.hash { prefix.len() } else { 0 };
@@ -189,45 +188,30 @@ impl FormatArgs {
     }
 
     fn fmt_binary(&self, var: Variable) -> OwnedStringVar {
-        if !self.is_simple_format() {
-            todo!("Non-trivial formatting")
-        }
         let value = IntVar::from(var);
         let str_val = OwnedStringVar::from_str_checked(format!("{:b}", value.magnitude()));
         self.pad_integer(str_val, value.sign(), "0b")
     }
 
     fn fmt_decimal(&self, var: Variable) -> OwnedStringVar {
-        if !self.is_simple_format() {
-            todo!("Non-trivial formatting")
-        }
         let value = IntVar::from(var);
         let str_val = OwnedStringVar::from_str_checked(format!("{}", value.magnitude()));
         self.pad_integer(str_val, value.sign(), "")
     }
 
     fn fmt_octal(&self, var: Variable) -> OwnedStringVar {
-        if !self.is_simple_format() {
-            todo!("Non-trivial formatting")
-        }
         let value = IntVar::from(var);
         let str_val = OwnedStringVar::from_str_checked(format!("{:o}", value.magnitude()));
         self.pad_integer(str_val, value.sign(), "0o")
     }
 
     fn fmt_hex(&self, var: Variable) -> OwnedStringVar {
-        if !self.is_simple_format() {
-            todo!("Non-trivial formatting")
-        }
         let value = IntVar::from(var);
         let str_val = OwnedStringVar::from_str_checked(format!("{:x}", value.magnitude()));
         self.pad_integer(str_val, value.sign(), "0x")
     }
 
     fn fmt_upper_hex(&self, var: Variable) -> OwnedStringVar {
-        if !self.is_simple_format() {
-            todo!("Non-trivial formatting")
-        }
         let value = IntVar::from(var);
         let str_val = OwnedStringVar::from_str_checked(format!("{:X}", value.magnitude()));
         self.pad_integer(str_val, value.sign(), "0X")
@@ -492,31 +476,6 @@ impl Default for FmtType {
     fn default() -> Self {
         FmtType::String
     }
-}
-
-// TODO? Use AsciiString instead of String
-fn as_decimal(value: &BigRational, precision: usize) -> String {
-    let ten_pow_prec = Pow::pow(&*BIG_TEN, precision);
-    let rounded = (value.clone() * &ten_pow_prec).round();
-    let minus = rounded.is_negative();
-    let trunc = &((&rounded / &ten_pow_prec).trunc().to_integer());
-    let tail = &(rounded % ten_pow_prec).abs().to_integer();
-    let mut ret_val = String::new();
-    if minus {
-        ret_val.push('-');
-    }
-    ret_val.push_str(&trunc.to_string());
-    ret_val.push('.');
-    let tail_str = tail.to_string();
-    let tail_length = tail_str.chars().count();
-    let tail_zeroes = if tail_length < precision {
-        "0".repeat(precision - tail_length)
-    } else {
-        String::new()
-    };
-    ret_val.push_str(&tail_zeroes);
-    ret_val.push_str(&tail_str);
-    ret_val
 }
 
 fn get_formatter(var: Variable) -> Rc<FormatArgs> {
