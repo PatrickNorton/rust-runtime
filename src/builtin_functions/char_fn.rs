@@ -48,7 +48,7 @@ pub fn get_attribute(this: char, s: &str) -> Variable {
 }
 
 fn eq(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    runtime.return_1(args.into_iter().any(|arg| char::from(arg) != this).into())
+    runtime.return_1(args.into_iter().all(|arg| char::from(arg) == this).into())
 }
 
 fn int(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -70,7 +70,7 @@ fn repr(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let result: StringVar = match this {
         '\'' => "c\"'\"".into(),
         '"' => "c'\"'".into(),
-        x => character::repr(x).into(),
+        x => format!("c'{}'", character::repr(x)).into(),
     };
     runtime.return_1(result.into())
 }
@@ -184,4 +184,57 @@ fn base_err<T: Display>(value: T, runtime: &mut Runtime) -> FnResult {
             value
         ),
     )
+}
+
+#[cfg(test)]
+mod test {
+    use crate::builtin_functions::char_fn::{encode, encode_utf_16, eq, int, lower, repr, upper};
+    use crate::custom_types::bytes::LangBytes;
+    use crate::runtime::Runtime;
+    use crate::string_var::StringVar;
+    use std::rc::Rc;
+
+    #[test]
+    fn char_eq() {
+        let v1 = Runtime::test(|runtime| eq('a', vec!['a'.into()], runtime));
+        assert_eq!(v1, Result::Ok(true.into()));
+        let v2 = Runtime::test(|runtime| eq('a', vec!['b'.into()], runtime));
+        assert_eq!(v2, Result::Ok(false.into()));
+        let v3 = Runtime::test(|runtime| eq('a', vec!['a'.into(), 'a'.into()], runtime));
+        assert_eq!(v3, Result::Ok(true.into()));
+        let v4 = Runtime::test(|runtime| eq('a', vec!['a'.into(), 'b'.into()], runtime));
+        assert_eq!(v4, Result::Ok(false.into()));
+    }
+
+    #[test]
+    fn char_int() {
+        let v1 = Runtime::test(|runtime| int('a', vec![], runtime));
+        assert_eq!(v1, Result::Ok(('a' as u32).into()));
+    }
+
+    #[test]
+    fn char_repr() {
+        let quote = Runtime::test(|runtime| repr('"', vec![], runtime));
+        assert_eq!(quote, Result::Ok(StringVar::from("c'\"'").into()));
+        let char = Runtime::test(|runtime| repr('a', vec![], runtime));
+        assert_eq!(char, Result::Ok(StringVar::from("c'a'").into()));
+    }
+
+    #[test]
+    fn char_upper() {
+        let val = Runtime::test(|runtime| upper('a', vec![], runtime));
+        assert_eq!(val, Result::Ok('A'.into()));
+    }
+
+    #[test]
+    fn char_lower() {
+        let val = Runtime::test(|runtime| lower('A', vec![], runtime));
+        assert_eq!(val, Result::Ok('a'.into()));
+    }
+
+    #[test]
+    fn encode_u16() {
+        let encoded = encode_utf_16('á', false);
+        assert_eq!(encoded, vec![0xe1, 0x00]);
+    }
 }

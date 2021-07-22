@@ -31,3 +31,44 @@ pub fn repr(value: char) -> Cow<'static, str> {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::character::repr;
+
+    #[test]
+    fn backslash() {
+        assert_eq!(&repr('\\'), r"\\");
+    }
+
+    #[test]
+    fn quote() {
+        assert_eq!(&repr('"'), "\\\"");
+    }
+
+    #[test]
+    fn printable_ascii() {
+        assert_eq!(&repr('b'), "b");
+    }
+
+    #[test]
+    fn ascii() {
+        assert_eq!(&repr('\x03'), r"\x03");
+    }
+
+    #[test]
+    fn printable() {
+        assert_eq!(&repr('á'), "á");
+    }
+
+    #[test]
+    fn bmp() {
+        // First character in the Private Use area
+        assert_eq!(&repr('\u{E000}'), r"\uE000");
+    }
+
+    #[test]
+    fn non_bmp() {
+        assert_eq!(&repr('\u{E0030}'), r"\U000E0030");
+    }
+}

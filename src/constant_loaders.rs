@@ -357,3 +357,62 @@ pub fn load_class(
         ),
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::constant_loaders::{
+        inner_bigint, load_ascii_str, load_bool, load_bytes, load_decimal, load_std_str,
+    };
+    use crate::custom_types::bytes::LangBytes;
+    use crate::rational_var::RationalVar;
+    use crate::variable::Variable;
+    use ascii::AsciiChar;
+    use num::{BigInt, BigRational, One};
+
+    const A_STR_BYTES: [u8; 5] = [0x00, 0x00, 0x00, 0x01, 0x61];
+    const BIG_ONE_BYTES: [u8; 8] = [0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01];
+    const TENTH_BYTES: [u8; 12] = [
+        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+    ];
+
+    #[test]
+    fn load_str() {
+        let mut index = 0;
+        assert_eq!(&load_std_str(&A_STR_BYTES, &mut index), "a");
+        assert_eq!(index, A_STR_BYTES.len());
+    }
+
+    #[test]
+    fn load_ascii() {
+        let mut index = 0;
+        assert_eq!(&*load_ascii_str(&A_STR_BYTES, &mut index), &[AsciiChar::a]);
+        assert_eq!(index, A_STR_BYTES.len());
+    }
+
+    #[test]
+    fn bigint() {
+        let mut index = 0;
+        assert_eq!(inner_bigint(&BIG_ONE_BYTES, &mut index), BigInt::one());
+        assert_eq!(index, BIG_ONE_BYTES.len());
+    }
+
+    #[test]
+    fn parse_decimal() {
+        let mut index = 0;
+        assert_eq!(
+            load_decimal(&TENTH_BYTES, &mut index),
+            RationalVar::new(BigRational::new(BigInt::one(), BigInt::from(10))).into()
+        );
+        assert_eq!(index, TENTH_BYTES.len());
+    }
+
+    #[test]
+    fn parse_bool() {
+        let mut index = 0;
+        assert_eq!(load_bool(&[1], &mut index), true.into());
+        assert_eq!(index, 1);
+        index = 0;
+        assert_eq!(load_bool(&[0], &mut index), false.into());
+        assert_eq!(index, 1);
+    }
+}

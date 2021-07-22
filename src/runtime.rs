@@ -716,6 +716,17 @@ impl Runtime {
                 .expect("Exception.operator str should not throw an exception")
         );
     }
+
+    pub fn test<F>(f: F) -> Result<Variable, ()>
+    where
+        F: FnOnce(&mut Runtime) -> FnResult,
+    {
+        let mut test_runtime = Self::new(vec![], 0);
+        match f(&mut test_runtime) {
+            Result::Ok(_) => Result::Ok(test_runtime.pop_return()),
+            Result::Err(_) => Result::Err(()),
+        }
+    }
 }
 
 impl InnerException {
