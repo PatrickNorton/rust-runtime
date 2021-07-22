@@ -15,7 +15,6 @@ use crate::variable::{FnResult, Variable};
 use crate::{first, first_n, looping};
 use ascii::{AsAsciiStr, AsciiStr, AsciiString};
 use num::{BigInt, Num, One, Signed, ToPrimitive};
-use std::array::IntoIter;
 use std::cell::Cell;
 use std::convert::TryInto;
 use std::fmt::Debug;
@@ -49,6 +48,8 @@ pub fn get_attr(this: StringVar, s: &str) -> Variable {
         "length" => return this.char_len().into(),
         "upper" => upper,
         "lower" => lower,
+        "isUpper" => is_upper,
+        "isLower" => is_lower,
         "join" => join,
         "joinAll" => join_all,
         "startsWith" => starts_with,
@@ -64,6 +65,10 @@ pub fn get_attr(this: StringVar, s: &str) -> Variable {
         "strip" => strip,
         "stripFront" => strip_front,
         "stripBack" => strip_back,
+        "expandTab" => expand_tab,
+        "isAscii" => is_ascii,
+        "isDigit" => is_digit,
+        "isNumeric" => is_numeric,
         x => unimplemented!("str.{}", x),
     };
     StdMethod::new_native(this, func).into()
@@ -129,14 +134,13 @@ fn mul_str(mut result: String, args: Vec<Variable>, runtime: &mut Runtime) -> Fn
     runtime.return_1(StringVar::from(result).into())
 }
 
-fn mul_exc(big_val: IntVar) -> StringVar {
+fn mul_exc(big_val: IntVar) -> String {
     format!(
         "Too many string repetitions: max number of shifts \
             for a non-empty string is {}, attempted to shift by {}",
         usize::MAX,
         big_val,
     )
-    .into()
 }
 
 fn overflow_exc(val: usize, len: usize) -> String {
@@ -376,6 +380,72 @@ fn upper(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResul
 fn lower(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
     runtime.return_1(this.to_lowercase().into())
+}
+
+fn is_upper(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert!(args.is_empty());
+    runtime.return_1(is_uppercase(this.as_maybe_ascii()).into())
+}
+
+fn is_uppercase(value: MaybeAscii<'_>) -> bool {
+    if value.is_empty() {
+        return false;
+    }
+    let mut cased = false;
+    match value {
+        MaybeAscii::Standard(x) => {
+            for chr in x.chars() {
+                if chr.is_lowercase() {
+                    return false;
+                } else if chr.is_uppercase() {
+                    cased = true;
+                }
+            }
+        }
+        MaybeAscii::Ascii(a) => {
+            for chr in a {
+                if chr.is_ascii_lowercase() {
+                    return false;
+                } else if chr.is_ascii_uppercase() {
+                    cased = true;
+                }
+            }
+        }
+    }
+    cased
+}
+
+fn is_lower(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert!(args.is_empty());
+    runtime.return_1(is_lowercase(this.as_maybe_ascii()).into())
+}
+
+fn is_lowercase(value: MaybeAscii<'_>) -> bool {
+    if value.is_empty() {
+        return false;
+    }
+    let mut cased = false;
+    match value {
+        MaybeAscii::Standard(x) => {
+            for chr in x.chars() {
+                if chr.is_uppercase() {
+                    return false;
+                } else if chr.is_lowercase() {
+                    cased = true;
+                }
+            }
+        }
+        MaybeAscii::Ascii(a) => {
+            for chr in a {
+                if chr.is_ascii_lowercase() {
+                    return true;
+                } else if chr.is_ascii_uppercase() {
+                    cased = true;
+                }
+            }
+        }
+    }
+    cased
 }
 
 fn join(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -621,6 +691,61 @@ fn strip_back(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> Fn
             let str = StringVar::from(x);
             runtime.return_1(StringVar::from(this.trim_end_matches(&*str).to_string()).into())
         }
+    }
+}
+
+fn expand_tab(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    let arg = first(args).int(runtime)?;
+    match arg.to_usize() {
+        Option::Some(x) => runtime.return_1(this.replace('\t', &" ".repeat(x)).into()),
+        Option::None => runtime.throw_quick_native(
+            value_error(),
+            format!("Tab expanded to too many spaces (max is {})", usize::MAX),
+        ),
+    }
+}
+
+fn is_ascii(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert!(args.is_empty());
+    runtime.return_1(this.is_ascii().into())
+}
+
+fn is_numeric(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert!(args.is_empty());
+    runtime.return_1(is_num(this.as_maybe_ascii()).into())
+}
+
+fn is_num(value: MaybeAscii<'_>) -> bool {
+    match value {
+        MaybeAscii::Standard(s) => !s.is_empty() && s.chars().all(|ch| ch.is_numeric()),
+        MaybeAscii::Ascii(a) => !a.is_empty() && a.chars().all(|ch| ch.is_ascii_digit()),
+    }
+}
+
+fn is_digit(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    let base = first(args).int(runtime)?;
+    let base = match base.try_into() {
+        Result::Ok(x) if (0..36).contains(&x) => x,
+        Result::Ok(x) => {
+            return runtime.throw_quick_native(
+                value_error(),
+                format!("Invalid base: bases must be between 0 and 36, got {}", x),
+            )
+        }
+        Result::Err(x) => {
+            return runtime.throw_quick_native(
+                value_error(),
+                format!("Invalid base: bases must be between 0 and 36, got {}", x),
+            )
+        }
+    };
+    runtime.return_1(is_dig(this.as_maybe_ascii(), base).into())
+}
+
+fn is_dig(value: MaybeAscii<'_>, base: u32) -> bool {
+    match value {
+        MaybeAscii::Standard(s) => !s.is_empty() && s.chars().all(|ch| ch.is_digit(base)),
+        MaybeAscii::Ascii(s) => !s.is_empty() && s.chars().all(|ch| ch.is_digit(base)),
     }
 }
 

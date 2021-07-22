@@ -245,11 +245,10 @@ fn create_char(var: Variable, runtime: &mut Runtime) -> Result<Variable, ()> {
     let int_val = var.int(runtime)?;
     match int_val.to_u32().and_then(|i| char::try_from(i).ok()) {
         Option::Some(c) => Result::Ok(c.into()),
-        Option::None => runtime
-            .throw_quick_native(
-                value_error(),
-                format!("Cannot convert scalar value {} to a char", int_val),
-            ),
+        Option::None => runtime.throw_quick_native(
+            value_error(),
+            format!("Cannot convert scalar value {} to a char", int_val),
+        ),
     }
 }
 

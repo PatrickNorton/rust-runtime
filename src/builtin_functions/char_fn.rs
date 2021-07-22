@@ -9,7 +9,6 @@ use crate::variable::{FnResult, Variable};
 use crate::{character, first};
 use ascii::{AsciiString, ToAsciiChar};
 use num::ToPrimitive;
-use std::array::IntoIter;
 use std::fmt::Display;
 use std::rc::Rc;
 
