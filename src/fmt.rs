@@ -1,6 +1,7 @@
 use crate::custom_var::CustomVar;
 use crate::first_n;
-use crate::fmt_num::{format_exp, format_rational, format_upper_exp};
+use crate::fmt_num::{format_exp, format_rational_unsigned, format_upper_exp};
+use crate::from_bool::FromBool;
 use crate::int_tools::bytes_index;
 use crate::int_var::IntVar;
 use crate::name::Name;
@@ -123,6 +124,18 @@ impl FormatArgs {
             && self.precision == 0
     }
 
+    fn is_default_float(&self) -> bool {
+        self.precision == 0 || self.precision == DEFAULT_FLOAT_DECIMALS as u32
+    }
+
+    fn float_decimals(&self) -> u32 {
+        if self.precision == 0 {
+            DEFAULT_FLOAT_DECIMALS as u32
+        } else {
+            self.precision
+        }
+    }
+
     fn pad_integer(
         &self,
         mut value: OwnedStringVar,
@@ -139,6 +152,15 @@ impl FormatArgs {
             value.insert_str(0, prefix);
         }
         let sign_chr = self.sign_char(sign);
+        self.pad_str_simple(value, sign_chr, prefix)
+    }
+
+    fn pad_str_simple(
+        &self,
+        mut value: OwnedStringVar,
+        sign_chr: Option<char>,
+        prefix: &str,
+    ) -> OwnedStringVar {
         if let Option::Some(sign) = sign_chr {
             value.insert(0, sign);
         }
@@ -148,12 +170,12 @@ impl FormatArgs {
                     + if self.hash { prefix.len() } else { 0 };
                 value.insert_n_chr(start, diff, '0');
             } else {
-                let fill_char = if self.fill != '\0' { self.fill } else { ' ' };
+                let fill_char = self.fill_char();
                 match self.align {
                     Align::Left => value.insert_n_chr(0, diff, fill_char),
                     Align::Right => value.push_n_chr(diff, fill_char),
                     Align::AfterSign => {
-                        value.insert_n_chr(if sign_chr.is_some() { 1 } else { 0 }, diff, fill_char)
+                        value.insert_n_chr(usize::from_bool(sign_chr.is_some()), diff, fill_char)
                     }
                     Align::Center => {
                         let pre_count = diff / 2; // Rounds down
@@ -163,8 +185,18 @@ impl FormatArgs {
                     }
                 }
             }
+            value
+        } else {
+            value
         }
-        value
+    }
+
+    fn fill_char(&self) -> char {
+        if self.fill == '\0' {
+            ' '
+        } else {
+            self.fill
+        }
     }
 
     fn sign_char(&self, sign: bigint::Sign) -> Option<char> {
@@ -297,39 +329,69 @@ impl FormatArgs {
             }
         } else {
             OwnedStringVar::from_str_checked(if uppercase {
-                format_upper_exp(value.clone(), DEFAULT_FLOAT_DECIMALS as u32)
+                format_upper_exp(value.clone(), self.float_decimals())
             } else {
-                format_exp(value.clone(), DEFAULT_FLOAT_DECIMALS as u32)
+                format_exp(value.clone(), self.float_decimals())
             })
         }
     }
 
     fn fmt_fixed(&self, var: Variable) -> OwnedStringVar {
-        if !self.is_simple_format() {
-            todo!("Non-trivial formatting")
-        }
+        self.fixed_inner(var, false)
+    }
+
+    fn fmt_upper_fixed(&self, var: Variable) -> OwnedStringVar {
+        self.fixed_inner(var, true)
+    }
+
+    fn fixed_inner(&self, var: Variable, _uppercase: bool) -> OwnedStringVar {
         static ZERO_FIXED: Lazy<&AsciiStr> =
             Lazy::new(|| AsciiStr::from_ascii("0.000000").unwrap());
         static ONE_FIXED: Lazy<&AsciiStr> = Lazy::new(|| AsciiStr::from_ascii("1.000000").unwrap());
         match var {
             Variable::Normal(InnerVar::Bigint(i)) => {
-                OwnedStringVar::from_str_checked(format!("{}.000000", i))
+                if i.is_zero() && self.is_default_float() {
+                    (*ZERO_FIXED).into()
+                } else {
+                    let precision = self.float_decimals() as usize;
+                    let sign_char = self.sign_char(i.sign());
+                    let value =
+                        format!("{}.{:precision$}", i.magnitude(), 0, precision = precision);
+                    self.pad_str_simple(OwnedStringVar::from_str_checked(value), sign_char, "")
+                }
             }
-            Variable::Normal(InnerVar::Bool(b)) => if b { *ONE_FIXED } else { *ZERO_FIXED }.into(),
-            Variable::Normal(InnerVar::Decimal(d)) => OwnedStringVar::from_str_checked(
-                format_rational((*d).clone(), DEFAULT_FLOAT_DECIMALS as u32),
-            ),
+            Variable::Normal(InnerVar::Bool(b)) => {
+                if self.is_default_float() {
+                    if b { *ONE_FIXED } else { *ZERO_FIXED }.into()
+                } else {
+                    let width = self.float_decimals() as usize;
+                    let value = format!("{:.*}", width, f32::from_bool(b));
+                    self.pad_str_simple(
+                        OwnedStringVar::from_str_checked(value),
+                        self.sign_char(bool_sign(b)),
+                        "",
+                    )
+                }
+            }
+            Variable::Normal(InnerVar::Decimal(d)) => {
+                let is_default = self.is_default_float();
+                if is_default && d.is_zero() {
+                    (*ZERO_FIXED).into()
+                } else if is_default && d.is_one() {
+                    (*ONE_FIXED).into()
+                } else {
+                    let value = OwnedStringVar::from_str_checked(format_rational_unsigned(
+                        (*d).clone(),
+                        self.float_decimals(),
+                    ));
+                    self.pad_str_simple(value, self.sign_char(d.sign()), "")
+                }
+            }
             _ => panic!(),
         }
     }
 
-    fn fmt_upper_fixed(&self, var: Variable) -> OwnedStringVar {
-        let mut format = self.fmt_fixed(var);
-        format.make_ascii_uppercase();
-        format
-    }
-
-    fn fmt_general(&self, var: Variable) -> OwnedStringVar {
+    fn fmt_general(&self, _var: Variable) -> OwnedStringVar {
         todo!()
     }
 
@@ -372,8 +434,8 @@ impl FormatArgs {
 impl Align {
     pub fn from_u8(x: u8) -> Align {
         match x as char {
-            '<' => Align::Left,
-            '>' => Align::Right,
+            '>' => Align::Left,
+            '<' => Align::Right,
             '^' => Align::Center,
             '=' => Align::AfterSign,
             x => panic!("Invalid align type: {} (hex value {:x})", x, x as u32),
@@ -482,6 +544,14 @@ fn get_formatter(var: Variable) -> Rc<FormatArgs> {
     match var {
         Variable::Normal(InnerVar::Custom(c)) => c.into_inner().downcast_rc().unwrap(),
         _ => panic!(),
+    }
+}
+
+fn bool_sign(x: bool) -> bigint::Sign {
+    if x {
+        bigint::Sign::Plus
+    } else {
+        bigint::Sign::NoSign
     }
 }
 

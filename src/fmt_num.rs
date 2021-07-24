@@ -65,10 +65,10 @@ static BIG_TEN_POWERS_TABLE: Lazy<[BigInt; BIG_TEN_POWERS_TABLE_INITLEN]> = Lazy
 pub static BIG_U_TEN: Lazy<BigUint> = Lazy::new(|| BigUint::from(10u32));
 pub static BIG_TEN: Lazy<BigInt> = Lazy::new(|| BigInt::from(10u32));
 
-pub fn format_rational(value: BigRational, precision: u32) -> String {
+pub fn format_rational_unsigned(value: BigRational, precision: u32) -> String {
     let (numer, denom) = value.into();
     let fmt_dec = FmtDecimal::from_ratio(numer, denom, precision as u64);
-    format!("{:.*}", precision as usize, fmt_dec)
+    format!("{:.*}", precision as usize, fmt_dec.into_abs())
 }
 
 pub fn format_exp(value: BigRational, precision: u32) -> String {
@@ -104,6 +104,14 @@ impl FmtDecimal {
         FmtDecimal {
             value: int_val,
             scale,
+        }
+    }
+
+    pub fn into_abs(self) -> FmtDecimal {
+        let (_, value) = self.value.into_parts();
+        FmtDecimal {
+            value: BigInt::from(value),
+            scale: self.scale,
         }
     }
 

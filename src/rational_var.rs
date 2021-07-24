@@ -1,4 +1,5 @@
-use num::{BigInt, BigRational, Zero};
+use num::bigint::Sign;
+use num::{BigInt, BigRational, Signed, Zero};
 use std::iter::{Product, Sum};
 use std::ops::{
     Add, AddAssign, Deref, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign,
@@ -19,6 +20,17 @@ impl RationalVar {
 
     pub fn from_integer(x: BigInt) -> RationalVar {
         Self::new(BigRational::from_integer(x))
+    }
+
+    pub fn sign(&self) -> Sign {
+        if self.is_zero() {
+            Sign::NoSign
+        } else if self.is_positive() {
+            Sign::Plus
+        } else {
+            // self.is_negative()
+            Sign::Minus
+        }
     }
 }
 
