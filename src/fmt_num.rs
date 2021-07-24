@@ -5,6 +5,7 @@ use once_cell::sync::Lazy;
 use std::borrow::Cow;
 use std::cmp::Ordering;
 use std::convert::TryInto;
+use std::f64::consts::LOG10_2;
 use std::fmt::{Display, Formatter, LowerExp, UpperExp, Write};
 
 #[derive(Debug, Eq, PartialEq)]
@@ -107,7 +108,11 @@ impl FmtDecimal {
     }
 
     fn divide_integer(dividend: BigInt, divisor: BigInt, scale: i64) -> FmtDecimal {
-        if scale > 0 {
+        if dividend.is_zero() {
+            FmtDecimal::new(BigInt::zero(), scale)
+        } else if dividend == divisor {
+            FmtDecimal::new(Self::big_ten_to_the(scale).into_owned(), scale)
+        } else if scale > 0 {
             let scaled_dividend = Self::big_multiply_power_ten(dividend, scale);
             Self::divide_and_round(scaled_dividend, divisor, scale, scale)
         } else {
@@ -352,8 +357,11 @@ fn get_digits(value: &BigInt) -> Vec<char> {
 /// assert_eq!(compare_half(&a, &d), Ordering::Less);
 /// ```
 fn compare_half(a: &BigInt, b: &BigInt) -> Ordering {
-    let a_val = a.iter_u32_digits();
-    let mut b_val = b.iter_u32_digits();
+    // TODO: Replace
+    // let a_val = a.iter_u32_digits_be();
+    // let mut b_val = b.iter_u32_digits_be();
+    let a_val = a.to_u32_digits().1.into_iter().rev();
+    let mut b_val = b.to_u32_digits().1.into_iter().rev();
     let a_len = a_val.len();
     let b_len = b_val.len();
     if a_len == 0 {
@@ -387,6 +395,96 @@ fn compare_half(a: &BigInt, b: &BigInt) -> Ordering {
     }
 }
 
+/// Computes `a.cmp(b/10)`.
+///
+/// This is faster than the standard computation, as this avoids any
+/// intermediate allocation.
+///
+/// # Examples
+///
+/// ```
+/// use num::BigInt;
+/// use std::cmp::Ordering;
+///
+/// let a = BigUint::from(10);
+/// let b = BigUint::from(50);
+/// let c = BigUint::from(100);
+/// let d = BigUint::from(150);
+/// assert_eq!(compare_tenth(&a, &b), Ordering::Greater);
+/// assert_eq!(compare_tenth(&a, &c), Ordering::Equal);
+/// assert_eq!(compare_tenth(&a, &d), Ordering::Less);
+/// ```
+fn compare_tenth(a: &BigUint, b: &BigUint) -> Ordering {
+    // TODO: Replace
+    // let a_val = a.iter_u32_digits_be();
+    // let mut b_val = b.iter_u32_digits_be();
+    let a_val = a.to_u32_digits().into_iter().rev();
+    let mut b_val = b.to_u32_digits().into_iter().rev();
+    let a_len = a_val.len();
+    let b_len = b_val.len();
+    if a_len == 0 {
+        return a_len.cmp(&b_len);
+    } else if a_len > b_len {
+        return Ordering::Greater;
+    } else if a_len < b_len - 1 {
+        return Ordering::Less;
+    }
+    let mut carry = 0;
+    // Only 2 cases left: a_len == b_len or a_len == b_len - 1
+    if a_len != b_len {
+        // a_len = b_len - 1
+        let next = b_val.next().unwrap();
+        if next < 10 {
+            carry = next % 10;
+        } else {
+            return Ordering::Less;
+        }
+    }
+    for (av, bv) in a_val.zip(b_val) {
+        // Lots of scary integer-size manipulation here, but nothing should
+        // overflow (`hb as u32` should be fine because big is < 10 *
+        // u32::MAX, thus hb is < u32::MAX, and `rem as u32` is fine because
+        // rem is < 10).
+        // In essence, what we're doing is converting from 32 to 64 bits,
+        // tacking on the remainder at the front, and then dividing and
+        // converting back.
+        let big = bv as u64 | ((carry as u64) << u32::BITS as u64);
+        let (hb, rem) = big.div_rem(&10);
+        if av != hb as u32 {
+            return av.cmp(&(hb as u32));
+        }
+        carry = rem as u32;
+    }
+    if carry == 0 {
+        Ordering::Equal
+    } else {
+        Ordering::Less
+    }
+}
+
+/// Computes `a.cmp(b*10)`.
+///
+/// This is faster than the standard computation, as this avoids any
+/// intermediate allocation.
+///
+/// # Examples
+///
+/// ```
+/// use num::BigUint;
+/// use std::cmp::Ordering;
+///
+/// let a = BigUint::from(10);
+/// let b = BigUint::from(50);
+/// let c = BigUint::from(100);
+/// let d = BigUint::from(150);
+/// assert_eq!(compare_ten(&b, &a), Ordering::Less);
+/// assert_eq!(compare_ten(&c, &a), Ordering::Equal);
+/// assert_eq!(compare_ten(&d, &a), Ordering::Greater);
+/// ```
+fn compare_ten(a: &BigUint, b: &BigUint) -> Ordering {
+    compare_tenth(b, a).reverse()
+}
+
 fn digit_count(x: &BigInt) -> u64 {
     // Fast paths for small numbers
     if x.is_zero() {
@@ -401,16 +499,52 @@ fn digit_count(x: &BigInt) -> u64 {
             Result::Err(x) => x as u64,
         }
     } else {
-        // TODO: Do this without an intermediate allocation
-        get_digits(x).len() as u64
+        big_digit_count(x.magnitude())
     }
+}
+
+fn big_digit_count(x: &BigUint) -> u64 {
+    let mut approx = (x.bits() as f64 * LOG10_2) as u64;
+    let mut approx_pow = Pow::pow(&*BIG_U_TEN, approx);
+    // There are loops in this next section, but almost all of the time,
+    // approx_pow() will be accurate, and so we can avoid loops.
+    match x.cmp(&approx_pow) {
+        // Don't get confused by the compare_tenth() calls here: it's trying to
+        // prevent unnecessary multiplication/division wherever possible (in
+        // almost all cases, we can avoid any at all)
+        Ordering::Less => {
+            approx -= 1;
+            while compare_tenth(x, &approx_pow).is_lt() {
+                approx -= 1;
+                approx_pow /= 10u32;
+            }
+        }
+        Ordering::Equal => {}
+        Ordering::Greater => loop {
+            match compare_ten(x, &approx_pow) {
+                Ordering::Less => break,
+                Ordering::Equal => {
+                    approx += 1;
+                    break;
+                }
+                Ordering::Greater => {
+                    approx += 1;
+                    approx_pow *= 10u32;
+                }
+            }
+        },
+    }
+    approx + 1
 }
 
 #[cfg(test)]
 mod test {
-    use crate::fmt_num::{compare_half, digit_count, FmtDecimal, BIG_TEN};
+    use crate::fmt_num::{
+        big_digit_count, compare_half, compare_ten, compare_tenth, digit_count, FmtDecimal,
+        BIG_TEN, BIG_U_TEN,
+    };
     use num::traits::Pow;
-    use num::{BigInt, One, Zero};
+    use num::{BigInt, BigUint, One, Zero};
     use std::cmp::Ordering;
 
     #[test]
@@ -430,6 +564,28 @@ mod test {
         assert_eq!(compare_half(&a, &b), Ordering::Greater);
         assert_eq!(compare_half(&a, &c), Ordering::Equal);
         assert_eq!(compare_half(&a, &d), Ordering::Less);
+    }
+
+    #[test]
+    fn comp_tenth() {
+        let a = BigUint::from(10u32);
+        let b = BigUint::from(50u32);
+        let c = BigUint::from(100u32);
+        let d = BigUint::from(150u32);
+        assert_eq!(compare_tenth(&a, &b), Ordering::Greater);
+        assert_eq!(compare_tenth(&a, &c), Ordering::Equal);
+        assert_eq!(compare_tenth(&a, &d), Ordering::Less);
+    }
+
+    #[test]
+    fn comp_ten() {
+        let a = BigUint::from(10u32);
+        let b = BigUint::from(50u32);
+        let c = BigUint::from(100u32);
+        let d = BigUint::from(150u32);
+        assert_eq!(compare_ten(&b, &a), Ordering::Less);
+        assert_eq!(compare_ten(&c, &a), Ordering::Equal);
+        assert_eq!(compare_ten(&d, &a), Ordering::Greater);
     }
 
     #[test]
@@ -468,5 +624,16 @@ mod test {
         assert_eq!(&format!("{:.4E}", d1), "3.3333E-01");
         assert_eq!(&format!("{:.6E}", d1), "3.333330E-01");
         // TODO: Get rounding working and add a test here
+    }
+
+    #[test]
+    fn big_u_digits() {
+        assert_eq!(big_digit_count(&BIG_U_TEN), 2);
+        let mut d1 = Pow::pow(&*BIG_U_TEN, 99u32);
+        assert_eq!(big_digit_count(&d1), 100);
+        d1 -= 1u32;
+        assert_eq!(big_digit_count(&d1), 99);
+        d1 += 2u32;
+        assert_eq!(big_digit_count(&d1), 100);
     }
 }
