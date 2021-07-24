@@ -1,3 +1,4 @@
+use crate::from_bool::FromBool;
 use num::bigint::Sign;
 use num::traits::Pow;
 use num::{BigInt, BigRational, BigUint, Integer, One, Signed, ToPrimitive, Zero};
@@ -213,33 +214,52 @@ impl FmtDecimal {
 
     fn fmt_exp(&self, f: &mut Formatter<'_>, e: char) -> std::fmt::Result {
         let precision = f.precision();
-        let digits = get_digits(&self.value);
-        f.write_char(digits[0])?;
+        let mut digits = get_digits(&self.value);
+        let sub_one;
         if digits.len() > 1 {
-            f.write_char('.')?;
             match precision {
                 Option::Some(x) => {
                     if x + 1 >= digits.len() {
+                        f.write_char(digits[0])?;
+                        f.write_char('.')?;
                         for ch in &digits[1..] {
                             f.write_char(*ch)?;
                         }
                         for _ in 0..x + 1 - digits.len() {
                             f.write_char('0')?;
                         }
+                        sub_one = true;
                     } else {
-                        for ch in &digits[1..x + 1] {
-                            f.write_char(*ch)?; // FIXME: Round last digit
+                        let carry = round_chars(&mut digits, x + 1);
+                        f.write_char(if carry { '1' } else { digits[0] })?;
+                        f.write_char('.')?;
+                        let c = usize::from_bool(!carry);
+                        for ch in &digits[c..x + c] {
+                            f.write_char(*ch)?;
                         }
+                        sub_one = !carry;
                     }
                 }
                 Option::None => {
+                    f.write_char(digits[0])?;
+                    f.write_char('.')?;
                     for ch in &digits[1..] {
                         f.write_char(*ch)?;
                     }
+                    sub_one = true;
                 }
             }
+        } else {
+            f.write_char(digits[0])?;
+            if let Option::Some(prec) = precision {
+                f.write_char('.')?;
+                for _ in 0..prec {
+                    f.write_char('0')?;
+                }
+            }
+            sub_one = true;
         }
-        let adjusted = -self.scale + (digits.len() as i64) - 1;
+        let adjusted = -self.scale + (digits.len() as i64) - i64::from_bool(sub_one);
         f.write_char(e)?;
         write!(f, "{:+03}", adjusted)?;
         Result::Ok(())
@@ -251,7 +271,7 @@ impl Display for FmtDecimal {
         if self.scale == 0 {
             return self.value.fmt(f);
         }
-        let digits = get_digits(&self.value);
+        let mut digits = get_digits(&self.value);
         if self.value.is_negative() {
             f.write_char('-')?;
         }
@@ -259,10 +279,11 @@ impl Display for FmtDecimal {
         let digit_len = digits.len();
         let pad = scale - digit_len as i64;
         if pad >= 0 {
-            f.write_char('0')?;
-            f.write_char('.')?;
+            let pad = pad as usize;
             match f.precision() {
                 Option::None => {
+                    f.write_char('0')?;
+                    f.write_char('.')?;
                     for _ in 0..pad {
                         f.write_char('0')?;
                     }
@@ -271,26 +292,35 @@ impl Display for FmtDecimal {
                     }
                 }
                 Option::Some(prec) => {
-                    if prec < pad as usize {
+                    if prec < pad {
+                        f.write_char('0')?;
+                        f.write_char('.')?;
                         for _ in 0..prec {
                             f.write_char('0')?;
                         }
-                    } else if prec - pad as usize >= digit_len {
+                    } else if prec - pad >= digit_len {
+                        f.write_char('0')?;
+                        f.write_char('.')?;
                         for _ in 0..pad {
                             f.write_char('0')?;
                         }
                         for ch in digits {
                             f.write_char(ch)?;
                         }
-                        for _ in 0..prec - pad as usize - digit_len {
+                        for _ in 0..prec - pad - digit_len {
                             f.write_char('0')?;
                         }
                     } else {
-                        // FIXME: Round properly
-                        for _ in 0..pad {
+                        let carry = round_chars(&mut digits, prec - pad);
+                        f.write_char(if carry && pad == 0 { '1' } else { '0' })?;
+                        f.write_char('.')?;
+                        for _ in 0..pad.saturating_sub(1) {
                             f.write_char('0')?;
                         }
-                        for ch in &digits[..prec - pad as usize] {
+                        if pad > 0 {
+                            f.write_char(if carry { '1' } else { '0' })?;
+                        }
+                        for ch in &digits[..prec - pad] {
                             f.write_char(*ch)?;
                         }
                     }
@@ -298,18 +328,22 @@ impl Display for FmtDecimal {
             }
         } else {
             let pad = (-pad) as usize;
-            for ch in &digits[..pad] {
-                f.write_char(*ch)?;
-            }
-            f.write_char('.')?;
             match f.precision() {
                 Option::None => {
+                    for ch in &digits[..pad] {
+                        f.write_char(*ch)?;
+                    }
+                    f.write_char('.')?;
                     for ch in &digits[pad..] {
                         f.write_char(*ch)?;
                     }
                 }
                 Option::Some(x) => {
                     if x + pad >= digit_len {
+                        for ch in &digits[..pad] {
+                            f.write_char(*ch)?;
+                        }
+                        f.write_char('.')?;
                         for ch in &digits[pad..] {
                             f.write_char(*ch)?;
                         }
@@ -317,7 +351,14 @@ impl Display for FmtDecimal {
                             f.write_char('0')?;
                         }
                     } else {
-                        // FIXME: Round properly
+                        let carry = round_chars(&mut digits, x + pad);
+                        if carry {
+                            f.write_char('1')?;
+                        }
+                        for ch in &digits[..pad] {
+                            f.write_char(*ch)?;
+                        }
+                        f.write_char('.')?;
                         for ch in &digits[pad..x + pad] {
                             f.write_char(*ch)?;
                         }
@@ -545,6 +586,45 @@ fn big_digit_count(x: &BigUint) -> u64 {
     approx + 1
 }
 
+fn char_rounds_up(ch: char) -> bool {
+    match ch {
+        '0'..='4' => false,
+        '5'..='9' => true,
+        _ => unreachable!("{} is not a decimal digit", ch),
+    }
+}
+
+fn increment_digit(ch: &mut char) -> bool {
+    *ch = match *ch {
+        '0' => '1',
+        '1' => '2',
+        '2' => '3',
+        '3' => '4',
+        '5' => '6',
+        '6' => '7',
+        '7' => '8',
+        '8' => '9',
+        '9' => '0',
+        _ => unreachable!("{} is not a decimal digit", ch),
+    };
+    *ch == '0'
+}
+
+fn round_chars(chars: &mut [char], last: usize) -> bool {
+    if last >= chars.len() {
+        return false;
+    }
+    let mut carry = char_rounds_up(chars[last]);
+    for digit in chars[..last].iter_mut().rev() {
+        if !carry {
+            return false;
+        } else {
+            carry = increment_digit(digit);
+        }
+    }
+    carry
+}
+
 #[cfg(test)]
 mod test {
     use crate::fmt_num::{
@@ -613,7 +693,16 @@ mod test {
         assert_eq!(&format!("{}", d1), "0.333333");
         assert_eq!(&format!("{:.5}", d1), "0.33333");
         assert_eq!(&format!("{:.7}", d1), "0.3333330");
-        // TODO: Get rounding working and add a test here
+    }
+
+    #[test]
+    fn fixed_round() {
+        let d1 = FmtDecimal::new(BigInt::from(666666), 6);
+        let d2 = FmtDecimal::new(BigInt::from(999999), 6);
+        let d3 = FmtDecimal::new(BigInt::from(999999), 5);
+        assert_eq!(&format!("{:.5}", d1), "0.66667");
+        assert_eq!(&format!("{:.5}", d2), "1.00000");
+        assert_eq!(&format!("{:.4}", d3), "10.0000");
     }
 
     #[test]
@@ -622,7 +711,6 @@ mod test {
         assert_eq!(&format!("{:e}", d1), "3.33333e-01");
         assert_eq!(&format!("{:.4e}", d1), "3.3333e-01");
         assert_eq!(&format!("{:.6e}", d1), "3.333330e-01");
-        // TODO: Get rounding working and add a test here
     }
 
     #[test]
@@ -631,7 +719,16 @@ mod test {
         assert_eq!(&format!("{:E}", d1), "3.33333E-01");
         assert_eq!(&format!("{:.4E}", d1), "3.3333E-01");
         assert_eq!(&format!("{:.6E}", d1), "3.333330E-01");
-        // TODO: Get rounding working and add a test here
+    }
+
+    #[test]
+    fn exp_carry() {
+        let d1 = FmtDecimal::new(BigInt::from(666666), 6);
+        let d2 = FmtDecimal::new(BigInt::from(999999), 6);
+        let d3 = FmtDecimal::new(BigInt::from(999999), 5);
+        assert_eq!(&format!("{:.4e}", d1), "6.6667e-01");
+        assert_eq!(&format!("{:.4e}", d2), "1.0000e+00");
+        assert_eq!(&format!("{:.4e}", d3), "1.0000e+01");
     }
 
     #[test]
