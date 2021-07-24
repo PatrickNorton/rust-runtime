@@ -572,3 +572,213 @@ impl CustomVar for FormatArgs {
         unimplemented!()
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::fmt::{Align, FmtType, FormatArgs, Sign};
+    use crate::rational_var::RationalVar;
+    use num::{BigInt, BigRational, One};
+
+    #[test]
+    fn simple_binary() {
+        let formatter = FormatArgs::default();
+        assert_eq!(&*formatter.fmt_binary(0b101.into()), "101");
+    }
+
+    #[test]
+    fn prefix() {
+        let formatter = FormatArgs {
+            hash: true,
+            fmt_type: FmtType::Binary,
+            ..Default::default()
+        };
+        assert_eq!(&*formatter.fmt_binary(0b101.into()), "0b101");
+    }
+
+    #[test]
+    fn simple_octal() {
+        let formatter = FormatArgs::default();
+        assert_eq!(&*formatter.fmt_octal(0o101.into()), "101");
+    }
+
+    #[test]
+    fn padding() {
+        let formatter = FormatArgs {
+            fill: ':',
+            min_width: 5,
+            fmt_type: FmtType::Octal,
+            ..Default::default()
+        };
+        assert_eq!(&*formatter.fmt_octal(0o101.into()), "::101")
+    }
+
+    #[test]
+    fn pad_post() {
+        let formatter = FormatArgs {
+            fill: ':',
+            min_width: 5,
+            align: Align::Right,
+            fmt_type: FmtType::Octal,
+            ..Default::default()
+        };
+        assert_eq!(&*formatter.fmt_octal(0o101.into()), "101::")
+    }
+
+    #[test]
+    fn pad_mid() {
+        let formatter = FormatArgs {
+            fill: ':',
+            align: Align::Center,
+            min_width: 5,
+            fmt_type: FmtType::Octal,
+            ..Default::default()
+        };
+        assert_eq!(&*formatter.fmt_octal(0o101.into()), ":101:")
+    }
+
+    #[test]
+    fn simple_decimal() {
+        let formatter = FormatArgs::default();
+        assert_eq!(&*formatter.fmt_decimal(101.into()), "101");
+    }
+
+    #[test]
+    fn pad_zeroes() {
+        let formatter = FormatArgs {
+            min_width: 7,
+            zero: true,
+            fmt_type: FmtType::Decimal,
+            ..Default::default()
+        };
+        assert_eq!(&*formatter.fmt_decimal((-101).into()), "-000101")
+    }
+
+    #[test]
+    fn pad_post_sign() {
+        let formatter = FormatArgs {
+            fill: ':',
+            min_width: 7,
+            align: Align::AfterSign,
+            fmt_type: FmtType::Decimal,
+            ..Default::default()
+        };
+        assert_eq!(&*formatter.fmt_decimal((-101).into()), "-:::101")
+    }
+
+    #[test]
+    fn simple_hex() {
+        let formatter = FormatArgs::default();
+        assert_eq!(&*formatter.fmt_hex(0x10a.into()), "10a");
+    }
+
+    #[test]
+    fn positive_sign() {
+        let formatter = FormatArgs {
+            sign: Sign::Both,
+            fmt_type: FmtType::Hex,
+            ..Default::default()
+        };
+        assert_eq!(&*formatter.fmt_hex(0x10a.into()), "+10a");
+    }
+
+    #[test]
+    fn simple_upper_hex() {
+        let formatter = FormatArgs::default();
+        assert_eq!(&*formatter.fmt_upper_hex(0x10A.into()), "10A");
+    }
+
+    #[test]
+    fn space_sign() {
+        let formatter = FormatArgs {
+            sign: Sign::LeadingSpace,
+            fmt_type: FmtType::Hex,
+            ..Default::default()
+        };
+        assert_eq!(&*formatter.fmt_hex(0x10a.into()), " 10a");
+    }
+
+    #[test]
+    fn simple_char() {
+        let formatter = FormatArgs::default();
+        assert_eq!(&*formatter.fmt_character('c'.into()), "c");
+    }
+
+    #[test]
+    fn simple_exp() {
+        let formatter = FormatArgs::default();
+        let third = BigRational::new(BigInt::one(), BigInt::from(3));
+        assert_eq!(
+            &*formatter.fmt_exp(RationalVar::from(third).into()),
+            "3.333333e-01"
+        )
+    }
+
+    #[test]
+    fn simple_upper_exp() {
+        let formatter = FormatArgs::default();
+        let third = BigRational::new(BigInt::one(), BigInt::from(3));
+        assert_eq!(
+            &*formatter.fmt_upper_exp(RationalVar::from(third).into()),
+            "3.333333E-01"
+        );
+    }
+
+    #[test]
+    fn simple_fixed() {
+        let formatter = FormatArgs::default();
+        let third = BigRational::new(BigInt::one(), BigInt::from(3));
+        assert_eq!(
+            &*formatter.fmt_fixed(RationalVar::from(third).into()),
+            "0.333333"
+        );
+    }
+
+    #[test]
+    fn fixed_sign() {
+        let formatter = FormatArgs {
+            sign: Sign::Both,
+            fmt_type: FmtType::Fixed,
+            ..Default::default()
+        };
+        let third = BigRational::new(BigInt::from(10), BigInt::from(3));
+        assert_eq!(
+            &*formatter.fmt_fixed(RationalVar::from(third).into()),
+            "+3.333333"
+        );
+        let neg_third = BigRational::new(BigInt::from(-10), BigInt::from(3));
+        assert_eq!(
+            &*formatter.fmt_fixed(RationalVar::from(neg_third).into()),
+            "-3.333333"
+        );
+    }
+
+    #[test]
+    fn zero_fixed() {
+        let formatter = FormatArgs {
+            zero: true,
+            min_width: 10,
+            fmt_type: FmtType::Fixed,
+            ..Default::default()
+        };
+        let third = BigRational::new(BigInt::from(10), BigInt::from(3));
+        assert_eq!(
+            &*formatter.fmt_fixed(RationalVar::from(third).into()),
+            "003.333333"
+        );
+        let neg_third = BigRational::new(BigInt::from(-10), BigInt::from(3));
+        assert_eq!(
+            &*formatter.fmt_fixed(RationalVar::from(neg_third).into()),
+            "-03.333333"
+        );
+    }
+
+    #[test]
+    fn simple_pct() {
+        let formatter = FormatArgs::default();
+        let third = BigRational::new(BigInt::one(), BigInt::from(3));
+        assert_eq!(
+            &*formatter.fmt_percentage(RationalVar::from(third).into()),
+            "33%"
+        );
+    }
+}
