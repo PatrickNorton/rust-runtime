@@ -15,29 +15,30 @@ struct FmtDecimal {
     scale: i64,
 }
 
-const LONG_TEN_POWERS_TABLE: [i64; 19] = [
-    1,                   // 0 / 10^0
-    10,                  // 1 / 10^1
-    100,                 // 2 / 10^2
-    1000,                // 3 / 10^3
-    10000,               // 4 / 10^4
-    100000,              // 5 / 10^5
-    1000000,             // 6 / 10^6
-    10000000,            // 7 / 10^7
-    100000000,           // 8 / 10^8
-    1000000000,          // 9 / 10^9
-    10000000000,         // 10 / 10^10
-    100000000000,        // 11 / 10^11
-    1000000000000,       // 12 / 10^12
-    10000000000000,      // 13 / 10^13
-    100000000000000,     // 14 / 10^14
-    1000000000000000,    // 15 / 10^15
-    10000000000000000,   // 16 / 10^16
-    100000000000000000,  // 17 / 10^17
-    1000000000000000000, // 18 / 10^18
+const LONG_TEN_POWERS_TABLE: [u64; 20] = [
+    1,                    // 0 / 10^0
+    10,                   // 1 / 10^1
+    100,                  // 2 / 10^2
+    1000,                 // 3 / 10^3
+    10000,                // 4 / 10^4
+    100000,               // 5 / 10^5
+    1000000,              // 6 / 10^6
+    10000000,             // 7 / 10^7
+    100000000,            // 8 / 10^8
+    1000000000,           // 9 / 10^9
+    10000000000,          // 10 / 10^10
+    100000000000,         // 11 / 10^11
+    1000000000000,        // 12 / 10^12
+    10000000000000,       // 13 / 10^13
+    100000000000000,      // 14 / 10^14
+    1000000000000000,     // 15 / 10^15
+    10000000000000000,    // 16 / 10^16
+    100000000000000000,   // 17 / 10^17
+    1000000000000000000,  // 18 / 10^18
+    10000000000000000000, // 19 / 10^19
 ];
 
-const BIG_TEN_POWERS_TABLE_INITLEN: usize = 19;
+const BIG_TEN_POWERS_TABLE_INITLEN: usize = 20;
 const BIG_TEN_POWERS_TABLE_MAX: usize = 16 * BIG_TEN_POWERS_TABLE_INITLEN;
 static BIG_TEN_POWERS_TABLE: Lazy<[BigInt; BIG_TEN_POWERS_TABLE_INITLEN]> = Lazy::new(|| {
     [
@@ -60,6 +61,7 @@ static BIG_TEN_POWERS_TABLE: Lazy<[BigInt; BIG_TEN_POWERS_TABLE_INITLEN]> = Lazy
         BigInt::from(10000000000000000u64),
         BigInt::from(100000000000000000u64),
         BigInt::from(1000000000000000000u64),
+        BigInt::from(10000000000000000000u64),
     ]
 });
 
@@ -538,12 +540,8 @@ fn digit_count(x: &BigInt) -> u64 {
     // Fast paths for small numbers
     if x.is_zero() {
         1
-    } else if let Option::Some(x) = x.to_i64() {
-        // The checked_abs here is needed b/c i64::MIN.abs() overflows back to
-        // i64::MIN, however, i64::MIN has the same number of digits as
-        // i64::MAX, so we can just replace it with that.
-        let x_abs = x.checked_abs().unwrap_or(i64::MAX);
-        match LONG_TEN_POWERS_TABLE.binary_search(&x_abs) {
+    } else if let Option::Some(x) = x.magnitude().to_u64() {
+        match LONG_TEN_POWERS_TABLE.binary_search(&x) {
             Result::Ok(x) => (x + 1) as u64,
             Result::Err(x) => x as u64,
         }
