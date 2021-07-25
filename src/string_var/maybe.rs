@@ -47,8 +47,8 @@ impl Deref for MaybeAscii<'_> {
 impl Display for MaybeAscii<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            MaybeAscii::Standard(s) => f.write_str(s),
-            MaybeAscii::Ascii(a) => f.write_str(a.as_str()),
+            MaybeAscii::Standard(s) => s.fmt(f),
+            MaybeAscii::Ascii(a) => a.fmt(f),
         }
     }
 }
@@ -133,8 +133,8 @@ impl Deref for MaybeString {
 impl Display for MaybeString {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            MaybeString::Standard(s) => f.write_str(s),
-            MaybeString::Ascii(a) => f.write_str(a.as_str()),
+            MaybeString::Standard(s) => s.fmt(f),
+            MaybeString::Ascii(a) => a.fmt(f),
         }
     }
 }

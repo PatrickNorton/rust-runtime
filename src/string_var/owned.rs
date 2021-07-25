@@ -1,6 +1,7 @@
 use crate::string_var::{AsciiVar, MaybeString, StrVar};
 use ascii::{AsAsciiStr, AsciiStr, AsciiString, ToAsciiChar};
 use std::borrow::Cow;
+use std::fmt::{Display, Formatter};
 use std::ops::Deref;
 
 #[derive(Debug, Clone)]
@@ -255,6 +256,17 @@ impl Deref for OwnedStringVar {
             OwnedStringVar::AsciiLiteral(a) => a.as_str(),
             OwnedStringVar::Other(o) => &o,
             OwnedStringVar::Ascii(a) => a.as_str(),
+        }
+    }
+}
+
+impl Display for OwnedStringVar {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            OwnedStringVar::Literal(l) => l.fmt(f),
+            OwnedStringVar::AsciiLiteral(a) => a.fmt(f),
+            OwnedStringVar::Other(o) => o.fmt(f),
+            OwnedStringVar::Ascii(a) => a.fmt(f),
         }
     }
 }
