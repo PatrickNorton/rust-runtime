@@ -55,6 +55,23 @@ impl<'a> Iterator for StrChunks<'a> {
             Option::Some(from_utf8_unchecked(slice))
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let (min, max) = self.iterator.size_hint();
+        let n = min / self.count;
+        let rem = min % self.count;
+        let min = if rem > 0 { n + 1 } else { n };
+        let max = max.map(|max| {
+            let n = max / self.count;
+            let rem = max % self.count;
+            if rem > 0 {
+                n + 1
+            } else {
+                n
+            }
+        });
+        (min, max)
+    }
 }
 
 impl<'a> Iterator for AsciiChunks<'a> {
