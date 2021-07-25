@@ -95,3 +95,53 @@ impl DoubleEndedIterator for AsciiChunks<'_> {
 impl ExactSizeIterator for AsciiChunks<'_> {}
 
 impl FusedIterator for AsciiChunks<'_> {}
+
+#[cfg(test)]
+mod test {
+    use crate::string_var::chunks::{AsciiChunks, StrChunks};
+    use ascii::{AsciiStr, AsciiString};
+
+    #[test]
+    fn empty() {
+        let chunks = StrChunks::new("", 1);
+        assert_eq!(chunks.collect::<Vec<_>>(), Vec::<&str>::new());
+    }
+
+    #[test]
+    fn empty_ascii() {
+        let chunks = AsciiChunks::new(Default::default(), 1);
+        assert_eq!(chunks.collect::<Vec<_>>(), Vec::<&AsciiStr>::new());
+    }
+
+    #[test]
+    fn string() {
+        let chunks = StrChunks::new("abcd", 2);
+        assert_eq!(chunks.collect::<Vec<_>>(), vec!["ab", "cd"]);
+    }
+
+    #[test]
+    fn ascii() {
+        let abcd = AsciiString::from_ascii("abcd").unwrap();
+        let ab = AsciiString::from_ascii("ab").unwrap();
+        let cd = AsciiString::from_ascii("cd").unwrap();
+        let chunks = AsciiChunks::new(&abcd, 2);
+        assert_eq!(chunks.collect::<Vec<_>>(), vec![&*ab, &*cd]);
+    }
+
+    #[test]
+    fn str_len() {
+        let mut chunks = StrChunks::new("abcdef", 2);
+        assert_eq!(chunks.size_hint().1, Some(3));
+        chunks.next().unwrap();
+        assert_eq!(chunks.size_hint().1, Some(2));
+    }
+
+    #[test]
+    fn ascii_len() {
+        let str = AsciiString::from_ascii("abcdef").unwrap();
+        let mut chunks = AsciiChunks::new(&str, 2);
+        assert_eq!(chunks.len(), 3);
+        chunks.next().unwrap();
+        assert_eq!(chunks.len(), 2);
+    }
+}

@@ -1,5 +1,5 @@
 use crate::string_var::StringVar;
-use ascii::{AsAsciiStr, AsciiChar, AsciiStr, AsciiString, ToAsciiChar, ToAsciiCharError};
+use ascii::{AsAsciiStr, AsciiChar, AsciiStr, AsciiString, ToAsciiChar};
 use std::fmt::{self, Display, Formatter};
 use std::hash::{Hash, Hasher};
 use std::mem::take;
@@ -297,5 +297,52 @@ impl fmt::Write for MaybeString {
             },
         }
         Result::Ok(())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::string_var::{MaybeAscii, MaybeString};
+    use ascii::{AsciiChar, AsciiStr, AsciiString};
+
+    #[test]
+    fn ascii_as_str() {
+        let a = MaybeAscii::Standard("abc");
+        assert_eq!(a.as_str(), "abc");
+        let b = MaybeAscii::Ascii(AsciiStr::from_ascii("def").unwrap());
+        assert_eq!(b.as_str(), "def");
+    }
+
+    #[test]
+    fn ascii_char_len() {
+        let a = MaybeAscii::Standard("abc");
+        assert_eq!(a.char_len(), 3);
+        let b = MaybeAscii::Ascii(AsciiStr::from_ascii("def").unwrap());
+        assert_eq!(b.char_len(), 3);
+    }
+
+    #[test]
+    fn from_str_checked() {
+        let a = MaybeString::from_str_checked("abc".to_owned());
+        assert_eq!(
+            a,
+            MaybeString::Ascii(AsciiString::from_ascii("abc").unwrap())
+        );
+        let b = MaybeString::from_str_checked("ábc".to_owned());
+        assert_eq!(b, MaybeString::Standard("ábc".to_owned()));
+    }
+
+    #[test]
+    fn insert_ascii() {
+        let mut a = MaybeString::from_str_checked("bcd".to_owned());
+        a.insert_ascii(0, AsciiChar::a);
+        assert_eq!(&*a, "abcd");
+    }
+
+    #[test]
+    fn insert_ascii_str() {
+        let mut a = MaybeString::from_str_checked("def".to_owned());
+        a.insert_ascii_str(0, AsciiStr::from_ascii("abc").unwrap());
+        assert_eq!(&*a, "abcdef");
     }
 }

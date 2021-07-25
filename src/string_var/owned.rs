@@ -260,6 +260,14 @@ impl Deref for OwnedStringVar {
     }
 }
 
+impl PartialEq for OwnedStringVar {
+    fn eq(&self, other: &Self) -> bool {
+        **self == **other
+    }
+}
+
+impl Eq for OwnedStringVar {}
+
 impl Display for OwnedStringVar {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -268,5 +276,63 @@ impl Display for OwnedStringVar {
             OwnedStringVar::Other(o) => o.fmt(f),
             OwnedStringVar::Ascii(a) => a.fmt(f),
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::string_var::OwnedStringVar;
+
+    #[test]
+    fn from_str_checked() {
+        let a = OwnedStringVar::from_str_checked("abc".to_owned());
+        assert!(matches!(a, OwnedStringVar::Ascii(_)));
+        assert_eq!(&*a, "abc");
+        let b = OwnedStringVar::from_str_checked("ábc".to_owned());
+        assert!(matches!(b, OwnedStringVar::Other(_)));
+        assert_eq!(&*b, "ábc".to_owned());
+    }
+
+    #[test]
+    fn char_len() {
+        let a = OwnedStringVar::from_str_checked("abc".to_owned());
+        assert_eq!(a.char_len(), 3);
+        let b = OwnedStringVar::from_str_checked("ábc".to_owned());
+        assert_eq!(b.char_len(), 3);
+    }
+
+    #[test]
+    fn ascii_uppercase() {
+        let mut a = OwnedStringVar::from_str_checked("abc".to_owned());
+        a.make_ascii_uppercase();
+        assert_eq!(&*a, "ABC");
+    }
+
+    #[test]
+    fn insert() {
+        let mut a = OwnedStringVar::from_str_checked("acd".to_owned());
+        a.insert(1, 'b');
+        assert_eq!(&*a, "abcd");
+    }
+
+    #[test]
+    fn insert_str() {
+        let mut a = OwnedStringVar::from_str_checked("aef".to_owned());
+        a.insert_str(1, "bcd");
+        assert_eq!(&*a, "abcdef");
+    }
+
+    #[test]
+    fn insert_n_chr() {
+        let mut a = OwnedStringVar::from_str_checked("abc".to_owned());
+        a.insert_n_chr(1, 3, '0');
+        assert_eq!(&*a, "a000bc");
+    }
+
+    #[test]
+    fn push_n_chr() {
+        let mut a = OwnedStringVar::from_str_checked("abc".to_owned());
+        a.push_n_chr(3, '0');
+        assert_eq!(&*a, "abc000");
     }
 }

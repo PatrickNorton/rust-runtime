@@ -144,3 +144,17 @@ impl Add for &StringVar {
         (self.as_owned() + rhs).into()
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::string_var::StringVar;
+
+    #[test]
+    fn string_add() {
+        let a = StringVar::from("abc");
+        let b = StringVar::from("def");
+        assert_eq!(&*(&a + &b), "abcdef");
+        drop(a);
+        drop(b);
+    }
+}

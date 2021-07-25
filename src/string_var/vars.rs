@@ -35,3 +35,21 @@ impl Deref for AsciiVar {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::string_var::{AsciiVar, StrVar};
+    use ascii::AsAsciiStr;
+
+    #[test]
+    fn str_deref() {
+        let a = StrVar::Literal("abc");
+        assert_eq!(&*a, "abc");
+    }
+
+    #[test]
+    fn ascii_deref() {
+        let a = AsciiVar::Literal("abc".as_ascii_str().unwrap());
+        assert_eq!(&*a, "abc");
+    }
+}

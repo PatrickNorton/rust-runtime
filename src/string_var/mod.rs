@@ -301,3 +301,34 @@ impl<'a> FromIterator<&'a AsciiStr> for StringVar {
         iter.into_iter().collect::<AsciiString>().into()
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::string_var::StringVar;
+    use ascii::AsciiChar;
+
+    #[test]
+    fn from_leak() {
+        assert_eq!(&*StringVar::from_leak("abc".to_owned()), "abc");
+        let chars = Box::from([AsciiChar::a, AsciiChar::b, AsciiChar::c]);
+        assert_eq!(&*StringVar::from_leak_ascii(chars), "abc");
+    }
+
+    #[test]
+    fn char_at() {
+        let a = StringVar::from("abc");
+        assert_eq!(a.char_at(1), Option::Some('b'));
+    }
+
+    #[test]
+    fn char_len() {
+        let a = StringVar::from("abc");
+        assert_eq!(a.char_len(), 3);
+    }
+
+    #[test]
+    fn repr() {
+        let a = StringVar::from("abc");
+        assert_eq!(&*a.repr(), "\"abc\"")
+    }
+}
