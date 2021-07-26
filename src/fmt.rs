@@ -109,8 +109,8 @@ impl FormatArgs {
             FmtType::General => Result::Ok(self.fmt_general(arg).into()),
             FmtType::UpperGeneral => Result::Ok(self.fmt_upper_general(arg).into()),
             FmtType::Percentage => Result::Ok(self.fmt_percentage(arg).into()),
-            FmtType::Repr => arg.repr(runtime),
-            FmtType::String => arg.str(runtime),
+            FmtType::Repr => self.fmt_repr(arg, runtime),
+            FmtType::String => self.fmt_str(arg, runtime),
         }
     }
 
@@ -216,6 +216,23 @@ impl FormatArgs {
                 bigint::Sign::NoSign => Option::Some(' '),
                 bigint::Sign::Plus => Option::Some(' '),
             },
+        }
+    }
+
+    fn fmt_str(&self, var: Variable, runtime: &mut Runtime) -> Result<StringVar, ()> {
+        Result::Ok(self.fmt_string_like(var.str(runtime)?))
+    }
+
+    fn fmt_repr(&self, var: Variable, runtime: &mut Runtime) -> Result<StringVar, ()> {
+        Result::Ok(self.fmt_string_like(var.repr(runtime)?))
+    }
+
+    fn fmt_string_like(&self, value: StringVar) -> StringVar {
+        if self.is_simple_format() {
+            value
+        } else {
+            let owned = OwnedStringVar::from(value);
+            self.pad_str_simple(owned, Option::None, "").into()
         }
     }
 

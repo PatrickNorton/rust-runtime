@@ -1,4 +1,4 @@
-use crate::string_var::{AsciiVar, MaybeString, StrVar};
+use crate::string_var::{AsciiVar, MaybeString, StrVar, StringVar};
 use ascii::{AsAsciiStr, AsciiStr, AsciiString, ToAsciiChar};
 use std::borrow::Cow;
 use std::fmt::{Display, Formatter};
@@ -197,7 +197,7 @@ impl From<Cow<'static, str>> for OwnedStringVar {
     fn from(x: Cow<'static, str>) -> Self {
         match x {
             Cow::Borrowed(x) => OwnedStringVar::Literal(x),
-            Cow::Owned(x) => OwnedStringVar::Other(x.into()),
+            Cow::Owned(x) => OwnedStringVar::Other(x),
         }
     }
 }
@@ -223,7 +223,7 @@ impl From<AsciiString> for OwnedStringVar {
 impl From<MaybeString> for OwnedStringVar {
     fn from(s: MaybeString) -> Self {
         match s {
-            MaybeString::Standard(s) => OwnedStringVar::Other(s.into()),
+            MaybeString::Standard(s) => OwnedStringVar::Other(s),
             MaybeString::Ascii(a) => a.into(),
         }
     }
@@ -243,6 +243,17 @@ impl From<AsciiVar> for OwnedStringVar {
         match s {
             AsciiVar::Literal(l) => OwnedStringVar::AsciiLiteral(l),
             AsciiVar::Other(o) => OwnedStringVar::Ascii(o.to_ascii_string()),
+        }
+    }
+}
+
+impl From<StringVar> for OwnedStringVar {
+    fn from(s: StringVar) -> Self {
+        match s {
+            StringVar::Literal(l) => OwnedStringVar::Literal(l),
+            StringVar::AsciiLiteral(a) => OwnedStringVar::AsciiLiteral(a),
+            StringVar::Other(s) => OwnedStringVar::Other(s.to_string()),
+            StringVar::Ascii(a) => OwnedStringVar::Ascii(AsciiString::from(&*a)),
         }
     }
 }
