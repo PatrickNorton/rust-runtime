@@ -121,6 +121,8 @@ impl FmtDecimal {
     fn divide_integer(dividend: BigInt, divisor: BigInt, scale: i64) -> FmtDecimal {
         if dividend.is_zero() {
             FmtDecimal::new(BigInt::zero(), scale)
+        } else if divisor.is_one() {
+            FmtDecimal::new(dividend, 0)
         } else if dividend == divisor {
             FmtDecimal::new(Self::big_ten_to_the(scale).into_owned(), scale)
         } else if scale > 0 {
