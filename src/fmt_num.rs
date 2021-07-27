@@ -15,6 +15,12 @@ struct FmtDecimal {
     scale: i64,
 }
 
+#[derive(Debug, Eq, PartialEq)]
+struct FmtDecimalRef<'a> {
+    value: &'a BigUint,
+    scale: i64,
+}
+
 const LONG_TEN_POWERS_TABLE: [u64; 20] = [
     1,                    // 0 / 10^0
     10,                   // 1 / 10^1
@@ -74,12 +80,28 @@ pub fn format_rational_unsigned(value: BigRational, precision: u32) -> String {
     format!("{:.*}", precision as usize, fmt_dec.into_abs())
 }
 
-pub fn format_exp(value: BigRational, precision: u32) -> String {
-    format!("{:.*e}", precision as usize, get_dec(value, precision))
+pub fn format_u_exp(value: BigRational, precision: u32) -> String {
+    format!(
+        "{:.*e}",
+        precision as usize,
+        get_dec(value, precision).into_abs()
+    )
 }
 
-pub fn format_upper_exp(value: BigRational, precision: u32) -> String {
-    format!("{:.*E}", precision as usize, get_dec(value, precision))
+pub fn format_upper_u_exp(value: BigRational, precision: u32) -> String {
+    format!(
+        "{:.*E}",
+        precision as usize,
+        get_dec(value, precision).into_abs()
+    )
+}
+
+pub fn format_int_exp(value: &BigUint, precision: u32) -> String {
+    format!("{:.*e}", precision as usize, FmtDecimalRef::new(value, 0))
+}
+
+pub fn format_int_upper_exp(value: &BigUint, precision: u32) -> String {
+    format!("{:.*e}", precision as usize, FmtDecimalRef::new(value, 0))
 }
 
 fn get_dec(value: BigRational, precision: u32) -> FmtDecimal {
@@ -96,6 +118,15 @@ fn get_dec(value: BigRational, precision: u32) -> FmtDecimal {
         precision as u64
     };
     FmtDecimal::from_ratio(numer, denom, precision)
+}
+
+impl<'a> FmtDecimalRef<'a> {
+    fn new(int_val: &'a BigUint, scale: i64) -> FmtDecimalRef<'a> {
+        FmtDecimalRef {
+            value: int_val,
+            scale,
+        }
+    }
 }
 
 impl FmtDecimal {
@@ -215,77 +246,79 @@ impl FmtDecimal {
             Cow::Owned(Pow::pow(BigInt::from(10), n as u64))
         }
     }
-
-    fn fmt_exp(&self, f: &mut Formatter<'_>, e: char) -> std::fmt::Result {
-        let precision = f.precision();
-        let mut digits = get_digits(&self.value);
-        let sub_one;
-        if digits.len() > 1 {
-            match precision {
-                Option::Some(x) => {
-                    if x + 1 >= digits.len() {
-                        f.write_char(digits[0])?;
-                        f.write_char('.')?;
-                        for ch in &digits[1..] {
-                            f.write_char(*ch)?;
-                        }
-                        for _ in 0..x + 1 - digits.len() {
-                            f.write_char('0')?;
-                        }
-                        sub_one = true;
-                    } else {
-                        let carry = round_chars(&mut digits, x + 1);
-                        f.write_char(if carry { '1' } else { digits[0] })?;
-                        f.write_char('.')?;
-                        let c = usize::from_bool(!carry);
-                        for ch in &digits[c..x + c] {
-                            f.write_char(*ch)?;
-                        }
-                        sub_one = !carry;
-                    }
-                }
-                Option::None => {
-                    f.write_char(digits[0])?;
-                    f.write_char('.')?;
-                    for ch in &digits[1..] {
-                        f.write_char(*ch)?;
-                    }
-                    sub_one = true;
-                }
-            }
-        } else {
-            f.write_char(digits[0])?;
-            if let Option::Some(prec) = precision {
-                f.write_char('.')?;
-                for _ in 0..prec {
-                    f.write_char('0')?;
-                }
-            }
-            sub_one = true;
-        }
-        let adjusted = -self.scale + (digits.len() as i64) - i64::from_bool(sub_one);
-        f.write_char(e)?;
-        write!(f, "{:+03}", adjusted)?;
-        Result::Ok(())
-    }
 }
 
 impl Display for FmtDecimal {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        if self.scale == 0 {
-            return self.value.fmt(f);
-        }
-        let mut digits = get_digits(&self.value);
-        if self.value.is_negative() {
-            f.write_char('-')?;
-        }
-        let scale = self.scale as i64;
-        let digit_len = digits.len();
-        let pad = scale - digit_len as i64;
-        if pad >= 0 {
-            let pad = pad as usize;
-            match f.precision() {
-                Option::None => {
+        fmt_display(&self.value, self.scale, f)
+    }
+}
+
+impl LowerExp for FmtDecimal {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        fmt_exp(&self.value, self.scale, f, 'e')
+    }
+}
+
+impl UpperExp for FmtDecimal {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        fmt_exp(&self.value, self.scale, f, 'E')
+    }
+}
+
+impl Display for FmtDecimalRef<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        fmt_display_abs(self.value, self.scale, f)
+    }
+}
+
+impl LowerExp for FmtDecimalRef<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        fmt_exp_abs(self.value, self.scale, f, 'e')
+    }
+}
+
+impl UpperExp for FmtDecimalRef<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        fmt_exp_abs(self.value, self.scale, f, 'E')
+    }
+}
+
+fn fmt_display(value: &BigInt, scale: i64, f: &mut Formatter<'_>) -> std::fmt::Result {
+    if scale == 0 {
+        return value.fmt(f);
+    }
+    if value.is_negative() {
+        f.write_char('-')?;
+    }
+    fmt_display_abs(value.magnitude(), scale, f)
+}
+
+fn fmt_display_abs(value: &BigUint, scale: i64, f: &mut Formatter<'_>) -> std::fmt::Result {
+    let mut digits = get_digits(value);
+    let digit_len = digits.len();
+    let pad = scale - digit_len as i64;
+    if pad >= 0 {
+        let pad = pad as usize;
+        match f.precision() {
+            Option::None => {
+                f.write_char('0')?;
+                f.write_char('.')?;
+                for _ in 0..pad {
+                    f.write_char('0')?;
+                }
+                for ch in digits {
+                    f.write_char(ch)?;
+                }
+            }
+            Option::Some(prec) => {
+                if prec < pad {
+                    f.write_char('0')?;
+                    f.write_char('.')?;
+                    for _ in 0..prec {
+                        f.write_char('0')?;
+                    }
+                } else if prec - pad >= digit_len {
                     f.write_char('0')?;
                     f.write_char('.')?;
                     for _ in 0..pad {
@@ -294,46 +327,39 @@ impl Display for FmtDecimal {
                     for ch in digits {
                         f.write_char(ch)?;
                     }
-                }
-                Option::Some(prec) => {
-                    if prec < pad {
+                    for _ in 0..prec - pad - digit_len {
                         f.write_char('0')?;
-                        f.write_char('.')?;
-                        for _ in 0..prec {
-                            f.write_char('0')?;
-                        }
-                    } else if prec - pad >= digit_len {
+                    }
+                } else {
+                    let carry = round_chars(&mut digits, prec - pad);
+                    f.write_char(if carry && pad == 0 { '1' } else { '0' })?;
+                    f.write_char('.')?;
+                    for _ in 0..pad.saturating_sub(1) {
                         f.write_char('0')?;
-                        f.write_char('.')?;
-                        for _ in 0..pad {
-                            f.write_char('0')?;
-                        }
-                        for ch in digits {
-                            f.write_char(ch)?;
-                        }
-                        for _ in 0..prec - pad - digit_len {
-                            f.write_char('0')?;
-                        }
-                    } else {
-                        let carry = round_chars(&mut digits, prec - pad);
-                        f.write_char(if carry && pad == 0 { '1' } else { '0' })?;
-                        f.write_char('.')?;
-                        for _ in 0..pad.saturating_sub(1) {
-                            f.write_char('0')?;
-                        }
-                        if pad > 0 {
-                            f.write_char(if carry { '1' } else { '0' })?;
-                        }
-                        for ch in &digits[..prec - pad] {
-                            f.write_char(*ch)?;
-                        }
+                    }
+                    if pad > 0 {
+                        f.write_char(if carry { '1' } else { '0' })?;
+                    }
+                    for ch in &digits[..prec - pad] {
+                        f.write_char(*ch)?;
                     }
                 }
             }
-        } else {
-            let pad = (-pad) as usize;
-            match f.precision() {
-                Option::None => {
+        }
+    } else {
+        let pad = (-pad) as usize;
+        match f.precision() {
+            Option::None => {
+                for ch in &digits[..pad] {
+                    f.write_char(*ch)?;
+                }
+                f.write_char('.')?;
+                for ch in &digits[pad..] {
+                    f.write_char(*ch)?;
+                }
+            }
+            Option::Some(x) => {
+                if x + pad >= digit_len {
                     for ch in &digits[..pad] {
                         f.write_char(*ch)?;
                     }
@@ -341,53 +367,93 @@ impl Display for FmtDecimal {
                     for ch in &digits[pad..] {
                         f.write_char(*ch)?;
                     }
-                }
-                Option::Some(x) => {
-                    if x + pad >= digit_len {
-                        for ch in &digits[..pad] {
-                            f.write_char(*ch)?;
-                        }
-                        f.write_char('.')?;
-                        for ch in &digits[pad..] {
-                            f.write_char(*ch)?;
-                        }
-                        for _ in 0..x + pad - digit_len {
-                            f.write_char('0')?;
-                        }
-                    } else {
-                        let carry = round_chars(&mut digits, x + pad);
-                        if carry {
-                            f.write_char('1')?;
-                        }
-                        for ch in &digits[..pad] {
-                            f.write_char(*ch)?;
-                        }
-                        f.write_char('.')?;
-                        for ch in &digits[pad..x + pad] {
-                            f.write_char(*ch)?;
-                        }
+                    for _ in 0..x + pad - digit_len {
+                        f.write_char('0')?;
+                    }
+                } else {
+                    let carry = round_chars(&mut digits, x + pad);
+                    if carry {
+                        f.write_char('1')?;
+                    }
+                    for ch in &digits[..pad] {
+                        f.write_char(*ch)?;
+                    }
+                    f.write_char('.')?;
+                    for ch in &digits[pad..x + pad] {
+                        f.write_char(*ch)?;
                     }
                 }
             }
         }
-        Result::Ok(())
     }
+    Result::Ok(())
 }
 
-impl LowerExp for FmtDecimal {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        self.fmt_exp(f, 'e')
+fn fmt_exp(value: &BigInt, scale: i64, f: &mut Formatter<'_>, e: char) -> std::fmt::Result {
+    if scale == 0 {
+        return value.fmt(f);
     }
+    if value.is_negative() {
+        f.write_char('-')?;
+    }
+    fmt_exp_abs(value.magnitude(), scale, f, e)
 }
 
-impl UpperExp for FmtDecimal {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        self.fmt_exp(f, 'E')
+fn fmt_exp_abs(value: &BigUint, scale: i64, f: &mut Formatter<'_>, e: char) -> std::fmt::Result {
+    let precision = f.precision();
+    let mut digits = get_digits(value);
+    let sub_one;
+    if digits.len() > 1 {
+        match precision {
+            Option::Some(x) => {
+                if x + 1 >= digits.len() {
+                    f.write_char(digits[0])?;
+                    f.write_char('.')?;
+                    for ch in &digits[1..] {
+                        f.write_char(*ch)?;
+                    }
+                    for _ in 0..x + 1 - digits.len() {
+                        f.write_char('0')?;
+                    }
+                    sub_one = true;
+                } else {
+                    let carry = round_chars(&mut digits, x + 1);
+                    f.write_char(if carry { '1' } else { digits[0] })?;
+                    f.write_char('.')?;
+                    let c = usize::from_bool(!carry);
+                    for ch in &digits[c..x + c] {
+                        f.write_char(*ch)?;
+                    }
+                    sub_one = !carry;
+                }
+            }
+            Option::None => {
+                f.write_char(digits[0])?;
+                f.write_char('.')?;
+                for ch in &digits[1..] {
+                    f.write_char(*ch)?;
+                }
+                sub_one = true;
+            }
+        }
+    } else {
+        f.write_char(digits[0])?;
+        if let Option::Some(prec) = precision {
+            f.write_char('.')?;
+            for _ in 0..prec {
+                f.write_char('0')?;
+            }
+        }
+        sub_one = true;
     }
+    let adjusted = -scale + (digits.len() as i64) - i64::from_bool(sub_one);
+    f.write_char(e)?;
+    write!(f, "{:+03}", adjusted)?;
+    Result::Ok(())
 }
 
-fn get_digits(value: &BigInt) -> Vec<char> {
-    value.magnitude().to_string().chars().collect()
+fn get_digits(value: &BigUint) -> Vec<char> {
+    value.to_string().chars().collect()
 }
 
 /// Computes `a.cmp(b/2)`.

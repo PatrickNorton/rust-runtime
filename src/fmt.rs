@@ -1,6 +1,9 @@
 use crate::custom_var::CustomVar;
 use crate::first_n;
-use crate::fmt_num::{format_exp, format_rational_unsigned, format_upper_exp};
+use crate::fmt_num::{
+    format_int_exp, format_int_upper_exp, format_rational_unsigned, format_u_exp,
+    format_upper_u_exp,
+};
 use crate::from_bool::FromBool;
 use crate::int_tools::bytes_index;
 use crate::int_var::IntVar;
@@ -10,9 +13,10 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::{MaybeString, OwnedStringVar, StringVar};
 use crate::variable::{FnResult, InnerVar, Variable};
-use ascii::{AsciiChar, AsciiStr};
-use num::{bigint, BigInt, BigRational, One, ToPrimitive, Zero};
+use ascii::{AsAsciiStr, AsciiChar, AsciiStr};
+use num::{bigint, BigInt, BigRational, BigUint, One, ToPrimitive, Zero};
 use once_cell::sync::Lazy;
+use std::borrow::Cow;
 use std::fmt::{Display, Formatter, Write};
 use std::rc::Rc;
 
@@ -295,61 +299,92 @@ impl FormatArgs {
     }
 
     fn fmt_exp(&self, var: Variable) -> OwnedStringVar {
-        if !self.is_simple_format() {
-            todo!("Non-trivial formatting")
-        }
         match var {
-            Variable::Normal(InnerVar::Bigint(i)) => {
-                self.fmt_exp_inner(&BigRational::from(BigInt::from(i)), false)
-            }
-            Variable::Normal(InnerVar::Bool(b)) => {
-                if b {
-                    "1.000000e+00".into()
-                } else {
-                    "0.000000e+00".into()
-                }
-            }
+            Variable::Normal(InnerVar::Bigint(i)) => self.fmt_integer_exp(&i, false),
+            Variable::Normal(InnerVar::Bool(b)) => self.fmt_bool_exp(b, false),
             Variable::Normal(InnerVar::Decimal(c)) => self.fmt_exp_inner(&*c, false),
             _ => panic!(),
         }
     }
 
     fn fmt_upper_exp(&self, var: Variable) -> OwnedStringVar {
-        if !self.is_simple_format() {
-            todo!("Non-trivial formatting")
-        }
         match var {
-            Variable::Normal(InnerVar::Bigint(i)) => {
-                self.fmt_exp_inner(&BigRational::from(BigInt::from(i)), true)
-            }
-            Variable::Normal(InnerVar::Bool(b)) => {
-                if b {
-                    "1.000000E+00".into()
-                } else {
-                    "0.000000E+00".into()
-                }
-            }
+            Variable::Normal(InnerVar::Bigint(i)) => self.fmt_integer_exp(&i, true),
+            Variable::Normal(InnerVar::Bool(b)) => self.fmt_bool_exp(b, true),
             Variable::Normal(InnerVar::Decimal(c)) => self.fmt_exp_inner(&*c, true),
             _ => panic!(),
         }
     }
 
-    fn fmt_exp_inner(&self, value: &BigRational, uppercase: bool) -> OwnedStringVar {
-        if !self.is_simple_format() {
-            todo!("Non-trivial formatting")
-        }
+    fn fmt_integer_exp(&self, value: &IntVar, uppercase: bool) -> OwnedStringVar {
         if value.is_zero() {
-            if uppercase {
-                "0.000000E+00".into()
+            self.fmt_zero_exp(uppercase)
+        } else {
+            let formatted = if uppercase {
+                format_int_upper_exp(&*int_var_as_magnitude(value), self.float_decimals())
             } else {
-                "0.000000e+00".into()
+                format_int_exp(&*int_var_as_magnitude(value), self.float_decimals())
+            };
+            let sign = self.sign_char(value.sign());
+            self.pad_str_simple(OwnedStringVar::from_str_checked(formatted), sign, "")
+        }
+    }
+
+    fn fmt_bool_exp(&self, value: bool, uppercase: bool) -> OwnedStringVar {
+        if !value {
+            self.fmt_zero_exp(uppercase)
+        } else {
+            self.fmt_one_exp(uppercase)
+        }
+    }
+
+    fn fmt_exp_inner(&self, value: &BigRational, uppercase: bool) -> OwnedStringVar {
+        if value.is_zero() {
+            self.fmt_zero_exp(uppercase)
+        } else {
+            let str = OwnedStringVar::from_str_checked(if uppercase {
+                format_upper_u_exp(value.clone(), self.float_decimals())
+            } else {
+                format_u_exp(value.clone(), self.float_decimals())
+            });
+            let sign = self.sign_char(value.numer().sign());
+            self.pad_str_simple(str, sign, "")
+        }
+    }
+
+    fn fmt_zero_exp(&self, uppercase: bool) -> OwnedStringVar {
+        static SIMPLE_LOWER: Lazy<&AsciiStr> = Lazy::new(|| "0.000000e+00".as_ascii_str().unwrap());
+        static SIMPLE_UPPER: Lazy<&AsciiStr> = Lazy::new(|| "0.000000E+00".as_ascii_str().unwrap());
+        if self.is_simple_format() {
+            if uppercase {
+                (*SIMPLE_UPPER).into()
+            } else {
+                (*SIMPLE_LOWER).into()
             }
         } else {
-            OwnedStringVar::from_str_checked(if uppercase {
-                format_upper_exp(value.clone(), self.float_decimals())
+            let e = if uppercase { 'E' } else { 'e' };
+            let precision = self.float_decimals() as usize;
+            let sign = self.sign_char(bigint::Sign::NoSign);
+            let str = format!("0.{:0width$}{}+00", 0, e, width = precision);
+            self.pad_str_simple(OwnedStringVar::from_str_checked(str), sign, "")
+        }
+    }
+
+    fn fmt_one_exp(&self, uppercase: bool) -> OwnedStringVar {
+        static SIMPLE_LOWER: Lazy<&AsciiStr> = Lazy::new(|| "1.000000e+00".as_ascii_str().unwrap());
+        static SIMPLE_UPPER: Lazy<&AsciiStr> = Lazy::new(|| "1.000000E+00".as_ascii_str().unwrap());
+        if self.is_simple_format() {
+            if uppercase {
+                (*SIMPLE_UPPER).into()
             } else {
-                format_exp(value.clone(), self.float_decimals())
-            })
+                (*SIMPLE_LOWER).into()
+            }
+        } else {
+            let e = if uppercase { 'E' } else { 'e' };
+            let precision = self.float_decimals() as usize;
+            let sign = self.sign_char(bigint::Sign::NoSign);
+            let str = format!("1.{:0width$}{}+00", 0, e, width = precision);
+            self.pad_str_simple(OwnedStringVar::from_str_checked(str), sign, "")
         }
     }
 
@@ -572,6 +607,13 @@ fn bool_sign(x: bool) -> bigint::Sign {
     }
 }
 
+fn int_var_as_magnitude(x: &IntVar) -> Cow<'_, BigUint> {
+    match x {
+        IntVar::Small(s) => Cow::Owned(s.unsigned_abs().into()),
+        IntVar::Big(b) => Cow::Borrowed(b.magnitude()),
+    }
+}
+
 impl CustomVar for FormatArgs {
     fn set(self: Rc<Self>, _name: Name, _object: Variable) {
         unimplemented!()
@@ -737,6 +779,25 @@ mod test {
         assert_eq!(
             &*formatter.fmt_upper_exp(RationalVar::from(third).into()),
             "3.333333E-01"
+        );
+    }
+
+    #[test]
+    fn exp_sign() {
+        let formatter = FormatArgs {
+            sign: Sign::Both,
+            fmt_type: FmtType::Exponent,
+            ..Default::default()
+        };
+        let third = BigRational::new(BigInt::from(1), BigInt::from(3));
+        assert_eq!(
+            &*formatter.fmt_exp(RationalVar::from(third).into()),
+            "+3.333333e-01"
+        );
+        let neg_third = BigRational::new(BigInt::from(-1), BigInt::from(3));
+        assert_eq!(
+            &*formatter.fmt_exp(RationalVar::from(neg_third).into()),
+            "-3.333333e-01"
         );
     }
 
