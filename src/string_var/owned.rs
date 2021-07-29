@@ -1,5 +1,5 @@
 use crate::string_var::{AsciiVar, MaybeString, StrVar, StringVar};
-use ascii::{AsAsciiStr, AsciiStr, AsciiString, ToAsciiChar};
+use ascii::{AsAsciiStr, AsciiChar, AsciiStr, AsciiString, ToAsciiChar};
 use std::borrow::Cow;
 use std::fmt::{Display, Formatter};
 use std::ops::Deref;
@@ -255,6 +255,21 @@ impl From<StringVar> for OwnedStringVar {
             StringVar::Other(s) => OwnedStringVar::Other(s.to_string()),
             StringVar::Ascii(a) => OwnedStringVar::Ascii(AsciiString::from(&*a)),
         }
+    }
+}
+
+impl From<char> for OwnedStringVar {
+    fn from(c: char) -> Self {
+        match AsciiChar::from_ascii(c) {
+            Result::Ok(ch) => ch.into(),
+            Result::Err(_) => OwnedStringVar::Other(c.into()),
+        }
+    }
+}
+
+impl From<AsciiChar> for OwnedStringVar {
+    fn from(ch: AsciiChar) -> Self {
+        OwnedStringVar::Ascii(AsciiString::from(vec![ch]))
     }
 }
 

@@ -1,3 +1,4 @@
+use crate::custom_types::exceptions::value_error;
 use crate::custom_var::CustomVar;
 use crate::first_n;
 use crate::fmt_num::{
@@ -11,7 +12,7 @@ use crate::name::Name;
 use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
-use crate::string_var::{MaybeString, OwnedStringVar, StringVar};
+use crate::string_var::{OwnedStringVar, StringVar};
 use crate::variable::{FnResult, InnerVar, Variable};
 use ascii::{AsAsciiStr, AsciiChar, AsciiStr};
 use num::{bigint, BigInt, BigRational, BigUint, One, ToPrimitive, Zero};
@@ -100,7 +101,7 @@ impl FormatArgs {
     pub fn format(&self, arg: Variable, runtime: &mut Runtime) -> Result<StringVar, ()> {
         match self.fmt_type {
             FmtType::Binary => Result::Ok(self.fmt_binary(arg).into()),
-            FmtType::Character => Result::Ok(self.fmt_character(arg).into()),
+            FmtType::Character => self.fmt_character(arg, runtime).map(From::from),
             FmtType::Decimal => Result::Ok(self.fmt_decimal(arg).into()),
             FmtType::Octal => Result::Ok(self.fmt_octal(arg).into()),
             FmtType::Hex => Result::Ok(self.fmt_hex(arg).into()),
@@ -270,27 +271,34 @@ impl FormatArgs {
         self.pad_integer(str_val, value.sign(), "0X")
     }
 
-    fn fmt_character(&self, var: Variable) -> MaybeString {
-        if !self.is_simple_format() {
-            todo!("Non-trivial formatting")
-        }
-        match var {
-            // FIXME: This unwrap() should throw an exception instead of panicking
-            Variable::Normal(InnerVar::Bigint(i)) => Self::char_from_int(&i).unwrap(),
+    fn fmt_character(&self, var: Variable, runtime: &mut Runtime) -> Result<OwnedStringVar, ()> {
+        assert!(!self.zero);
+        let char_str = match var {
+            Variable::Normal(InnerVar::Bigint(i)) => match Self::char_from_int(&i) {
+                Option::Some(x) => x,
+                Option::None => return runtime.throw_quick_native(
+                    value_error(),
+                    format!(
+                        "Invalid argument to !c string format: Scalar value {} is not a Unicode character value", 
+                        i
+                    )
+                )
+            }
             Variable::Normal(InnerVar::Bool(b)) => Self::char_from_bool(b),
             Variable::Normal(InnerVar::Char(c)) => c.into(),
             x => panic!(
                 "Attempted to turn a variable not a superclass of int ({}) into an int",
                 x.get_type().str()
             ),
-        }
+        };
+        Result::Ok(self.pad_str_simple(char_str, Option::None, ""))
     }
 
-    fn char_from_int(i: &IntVar) -> Option<MaybeString> {
+    fn char_from_int(i: &IntVar) -> Option<OwnedStringVar> {
         i.to_u32().and_then(char::from_u32).map(From::from)
     }
 
-    fn char_from_bool(i: bool) -> MaybeString {
+    fn char_from_bool(i: bool) -> OwnedStringVar {
         if i { AsciiChar::SOH } else { AsciiChar::Null }.into()
     }
 
@@ -754,12 +762,6 @@ mod test {
             ..Default::default()
         };
         assert_eq!(&*formatter.fmt_hex(0x10a.into()), " 10a");
-    }
-
-    #[test]
-    fn simple_char() {
-        let formatter = FormatArgs::default();
-        assert_eq!(&*formatter.fmt_character('c'.into()), "c");
     }
 
     #[test]
