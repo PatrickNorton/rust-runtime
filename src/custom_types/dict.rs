@@ -8,6 +8,7 @@ use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::{MaybeString, StringVar};
+use crate::tuple::LangTuple;
 use crate::variable::{FnResult, Variable};
 use crate::{first, first_n};
 use ascii::{AsciiChar, AsciiStr};
@@ -17,7 +18,9 @@ use std::cmp::{max, min};
 use std::fmt::Debug;
 use std::iter::{FusedIterator, Iterator};
 use std::mem::{replace, take};
+use std::panic::resume_unwind;
 use std::rc::Rc;
+use std::slice;
 
 pub(super) trait DictLike: Debug {
     fn borrow(&self) -> Ref<'_, InnerDict>;
@@ -97,9 +100,11 @@ impl Dict {
         match s {
             "clear" => Dict::clear,
             "get" => Dict::get,
+            "getPair" => Dict::get_pair,
             "replace" => Dict::replace,
             "remove" => Dict::remove,
             "setDefault" => Dict::set_default,
+            "retain" => Dict::retain,
             _ => unimplemented!("dict.{}", s),
         }
     }
@@ -160,11 +165,21 @@ impl Dict {
         }
     }
 
+    fn get_pair(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        let key = first(args);
+        let val = self.value.borrow().get_pair(key, runtime)?;
+        let mapped = val.map(|(x, y)| LangTuple::from_vec(vec![x, y]).into());
+        runtime.return_1(mapped.into())
+    }
+
     fn replace(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 2);
         let [key, val] = first_n(args);
         let mut value = self.value.borrow_mut();
-        if let Result::Ok(e) = value.entry_mut(key, runtime)?.into_value() {
+        if value.is_empty() {
+            runtime.return_1(Option::None.into())
+        } else if let Result::Ok(e) = value.entry_mut(key, runtime)?.into_value() {
             runtime.return_1(Option::Some(replace(&mut e.value, val)).into())
         } else {
             runtime.return_1(Option::None.into())
@@ -191,6 +206,27 @@ impl Dict {
             }
         };
         runtime.return_1(result)
+    }
+
+    fn retain(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        let predicate = first(args);
+        let mut removed = 0;
+        let mut value = self.value.borrow_mut();
+        for entry in &mut value.entries {
+            if let Entry::Some(e) = entry {
+                predicate
+                    .clone()
+                    .call_or_goto((vec![e.key.clone(), e.value.clone()], runtime))?;
+                let result = runtime.pop_return().into_bool(runtime)?;
+                if !result {
+                    *entry = Entry::Removed;
+                    removed += 1;
+                }
+            }
+        }
+        value.size -= removed;
+        runtime.return_0()
     }
 
     fn eq(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -291,6 +327,20 @@ impl InnerDict {
             Result::Ok(Option::None)
         } else if let Entry::Some(e) = self.entry(key, runtime)? {
             Result::Ok(Option::Some(e.value.clone()))
+        } else {
+            Result::Ok(Option::None)
+        }
+    }
+
+    pub fn get_pair(
+        &self,
+        key: Variable,
+        runtime: &mut Runtime,
+    ) -> Result<Option<(Variable, Variable)>, ()> {
+        if self.entries.is_empty() {
+            Result::Ok(Option::None)
+        } else if let Entry::Some(e) = self.entry(key, runtime)? {
+            Result::Ok(Option::Some((e.key.clone(), e.value.clone())))
         } else {
             Result::Ok(Option::None)
         }
