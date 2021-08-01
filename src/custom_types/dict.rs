@@ -526,13 +526,17 @@ impl InnerDict {
         Self::new_cap(self.entries.len(), new_size)
     }
 
+    fn requires_resize(current_cap: usize, new_size: usize) -> bool {
+        // Equivalent to load factor of 0.75, but without loss of precision from floats
+        current_cap - (current_cap / 4) < new_size
+    }
+
     fn new_cap(current_cap: usize, new_size: usize) -> usize {
-        const LOAD_FACTOR: f64 = 0.75;
-        if current_cap as f64 * LOAD_FACTOR >= new_size as f64 {
+        if !Self::requires_resize(current_cap, new_size) {
             return current_cap;
         }
         let mut new_cap = max(Self::MIN_SIZE, new_size.next_power_of_two());
-        while new_cap as f64 * LOAD_FACTOR < new_size as f64 {
+        while Self::requires_resize(current_cap, new_cap) {
             new_cap <<= 1;
         }
         new_cap
