@@ -535,11 +535,12 @@ impl InnerDict {
         if !Self::requires_resize(current_cap, new_size) {
             return current_cap;
         }
-        let mut new_cap = max(Self::MIN_SIZE, new_size.next_power_of_two());
-        while Self::requires_resize(current_cap, new_cap) {
-            new_cap <<= 1;
+        let new_cap = max(Self::MIN_SIZE, new_size.next_power_of_two());
+        if Self::requires_resize(current_cap, new_cap) {
+            new_cap << 1
+        } else {
+            new_cap
         }
-        new_cap
     }
 
     fn rehash(perturb: &mut usize, bucket: usize) -> usize {
