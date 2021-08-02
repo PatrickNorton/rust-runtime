@@ -50,24 +50,24 @@ fn u_minus(this: RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnR
 
 fn mul(this: RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     let mut prod: RationalVar = args.into_iter().map(RationalVar::from).product();
-    prod += this;
+    prod *= this;
     runtime.return_1(prod.into())
 }
 
 fn floor_div(this: RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    let mut ratio = this.to_integer();
+    let mut ratio = this.into_inner();
     for arg in args {
-        ratio /= RationalVar::from(arg).to_integer()
+        ratio /= &*RationalVar::from(arg)
     }
-    runtime.return_1(ratio.into())
+    runtime.return_1(ratio.to_integer().into())
 }
 
 fn div(this: RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
-    let mut ratio = this;
+    let mut ratio = this.into_inner();
     for arg in args {
-        ratio /= RationalVar::from(arg)
+        ratio /= &*RationalVar::from(arg)
     }
-    runtime.return_1(ratio.into())
+    runtime.return_1(RationalVar::from(ratio).into())
 }
 
 fn eq(this: RationalVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

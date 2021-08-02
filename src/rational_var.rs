@@ -1,5 +1,5 @@
 use num::bigint::Sign;
-use num::{BigInt, BigRational, Signed, Zero};
+use num::{BigInt, BigRational, One, Signed, Zero};
 use std::iter::{Product, Sum};
 use std::ops::{
     Add, AddAssign, Deref, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign,
@@ -16,6 +16,10 @@ impl RationalVar {
         RationalVar {
             value: Rc::new(value),
         }
+    }
+
+    pub fn into_inner(self) -> BigRational {
+        Rc::try_unwrap(self.value).unwrap_or_else(|x| (*x).clone())
     }
 
     pub fn from_integer(x: BigInt) -> RationalVar {
@@ -94,6 +98,16 @@ impl Zero for RationalVar {
     }
 }
 
+impl One for RationalVar {
+    fn one() -> Self {
+        RationalVar::new(One::one())
+    }
+    
+    fn is_one(&self) -> bool {
+        self.value.is_one()
+    }
+}
+
 impl From<BigRational> for RationalVar {
     fn from(x: BigRational) -> Self {
         Self::new(x)
@@ -109,7 +123,6 @@ impl Sum for RationalVar {
 
 impl Product for RationalVar {
     fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
-        iter.fold(BigRational::zero(), |sum, num| sum * &*num)
-            .into()
+        iter.fold(BigRational::one(), |sum, num| sum * &*num).into()
     }
 }
