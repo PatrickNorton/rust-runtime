@@ -84,11 +84,7 @@ impl From<LangTuple> for Variable {
 
 impl From<Option<Variable>> for Variable {
     fn from(x: Option<Variable>) -> Self {
-        Variable::Option(match x {
-            Option::None => OptionVar::null(),
-            Option::Some(Variable::Normal(x)) => OptionVar::some(x),
-            Option::Some(Variable::Option(var)) => OptionVar::new(var.depth + 1, var.value),
-        })
+        Variable::Option(x.into())
     }
 }
 

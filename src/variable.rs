@@ -642,3 +642,13 @@ impl Hash for FileInfo {
         ptr::hash(self, state);
     }
 }
+
+impl From<Option<Variable>> for OptionVar {
+    fn from(x: Option<Variable>) -> Self {
+        match x {
+            Option::None => OptionVar::null(),
+            Option::Some(Variable::Normal(x)) => OptionVar::some(x),
+            Option::Some(Variable::Option(var)) => OptionVar::new(var.depth + 1, var.value),
+        }
+    }
+}
