@@ -371,7 +371,7 @@ impl Signed for IntVar {
             },
             IntVar::Big(b1) => match other {
                 IntVar::Small(s2) => match b1.to_isize() {
-                    Option::Some(s1) => s1.abs_sub(&s2).into(),
+                    Option::Some(s1) => s1.abs_sub(s2).into(),
                     Option::None => b1.abs_sub(&(*s2).into()).into(),
                 },
                 IntVar::Big(b2) => {
@@ -803,11 +803,11 @@ impl Integer for IntVar {
         match self {
             IntVar::Small(s1) => match other {
                 IntVar::Small(s2) => map_into(s1.div_rem(s2)),
-                IntVar::Big(b2) => map_into(BigInt::from(*s1).div_rem(&b2)),
+                IntVar::Big(b2) => map_into(BigInt::from(*s1).div_rem(b2)),
             },
             IntVar::Big(b1) => match other {
                 IntVar::Small(s2) => map_into(b1.div_rem(&(*s2).into())),
-                IntVar::Big(b2) => map_into(b1.div_rem(&b2)),
+                IntVar::Big(b2) => map_into(b1.div_rem(b2)),
             },
         }
     }
