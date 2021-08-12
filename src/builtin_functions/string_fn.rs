@@ -13,7 +13,7 @@ use crate::std_type::Type;
 use crate::string_var::{AsciiVar, MaybeAscii, StrVar, StringVar};
 use crate::variable::{FnResult, Variable};
 use crate::{first, first_n, looping};
-use ascii::{AsAsciiStr, AsciiStr, AsciiString};
+use ascii::{AsAsciiStr, AsciiChar, AsciiStr, AsciiString};
 use num::{BigInt, Num, One, Signed, ToPrimitive};
 use std::cell::Cell;
 use std::convert::TryInto;
@@ -46,6 +46,7 @@ pub fn get_operator(this: StringVar, o: Operator) -> Variable {
 pub fn get_attr(this: StringVar, s: &str) -> Variable {
     let func = match s {
         "length" => return this.char_len().into(),
+        "get" => get,
         "upper" => upper,
         "lower" => lower,
         "isUpper" => is_upper,
@@ -190,15 +191,18 @@ fn index(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResul
     }
 }
 
-fn index_non_ascii(s: &str, big_index: IntVar, runtime: &mut Runtime) -> FnResult {
-    let value = if big_index.is_negative() {
+fn get_non_ascii(s: &str, big_index: &IntVar) -> Option<char> {
+    if big_index.is_negative() {
         // Instead of getting the character length and then indexing from the start, index from
         // the back instead, which will only result in iterating through the string once
-        to_abs_usize(&big_index).and_then(|b| s.chars().rev().nth(b - 1))
+        to_abs_usize(big_index).and_then(|b| s.chars().rev().nth(b - 1))
     } else {
         big_index.to_usize().and_then(|b| s.chars().nth(b))
-    };
-    match value {
+    }
+}
+
+fn index_non_ascii(s: &str, big_index: IntVar, runtime: &mut Runtime) -> FnResult {
+    match get_non_ascii(s, &big_index) {
         Option::None => {
             runtime.throw_quick(index_error(), bounds_msg(&big_index, s.chars().count()))
         }
@@ -206,13 +210,17 @@ fn index_non_ascii(s: &str, big_index: IntVar, runtime: &mut Runtime) -> FnResul
     }
 }
 
-fn index_ascii(a: &AsciiStr, big_index: IntVar, runtime: &mut Runtime) -> FnResult {
-    let proper_index = if big_index.is_negative() {
-        (&big_index + &a.len().into()).to_usize()
+fn get_ascii(a: &AsciiStr, big_index: &IntVar) -> Option<AsciiChar> {
+    if big_index.is_negative() {
+        (big_index + a.len()).to_usize()
     } else {
         big_index.to_usize()
-    };
-    match proper_index.and_then(|index| a.get_ascii(index)) {
+    }
+    .and_then(|index| a.get_ascii(index))
+}
+
+fn index_ascii(a: &AsciiStr, big_index: IntVar, runtime: &mut Runtime) -> FnResult {
+    match get_ascii(a, &big_index) {
         Option::Some(chr) => runtime.return_1(chr.into()),
         Option::None => runtime.throw_quick(index_error(), bounds_msg(&big_index, a.len())),
     }
@@ -370,6 +378,16 @@ fn hash(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult
         result += c as usize;
     }
     runtime.return_1(result.into())
+}
+
+fn get(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert_eq!(args.len(), 1);
+    let big_index = IntVar::from(first(args));
+    let char = match this.as_maybe_ascii() {
+        MaybeAscii::Standard(s) => get_non_ascii(s, &big_index),
+        MaybeAscii::Ascii(a) => get_ascii(a, &big_index).map(From::from),
+    };
+    runtime.return_1(char.map(From::from).into())
 }
 
 fn upper(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
