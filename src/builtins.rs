@@ -3,7 +3,7 @@ use crate::custom_types::bytes::LangBytes;
 use crate::custom_types::dict::Dict;
 use crate::custom_types::enumerate::Enumerate;
 use crate::custom_types::exceptions::{
-    assertion_error, io_error, not_implemented, null_error, value_error,
+    arithmetic_error, assertion_error, io_error, not_implemented, null_error, value_error,
 };
 use crate::custom_types::file::FileObj;
 use crate::custom_types::interfaces::{Callable, Iterable, Throwable};
@@ -20,6 +20,7 @@ use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::std_variable::{StdVarMethod, StdVariable};
 use crate::string_var::StringVar;
+use crate::test_fn::test_internal;
 use crate::variable::{FnResult, Variable};
 
 fn print() -> Variable {
@@ -138,6 +139,9 @@ pub fn builtin_of(index: usize) -> Variable {
         29 => Iterable::cls().into(),
         30 => assertion_error().into(),
         31 => fmt_internal(),
+        32 => todo!("Iterator type"),
+        33 => arithmetic_error().into(),
+        34 => tst_internal(),
         x => unimplemented!("Builtin number {}", x),
     }
 }
@@ -197,4 +201,8 @@ fn default_in(this: StdVariable, args: Vec<Variable>, runtime: &mut Runtime) -> 
 
 fn fmt_internal() -> Variable {
     Function::Native(format_internal).into()
+}
+
+fn tst_internal() -> Variable {
+    Function::Native(test_internal).into()
 }

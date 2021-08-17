@@ -49,6 +49,7 @@ mod sys;
 mod tuple;
 mod var_impls;
 mod variable;
+mod test_fn;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
