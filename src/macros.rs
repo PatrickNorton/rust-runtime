@@ -1,36 +1,3 @@
-#[macro_export]
-macro_rules! hash_map {
-    () => {
-        ::std::collections::HashMap::new()
-    };
-    { $($key:expr => $value:expr),+ $(,)? } => {
-        {
-            let mut m = ::std::collections::HashMap::new();
-            $(
-                m.insert($key, $value);
-            )+
-            m
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! hash_set {
-    () => {
-        ::std::collections::HashSet::new()
-    };
-    { $($value:expr),* $(,)? } => {
-        {
-            let mut m = ::std::collections::HashSet::new();
-            $(
-                m.insert($value);
-            )+
-            m
-        }
-    };
-}
-
-#[macro_export]
 macro_rules! name_map {
     () => {
         $crate::name_map::NameMap::new()
@@ -46,7 +13,6 @@ macro_rules! name_map {
     };
 }
 
-#[macro_export]
 macro_rules! call_op_fn {
     ($name:ident, $ret:ty, $op:ident) => {
         pub fn $name(self, runtime: &mut Runtime) -> Result<$ret, ()> {
