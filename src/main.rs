@@ -37,6 +37,7 @@ mod method;
 mod name;
 mod name_map;
 mod operator;
+mod primitive;
 mod property;
 mod quick_functions;
 mod rational_var;
@@ -46,10 +47,10 @@ mod std_type;
 mod std_variable;
 mod string_var;
 mod sys;
+mod test_fn;
 mod tuple;
 mod var_impls;
 mod variable;
-mod test_fn;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
