@@ -18,9 +18,7 @@ use std::cmp::{max, min};
 use std::fmt::Debug;
 use std::iter::{FusedIterator, Iterator};
 use std::mem::{replace, take};
-use std::panic::resume_unwind;
 use std::rc::Rc;
-use std::slice;
 
 pub(super) trait DictLike: Debug {
     fn borrow(&self) -> Ref<'_, InnerDict>;

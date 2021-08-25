@@ -93,7 +93,7 @@ impl CustomVar for LangMetadata {
 }
 
 impl CustomVar for LangFileType {
-    fn set(self: Rc<Self>, name: Name, object: Variable) {
+    fn set(self: Rc<Self>, _name: Name, _object: Variable) {
         unimplemented!()
     }
 
@@ -101,7 +101,7 @@ impl CustomVar for LangFileType {
         todo!()
     }
 
-    fn get_operator(self: Rc<Self>, op: Operator) -> Variable {
+    fn get_operator(self: Rc<Self>, _op: Operator) -> Variable {
         todo!()
     }
 
@@ -116,7 +116,7 @@ impl CustomVar for LangFileType {
 }
 
 impl CustomVar for LangPermissions {
-    fn set(self: Rc<Self>, name: Name, object: Variable) {
+    fn set(self: Rc<Self>, _name: Name, _object: Variable) {
         unimplemented!()
     }
 
@@ -124,7 +124,7 @@ impl CustomVar for LangPermissions {
         unimplemented!()
     }
 
-    fn get_operator(self: Rc<Self>, op: Operator) -> Variable {
+    fn get_operator(self: Rc<Self>, _op: Operator) -> Variable {
         unimplemented!()
     }
 
