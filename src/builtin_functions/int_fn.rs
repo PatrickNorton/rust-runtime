@@ -328,3 +328,122 @@ fn div_rem(this: IntVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult
     let (quotient, rem) = this.div_rem(&other);
     runtime.return_1(LangTuple::from_vec(vec![quotient.into(), rem.into()]).into())
 }
+
+#[cfg(test)]
+mod test {
+    use crate::builtin_functions::int_fn::{
+        add, div, eq, floor_div, greater_than, left_bs, less_than, mul, right_bs, sub, u_minus,
+    };
+    use crate::int_var::IntVar;
+    use crate::rational_var::RationalVar;
+    use crate::runtime::Runtime;
+    use num::{BigInt, BigRational, One, Zero};
+
+    #[test]
+    fn sum() {
+        let a = IntVar::one();
+        let b = IntVar::from(2);
+        let result = Runtime::test(|runtime| add(a, vec![b.into()], runtime));
+        assert_eq!(result, Result::Ok(IntVar::from(3).into()))
+    }
+
+    #[test]
+    fn diff() {
+        let a = IntVar::one();
+        let b = IntVar::from(2);
+        let result = Runtime::test(|runtime| sub(a, vec![b.into()], runtime));
+        assert_eq!(result, Result::Ok(IntVar::from(-1).into()))
+    }
+
+    #[test]
+    fn inverse() {
+        let a = IntVar::one();
+        let result = Runtime::test(|runtime| u_minus(a, vec![], runtime));
+        assert_eq!(result, Result::Ok(IntVar::from(-1).into()))
+    }
+
+    #[test]
+    fn prod() {
+        let a = IntVar::one();
+        let b = IntVar::from(2);
+        let result = Runtime::test(|runtime| mul(a, vec![b.into()], runtime));
+        assert_eq!(result, Result::Ok(IntVar::from(2).into()))
+    }
+
+    #[test]
+    fn floor_quot() {
+        let a = IntVar::one();
+        let b = IntVar::from(2);
+        let result = Runtime::test(|runtime| floor_div(a, vec![b.into()], runtime));
+        assert_eq!(result, Result::Ok(IntVar::zero().into()))
+    }
+
+    #[test]
+    fn quot() {
+        let a = IntVar::one();
+        let b = IntVar::from(2);
+        let result = Runtime::test(|runtime| div(a, vec![b.into()], runtime));
+        assert_eq!(
+            result,
+            Result::Ok(RationalVar::from(BigRational::new(BigInt::one(), BigInt::from(2))).into())
+        )
+    }
+
+    #[test]
+    fn equal() {
+        let a = IntVar::one();
+        let b = a.clone();
+        let c = IntVar::zero();
+        let d = IntVar::from(2);
+        let result = Runtime::test(|runtime| eq(a.clone(), vec![b.into()], runtime));
+        assert_eq!(result, Result::Ok(true.into()));
+        let result = Runtime::test(|runtime| eq(a.clone(), vec![c.into()], runtime));
+        assert_eq!(result, Result::Ok(false.into()));
+        let result = Runtime::test(|runtime| eq(a, vec![d.into()], runtime));
+        assert_eq!(result, Result::Ok(false.into()));
+    }
+
+    #[test]
+    fn lt() {
+        let a = IntVar::one();
+        let b = a.clone();
+        let c = IntVar::zero();
+        let d = IntVar::from(2);
+        let result = Runtime::test(|runtime| less_than(a.clone(), vec![b.into()], runtime));
+        assert_eq!(result, Result::Ok(false.into()));
+        let result = Runtime::test(|runtime| less_than(a.clone(), vec![c.into()], runtime));
+        assert_eq!(result, Result::Ok(false.into()));
+        let result = Runtime::test(|runtime| less_than(a, vec![d.into()], runtime));
+        assert_eq!(result, Result::Ok(true.into()));
+    }
+
+    #[test]
+    fn gt() {
+        let a = IntVar::one();
+        let b = a.clone();
+        let c = IntVar::zero();
+        let d = IntVar::from(2);
+        let result = Runtime::test(|runtime| greater_than(a.clone(), vec![b.into()], runtime));
+        assert_eq!(result, Result::Ok(false.into()));
+        let result = Runtime::test(|runtime| greater_than(a.clone(), vec![c.into()], runtime));
+        assert_eq!(result, Result::Ok(true.into()));
+        let result = Runtime::test(|runtime| greater_than(a, vec![d.into()], runtime));
+        assert_eq!(result, Result::Ok(false.into()));
+    }
+
+    #[test]
+    fn right_shift() {
+        let a = IntVar::from(8);
+        let b = IntVar::from(2);
+        let result = Runtime::test(|runtime| right_bs(a, vec![b.into()], runtime));
+        assert_eq!(result, Result::Ok(IntVar::from(2).into()))
+    }
+
+    #[test]
+    fn left_shift() {
+        let a = IntVar::from(8);
+        let b = IntVar::from(2);
+        let result = Runtime::test(|runtime| left_bs(a, vec![b.into()], runtime));
+        assert_eq!(result, Result::Ok(IntVar::from(32).into()))
+    }
+}

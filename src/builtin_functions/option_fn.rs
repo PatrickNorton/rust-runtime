@@ -123,3 +123,32 @@ fn to_hash(this: OptionVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnRes
     let val = hash(this, runtime)?;
     runtime.return_1(val.into())
 }
+
+#[cfg(test)]
+mod test {
+    use crate::builtin_functions::option_fn::{to_repr, to_str};
+    use crate::int_var::IntVar;
+    use crate::runtime::Runtime;
+    use crate::string_var::StringVar;
+    use num::One;
+
+    #[test]
+    fn string() {
+        let some = Option::Some(IntVar::one().into());
+        let none = Option::None;
+        let result = Runtime::test(|runtime| to_str(some.into(), vec![], runtime));
+        assert_eq!(result, Result::Ok(StringVar::from("Some(1)").into()));
+        let result = Runtime::test(|runtime| to_str(none.into(), vec![], runtime));
+        assert_eq!(result, Result::Ok(StringVar::from("null").into()));
+    }
+
+    #[test]
+    fn repr() {
+        let some = Option::Some(IntVar::one().into());
+        let none = Option::None;
+        let result = Runtime::test(|runtime| to_repr(some.into(), vec![], runtime));
+        assert_eq!(result, Result::Ok(StringVar::from("Some(1)").into()));
+        let result = Runtime::test(|runtime| to_repr(none.into(), vec![], runtime));
+        assert_eq!(result, Result::Ok(StringVar::from("null").into()));
+    }
+}
