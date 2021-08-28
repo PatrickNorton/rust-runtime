@@ -476,11 +476,8 @@ fn get_digits(value: &BigUint) -> Vec<char> {
 /// assert_eq!(compare_half(&a, &d), Ordering::Less);
 /// ```
 fn compare_half(a: &BigInt, b: &BigInt) -> Ordering {
-    // TODO: Replace
-    // let a_val = a.iter_u32_digits_be();
-    // let mut b_val = b.iter_u32_digits_be();
-    let a_val = a.to_u32_digits().1.into_iter().rev();
-    let mut b_val = b.to_u32_digits().1.into_iter().rev();
+    let a_val = a.iter_u32_digits().rev();
+    let mut b_val = b.iter_u32_digits().rev();
     let a_len = a_val.len();
     let b_len = b_val.len();
     if a_len == 0 {
@@ -534,11 +531,8 @@ fn compare_half(a: &BigInt, b: &BigInt) -> Ordering {
 /// assert_eq!(compare_tenth(&a, &d), Ordering::Less);
 /// ```
 fn compare_tenth(a: &BigUint, b: &BigUint) -> Ordering {
-    // TODO: Replace
-    // let a_val = a.iter_u32_digits_be();
-    // let mut b_val = b.iter_u32_digits_be();
-    let a_val = a.to_u32_digits().into_iter().rev();
-    let mut b_val = b.to_u32_digits().into_iter().rev();
+    let a_val = a.iter_u32_digits().rev();
+    let mut b_val = b.iter_u32_digits().rev();
     let a_len = a_val.len();
     let b_len = b_val.len();
     if a_len == 0 {
