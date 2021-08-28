@@ -105,6 +105,16 @@ fn hash_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     runtime.return_1(hash.into())
 }
 
+fn option() -> Variable {
+    Function::Native(option_impl).into()
+}
+
+fn option_impl(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert_eq!(args.len(), 1);
+    let opt = Option::Some(first(args));
+    runtime.return_1(opt.into())
+}
+
 pub fn builtin_of(index: usize) -> Variable {
     match index {
         0 => print(),
@@ -142,6 +152,7 @@ pub fn builtin_of(index: usize) -> Variable {
         32 => todo!("Iterator type"),
         33 => arithmetic_error().into(),
         34 => tst_internal(),
+        35 => option(),
         x => unimplemented!("Builtin number {}", x),
     }
 }
