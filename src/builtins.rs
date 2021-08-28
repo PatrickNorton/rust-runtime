@@ -6,7 +6,7 @@ use crate::custom_types::exceptions::{
     arithmetic_error, assertion_error, io_error, not_implemented, null_error, value_error,
 };
 use crate::custom_types::file::FileObj;
-use crate::custom_types::interfaces::{Callable, Iterable, Throwable};
+use crate::custom_types::interfaces::{Callable, Iterable, Iterator, Throwable};
 use crate::custom_types::list::List;
 use crate::custom_types::range::Range;
 use crate::custom_types::set::Set;
@@ -149,7 +149,7 @@ pub fn builtin_of(index: usize) -> Variable {
         29 => Iterable::cls().into(),
         30 => assertion_error().into(),
         31 => fmt_internal(),
-        32 => todo!("Iterator type"),
+        32 => Iterator::cls().into(),
         33 => arithmetic_error().into(),
         34 => tst_internal(),
         35 => option(),

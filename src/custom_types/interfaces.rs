@@ -43,4 +43,5 @@ macro_rules! std_interface {
 
 std_interface!(Callable, "Callable");
 std_interface!(Iterable, "Iterable");
+std_interface!(Iterator, "Iterator");
 std_interface!(Throwable, "Throwable");
