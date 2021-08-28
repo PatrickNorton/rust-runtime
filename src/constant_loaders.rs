@@ -361,11 +361,9 @@ pub fn load_class(
 #[cfg(test)]
 mod test {
     use crate::constant_loaders::{
-        inner_bigint, load_ascii_str, load_bool, load_bytes, load_decimal, load_std_str,
+        inner_bigint, load_ascii_str, load_bool, load_decimal, load_std_str,
     };
-    use crate::custom_types::bytes::LangBytes;
     use crate::rational_var::RationalVar;
-    use crate::variable::Variable;
     use ascii::AsciiChar;
     use num::{BigInt, BigRational, One};
 

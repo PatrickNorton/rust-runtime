@@ -188,11 +188,9 @@ fn base_err<T: Display>(value: T, runtime: &mut Runtime) -> FnResult {
 
 #[cfg(test)]
 mod test {
-    use crate::builtin_functions::char_fn::{encode, encode_utf_16, eq, int, lower, repr, upper};
-    use crate::custom_types::bytes::LangBytes;
+    use crate::builtin_functions::char_fn::{encode_utf_16, eq, int, lower, repr, upper};
     use crate::runtime::Runtime;
     use crate::string_var::StringVar;
-    use std::rc::Rc;
 
     #[test]
     fn char_eq() {
