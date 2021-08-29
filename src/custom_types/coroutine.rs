@@ -1,5 +1,4 @@
 use crate::custom_var::CustomVar;
-use crate::executor;
 use crate::looping::{IterResult, NativeIterator};
 use crate::method::StdMethod;
 use crate::name::Name;
@@ -8,6 +7,7 @@ use crate::runtime::Runtime;
 use crate::stack_frame::StackFrame;
 use crate::std_type::Type;
 use crate::variable::{FnResult, Variable};
+use crate::{executor, looping};
 use std::cell::Cell;
 use std::fmt::{self, Debug, Formatter};
 use std::rc::Rc;
@@ -86,6 +86,10 @@ impl CustomVar for Generator {
             "next" => StdMethod::new_native(self, Self::next_fn).into(),
             _ => unimplemented!("Generator.{}", name),
         }
+    }
+
+    fn into_iter(self: Rc<Self>) -> looping::Iterator {
+        looping::Iterator::Native(self)
     }
 }
 

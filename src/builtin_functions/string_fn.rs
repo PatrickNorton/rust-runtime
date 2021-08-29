@@ -885,7 +885,7 @@ impl AsciiIter {
 
 impl TypicalIterator for AsciiIter {
     fn inner_next(&self) -> Option<Variable> {
-        if self.index.get() > self.val.len() {
+        if self.index.get() < self.val.len() {
             Option::Some(
                 self.val[self.index.replace(self.index.get() + 1)]
                     .as_char()
