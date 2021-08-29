@@ -82,7 +82,10 @@ pub trait CustomVar: Debug + Any + Downcast {
     }
 
     fn into_iter(self: Rc<Self>) -> looping::Iterator {
-        panic!("Cannot into_iter a non-iterable")
+        panic!(
+            "Cannot into_iter a non-iterable (value has type {})",
+            self.get_type().str()
+        )
     }
 }
 

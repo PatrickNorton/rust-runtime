@@ -346,7 +346,7 @@ impl LangBytes {
         runtime.throw_quick(
             index_error(),
             format!(
-                "index {} out of range for list of length {}",
+                "index {} out of range for bytes of length {}",
                 index,
                 self.value.borrow().len()
             ),
