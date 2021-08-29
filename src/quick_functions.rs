@@ -357,7 +357,13 @@ pub fn quick_subscript(this: Variable, other: Variable, runtime: &mut Runtime) -
         }
         Variable::Normal(InnerVar::Decimal(_)) => unimplemented!(),
         Variable::Normal(InnerVar::Char(_)) => unimplemented!(),
-        Variable::Normal(InnerVar::Type(_)) => unimplemented!(),
+        Variable::Normal(InnerVar::Type(t)) => {
+            if let Variable::Normal(InnerVar::Type(_)) = other {
+                Result::Ok(t.into()) // FIXME
+            } else {
+                panic!("Type indexing only supported for other types")
+            }
+        }
         Variable::Normal(InnerVar::Standard(v)) => {
             v.call_operator(Operator::GetAttr, vec![other], runtime)?;
             QuickResult::Ok(runtime.pop_return())
