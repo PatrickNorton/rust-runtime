@@ -1,6 +1,7 @@
 use crate::builtin_functions::Encoding;
 use crate::custom_types::bytes::LangBytes;
 use crate::custom_types::exceptions::value_error;
+use crate::function::Function;
 use crate::method::{NativeMethod, StdMethod};
 use crate::operator::Operator;
 use crate::runtime::Runtime;
@@ -45,6 +46,14 @@ pub fn attr_fn(s: &str) -> NativeMethod<char> {
 pub fn get_attribute(this: char, s: &str) -> Variable {
     let func = attr_fn(s);
     StdMethod::new_native(this, func).into()
+}
+
+pub fn static_attr(s: &str) -> Variable {
+    let func = match s {
+        "fromInt" => from_int,
+        x => unimplemented!("str.{}", x),
+    };
+    Function::Native(func).into()
 }
 
 fn eq(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -174,6 +183,13 @@ fn encode_utf_16(value: char, big_end: bool) -> Vec<u8> {
             }
         })
         .collect()
+}
+
+fn from_int(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+    debug_assert_eq!(args.len(), 1);
+    let arg = first(args).int(runtime)?;
+    let value = arg.to_u32().and_then(char::from_u32).map(From::from);
+    runtime.return_1(value.into())
 }
 
 fn base_err<T: Display>(value: T, runtime: &mut Runtime) -> FnResult {

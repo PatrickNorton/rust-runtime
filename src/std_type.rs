@@ -1,4 +1,4 @@
-use crate::builtin_functions::string_fn;
+use crate::builtin_functions::{char_fn, string_fn};
 use crate::builtins::default_methods;
 use crate::custom_types::exceptions::value_error;
 use crate::custom_types::types::{CustomType, TypeIdentity};
@@ -166,9 +166,18 @@ impl Type {
             Type::Custom(custom_t) => custom_t.index(index),
             Type::String => match index {
                 Name::Attribute(s) => string_fn::static_attr(s),
-                _ => unimplemented!(),
+                _ => unimplemented!("str.{}", index.as_str()),
             },
-            _ => unimplemented!(),
+            Type::Char => match index {
+                Name::Attribute(s) => char_fn::static_attr(s),
+                _ => unimplemented!("char.{}", index.as_str()),
+            },
+            _ => unimplemented!(
+                "{:?}.{}\n{}",
+                self.str(),
+                index.as_str(),
+                runtime.frame_strings()
+            ),
         }
     }
 
