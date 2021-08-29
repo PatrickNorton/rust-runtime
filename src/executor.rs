@@ -477,10 +477,8 @@ fn parse(b: Bytecode, bytes_0: u32, bytes_1: u32, runtime: &mut Runtime) -> FnRe
             }
         }
         Bytecode::ForParallel => {
-            let iterators = (0..bytes_1)
-                .map(|_| runtime.pop())
-                .rev()
-                .collect::<Vec<_>>();
+            let mut iterators = (0..bytes_1).map(|_| runtime.pop()).collect::<Vec<_>>();
+            iterators.reverse();
             let mut results = Vec::with_capacity(iterators.len());
             let mut loop_done = false;
             for iterator in &iterators {
