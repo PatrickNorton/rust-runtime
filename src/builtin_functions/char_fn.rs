@@ -76,12 +76,16 @@ fn str(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
 
 fn repr(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    let result: StringVar = match this {
+    let result = repr_val(this);
+    runtime.return_1(result.into())
+}
+
+pub fn repr_val(this: char) -> StringVar {
+    match this {
         '\'' => "c\"'\"".into(),
         '"' => "c'\"'".into(),
         x => format!("c'{}'", character::repr(x)).into(),
-    };
-    runtime.return_1(result.into())
+    }
 }
 
 fn upper(this: char, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {

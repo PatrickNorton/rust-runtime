@@ -253,7 +253,7 @@ impl InnerVar {
             InnerVar::String(val) => Result::Ok(val.repr()),
             InnerVar::Bigint(val) => Result::Ok(val.to_string().into()),
             InnerVar::Decimal(val) => Result::Ok(val.to_string().into()),
-            InnerVar::Char(val) => Result::Ok(val.to_string().into()),
+            InnerVar::Char(val) => Result::Ok(char_fn::repr_val(val)),
             InnerVar::Type(val) => Result::Ok(val.str()),
             InnerVar::Standard(val) => val.repr(runtime),
             InnerVar::Tuple(val) => val.repr(runtime),
