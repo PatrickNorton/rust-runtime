@@ -1,5 +1,6 @@
 use crate::custom_types::exceptions::{arithmetic_error, index_error, value_error};
 use crate::custom_types::list::List;
+use crate::custom_types::range::Range;
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::int_tools::FromBytes;
 use crate::int_var::{normalize, IntVar};
@@ -10,12 +11,13 @@ use crate::operator::Operator;
 use crate::runtime::Runtime;
 use crate::std_type::Type;
 use crate::string_var::StringVar;
-use crate::variable::{FnResult, Variable};
+use crate::variable::{FnResult, InnerVar, Variable};
 use crate::{first, first_n};
 use ascii::{AsciiChar, AsciiString, IntoAsciiString};
-use num::{BigInt, ToPrimitive};
+use num::{BigInt, One, ToPrimitive};
 use std::cell::{Cell, Ref, RefCell};
 use std::char;
+use std::cmp::min;
 use std::rc::Rc;
 
 #[derive(Debug)]
@@ -46,6 +48,10 @@ impl LangBytes {
         self.value.borrow()
     }
 
+    pub fn len(&self) -> usize {
+        self.value.borrow().len()
+    }
+
     fn op_fn(op: Operator) -> NativeMethod<Rc<LangBytes>> {
         match op {
             Operator::GetAttr => Self::index,
@@ -56,6 +62,9 @@ impl LangBytes {
             Operator::Bool => Self::bool,
             Operator::Add => Self::plus,
             Operator::Multiply => Self::mul,
+            Operator::GetSlice => Self::get_slice,
+            Operator::SetSlice => Self::set_slice,
+            Operator::DelSlice => Self::del_slice,
             _ => unimplemented!("bytes.{}", op.name()),
         }
     }
@@ -99,6 +108,98 @@ impl LangBytes {
             }
             Result::Err(index) => self.index_err(index, runtime),
         }
+    }
+
+    fn get_slice(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        let range = Range::from_slice(self.len(), runtime, first(args))?;
+        if range.get_step().is_one() {
+            let value = self.value.borrow();
+            let start = range.get_start().to_usize().unwrap();
+            let stop = range.get_stop().to_usize().unwrap_or(usize::MAX);
+            runtime.return_1(Rc::new(LangBytes::new(value[start..stop].to_vec())).into())
+        } else {
+            let mut raw_vec = Vec::new();
+            let self_val = self.value.borrow();
+            for i in range.values() {
+                raw_vec.push(self_val[i.to_usize().expect("Conversion error")]);
+            }
+            runtime.return_1(Rc::new(LangBytes::new(raw_vec)).into())
+        }
+    }
+
+    fn set_slice(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 2);
+        let [range, values] = first_n(args);
+        let range = Range::from_slice(self.len(), runtime, range)?;
+        if !range.get_step().is_one() {
+            return runtime.throw_quick(
+                value_error(),
+                format!(
+                    "bytes.operator [:]= is only valid with a slice step of 1, not {}",
+                    range.get_step()
+                ),
+            );
+        }
+        let range_end = range.get_stop().to_usize().unwrap_or(usize::MAX);
+        let value_iter = values.iter(runtime)?;
+        let mut array = self.value.borrow_mut();
+        for next_index in range.values() {
+            let index = match next_index.to_usize() {
+                Option::None => return self.index_err(next_index, runtime),
+                Option::Some(val) => val,
+            };
+            let next_value = match value_iter.next(runtime)?.take_first() {
+                Option::Some(v) => v,
+                Option::None => {
+                    // If there are extra values left on the range after the iterator has been
+                    // iterated, drain the rest of the byte slice
+                    let end = min(array.len(), range_end);
+                    array.drain(index..end);
+                    return runtime.return_0();
+                }
+            };
+            let next = next_value.int(runtime)?.to_u8().unwrap();
+            if index >= array.len() {
+                array.push(next);
+            } else {
+                array[index] = next;
+            }
+        }
+        // If there are values left on the iterable after the range has been iterated, put them in
+        while let Option::Some(val) = value_iter.next(runtime)?.take_first() {
+            let arr_len = array.len();
+            let end = min(range_end, arr_len);
+            let value = val.int(runtime)?.to_u8().unwrap();
+            if end >= arr_len {
+                array.push(value);
+            } else {
+                array.insert(end, value);
+            }
+        }
+        runtime.return_0()
+    }
+
+    fn del_slice(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert_eq!(args.len(), 1);
+        let range = Range::from_slice(self.len(), runtime, first(args))?;
+        if !range.get_step().is_one() {
+            return runtime.throw_quick(
+                value_error(),
+                format!(
+                    "list.operator del[:] is only valid with a slice step of 1, not {}",
+                    range.get_step()
+                ),
+            );
+        }
+        let range_start = range.get_start().to_usize().unwrap();
+        let range_end = range.get_stop().to_usize().unwrap_or(usize::MAX);
+        let len = self.len();
+        self.value
+            .borrow_mut()
+            .drain(range_start..min(range_end, len));
+
+        runtime.return_0()
     }
 
     fn str(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
@@ -495,12 +596,22 @@ impl LangBytes {
                 .map(|x| IntVar::from(x.clone()).to_u8().unwrap())
                 .collect(),
             Result::Err(first) => {
-                let mut result = Vec::new();
-                let iter = first.iter(runtime)?;
-                while let Option::Some(val) = iter.next(runtime)?.take_first() {
-                    result.push(IntVar::from(val).to_u8().unwrap());
+                // TODO: Add operator bytes
+                if let Variable::Normal(InnerVar::Char(c)) = first {
+                    let mut data = vec![0; c.len_utf8()];
+                    c.encode_utf8(&mut data);
+                    data
+                } else if let Variable::Normal(InnerVar::String(s)) = first {
+                    s.as_bytes().to_vec()
+                } else {
+                    let mut result = Vec::new();
+                    let iter = first.iter(runtime)?;
+                    while let Option::Some(val) = iter.next(runtime)?.take_first() {
+                        println!("{}", runtime.frame_strings());
+                        result.push(IntVar::from(val).to_u8().unwrap());
+                    }
+                    result
                 }
-                result
             }
         };
         runtime.return_1(Rc::new(LangBytes::new(result)).into())
