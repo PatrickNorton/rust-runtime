@@ -81,6 +81,7 @@ impl LangBytes {
             "endsWith" => Self::ends_with,
             "lastIndexOf" => Self::last_index_of,
             "hex" => Self::hex,
+            "reverse" => Self::reverse,
             _ => unimplemented!("bytes.{}", attr),
         }
     }
@@ -564,6 +565,12 @@ impl LangBytes {
             .map(|x| format!("{:x}", x).into_ascii_string().unwrap())
             .collect::<StringVar>();
         runtime.return_1(result.into())
+    }
+
+    fn reverse(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        self.value.borrow_mut().reverse();
+        runtime.return_0()
     }
 
     fn from_hex(args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
