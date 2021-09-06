@@ -13,8 +13,9 @@ use crate::std_type::Type;
 use crate::string_var::StringVar;
 use crate::variable::{FnResult, InnerVar, Variable};
 use crate::{first, first_n};
-use ascii::{AsciiChar, AsciiString, IntoAsciiString};
+use ascii::{AsciiChar, AsciiStr, AsciiString, IntoAsciiString};
 use num::{BigInt, One, ToPrimitive};
+use once_cell::sync::Lazy;
 use std::cell::{Cell, Ref, RefCell};
 use std::char;
 use std::cmp::min;
@@ -214,10 +215,17 @@ impl LangBytes {
     }
 
     fn repr_value(&self) -> StringVar {
+        static BYTES_START: Lazy<&AsciiStr> = Lazy::new(|| AsciiStr::from_ascii("b\"").unwrap());
+        static BYTES_END: Lazy<&AsciiStr> = Lazy::new(|| AsciiStr::from_ascii("\"").unwrap());
         let value = self.value.borrow();
         let mut result = AsciiString::with_capacity(value.len());
+        result.push_str(*BYTES_START);
         for chr in &*value {
             match AsciiChar::from_ascii(*chr) {
+                Ok(AsciiChar::Quotation) => {
+                    result.push(AsciiChar::BackSlash);
+                    result.push(AsciiChar::Quotation);
+                }
                 Ok(ascii) => result.push(ascii),
                 Err(_) => {
                     // Not quite confident enough in this to use from_ascii_unchecked here
@@ -226,6 +234,7 @@ impl LangBytes {
                 }
             }
         }
+        result.push_str(*BYTES_END);
         result.into()
     }
 
