@@ -66,6 +66,7 @@ impl LangBytes {
             Operator::GetSlice => Self::get_slice,
             Operator::SetSlice => Self::set_slice,
             Operator::DelSlice => Self::del_slice,
+            Operator::Reversed => Self::reversed,
             _ => unimplemented!("bytes.{}", op.name()),
         }
     }
@@ -236,6 +237,13 @@ impl LangBytes {
         }
         result.push_str(*BYTES_END);
         result.into()
+    }
+
+    fn reversed(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
+        debug_assert!(args.is_empty());
+        let mut reversed = self.value.borrow().clone();
+        reversed.reverse();
+        runtime.return_1(Rc::new(LangBytes::new(reversed)).into())
     }
 
     fn encode(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
