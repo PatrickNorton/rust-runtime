@@ -37,7 +37,7 @@ pub trait IterAttrs: NativeIterator + Sized {
     fn get_name(self: Rc<Self>, val: &str) -> Variable {
         let func = match val {
             "next" => Self::next_fn,
-            _ => unimplemented!("{}", val),
+            _ => unimplemented!("{}.{}", self.get_type().str(), val),
         };
         StdMethod::new_native(self, func).into()
     }

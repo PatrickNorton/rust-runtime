@@ -121,7 +121,12 @@ impl List {
                 if value.get_type().is_subclass(&self.generic, runtime) {
                     self.value.borrow_mut()[index] = value;
                 } else {
-                    panic!("Bad type for list.operator []=")
+                    panic!(
+                        "Bad type for list.operator []=. Expected {}, got {}\n{}",
+                        self.generic.str(),
+                        value.get_type().str(),
+                        runtime.frame_strings(),
+                    )
                 }
                 runtime.return_0()
             }
@@ -149,11 +154,11 @@ impl List {
     fn plus(self: Rc<Self>, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
         debug_assert_eq!(args.len(), 1);
         let iter = first(args).iter(runtime)?;
-        let mut new = Vec::new();
+        let mut new = self.value.borrow().clone();
         while let Option::Some(val) = iter.next(runtime)?.take_first() {
             if !val.get_type().is_subclass(&self.generic, runtime) {
                 panic!(
-                    "Bad type for list[{}].addAll: {}\n{}",
+                    "Bad type for list[{}].operator +: {}\n{}",
                     self.generic.str(),
                     val.get_type().str(),
                     runtime.frame_strings(),
@@ -381,6 +386,8 @@ impl List {
             let value = self.value.borrow();
             let start = range.get_start().to_usize().unwrap();
             let stop = range.get_stop().to_usize().unwrap_or(usize::MAX);
+            let start = start.clamp(0, value.len());
+            let stop = stop.clamp(0, value.len());
             runtime.return_1(List::from_values(self.generic, value[start..stop].to_vec()).into())
         } else {
             let mut raw_vec = Vec::new();
