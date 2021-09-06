@@ -127,6 +127,7 @@ impl Type {
             (Type::Object, _) => true,
             (Type::Custom(t), _) => t.is_subclass(other, runtime),
             (Type::Union(t), Type::Union(u)) => ptr::eq(*t, *u),
+            (Type::Option(i1, t1), Type::Option(i2, t2)) => i1 == i2 && t1 == t2,
             _ => false,
         }
     }
@@ -423,6 +424,29 @@ impl PartialEq for Type {
 }
 
 impl Eq for Type {}
+
+impl PartialEq for OptionType {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (OptionType::Standard(a), OptionType::Standard(b)) => ptr::eq(*a, *b),
+            (OptionType::Null, OptionType::Null) => true,
+            (OptionType::Bool, OptionType::Bool) => true,
+            (OptionType::Bigint, OptionType::Bigint) => true,
+            (OptionType::String, OptionType::String) => true,
+            (OptionType::Decimal, OptionType::Decimal) => true,
+            (OptionType::Char, OptionType::Char) => true,
+            (OptionType::Tuple, OptionType::Tuple) => true,
+            (OptionType::Type, OptionType::Type) => true,
+            (OptionType::Custom(a), OptionType::Custom(b)) => {
+                ptr::eq(*a as *const _ as *const (), *b as *const _ as *const ())
+            }
+            (OptionType::Union(t), OptionType::Union(u)) => ptr::eq(*t, *u),
+            _ => false,
+        }
+    }
+}
+
+impl Eq for OptionType {}
 
 impl Hash for Type {
     fn hash<H: Hasher>(&self, state: &mut H) {

@@ -92,7 +92,10 @@ impl Variable {
     pub fn into_bool(self, runtime: &mut Runtime) -> Result<bool, ()> {
         match self {
             Variable::Normal(var) => var.into_bool(runtime),
-            Variable::Option(var) => Result::Ok(var.is_some()),
+            Variable::Option(var) => match var.into_option_var() {
+                Option::Some(v) => v.into_bool(runtime),
+                Option::None => Result::Ok(false),
+            },
         }
     }
 
@@ -606,6 +609,10 @@ impl OptionVar {
             .map(InnerVar::get_type)
             .unwrap_or(Type::Object)
             .make_option_n(self.depth)
+    }
+
+    pub fn into_option_var(self) -> Option<Variable> {
+        self.into()
     }
 }
 
