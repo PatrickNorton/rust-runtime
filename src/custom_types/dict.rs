@@ -660,7 +660,7 @@ impl<T: DictLike> DictIter<T> {
 
     fn true_next(self: Rc<Self>) -> Option<(Variable, Variable)> {
         let parent = self.parent.borrow();
-        let len = parent.size;
+        let len = parent.entries.len();
         let mut bucket = self.bucket_no.get();
         if bucket >= len {
             return Option::None;
