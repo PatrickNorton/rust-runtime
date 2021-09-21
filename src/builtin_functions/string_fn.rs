@@ -155,7 +155,7 @@ fn overflow_exc(val: usize, len: usize) -> String {
 
 fn bool(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
     debug_assert!(args.is_empty());
-    runtime.return_1(this.is_empty().into())
+    runtime.return_1((!this.is_empty()).into())
 }
 
 fn int(this: StringVar, args: Vec<Variable>, runtime: &mut Runtime) -> FnResult {
