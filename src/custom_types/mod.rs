@@ -43,6 +43,8 @@ pub mod set;
 pub mod slice;
 pub mod types;
 
+mod inner_dict;
+
 /// A static reference to prevent multiple-checking of ascii
 ///
 /// It'd be nice if this was `const`, but it's not yet

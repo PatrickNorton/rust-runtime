@@ -1,4 +1,4 @@
-use crate::custom_types::dict::{DictIter, DictLike, InnerDict};
+use crate::custom_types::inner_dict::{DictIter, DictLike, InnerDict};
 use crate::custom_var::{downcast_var, CustomVar};
 use crate::first;
 use crate::looping;
