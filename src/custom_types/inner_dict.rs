@@ -38,6 +38,7 @@ pub(super) struct InnerEntry {
     hash: usize,
 }
 
+#[derive(Debug)]
 pub(super) struct EntryMut<'a> {
     size: &'a mut usize,
     size_w_deleted: &'a mut usize,
